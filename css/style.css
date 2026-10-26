@@ -167,7 +167,7 @@ h2 .uicon { width: 32px; height: 32px; font-size: 1.05rem; vertical-align: middl
 .bars { width: 100%; max-width: 420px; display: grid; gap: 10px; }
 .bar-row { display: flex; align-items: center; gap: 8px; } .bar-l { width: 96px; font-weight: 800; font-size: .9rem; flex: none; }
 .bar { height: 22px; border-radius: 0 12px 12px 0; display: block; border-left: 3px solid var(--ink); }
-.ruler { width: 100%; max-width: 420px; min-width: 300px; }
+.ruler { width: 100%; max-width: 420px; min-width: 250px; }
 .ruler line { stroke: var(--ink); stroke-width: 1.5; } .ruler text { font-size: 12px; text-anchor: middle; font-weight: 800; fill: var(--ink); }
 .ruler .rbody { fill: #ffe9a8; stroke: #d6b13a; } .ruler .robj { fill: #ffb347; } .ruler .rtip { fill: #f3d6a4; } .ruler .cm { font-size: 11px; }
 .clips { width: 100%; max-width: 380px; } .cobj { height: 20px; background: #2ecc71; border-radius: 4px 14px 14px 4px; margin-bottom: 6px; }
@@ -392,3 +392,25 @@ details[open].trouble > summary, details[open].prog > summary { margin-bottom: 1
 .sc { display: inline-block; min-width: 30px; text-align: center; border-radius: 99px; padding: 1px 6px; font-weight: 900; font-size: .82rem; }
 .sc.lv-0 { background: var(--lv0); } .sc.lv-1 { background: var(--lv1); } .sc.lv-2 { background: var(--lv2); } .sc.lv-3 { background: var(--lv3); } .sc.lv-4 { background: var(--lv4); }
 @media (min-width: 640px) { .filters { grid-template-columns: 1fr 1.6fr 1fr; } .skl { columns: 3; } }
+
+/* Pelajaran */
+.lessonlink { display: inline-block; margin: 10px 0 2px; font-weight: 800; text-decoration: none; background: #efecff; border-radius: 10px; padding: 6px 12px; font-size: .9rem; }
+.lhead { display: flex; gap: 12px; align-items: flex-start; border-top: 6px solid var(--c); }
+.lhead h1 { margin: 2px 0 6px; } .lhead p { margin: 0; }
+.ltoc { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px; }
+.ltoc button { flex: none; border: 2px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 12px; font: inherit; font-weight: 700; font-size: .85rem; color: var(--ink); cursor: pointer; white-space: nowrap; }
+.lph { display: flex; align-items: center; gap: 10px; } .lph h2 { flex: 1; margin: 0; }
+.lnum { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: #1f2140; font-weight: 900; flex: none; }
+.say.sm { width: 36px; height: 36px; font-size: 1rem; }
+.lsteps { padding-left: 22px; margin: 12px 0; } .lsteps li { margin-bottom: 6px; line-height: 1.5; }
+.sgnote { background: #fff4f4; border-left: 4px solid #e0464b; border-radius: 8px; padding: 8px 12px; font-size: .92rem; margin-bottom: 12px; }
+.lex { background: #f8f7ff; border-radius: 14px; padding: 12px 14px; }
+.lex h3 { margin: 0 0 4px; color: var(--brand); }
+.lex .qtext { font-size: 1.05rem; }
+.lopts { display: flex; flex-wrap: wrap; gap: 6px; justify-content: center; margin: 6px 0; }
+.lopts span { background: #fff; border: 2px solid var(--line); border-radius: 10px; padding: 6px 12px; font-weight: 800; }
+.lsol { margin-top: 8px; } .lsol summary { cursor: pointer; font-weight: 800; color: var(--brand); padding: 6px 0; }
+.lsol p { margin: 6px 0; } .lans b { color: var(--ok); }
+.ptop .ptitle { flex: 1; }
+.plesson { text-decoration: none; }
+.sgtag { display: inline-block; background: #e0464b; color: #fff; font-weight: 900; font-size: .72rem; letter-spacing: .5px; text-transform: uppercase; border-radius: 6px; padding: 2px 7px; margin-right: 6px; vertical-align: 1px; }

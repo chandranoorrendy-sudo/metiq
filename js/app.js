@@ -149,7 +149,7 @@
       <h1>Kurikulum Matematika SD</h1>
       <p class="muted">Setiap bab mencantumkan rujukan IXL, Singapore Math, dan Kurikulum Merdeka yang setara.</p>
       ${gradeTabs()}
-      ${curUnits().map((u) => `<section class="card unit" style="--c:${u.color}"><h2><span class="uicon">${u.icon}</span>${u.id}. ${u.name}</h2><p class="muted small">IXL: ${u.ixl} · Singapore Math: ${u.sg} · Kurikulum Merdeka: ${u.km}</p><ol>${u.skills.map((s) => `<li>${s.name}</li>`).join('')}</ol></section>`).join('')}
+      ${curUnits().map((u) => `<section class="card unit" style="--c:${u.color}"><h2><span class="uicon">${u.icon}</span>${u.id}. ${u.name}</h2><p class="muted small">IXL: ${u.ixl} · Singapore Math: ${u.sg} · Kurikulum Merdeka: ${u.km}</p><a class="lessonlink" href="#/pelajaran/${u.id}">📖 Buka pelajaran</a><ol>${u.skills.map((s) => `<li>${s.name}</li>`).join('')}</ol></section>`).join('')}
     `);
   }
 
@@ -196,7 +196,7 @@
       ${gradeTabs()}
       <div class="units">${curUnits().map((u) => {
         const us = unitScore(st.id, u);
-        return `<details class="unit card" style="--c:${u.color}" ${open === u.id ? 'open' : ''} data-unit="${u.id}"><summary><span class="uicon">${u.icon}</span><span class="utitle"><b>${u.id}. ${u.name}</b><small>${us.prof} dari ${us.total} keterampilan mahir</small></span><span class="ubar"><i style="width:${us.avg}%"></i></span></summary><div class="sklist">${u.skills.map((s) => skillLink(s.id, prog[s.id])).join('')}</div></details>`;
+        return `<details class="unit card" style="--c:${u.color}" ${open === u.id ? 'open' : ''} data-unit="${u.id}"><summary><span class="uicon">${u.icon}</span><span class="utitle"><b>${u.id}. ${u.name}</b><small>${us.prof} dari ${us.total} keterampilan mahir</small></span><span class="ubar"><i style="width:${us.avg}%"></i></span></summary><a class="lessonlink" href="#/pelajaran/${u.id}">📖 Pelajaran: ${u.name}</a><div class="sklist">${u.skills.map((s) => skillLink(s.id, prog[s.id])).join('')}</div></details>`;
       }).join('')}</div>
     `, { right: ses.back ? `<button class="link" data-act="backparent">← Akun orang tua</button>` : `<button class="link" data-act="logout">Keluar</button>` });
   }
@@ -216,7 +216,7 @@
     P = { sid: st.id, sk, score: p.score, count: 0, start: Date.now(), q: null, input: '', locked: false };
     const u = UNITS.find((x) => x.id === sk.unit);
     app.innerHTML = `
-      <header class="ptop" style="--c:${u.color}"><a href="#/belajar" class="pback" aria-label="Kembali">←</a><div class="ptitle"><small>${sk.code} · ${u.name}</small><b>${sk.name}</b></div></header>
+      <header class="ptop" style="--c:${u.color}"><a href="#/belajar" class="pback" aria-label="Kembali">←</a><div class="ptitle"><small>${sk.code} · ${u.name}</small><b>${sk.name}</b></div><a href="#/pelajaran/${u.id}" class="pback plesson" aria-label="Pelajaran">📖</a></header>
       <div class="pstats"><div><small>Soal dijawab</small><b id="pcount">0</b></div><div><small>Waktu</small><b id="ptime">00:00</b></div><div class="ss"><small>SmartScore</small><b id="pscore">${P.score}</b></div></div>
       <div class="sbar"><i id="sbar" style="width:${P.score}%"></i></div>
       <main class="wrap practice" id="pq"></main>`;
@@ -266,7 +266,7 @@
     } else {
       fb.innerHTML = `<div class="fb no"><h3>Belum tepat 🙂</h3>
         <p>Jawabanmu: <b class="strike">${esc(strip(given))}</b> · Jawaban yang benar: <b>${q.answer}</b></p>
-        <div class="explain"><b>Cara mengerjakan:</b><p>${q.explain}</p></div>
+        <div class="explain"><b>Cara mengerjakan:</b><p>${q.explain}</p><a class="small" href="#/pelajaran/${P.sk.unit}">📖 Baca pelajaran bab ini</a></div>
         <button class="btn" data-act="next">Lanjut →</button></div>`;
       fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -397,7 +397,7 @@
     }
     if (tab === 'keterampilan') {
       const agg = classSkillAgg(kids);
-      return teacherShell(ctx, tab, gradeTabs() + curUnits().map((u) => `<section class="card unit" style="--c:${u.color}"><h2><span class="uicon">${u.icon}</span>${u.id}. ${u.name}</h2>
+      return teacherShell(ctx, tab, gradeTabs() + curUnits().map((u) => `<section class="card unit" style="--c:${u.color}"><h2><span class="uicon">${u.icon}</span>${u.id}. ${u.name}</h2><a class="lessonlink" href="#/pelajaran/${u.id}">📖 Pelajaran bab ini</a>
         ${u.skills.map((s) => { const a = agg[s.id]; const prof = a ? a.students.filter((x) => x.p.score >= 80).length : 0; return `<details class="skd"><summary><span class="sk-code">${s.code}</span><span class="grow">${s.name}</span><span class="muted small">${a ? `${a.n} siswa · ${pct(a.ok, a.att)}%` : 'belum dicoba'}</span><span class="pill">${prof}/${kids.length} mahir</span></summary>
           ${a ? `<div class="skd-b">${a.students.sort((x, y) => x.p.score - y.p.score).map((x) => `<a class="lrow" href="#/guru/siswa/${x.k.id}"><span class="av sm">${x.k.avatar}</span><span class="grow">${esc(x.k.name)}<small>${x.p.att} soal · ${pct(x.p.ok, x.p.att)}% benar</small></span>${chip(x.p.score)}</a>`).join('')}</div>` : ''}<p class="small"><a href="#/coba/${s.id}">Coba soal contoh →</a></p></details>`; }).join('')}</section>`).join(''));
     }
@@ -647,7 +647,7 @@
         <section class="card good"><h2>👍 Yang sudah bagus</h2>${good.length ? good.slice(0, 6).map((g) => `<div class="lrow"><span class="grow"><b>${g.skill.name}</b><small>${g.att} soal · ${g.acc}% benar</small></span>${chip(g.score)}</div>`).join('') : `<p class="muted">Belum ada keterampilan yang mencapai tingkat mahir (skor 80). Terus berlatih ya!</p>`}</section>
         <section class="card improve"><h2>💪 Yang perlu ditingkatkan</h2>${weak.length ? weak.slice(0, 5).map((w) => `<div class="wrow"><div class="lrow"><span class="grow"><b>${w.skill.name}</b><small>${w.att} soal · ${w.acc}% benar</small></span>${chip(w.score)}</div>
           ${w.tag ? `<p class="small"><b>Pola:</b> ${TAGS[w.tag].label}.</p>` : ''}${w.example ? `<p class="small ex">Contoh: "${esc(w.example.text)}" — dijawab <b class="strike">${esc(w.example.given)}</b>, seharusnya <b>${esc(w.example.answer)}</b>.</p>` : ''}
-          <p class="small tip">💡 ${w.tag && w.tag !== 'konsep' ? TAGS[w.tag].tip : UNITS.find((u) => u.id === w.skill.unit).tip}</p></div>`).join('') : `<p class="muted">Tidak ada keterampilan yang tertinggal. Mantap!</p>`}</section>
+          <p class="small tip">💡 ${w.tag && w.tag !== 'konsep' ? TAGS[w.tag].tip : UNITS.find((u) => u.id === w.skill.unit).tip} <a href="#/pelajaran/${w.skill.unit}">📖 Pelajarannya</a></p></div>`).join('') : `<p class="muted">Tidak ada keterampilan yang tertinggal. Mantap!</p>`}</section>
       </div>
       ${tags.length ? `<section class="card"><h2>🔍 Pola kesalahan dari jawaban ${nm} (30 hari)</h2>${tags.map(([t, n]) => `<div class="tagrow"><b>${TAGS[t].label}</b> <span class="pill">${n}×</span><p class="small">${audience === 'ortu' ? 'Di rumah: ' : 'Saran: '}${TAGS[t].tip}</p></div>`).join('')}</section>` : ''}
       <section class="card"><h2>Kemajuan per bab</h2>${reportGrades(k.id).map((g, _, all) => (all.length > 1 ? `<p class="small"><b>Kelas ${g}</b></p>` : '') + unitsOf(g).map((u) => { const us = unitScore(k.id, u); return `<div class="uprog"><span>${u.icon} ${u.name}</span><span class="ubar"><i style="width:${us.avg}%;background:${u.color}"></i></span><small>${us.prof}/${us.total}</small></div>`; }).join('')).join('')}</section>
@@ -704,6 +704,34 @@
     app.innerHTML = shell((ses.ptoken ? '<a class="back" href="#/ortu/anak">← Anak saya</a>' : '') + reportHTML(k, 'ortu') + `<p class="center muted small">SmartScore: 0–49 Mulai · 50–79 Berkembang · 80–99 Mahir · 100 Tuntas 🏆</p>`, { right: `<button class="link" data-act="logout">Keluar</button>` });
   }
 
+  /* ---------- Pelajaran: materi singkat + contoh "Ayo coba!" per bab ---------- */
+  const LESSONS = window.METIQ_LESSONS || {};
+  function lessonExample(skillId) {
+    const q = SKILLS[skillId].gen();
+    return `<p class="qtext">${q.text}</p>${q.vis ? `<div class="qvis">${q.vis}</div>` : ''}${q.options ? `<div class="lopts">${q.options.map((o) => `<span>${o}</span>`).join('')}</div>` : ''}
+      <details class="lsol"><summary>Lihat cara mengerjakan</summary><p class="lans">Jawaban: <b>${q.unit === 'Rp' ? 'Rp' : ''}${q.answer}</b></p><p>${q.explain}</p></details>`;
+  }
+  function viewLesson(uid) {
+    const u = UNITS.find((x) => x.id === uid), les = LESSONS[uid];
+    if (!u || !les) return go('#/kurikulum');
+    const kid = session.get().role === 'siswa';
+    const practice = (id) => (kid ? `#/latihan/${id}` : `#/coba/${id}`);
+    const prog = kid ? S.progressAll(session.get().id) : {};
+    app.innerHTML = shell(`
+      <button class="back link" data-act="back">← Kembali</button>
+      <section class="card lhead" style="--c:${u.color}"><span class="uicon">${u.icon}</span><div class="grow"><small class="muted">Pelajaran · Kelas ${u.grade} · Bab ${u.id}</small><h1>${u.name}</h1><p>${les.intro}</p></div><button class="say" data-act="lsay" data-i="-1" aria-label="Bacakan">🔊</button></section>
+      ${les.parts.length > 1 ? `<div class="ltoc">${les.parts.map((p, i) => `<button data-act="lgo" data-i="${i}">${i + 1}. ${p.t}</button>`).join('')}</div>` : ''}
+      ${les.parts.map((p, i) => `<section class="card lpart" id="lp-${i}">
+        <div class="lph"><span class="lnum" style="background:${u.color}">${i + 1}</span><h2>${p.t}</h2><button class="say sm" data-act="lsay" data-i="${i}" aria-label="Bacakan">🔊</button></div>
+        <ol class="lsteps">${p.steps.map((st) => `<li>${st}</li>`).join('')}</ol>
+        ${p.sg ? `<div class="sgnote"><span class="sgtag">Cara Singapura</span> ${p.sg}</div>` : ''}
+        <div class="lex"><h3>Ayo coba!</h3><div id="lex-${i}">${lessonExample(p.ex)}</div>
+          <div class="row-btn left"><button class="btn sm ghost" data-act="lexnew" data-i="${i}" data-sk="${p.ex}">🔄 Contoh lain</button><a class="btn sm" href="${practice(p.ex)}">Latihan: ${SKILLS[p.ex].name} →</a></div></div>
+      </section>`).join('')}
+      <section class="card"><h2>Latihan di bab ini</h2><div class="sklist">${u.skills.map((s) => (kid ? skillLink(s.id, prog[s.id]) : `<a class="sk" href="${practice(s.id)}"><span class="sk-code">${s.code}</span><span class="sk-name">${s.name}</span><span class="chip lv0">→</span></a>`)).join('')}</div></section>
+    `);
+  }
+
   /* Pratinjau soal untuk guru (tidak disimpan) */
   function viewPreview(id) {
     const sk = SKILLS[id]; if (!sk) return go('#/guru');
@@ -734,6 +762,7 @@
       case 'latihan': return viewPractice(b);
       case 'guru': if (b === 'masuk' || b === 'daftar') return viewTeacherAuth(b); if (!b) { const ses = session.get(); return ses.role === 'guru' && (cloudOn() ? ses.token : S.teacher(ses.id)) ? go('#/guru/ringkasan') : viewTeacherAuth(); } return viewTeacher(b, c);
       case 'coba': return viewPreview(b);
+      case 'pelajaran': return viewLesson(b);
       case 'ortu': return b === 'laporan' ? viewParentReport(c) : b === 'anak' ? viewParentHome() : b === 'daftar' ? viewParentRegister() : viewParentEnter();
       default: return viewHome();
     }
@@ -764,6 +793,13 @@
     else if (act === 'next') nextQ();
     else if (act === 'again') { P.score = 0; nextQ(); }
     else if (act === 'say') speak(P.q.speak || P.q.text);
+    else if (act === 'lexnew') { const box = document.getElementById('lex-' + el.dataset.i); if (box) box.innerHTML = lessonExample(el.dataset.sk); }
+    else if (act === 'lgo') { const sec = document.getElementById('lp-' + el.dataset.i); if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    else if (act === 'back') { if (history.length > 1) history.back(); else go('#/'); }
+    else if (act === 'lsay') {
+      const les = LESSONS[location.hash.split('/')[2]], i = +el.dataset.i;
+      if (les) speak(i < 0 ? les.intro : `${les.parts[i].t}. ${les.parts[i].steps.join(' ')}`);
+    }
     else if (act === 'pickkid') { session.set({ role: 'siswa', id: el.dataset.id, code: el.dataset.code }); go('#/belajar'); }
     else if (act === 'askid') {
       const ses = session.get(), k = S.student(el.dataset.id), c = k && S.cls(k.classId);
