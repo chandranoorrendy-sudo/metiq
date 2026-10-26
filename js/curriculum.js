@@ -27,7 +27,8 @@
     if (n === 10) return 'sepuluh';
     if (n === 11) return 'sebelas';
     if (n < 20) return SATUAN[n - 10] + ' belas';
-    if (n === 1000) return 'seribu';
+    if (n >= 1e6) { const j = Math.floor(n / 1e6), rest = n % 1e6; return kata(j) + ' juta' + (rest ? ' ' + kata(rest) : ''); }
+    if (n >= 1000) { const k = Math.floor(n / 1000), rest = n % 1000; return (k === 1 ? 'seribu' : kata(k) + ' ribu') + (rest ? ' ' + kata(rest) : ''); }
     if (n >= 100) { const h = Math.floor(n / 100), rest = n % 100; return (h === 1 ? 'seratus' : SATUAN[h] + ' ratus') + (rest ? ' ' + kata(rest) : ''); }
     const t = Math.floor(n / 10), o = n % 10;
     return SATUAN[t] + ' puluh' + (o ? ' ' + SATUAN[o] : '');

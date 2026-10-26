@@ -125,7 +125,7 @@
     app.innerHTML = shell(`
       <section class="hero">
         <h1>Belajar matematika kelas 1, <span>selangkah demi selangkah.</span></h1>
-        <p>${GRADES.map((g) => g.name).join(' dan ')}: ${UNITS.length} bab dan ${Object.keys(SKILLS).length} keterampilan dalam bahasa Indonesia. Soal menyesuaikan kemampuan anak, dengan penjelasan setiap kali jawaban belum tepat.</p>
+        <p>Kelas 1 sampai ${GRADES[GRADES.length - 1].name.replace('Kelas ', '')}: ${UNITS.length} bab dan ${Object.keys(SKILLS).length} keterampilan dalam bahasa Indonesia. Soal menyesuaikan kemampuan anak, dengan penjelasan setiap kali jawaban belum tepat.</p>
         ${resume}
       </section>
       <section class="roles">
@@ -136,7 +136,7 @@
       <section class="card">
         <h2>Isi kurikulum</h2>
         <p class="muted">Gabungan daftar keterampilan IXL kelas 1 dan alur Singapore Math (pasangan bilangan, membuat 10, model batang), disesuaikan dengan konteks Indonesia.</p>
-        ${GRADES.map((g) => `<p class="small"><b>${g.name}</b></p><div class="unit-mini">${unitsOf(g.id).map((u) => `<span style="--c:${u.color}">${u.icon} ${u.name}</span>`).join('')}</div>`).join('')}
+        <div class="grade-sum">${GRADES.map((g) => `<a href="#/kurikulum" data-act="grade" data-g="${g.id}"><b>${g.name}</b><small>${unitsOf(g.id).length} bab · ${unitsOf(g.id).reduce((a, u) => a + u.skills.length, 0)} keterampilan</small></a>`).join('')}</div>
         <a class="btn ghost" href="#/kurikulum">Lihat semua keterampilan</a>
       </section>
       <p class="center muted small">Baru mencoba? <button class="link" data-act="demo">Isi data contoh</button> lalu masuk sebagai guru dengan PIN <b>1234</b>.</p>
@@ -146,7 +146,7 @@
   function viewCurriculum() {
     app.innerHTML = shell(`
       <a class="back" href="#/">← Kembali</a>
-      <h1>Kurikulum Matematika ${GRADES.map((g) => g.name).join(' dan ')}</h1>
+      <h1>Kurikulum Matematika SD</h1>
       <p class="muted">Setiap bab mencantumkan rujukan IXL, Singapore Math, dan Kurikulum Merdeka yang setara.</p>
       ${gradeTabs()}
       ${curUnits().map((u) => `<section class="card unit" style="--c:${u.color}"><h2><span class="uicon">${u.icon}</span>${u.id}. ${u.name}</h2><p class="muted small">IXL: ${u.ixl} · Singapore Math: ${u.sg} · Kurikulum Merdeka: ${u.km}</p><ol>${u.skills.map((s) => `<li>${s.name}</li>`).join('')}</ol></section>`).join('')}
@@ -237,7 +237,7 @@
         <div class="qans">${q.type === 'choice'
           ? `<div class="opts ${q.options.every((o) => strip(o).length <= 4) ? 'short' : ''}">${q.options.map((o, i) => `<button class="opt" data-act="choose" data-i="${i}">${o}</button>`).join('')}</div>`
           : `<div class="inrow">${q.unit ? `<span class="unit-l">${q.unit}</span>` : ''}<div class="indisp" id="indisp">&nbsp;</div></div>
-             <div class="keypad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button data-act="key" data-k="${n}">${n}</button>`).join('')}<button data-act="key" data-k="del" class="kdel">⌫</button><button data-act="key" data-k="0">0</button><button data-act="submit" class="ksub">Jawab</button></div>`}
+             ${q.keys ? `<div class="keypad extra">${q.keys.map((k) => `<button data-act="key" data-k="${k}">${k}</button>`).join('')}</div>` : ''}<div class="keypad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button data-act="key" data-k="${n}">${n}</button>`).join('')}<button data-act="key" data-k="del" class="kdel">⌫</button><button data-act="key" data-k="0">0</button><button data-act="submit" class="ksub">Jawab</button></div>`}
         </div>
       </section>
       <div id="fb"></div>`;
@@ -246,7 +246,8 @@
     if (P.locked) return;
     const q = P.q;
     if (q.type === 'input' && given === '') return toast('Tulis jawabanmu dulu ya');
-    const norm = (x) => String(x).trim().toLowerCase().replace(/[.\s]/g, '');
+    // titik ribuan dan spasi diabaikan; tanda minus dan koma desimal dibakukan
+    const norm = (x) => String(x).trim().toLowerCase().replace(/[−–]/g, '-').replace(/[.\s]/g, '');
     const ok = q.type === 'choice' ? given === q.answer : norm(given) === norm(q.answer);
     P.locked = true; P.count++;
     const tag = ok ? null : classify(q, given);
@@ -414,7 +415,7 @@
         <div class="refsrc"><h3>2. Singapore Math</h3>
           <p>Alur topik dan metode mengikuti seri Primary Mathematics / Dimensions Math (${GRADES.map((g) => g.sg.replace('Primary Mathematics / Dimensions Math ', '')).join('; ')}), yang disusun berdasarkan silabus matematika sekolah dasar Kementerian Pendidikan Singapura (MOE). Rujukan ditulis sebagai nama topik, bukan nomor bab, karena setiap edisi buku berbeda urutannya.</p></div>
         <div class="refsrc"><h3>3. Kurikulum Merdeka (Indonesia)</h3>
-          <p>Setiap bab dipetakan ke elemen Capaian Pembelajaran (CP) Matematika <b>Fase A</b> (kelas 1–2): Bilangan, Aljabar, Pengukuran, Geometri, serta Analisis Data dan Peluang. Topik yang di CP baru muncul di <b>Fase B</b> (kelas 3–4), seperti perkalian, pembagian, dan bilangan sampai 1.000, ditandai <b>Pengayaan</b>. Silakan cocokkan dengan dokumen CP resmi terbaru dari Kemendikbudristek.</p></div>
+          <p>Setiap bab dipetakan ke elemen Capaian Pembelajaran (CP) Matematika: Bilangan, Aljabar, Pengukuran, Geometri, serta Analisis Data dan Peluang. Kelas 1–2 = <b>Fase A</b>, kelas 3–4 = <b>Fase B</b>, kelas 5–6 = <b>Fase C</b>. Topik yang di CP baru muncul di fase berikutnya (mis. perkalian di kelas 2, atau bilangan bulat negatif di kelas 6 yang termasuk Fase D/SMP) ditandai <b>Pengayaan</b>. Silakan cocokkan dengan dokumen CP resmi terbaru dari Kemendikbudristek.</p></div>
       </section>
       <section class="card ref"><h2>🇸🇬 Metode Singapore Math di Metiq</h2>
         <div class="refgrid">
@@ -433,7 +434,8 @@
       <section class="card ref"><h2>🇮🇩 Penyesuaian untuk Indonesia</h2><ul>
         <li>Uang memakai koin dan uang kertas Rupiah (koin Rp100–Rp1.000, uang kertas Rp1.000–Rp100.000).</li>
         <li>Jam: "setengah tujuh" berarti pukul 06.30. Kelas 2 memakai jam 24 (pukul 19.00 = 7 malam) sebagai pengganti a.m./p.m.</li>
-        <li>Pengukuran hanya memakai satuan metrik (cm, m, g, kg, liter). Satuan inci dan kaki dari IXL tidak dipakai.</li>
+        <li>Pengukuran hanya memakai satuan metrik (mm, cm, m, km, g, kg, mL, L). Satuan inci, kaki, dan pon dari IXL tidak dipakai.</li>
+        <li>Desimal ditulis dengan koma (2,5) dan ribuan dengan titik (1.250), sesuai kebiasaan di Indonesia. Keypad menyediakan tombol koma dan minus bila diperlukan.</li>
         <li>Nama orang, hari, bulan, dan konteks soal (warung, pasar, sekolah) disesuaikan dengan kehidupan sehari-hari di Indonesia.</li>
       </ul></section>
       <section class="card ref"><h2>📈 SmartScore dan tingkat penguasaan</h2>
@@ -606,7 +608,7 @@
     if (act === 'grade') { setGrade(+el.dataset.g); sessionStorage.removeItem('metiq_open'); return route(); }
     if (act === 'key') {
       if (!P || P.locked) return;
-      if (el.dataset.k === 'del') P.input = P.input.slice(0, -1); else if (P.input.length < 6) P.input += el.dataset.k;
+      if (el.dataset.k === 'del') P.input = P.input.slice(0, -1); else if (P.input.length < 12) P.input += el.dataset.k;
       document.getElementById('indisp').innerHTML = P.input || '&nbsp;';
     } else if (act === 'submit') submit(P.input);
     else if (act === 'choose') submit(P.q.options[+el.dataset.i]);
@@ -662,7 +664,7 @@
   document.addEventListener('keydown', (e) => {
     if (!P || !document.getElementById('pq') || e.target.tagName === 'INPUT') return;
     if (P.q && P.q.type === 'input' && !P.locked) {
-      if (/^[0-9]$/.test(e.key) && P.input.length < 6) P.input += e.key; else if (e.key === 'Backspace') P.input = P.input.slice(0, -1); else if (e.key === 'Enter') return submit(P.input); else return;
+      const extra = { ',': ',', '.': ',', '-': '−', '/': '/' }; if (/^[0-9]$/.test(e.key) && P.input.length < 12) P.input += e.key; else if (extra[e.key] && (P.q.keys || []).includes(extra[e.key])) P.input += extra[e.key]; else if (e.key === 'Backspace') P.input = P.input.slice(0, -1); else if (e.key === 'Enter') return submit(P.input); else return;
       document.getElementById('indisp').innerHTML = P.input || '&nbsp;';
     } else if (e.key === 'Enter' && document.querySelector('[data-act="next"]')) nextQ();
   });

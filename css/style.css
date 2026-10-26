@@ -136,7 +136,7 @@ h2 .uicon { width: 32px; height: 32px; font-size: 1.05rem; vertical-align: middl
 .tf { display: grid; grid-template-columns: repeat(5, 44px); grid-template-rows: repeat(2, 44px); border: 3px solid var(--ink); border-radius: 6px; background: #fff; }
 .tf-c { border: 1.5px solid #9a9cc0; display: grid; place-items: center; }
 .dot { width: 30px; height: 30px; border-radius: 50%; background: #ff5d5d; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .15); }
-.nl { width: 100%; max-width: 420px; min-width: 300px; }
+.nl { width: 100%; max-width: 420px; min-width: 260px; }
 .nl text { font-size: 13px; text-anchor: middle; font-weight: 700; fill: var(--ink); }
 .nl .ax, .nl .tk { stroke: var(--ink); stroke-width: 2; }
 .nl .jump { fill: none; stroke: var(--brand); stroke-width: 2.5; }
@@ -324,3 +324,38 @@ h2 .uicon { width: 32px; height: 32px; font-size: 1.05rem; vertical-align: middl
 .pill.warn { background: #fff1d6; color: #9a6200; white-space: normal; }
 @media (min-width: 640px) { .refgrid { grid-template-columns: 1fr 1fr; } }
 .b10.stackrows { flex-direction: column; align-items: center; gap: 8px; }
+
+/* Kelas 3–6 */
+.gtabs { overflow-x: auto; scrollbar-width: none; }
+.gtabs button { flex: 1 0 auto; min-width: 74px; white-space: nowrap; }
+.grade-sum { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin: 10px 0 14px; }
+.grade-sum a { display: grid; background: #f3f1ff; border-radius: 12px; padding: 10px 12px; text-decoration: none; color: var(--ink); }
+.grade-sum small { color: var(--muted); }
+.keypad.extra { grid-template-columns: repeat(auto-fit, minmax(60px, 1fr)); margin-bottom: 8px; }
+.keypad.extra button { background: #fff3c4; box-shadow: 0 3px 0 #f1d98a; }
+.dgrid { display: grid; grid-template-columns: repeat(10, 18px); border: 2px solid var(--ink); }
+.dgrid i { width: 18px; height: 18px; border: 1px solid #b9bbd6; background: #fff; }
+.dgrid i.on { background: #4d96ff; }
+.ang { width: 100%; max-width: 240px; }
+.ang line, .ang path { stroke: var(--ink); stroke-width: 3; fill: none; stroke-linecap: round; }
+.ang .arc { stroke: var(--warn); stroke-width: 2.5; }
+.ang .thin { stroke-width: 1.5; stroke: #9a9cc0; }
+.ang circle { fill: var(--ink); } .ang .cring { fill: none; stroke: var(--line); stroke-width: 2; }
+.ang text { font-size: 14px; font-weight: 800; fill: var(--ink); text-anchor: middle; } .ang .qt { fill: var(--warn); font-size: 18px; }
+.ang .cl { font-size: 12px; }
+.coord { width: 100%; max-width: 300px; }
+.coord .gl { stroke: #e3e1f2; stroke-width: 1; } .coord .axis { stroke: var(--ink); stroke-width: 2; }
+.coord .tl { font-size: 10px; text-anchor: middle; fill: var(--muted); font-weight: 700; } .coord .tl.r { text-anchor: end; }
+.coord .pt { fill: #e0464b; } .coord .pl { font-size: 13px; font-weight: 900; fill: #e0464b; }
+.shp { width: 100%; max-width: 280px; }
+.shp .fillp { fill: #dcd5ff; stroke: var(--ink); stroke-width: 2.5; }
+.shp .f1 { fill: #c8f0dc; stroke: var(--ink); stroke-width: 2; } .shp .f2 { fill: #e9fbf1; stroke: var(--ink); stroke-width: 2; } .shp .f3 { fill: #9fdcbf; stroke: var(--ink); stroke-width: 2; }
+.shp .cg { stroke: var(--ink); stroke-width: .8; opacity: .55; }
+.shp .dash { stroke: var(--warn); stroke-width: 2; stroke-dasharray: 5 4; }
+.shp .dl { font-size: 12px; font-weight: 800; fill: var(--ink); text-anchor: middle; } .shp .dl.r { text-anchor: end; } .shp .dl.l { text-anchor: start; }
+.bgraph .ln { fill: none; stroke: var(--brand); stroke-width: 3; } .bgraph .lp { fill: var(--brand); }
+.piewrap { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: center; }
+.pie { width: 150px; height: 150px; } .pielg { display: grid; gap: 4px; font-size: .9rem; font-weight: 700; }
+.pielg i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.bag { font-size: 1.5rem; letter-spacing: 2px; background: #f8f7ff; border: 3px dashed #c9c4ee; border-radius: 0 0 40px 40px; padding: 10px 14px; max-width: 280px; text-align: center; word-break: break-all; }
+.fstack { display: grid; gap: 6px; justify-items: center; } .fstack .frac { width: 200px; height: 90px; }
