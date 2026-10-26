@@ -35,6 +35,7 @@
     loadBundle(b, pending, sid) {
       db = blank();
       if (b.teacher) db.teachers = [b.teacher];
+      if (b.parent) db.parent = b.parent;
       ['classes', 'students', 'answers', 'assignments'].forEach((k) => { db[k] = b[k] || []; });
       db.progress = b.progress || {};
       if (pending) {

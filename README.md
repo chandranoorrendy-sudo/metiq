@@ -19,6 +19,7 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 ## Server (Supabase)
 - `js/config.js` berisi URL proyek dan publishable key (aman untuk browser). Kosongkan keduanya untuk mode lokal.
 - `supabase/schema.sql`: tabel dan fungsi RPC. Jalankan di SQL Editor Supabase saat membuat proyek baru.
+- `supabase/002_roles.sql`: admin (melihat semua kelas) dan akun orang tua (banyak anak, belajar sebagai anak). Jalankan setelah schema.sql; hasilnya menampilkan kode admin.
 - `js/cloud.js`: memanggil RPC dan mengirim jawaban siswa lewat kotak keluar (tetap aman saat offline).
 - Semua tabel dikunci (RLS tanpa policy); akses hanya lewat fungsi yang memeriksa token guru, kode kelas, atau kode orang tua.
 - "Isi data contoh" tetap berjalan lokal dan tidak dikirim ke server.

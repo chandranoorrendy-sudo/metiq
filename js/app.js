@@ -27,6 +27,7 @@
     let key, fn, args;
     if (ses.role === 'guru' && ses.token) { key = 'g' + ses.token; fn = 'teacher_bundle'; args = { p_token: ses.token }; }
     else if (ses.role === 'siswa' && ses.code) { key = 's' + ses.id; fn = 'student_bundle'; args = { p_code: ses.code, p_student_id: ses.id }; }
+    else if (ses.role === 'ortu' && ses.ptoken) { key = 'p' + ses.ptoken; fn = 'parent_home'; args = { p_token: ses.ptoken }; }
     else if (ses.role === 'ortu' && ses.pcode) { key = 'o' + ses.pcode; fn = 'parent_bundle'; args = { p_code: ses.pcode }; }
     else return true;
     if (!force && loaded.key === key && Date.now() - loaded.at < 30000) return true;
@@ -185,7 +186,7 @@
         const us = unitScore(st.id, u);
         return `<details class="unit card" style="--c:${u.color}" ${open === u.id ? 'open' : ''} data-unit="${u.id}"><summary><span class="uicon">${u.icon}</span><span class="utitle"><b>${u.id}. ${u.name}</b><small>${us.prof} dari ${us.total} keterampilan mahir</small></span><span class="ubar"><i style="width:${us.avg}%"></i></span></summary><div class="sklist">${u.skills.map((s) => skillLink(s.id, prog[s.id])).join('')}</div></details>`;
       }).join('')}</div>
-    `, { right: `<button class="link" data-act="logout">Keluar</button>` });
+    `, { right: ses.back ? `<button class="link" data-act="backparent">← Akun orang tua</button>` : `<button class="link" data-act="logout">Keluar</button>` });
   }
   function skillLink(id, p) {
     const s = SKILLS[id]; const sc = p ? p.score : 0;
@@ -278,6 +279,7 @@
             <label>Email<input name="email" type="email" required autocomplete="email"></label>
             <label>Kata sandi (min. 6 karakter)<input name="pass" type="password" minlength="6" required autocomplete="new-password"></label>
             <label>Nama kelas<input name="cls" required placeholder="mis. Kelas 1A"></label>
+            <label>Kode admin <small class="muted">(khusus admin, kosongkan jika bukan)</small><input name="admin" autocomplete="off" autocapitalize="characters"></label>
             <button class="btn">Buat akun</button>
           </form><p class="center"><a href="#/guru/masuk">Sudah punya akun? Masuk</a></p>`
         : `<h1 class="center">Masuk guru</h1>
@@ -316,7 +318,8 @@
   function teacherCtx() {
     const ses = session.get(); const t = ses.role === 'guru' && S.teacher(ses.id);
     if (!t) return null;
-    let classes = S.classesOf(t.id);
+    // Di mode server, daftar kelas sudah disaring oleh server (admin melihat semua kelas)
+    let classes = cloudOn() ? S.db.classes.slice() : S.classesOf(t.id);
     if (!classes.length) { if (cloudOn()) return null; classes = [S.createClass(t.id, 'Kelas 1')]; }
     const c = classes.find((x) => x.id === ses.classId) || classes[0];
     return { t, c, classes, kids: S.studentsOf(c.id) };
@@ -324,8 +327,8 @@
   const TABS = [['ringkasan', 'Ringkasan'], ['siswa', 'Siswa'], ['peta', 'Peta kemajuan'], ['keterampilan', 'Keterampilan'], ['tugas', 'Tugas'], ['kelola', 'Kelola kelas']];
   function teacherShell(ctx, tab, inner) {
     app.innerHTML = shell(`
-      <section class="dhead"><div><small class="muted">${esc(ctx.t.name)}</small><h1>${esc(ctx.c.name)}</h1></div>
-        ${ctx.classes.length > 1 ? `<select data-act="switchclass">${ctx.classes.map((c) => `<option value="${c.id}" ${c.id === ctx.c.id ? 'selected' : ''}>${esc(c.name)}</option>`).join('')}</select>` : ''}
+      <section class="dhead"><div><small class="muted">${esc(ctx.t.name)}${ctx.t.isAdmin ? ' <span class="pill">Admin</span>' : ''}${ctx.c.teacherName && ctx.c.teacherId !== ctx.t.id ? ` · kelas milik ${esc(ctx.c.teacherName)}` : ''}</small><h1>${esc(ctx.c.name)}</h1></div>
+        ${ctx.classes.length > 1 ? `<select data-act="switchclass">${ctx.classes.map((c) => `<option value="${c.id}" ${c.id === ctx.c.id ? 'selected' : ''}>${esc(c.name)}${ctx.t.isAdmin && c.teacherName ? ` (${esc(c.teacherName)})` : ''}</option>`).join('')}</select>` : ''}
         <div class="codebox">Kode kelas <b>${ctx.c.code}</b></div></section>
       <nav class="tabs">${TABS.map(([k, l]) => `<a href="#/guru/${k}" class="${k === tab ? 'on' : ''}">${l}</a>`).join('')}</nav>
       ${inner}`, { cls: 'wide', right: `<button class="link" data-act="logout">Keluar</button>` });
@@ -400,7 +403,7 @@
         <p class="muted small">Bisa tambah banyak sekaligus: pisahkan nama dengan koma.</p></section>
       <section class="card"><h2>Cara masuk</h2><p><b>Siswa:</b> buka Metiq → "Saya Siswa" → masukkan kode kelas <b class="code">${ctx.c.code}</b> → ketuk nama.</p><p><b>Orang tua:</b> buka Metiq → "Saya Orang Tua" → masukkan kode orang tua masing-masing anak (lihat daftar di bawah).</p><button class="btn ghost sm" data-act="print">Cetak kartu kode</button></section>
     </div>
-    <section class="card"><h2>Daftar siswa (${ctx.kids.length})</h2>${ctx.kids.length ? `<div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Kode orang tua</th><th></th></tr></thead><tbody>${ctx.kids.map((k) => `<tr><td>${k.avatar} ${esc(k.name)}</td><td><b class="code">${k.parentCode}</b></td><td class="r"><button class="btn sm ghost danger" data-act="rmkid" data-id="${k.id}">Hapus</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Belum ada siswa.</p>'}</section>
+    <section class="card"><h2>Daftar siswa (${ctx.kids.length})</h2>${ctx.kids.length ? `<div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Kode orang tua</th>${cloudOn() ? '<th>Akun orang tua</th>' : ''}<th></th></tr></thead><tbody>${ctx.kids.map((k) => `<tr><td>${k.avatar} ${esc(k.name)}</td><td><b class="code">${k.parentCode}</b></td>${cloudOn() ? `<td class="small">${(k.parents || []).map(esc).join('<br>') || '<span class="muted">–</span>'}</td>` : ''}<td class="r"><button class="btn sm ghost danger" data-act="rmkid" data-id="${k.id}">Hapus</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Belum ada siswa.</p>'}</section>
     <div class="grid2">
       <section class="card"><h2>Kelas</h2><form data-form="renameclass" class="form inline"><input name="name" value="${esc(ctx.c.name)}" required><button class="btn ghost">Ganti nama</button></form>
         <form data-form="newclass" class="form inline"><input name="name" placeholder="Nama kelas baru" required><button class="btn ghost">Tambah kelas</button></form></section>
@@ -453,15 +456,52 @@
 
   /* ---------- Orang tua ---------- */
   function viewParentEnter() {
+    const ses = session.get();
+    if (cloudOn() && ses.role === 'ortu' && ses.ptoken) return go('#/ortu/anak');
     app.innerHTML = shell(`
       <a class="back" href="#/">← Kembali</a>
-      <section class="card narrow center"><div class="bigemoji">👨‍👩‍👧</div><h1>Laporan untuk orang tua</h1><p class="muted">Masukkan kode orang tua (6 huruf/angka) dari guru.</p>
-        <form data-form="parentcode"><input name="code" class="codein" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC123" required><button class="btn">Lihat laporan</button></form></section>`);
+      ${cloudOn() ? `<section class="card narrow"><div class="bigemoji center">👨‍👩‍👧</div><h1 class="center">Masuk akun orang tua</h1>
+        <p class="muted center small">Satu akun untuk semua anak: lihat laporan dan ikut belajar bersama anak.</p>
+        <form data-form="plogin" class="form">
+          <label>Email<input name="email" type="email" required autocomplete="email"></label>
+          <label>Kata sandi<input name="pass" type="password" required autocomplete="current-password"></label>
+          <button class="btn">Masuk</button>
+        </form><p class="center"><a href="#/ortu/daftar">Belum punya akun? Daftar</a></p></section>` : ''}
+      <section class="card narrow center">${cloudOn() ? '<h2>Atau lihat laporan dengan kode</h2>' : '<div class="bigemoji">👨‍👩‍👧</div><h1>Laporan untuk orang tua</h1>'}<p class="muted">Masukkan kode orang tua (6 huruf/angka) dari guru.</p>
+        <form data-form="parentcode"><input name="code" class="codein" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC123" required><button class="btn ghost">Lihat laporan</button></form></section>`);
   }
-  function viewParentReport() {
-    const ses = session.get(); const k = ses.role === 'ortu' && S.student(ses.id);
-    if (!k) return go('#/ortu');
-    app.innerHTML = shell(reportHTML(k, 'ortu') + `<p class="center muted small">SmartScore: 0–49 Mulai · 50–79 Berkembang · 80–99 Mahir · 100 Tuntas 🏆</p>`, { right: `<button class="link" data-act="logout">Keluar</button>` });
+  function viewParentRegister() {
+    app.innerHTML = shell(`
+      <a class="back" href="#/ortu">← Kembali</a>
+      <section class="card narrow"><div class="bigemoji center">👨‍👩‍👧</div><h1 class="center">Daftar akun orang tua</h1>
+        <form data-form="pregister" class="form">
+          <label>Nama<input name="name" required placeholder="mis. Ayah Bima" autocomplete="name"></label>
+          <label>Email<input name="email" type="email" required autocomplete="email"></label>
+          <label>Kata sandi (min. 6 karakter)<input name="pass" type="password" minlength="6" required autocomplete="new-password"></label>
+          <button class="btn">Buat akun</button>
+        </form><p class="muted small center">Setelah masuk, tambahkan anak dengan kode orang tua dari guru.</p></section>`);
+  }
+  function viewParentHome() {
+    const ses = session.get();
+    if (!(ses.role === 'ortu' && ses.ptoken)) return go('#/ortu');
+    const p = S.db.parent || {};
+    const kids = S.db.students;
+    app.innerHTML = shell(`
+      <section class="dhead"><div><small class="muted">Akun orang tua</small><h1>Halo, ${esc(p.name || '')}</h1></div></section>
+      ${kids.map((k) => { const s7 = stats(k.id, 7), all = stats(k.id); const c = S.cls(k.classId) || {};
+        return `<section class="card kidcard"><div class="report-head"><span class="av lg">${k.avatar}</span><div class="grow"><h2>${esc(k.name)}</h2><p class="muted small">${esc(c.name || '')}${c.teacherName ? ' · ' + esc(c.teacherName) : ''}</p></div></div>
+          <div class="kpis"><div class="kpi"><small>Soal 7 hari</small><b>${s7.answered}</b></div><div class="kpi"><small>Ketepatan</small><b>${all.acc}%</b></div><div class="kpi"><small>Mahir</small><b>${all.proficient}</b></div><div class="kpi"><small>Terakhir</small><b class="sm">${ago(all.last)}</b></div></div>
+          <div class="row-btn"><a class="btn" href="#/ortu/laporan/${k.id}">Lihat laporan</a><button class="btn ghost" data-act="askid" data-id="${k.id}">Belajar sebagai ${esc(k.name)}</button></div>
+          <p class="center small"><button class="link muted" data-act="punlink" data-id="${k.id}">Lepas dari akun</button></p></section>`; }).join('') || '<section class="card center"><div class="bigemoji">🧒</div><p class="muted">Belum ada anak yang terhubung.</p></section>'}
+      <section class="card"><h2>Tambah anak</h2><p class="muted small">Masukkan kode orang tua anak (dari guru).</p>
+        <form data-form="plink" class="form inline"><input name="code" class="codein sm" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC123" required><button class="btn">Tambah</button></form></section>
+    `, { right: `<button class="link" data-act="logout">Keluar</button>` });
+  }
+  function viewParentReport(sid) {
+    const ses = session.get();
+    const k = ses.role === 'ortu' && S.student(sid || ses.id);
+    if (!k) return go(ses.ptoken ? '#/ortu/anak' : '#/ortu');
+    app.innerHTML = shell((ses.ptoken ? '<a class="back" href="#/ortu/anak">← Anak saya</a>' : '') + reportHTML(k, 'ortu') + `<p class="center muted small">SmartScore: 0–49 Mulai · 50–79 Berkembang · 80–99 Mahir · 100 Tuntas 🏆</p>`, { right: `<button class="link" data-act="logout">Keluar</button>` });
   }
 
   /* Pratinjau soal untuk guru (tidak disimpan) */
@@ -482,7 +522,7 @@
     const [a, b, c] = parts;
     const seq = ++routeSeq;
     S.setMode(cloudOn());
-    const needsData = a === 'belajar' || a === 'latihan' || (a === 'ortu' && b === 'laporan') || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar');
+    const needsData = a === 'belajar' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar');
     if (needsData && !(await ensure())) return;
     if (seq !== routeSeq) return;
     window.scrollTo(0, 0);
@@ -494,7 +534,7 @@
       case 'latihan': return viewPractice(b);
       case 'guru': if (b === 'masuk' || b === 'daftar') return viewTeacherAuth(b); if (!b) { const ses = session.get(); return ses.role === 'guru' && (cloudOn() ? ses.token : S.teacher(ses.id)) ? go('#/guru/ringkasan') : viewTeacherAuth(); } return viewTeacher(b, c);
       case 'coba': return viewPreview(b);
-      case 'ortu': return b === 'laporan' ? viewParentReport() : viewParentEnter();
+      case 'ortu': return b === 'laporan' ? viewParentReport(c) : b === 'anak' ? viewParentHome() : b === 'daftar' ? viewParentRegister() : viewParentEnter();
       default: return viewHome();
     }
   }
@@ -516,9 +556,22 @@
     else if (act === 'again') { P.score = 0; nextQ(); }
     else if (act === 'say') speak(P.q.speak || P.q.text);
     else if (act === 'pickkid') { session.set({ role: 'siswa', id: el.dataset.id, code: el.dataset.code }); go('#/belajar'); }
+    else if (act === 'askid') {
+      const ses = session.get(), k = S.student(el.dataset.id), c = k && S.cls(k.classId);
+      if (!k || !c) return;
+      session.set({ role: 'siswa', id: k.id, code: c.code, back: { role: 'ortu', ptoken: ses.ptoken, pid: ses.pid } });
+      go('#/belajar');
+    } else if (act === 'backparent') {
+      const ses = session.get(); if (ses.back) session.set(ses.back); go('#/ortu/anak');
+    } else if (act === 'punlink') {
+      const k = S.student(el.dataset.id);
+      if (!k || !confirm(`Lepas ${k.name} dari akun ini? Data belajar ${k.name} tidak terhapus.`)) return;
+      Cloud.rpc('parent_unlink', { p_token: session.get().ptoken, p_student_id: k.id }).then(() => ensure(true)).then(route).catch((e) => toast(e.message));
+    }
     else if (act === 'logout') {
       const ses = session.get();
       if (cloudOn() && ses.role === 'guru' && ses.token) Cloud.rpc('teacher_logout', { p_token: ses.token }).catch(() => {});
+      if (cloudOn() && ses.role === 'ortu' && ses.ptoken) Cloud.rpc('parent_logout', { p_token: ses.ptoken }).catch(() => {});
       session.set({}); loaded = { key: '', at: 0 }; go('#/');
     }
     else if (act === 'demo') { session.set({ demo: true }); S.setMode(false); const t = S.seedDemo(); session.set({ role: 'guru', id: t.id, demo: true }); toast('Data contoh siap. Masuk sebagai guru contoh.'); go('#/guru/ringkasan'); }
@@ -585,9 +638,21 @@
         S.loadBundle(b); loaded = { key: 'o' + code, at: Date.now() };
         return go('#/ortu/laporan');
       }
+      if (kind === 'plogin' || kind === 'pregister') {
+        const r = kind === 'pregister'
+          ? await Cloud.rpc('parent_register', { p_name: fd.get('name'), p_email: fd.get('email'), p_password: fd.get('pass') })
+          : await Cloud.rpc('parent_login', { p_email: fd.get('email'), p_password: fd.get('pass') });
+        if (r.error) { done(); return toast(r.error); }
+        session.set({ role: 'ortu', ptoken: r.token, pid: r.parentId });
+        return go('#/ortu/anak');
+      }
+      if (kind === 'plink') {
+        const r = await Cloud.rpc('parent_link', { p_token: session.get().ptoken, p_parent_code: String(fd.get('code')).trim().toUpperCase() });
+        await ensure(true); toast(`${esc(r.name)} ditambahkan ✔`); return route();
+      }
       if (kind === 'register' || kind === 'login') {
         const r = kind === 'register'
-          ? await Cloud.rpc('teacher_register', { p_name: fd.get('name'), p_email: fd.get('email'), p_password: fd.get('pass'), p_class_name: fd.get('cls') })
+          ? await Cloud.rpc('teacher_register', { p_name: fd.get('name'), p_email: fd.get('email'), p_password: fd.get('pass'), p_class_name: fd.get('cls'), p_admin_code: String(fd.get('admin') || '').trim() || null })
           : await Cloud.rpc('teacher_login', { p_email: fd.get('email'), p_password: fd.get('pass') });
         if (r.error) { done(); return toast(r.error); }
         session.set({ role: 'guru', id: r.teacherId, token: r.token });

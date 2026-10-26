@@ -273,3 +273,6 @@ h2 .uicon { width: 32px; height: 32px; font-size: 1.05rem; vertical-align: middl
 .spin { width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--lv0); border-top-color: var(--brand); animation: spin .8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 .offline { background: #fff8e6; border: 1px solid #f5d88a; border-radius: 12px; padding: 8px 12px; font-size: .9rem; font-weight: 700; margin: 0 0 12px; }
+.codein.sm { font-size: 1.2rem; letter-spacing: 3px; margin: 0; }
+.kpi b.sm { font-size: 1.05rem; }
+.kidcard .kpis { margin: 12px 0 4px; }
