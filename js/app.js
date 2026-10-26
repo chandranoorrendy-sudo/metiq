@@ -6,6 +6,7 @@
   const DAY = 864e5;
 
   /* ---------- Utilitas ---------- */
+  const avHTML = (a) => window.METIQ_AVATARS.html(a);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const strip = (h) => String(h).replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ');
   const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
@@ -66,7 +67,7 @@
   }
 
   const shell = (inner, opts = {}) => `
-    <header class="top"><a href="#/" class="logo"><span class="logo-m">M</span>etiq</a>${opts.right || ''}</header>
+    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg" alt="">Metiq</a>${opts.right || ''}</header>
     <main class="wrap ${opts.cls || ''}">${inner}</main>`;
 
   /* ---------- Analitik (dipakai guru dan orang tua) ---------- */
@@ -178,7 +179,7 @@
     app.innerHTML = shell(`
       <a class="back" href="#/siswa">← Ganti kelas</a>
       <h1 class="center">${esc(c.name)}</h1><p class="center muted">Ketuk namamu</p>
-      <div class="pick">${kids.map((k) => `<button class="kid" data-act="pickkid" data-id="${k.id}" data-code="${c.code}"><span>${k.avatar}</span>${esc(k.name)}</button>`).join('') || '<p class="muted center">Belum ada siswa di kelas ini.</p>'}</div>`);
+      <div class="pick">${kids.map((k) => `<button class="kid" data-act="pickkid" data-id="${k.id}" data-code="${c.code}"><span>${avHTML(k.avatar)}</span>${esc(k.name)}</button>`).join('') || '<p class="muted center">Belum ada siswa di kelas ini.</p>'}</div>`);
   }
   function viewStudentHome() {
     const ses = session.get(); const st = S.student(ses.id);
@@ -191,7 +192,7 @@
     const unsent = cloudOn() ? Cloud.pendingCount(st.id) : 0;
     app.innerHTML = shell(`
       ${unsent ? `<p class="offline">📶 ${unsent} jawaban menunggu internet untuk dikirim ke guru.</p>` : ''}
-      <section class="hello"><span class="av">${st.avatar}</span><div><h1>Halo, ${esc(st.name)}!</h1><p class="muted">${esc(c ? c.name : '')} · ${st7.answered} soal minggu ini · ${Object.values(prog).filter((p) => p.score >= 100).length} 🏆</p></div></section>
+      <section class="hello"><a class="av avedit" href="#/avatar/saya" aria-label="Ganti avatar">${avHTML(st.avatar)}<i>✏️</i></a><div><h1>Halo, ${esc(st.name)}!</h1><p class="muted">${esc(c ? c.name : '')} · ${st7.answered} soal minggu ini · ${Object.values(prog).filter((p) => p.score >= 100).length} 🏆</p></div></section>
       ${asg.length ? `<section class="card tugas"><h2>📌 Tugas dari guru</h2>${asg.map((a) => `<div class="asg">${a.note ? `<p><b>${esc(a.note)}</b>${a.due ? ` · <span class="muted">sampai ${esc(a.due)}</span>` : ''}</p>` : ''}<div class="sklist">${a.skills.filter((k) => SKILLS[k]).map((k) => skillLink(k, prog[k])).join('')}</div></div>`).join('')}</section>` : ''}
       ${gradeTabs()}
       <div class="units">${curUnits().map((u) => {
@@ -216,7 +217,7 @@
     P = { sid: st.id, sk, score: p.score, count: 0, start: Date.now(), q: null, input: '', locked: false };
     const u = UNITS.find((x) => x.id === sk.unit);
     app.innerHTML = `
-      <header class="ptop" style="--c:${u.color}"><a href="#/belajar" class="pback" aria-label="Kembali">←</a><div class="ptitle"><small>${sk.code} · ${u.name}</small><b>${sk.name}</b></div><a href="#/pelajaran/${u.id}" class="pback plesson" aria-label="Pelajaran">📖</a></header>
+      <header class="ptop" style="--c:${u.color}"><a href="#/belajar" class="pback" aria-label="Kembali">←</a><div class="ptitle"><small>${sk.code} · ${u.name}</small><b>${sk.name}</b></div><button class="pback psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button><a href="#/pelajaran/${u.id}" class="pback plesson" aria-label="Pelajaran">📖</a></header>
       <div class="pstats"><div><small>Soal dijawab</small><b id="pcount">0</b></div><div><small>Waktu</small><b id="ptime">00:00</b></div><div class="ss"><small>SmartScore</small><b id="pscore">${P.score}</b></div></div>
       <div class="sbar"><i id="sbar" style="width:${P.score}%"></i></div>
       <main class="wrap practice" id="pq"></main>`;
@@ -251,6 +252,9 @@
     const ok = q.type === 'choice' ? given === q.answer : norm(given) === norm(q.answer);
     P.locked = true; P.count++;
     const tag = ok ? null : classify(q, given);
+    const kidCls = (S.student(P.sid) || {}).classId;
+    const asgDone = (a) => a.skills.filter((k) => SKILLS[k]).every((k) => S.progress(P.sid, k).score >= 80);
+    const myAsg = S.assignmentsOf(kidCls).filter((a) => a.skills.includes(P.sk.id) && !asgDone(a));
     const res = S.record(P.sid, P.sk.id, { ok, given: strip(given), answer: strip(q.answer), text: strip(q.log || q.text), tag, ms: Date.now() - P.qStart });
     if (cloudOn()) Cloud.queue(P.sid, session.get().code, S.lastAnswer(), Object.assign({}, res));
     const before = P.score; P.score = res.score;
@@ -259,11 +263,17 @@
     document.getElementById('sbar').style.width = P.score + '%';
     document.querySelectorAll('.opt').forEach((b) => { const v = q.options[+b.dataset.i]; if (v === q.answer) b.classList.add('right'); else if (v === given) b.classList.add('wrong'); b.disabled = true; });
     const fb = document.getElementById('fb');
+    const finished = ok ? myAsg.filter(asgDone) : [];
     if (ok) {
+      if (P.score >= 100 && before < 100) window.SFX.mastered();
+      else if (finished.length) { window.SFX.task(); toast(`📌 Tugas selesai: ${esc(finished[0].note || 'Tugas dari guru')}! 🎉`); }
+      else if (P.score >= 80 && before < 80) { window.SFX.levelUp(); toast('⭐ Naik ke tingkat Mahir!'); }
+      else window.SFX.correct();
       fb.innerHTML = `<div class="fb ok">${['Hebat!', 'Pintar!', 'Benar sekali!', 'Mantap!', 'Keren!'][Math.floor(Math.random() * 5)]} 🎉</div>`;
       if (P.score >= 100 && before < 100) return setTimeout(() => renderMastered(false), 900);
       setTimeout(nextQ, 1000);
     } else {
+      window.SFX.wrong();
       fb.innerHTML = `<div class="fb no"><h3>Belum tepat 🙂</h3>
         <p>Jawabanmu: <b class="strike">${esc(strip(given))}</b> · Jawaban yang benar: <b>${q.answer}</b></p>
         <div class="explain"><b>Cara mengerjakan:</b><p>${q.explain}</p><a class="small" href="#/pelajaran/${P.sk.unit}">📖 Baca pelajaran bab ini</a></div>
@@ -340,7 +350,7 @@
   const TABS = [['ringkasan', 'Ringkasan'], ['siswa', 'Siswa'], ['analitik', 'Analitik'], ['peta', 'Peta kemajuan'], ['keterampilan', 'Keterampilan'], ['tugas', 'Tugas'], ['kelola', 'Kelola kelas'], ['referensi', 'Referensi']];
   function teacherShell(ctx, tab, inner) {
     app.innerHTML = shell(`
-      <section class="dhead"><div><small class="muted">${esc(ctx.t.name)}${ctx.t.isAdmin ? ' <span class="pill">Admin</span>' : ''}${ctx.c.teacherName && ctx.c.teacherId !== ctx.t.id ? ` · kelas milik ${esc(ctx.c.teacherName)}` : ''}</small><h1>${esc(ctx.c.name)}</h1></div>
+      <section class="dhead"><a class="av avedit" href="#/avatar/guru" aria-label="Ganti avatar">${avHTML(ctx.t.avatar || 'svg:ustadzah')}<i>✏️</i></a><div class="grow"><small class="muted">${esc(ctx.t.name)}${ctx.t.isAdmin ? ' <span class="pill">Admin</span>' : ''}${ctx.c.teacherName && ctx.c.teacherId !== ctx.t.id ? ` · kelas milik ${esc(ctx.c.teacherName)}` : ''}</small><h1>${esc(ctx.c.name)}</h1></div>
         ${ctx.classes.length > 1 ? `<select data-act="switchclass">${ctx.classes.map((c) => `<option value="${c.id}" ${c.id === ctx.c.id ? 'selected' : ''}>${esc(c.name)}${ctx.t.isAdmin && c.teacherName ? ` (${esc(c.teacherName)})` : ''}</option>`).join('')}</select>` : ''}
         <div class="codebox">Kode kelas <b>${ctx.c.code}</b></div></section>
       <nav class="tabs">${TABS.map(([k, l]) => `<a href="#/guru/${k}" class="${k === tab ? 'on' : ''}">${l}</a>`).join('')}</nav>
@@ -379,27 +389,27 @@
       return teacherShell(ctx, tab, `
         <div class="kpis"><div class="kpi"><small>Siswa aktif (7 hari)</small><b>${active}<span>/${kids.length}</span></b></div><div class="kpi"><small>Soal dijawab (7 hari)</small><b>${answered}</b></div><div class="kpi"><small>Ketepatan (7 hari)</small><b>${pct(correct, answered)}%</b></div><div class="kpi"><small>Keterampilan tuntas</small><b>${all.reduce((a, x) => a + x.all.mastered, 0)}</b></div></div>
         <div class="grid2">
-          <section class="card"><h2>⚠️ Perlu perhatian</h2>${attention.length ? attention.map((x) => `<a class="lrow" href="#/guru/siswa/${x.k.id}"><span class="av sm">${x.k.avatar}</span><span class="grow"><b>${esc(x.k.name)}</b><small>${x.s.answered === 0 ? `Tidak berlatih 7 hari terakhir · terakhir ${ago(x.all.last)}` : `Ketepatan ${x.s.acc}% dari ${x.s.answered} soal`}</small></span>→</a>`).join('') : '<p class="muted">Semua siswa aktif dan ketepatannya baik. 👍</p>'}</section>
+          <section class="card"><h2>⚠️ Perlu perhatian</h2>${attention.length ? attention.map((x) => `<a class="lrow" href="#/guru/siswa/${x.k.id}"><span class="av sm">${avHTML(x.k.avatar)}</span><span class="grow"><b>${esc(x.k.name)}</b><small>${x.s.answered === 0 ? `Tidak berlatih 7 hari terakhir · terakhir ${ago(x.all.last)}` : `Ketepatan ${x.s.acc}% dari ${x.s.answered} soal`}</small></span>→</a>`).join('') : '<p class="muted">Semua siswa aktif dan ketepatannya baik. 👍</p>'}</section>
           <section class="card"><h2>🧗 Keterampilan tersulit di kelas</h2>${hard.length ? hard.map((h) => `<div class="lrow"><span class="grow"><b>${SKILLS[h.id].code} ${SKILLS[h.id].name}</b><small>Ketepatan ${h.acc}% · ${h.n} siswa mencoba</small></span><button class="btn sm ghost" data-act="assign1" data-id="${h.id}">Tugaskan</button></div>`).join('') : '<p class="muted">Belum cukup data.</p>'}</section>
           <section class="card"><h2>🔍 Pola kesalahan kelas (14 hari)</h2>${tags.length ? tags.map(([t, n]) => `<div class="tagrow"><b>${TAGS[t].label}</b> <span class="pill">${n}×</span><p class="muted small">${TAGS[t].tip}</p></div>`).join('') : '<p class="muted">Belum ada pola kesalahan yang menonjol.</p>'}</section>
-          <section class="card"><h2>⭐ Paling rajin minggu ini</h2>${stars.length ? stars.map((x, i) => `<a class="lrow" href="#/guru/siswa/${x.k.id}"><span class="medal">${['🥇', '🥈', '🥉'][i]}</span><span class="av sm">${x.k.avatar}</span><span class="grow"><b>${esc(x.k.name)}</b><small>${x.s.correct} jawaban benar</small></span></a>`).join('') : '<p class="muted">Belum ada aktivitas minggu ini.</p>'}</section>
+          <section class="card"><h2>⭐ Paling rajin minggu ini</h2>${stars.length ? stars.map((x, i) => `<a class="lrow" href="#/guru/siswa/${x.k.id}"><span class="medal">${['🥇', '🥈', '🥉'][i]}</span><span class="av sm">${avHTML(x.k.avatar)}</span><span class="grow"><b>${esc(x.k.name)}</b><small>${x.s.correct} jawaban benar</small></span></a>`).join('') : '<p class="muted">Belum ada aktivitas minggu ini.</p>'}</section>
         </div>`);
     }
     if (tab === 'siswa') {
       return teacherShell(ctx, tab, `<section class="card"><div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Soal</th><th>Ketepatan</th><th>Waktu</th><th>Mahir</th><th>🏆</th><th>Terakhir</th></tr></thead><tbody>
-        ${kids.map((k) => { const s = stats(k.id); return `<tr data-href="#/guru/siswa/${k.id}"><td><span class="av sm">${k.avatar}</span> <a href="#/guru/siswa/${k.id}">${esc(k.name)}</a></td><td>${s.answered}</td><td><span class="accb ${s.acc >= 80 ? 'g' : s.acc >= 60 ? 'y' : 'r'}">${s.answered ? s.acc + '%' : '–'}</span></td><td>${fmtTime(s.ms)}</td><td>${s.proficient}</td><td>${s.mastered}</td><td>${ago(s.last)}</td></tr>`; }).join('')}
+        ${kids.map((k) => { const s = stats(k.id); return `<tr data-href="#/guru/siswa/${k.id}"><td><span class="av sm">${avHTML(k.avatar)}</span> <a href="#/guru/siswa/${k.id}">${esc(k.name)}</a></td><td>${s.answered}</td><td><span class="accb ${s.acc >= 80 ? 'g' : s.acc >= 60 ? 'y' : 'r'}">${s.answered ? s.acc + '%' : '–'}</span></td><td>${fmtTime(s.ms)}</td><td>${s.proficient}</td><td>${s.mastered}</td><td>${ago(s.last)}</td></tr>`; }).join('')}
         </tbody></table></div></section>`);
     }
     if (tab === 'peta') {
       return teacherShell(ctx, tab, `${gradeTabs()}<section class="card"><p class="muted small">Rata-rata SmartScore per bab. Ketuk nama untuk detail.</p><div class="tscroll"><table class="tbl heat"><thead><tr><th>Siswa</th>${curUnits().map((u) => `<th title="${u.name}">${u.icon}<br>${u.id}</th>`).join('')}</tr></thead><tbody>
-        ${kids.map((k) => `<tr><td><a href="#/guru/siswa/${k.id}">${k.avatar} ${esc(k.name)}</a></td>${curUnits().map((u) => { const us = unitScore(k.id, u); return `<td class="hc ${level(us.avg)[1]}" title="${u.name}: ${us.avg}">${us.avg || ''}</td>`; }).join('')}</tr>`).join('')}
+        ${kids.map((k) => `<tr><td><a href="#/guru/siswa/${k.id}">${avHTML(k.avatar)} ${esc(k.name)}</a></td>${curUnits().map((u) => { const us = unitScore(k.id, u); return `<td class="hc ${level(us.avg)[1]}" title="${u.name}: ${us.avg}">${us.avg || ''}</td>`; }).join('')}</tr>`).join('')}
         </tbody></table></div><div class="legend">${[['Belum', 'lv0'], ['Mulai <50', 'lv1'], ['Berkembang 50–79', 'lv2'], ['Mahir 80–99', 'lv3'], ['Tuntas 100', 'lv4']].map(([l, c]) => `<span><i class="${c}"></i>${l}</span>`).join('')}</div></section>`);
     }
     if (tab === 'keterampilan') {
       const agg = classSkillAgg(kids);
       return teacherShell(ctx, tab, gradeTabs() + curUnits().map((u) => `<section class="card unit" style="--c:${u.color}"><h2><span class="uicon">${u.icon}</span>${u.id}. ${u.name}</h2><a class="lessonlink" href="#/pelajaran/${u.id}">📖 Pelajaran bab ini</a>
         ${u.skills.map((s) => { const a = agg[s.id]; const prof = a ? a.students.filter((x) => x.p.score >= 80).length : 0; return `<details class="skd"><summary><span class="sk-code">${s.code}</span><span class="grow">${s.name}</span><span class="muted small">${a ? `${a.n} siswa · ${pct(a.ok, a.att)}%` : 'belum dicoba'}</span><span class="pill">${prof}/${kids.length} mahir</span></summary>
-          ${a ? `<div class="skd-b">${a.students.sort((x, y) => x.p.score - y.p.score).map((x) => `<a class="lrow" href="#/guru/siswa/${x.k.id}"><span class="av sm">${x.k.avatar}</span><span class="grow">${esc(x.k.name)}<small>${x.p.att} soal · ${pct(x.p.ok, x.p.att)}% benar</small></span>${chip(x.p.score)}</a>`).join('')}</div>` : ''}<p class="small"><a href="#/coba/${s.id}">Coba soal contoh →</a></p></details>`; }).join('')}</section>`).join(''));
+          ${a ? `<div class="skd-b">${a.students.sort((x, y) => x.p.score - y.p.score).map((x) => `<a class="lrow" href="#/guru/siswa/${x.k.id}"><span class="av sm">${avHTML(x.k.avatar)}</span><span class="grow">${esc(x.k.name)}<small>${x.p.att} soal · ${pct(x.p.ok, x.p.att)}% benar</small></span>${chip(x.p.score)}</a>`).join('')}</div>` : ''}<p class="small"><a href="#/coba/${s.id}">Coba soal contoh →</a></p></details>`; }).join('')}</section>`).join(''));
     }
     return go('#/guru/ringkasan');
   }
@@ -500,7 +510,7 @@
     return `<div class="kpis"><div class="kpi"><small>Soal dijawab</small><b>${fmtNum(ans.length)}</b></div><div class="kpi"><small>Waktu belajar</small><b class="sm">${fmtTime(ms)}</b></div><div class="kpi"><small>Siswa aktif</small><b>${active}<span>/${ctx.kids.length}</span></b></div><div class="kpi"><small>Keterampilan dilatih</small><b>${new Set(ans.map((a) => a.skill)).size}</b></div></div>
       <section class="card"><h2>Soal dijawab per ${step === 7 ? 'minggu' : 'hari'}</h2>${ans.length ? `<div class="ubars">${buckets.map((b) => `<div class="ub" title="${fdate(b.t)}: ${b.n} soal"><span class="ubv">${b.n && buckets.length <= 31 ? b.n : ''}</span><i style="height:${Math.round((b.n / max) * 100)}%"></i></div>`).join('')}</div><div class="ublab"><span>${fdate(buckets[0].t)}</span><span>${fdate(buckets[buckets.length - 1].t)}</span></div>` : '<p class="muted">Belum ada latihan pada periode ini.</p>'}</section>
       <section class="card"><h2>Penggunaan per siswa</h2><div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Soal</th><th>Ketepatan</th><th>Waktu</th><th>Keterampilan</th><th>Hari aktif</th><th>Terakhir</th></tr></thead><tbody>
-      ${rows.map((x) => `<tr data-href="#/guru/siswa/${x.k.id}"><td><span class="av sm">${x.k.avatar}</span> ${esc(x.k.name)}</td><td>${x.n}</td><td>${x.n ? `<span class="accb ${pct(x.ok, x.n) >= 80 ? 'g' : pct(x.ok, x.n) >= 60 ? 'y' : 'r'}">${pct(x.ok, x.n)}%</span>` : '–'}</td><td>${fmtTime(x.ms)}</td><td>${x.sk}</td><td>${x.days}</td><td>${x.last ? ago(x.last) : '–'}</td></tr>`).join('')}
+      ${rows.map((x) => `<tr data-href="#/guru/siswa/${x.k.id}"><td><span class="av sm">${avHTML(x.k.avatar)}</span> ${esc(x.k.name)}</td><td>${x.n}</td><td>${x.n ? `<span class="accb ${pct(x.ok, x.n) >= 80 ? 'g' : pct(x.ok, x.n) >= 60 ? 'y' : 'r'}">${pct(x.ok, x.n)}%</span>` : '–'}</td><td>${fmtTime(x.ms)}</td><td>${x.sk}</td><td>${x.days}</td><td>${x.last ? ago(x.last) : '–'}</td></tr>`).join('')}
       </tbody></table></div></section>`;
   }
 
@@ -519,9 +529,9 @@
       const tags = tagCounts(t.w).filter(([x]) => x !== 'konsep' && TAGS[x]).slice(0, 2);
       const recent = t.w.slice().sort((a, b) => b.ts - a.ts).slice(0, 6);
       return `<details class="card trouble"><summary><span class="grow"><b>${sk.code} ${sk.name}</b><small>Kelas ${sk.grade} · ${t.w.length} salah dari ${t.tot} soal · ${t.sids.length} siswa</small></span><span class="pill warn">${pct(t.w.length, t.tot)}% salah</span></summary>
-        <div class="kidchips">${per.map((x) => `<a href="#/guru/siswa/${x.k.id}" class="kchip">${x.k.avatar} ${esc(x.k.name)} <b>${x.n}×</b></a>`).join('')}</div>
+        <div class="kidchips">${per.map((x) => `<a href="#/guru/siswa/${x.k.id}" class="kchip">${avHTML(x.k.avatar)} ${esc(x.k.name)} <b>${x.n}×</b></a>`).join('')}</div>
         ${tags.length ? `<p class="small"><b>Pola kesalahan:</b> ${tags.map(([x, n]) => `${TAGS[x].label} (${n}×)`).join('; ')}</p>` : ''}
-        <div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Soal</th><th>Jawaban</th><th>Benar</th></tr></thead><tbody>${recent.map((a) => { const k = S.student(a.sid); return `<tr><td>${k ? `${k.avatar} ${esc(k.name)}` : ''}</td><td class="wrap">${esc(a.text)}</td><td class="strike">${esc(a.given)}</td><td><b>${esc(a.answer)}</b></td></tr>`; }).join('')}</tbody></table></div>
+        <div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Soal</th><th>Jawaban</th><th>Benar</th></tr></thead><tbody>${recent.map((a) => { const k = S.student(a.sid); return `<tr><td>${k ? `${avHTML(k.avatar)} ${esc(k.name)}` : ''}</td><td class="wrap">${esc(a.text)}</td><td class="strike">${esc(a.given)}</td><td><b>${esc(a.answer)}</b></td></tr>`; }).join('')}</tbody></table></div>
         <div class="row-btn left"><button class="btn sm ghost" data-act="assign1" data-id="${t.id}">Tugaskan ke kelas</button><a class="btn sm ghost" href="#/coba/${t.id}">Lihat soal contoh</a></div></details>`;
     }).join('') + (list.length > lim ? `<div class="row-btn"><button class="btn ghost sm" data-act="troublemore">Tampilkan 15 lagi (${list.length - lim} tersisa)</button></div>` : '');
   }
@@ -535,7 +545,7 @@
     return gradeTabs() + `<div class="unitchips">${units.map((x) => `<button class="${x.id === uid ? 'on' : ''}" data-act="gridunit" data-u="${x.id}" title="${esc(x.name)}">${x.icon} ${x.id}</button>`).join('')}</div>
       <section class="card"><h2><span class="uicon" style="--c:${u.color}">${u.icon}</span>${u.id}. ${u.name}</h2><p class="muted small">SmartScore saat ini. Sel kosong = belum dicoba.</p>
       <div class="tscroll"><table class="tbl heat"><thead><tr><th>Siswa</th>${u.skills.map((s) => `<th title="${esc(s.name)}">${s.code}</th>`).join('')}</tr></thead><tbody>
-      ${ctx.kids.map((k) => `<tr><td><a href="#/guru/siswa/${k.id}">${k.avatar} ${esc(k.name)}</a></td>${u.skills.map((s) => { const p = S.progress(k.id, s.id); return `<td class="hc ${p.att ? level(p.score)[1] : 'lv0'}" title="${esc(s.name)}: ${p.att ? `${p.score} (${p.att} soal)` : 'belum dicoba'}">${p.att ? (p.score >= 100 ? '🏆' : p.score) : ''}</td>`; }).join('')}</tr>`).join('')}
+      ${ctx.kids.map((k) => `<tr><td><a href="#/guru/siswa/${k.id}">${avHTML(k.avatar)} ${esc(k.name)}</a></td>${u.skills.map((s) => { const p = S.progress(k.id, s.id); return `<td class="hc ${p.att ? level(p.score)[1] : 'lv0'}" title="${esc(s.name)}: ${p.att ? `${p.score} (${p.att} soal)` : 'belum dicoba'}">${p.att ? (p.score >= 100 ? '🏆' : p.score) : ''}</td>`; }).join('')}</tr>`).join('')}
       </tbody></table></div>
       <ol class="skl small">${u.skills.map((s) => `<li><b>${s.code}</b> ${s.name}</li>`).join('')}</ol>
       <div class="legend">${[['Mulai <50', 'lv1'], ['Berkembang 50–79', 'lv2'], ['Mahir 80–99', 'lv3'], ['Tuntas 100', 'lv4']].map(([l, c]) => `<span><i class="${c}"></i>${l}</span>`).join('')}</div></section>`;
@@ -552,7 +562,7 @@
       <select data-act="logf" data-k="res"><option value="">Benar dan salah</option><option value="ok" ${f.res === 'ok' ? 'selected' : ''}>Hanya benar</option><option value="no" ${f.res === 'no' ? 'selected' : ''}>Hanya salah</option></select></div>
       <p class="muted small">${fmtNum(all.length)} soal${all.length > rows.length ? `, menampilkan ${rows.length} terbaru` : ''}.</p>
       <section class="card"><div class="tscroll"><table class="tbl log"><thead><tr><th>Waktu</th><th>Siswa</th><th>Kode</th><th>Soal</th><th>Jawaban</th><th>Benar</th><th>Lama</th></tr></thead><tbody>
-      ${rows.map((a) => { const k = S.student(a.sid), sk = SKILLS[a.skill]; return `<tr class="${a.ok ? '' : 'bad'}"><td>${ftime(a.ts)}</td><td>${k ? `${k.avatar} ${esc(k.name)}` : ''}</td><td title="${sk ? esc(sk.name) : ''}">${sk ? sk.code : esc(a.skill)}</td><td class="wrap">${esc(a.text)}</td><td>${a.ok ? '✅' : '❌'} ${esc(a.given)}</td><td>${esc(a.answer)}</td><td>${Math.round((a.ms || 0) / 1000)} dtk</td></tr>`; }).join('') || '<tr><td colspan="7" class="muted">Tidak ada soal yang cocok.</td></tr>'}
+      ${rows.map((a) => { const k = S.student(a.sid), sk = SKILLS[a.skill]; return `<tr class="${a.ok ? '' : 'bad'}"><td>${ftime(a.ts)}</td><td>${k ? `${avHTML(k.avatar)} ${esc(k.name)}` : ''}</td><td title="${sk ? esc(sk.name) : ''}">${sk ? sk.code : esc(a.skill)}</td><td class="wrap">${esc(a.text)}</td><td>${a.ok ? '✅' : '❌'} ${esc(a.given)}</td><td>${esc(a.answer)}</td><td>${Math.round((a.ms || 0) / 1000)} dtk</td></tr>`; }).join('') || '<tr><td colspan="7" class="muted">Tidak ada soal yang cocok.</td></tr>'}
       </tbody></table></div>${all.length > rows.length ? '<div class="row-btn"><button class="btn ghost sm" data-act="logmore">Tampilkan 50 lagi</button></div>' : ''}</section>`;
   }
 
@@ -583,7 +593,7 @@
     const arrow = (x) => `<span class="sc lv-${x.start >= 100 ? 4 : x.start >= 80 ? 3 : x.start >= 50 ? 2 : x.start > 0 ? 1 : 0}">${x.start}</span> → <span class="sc lv-${x.end >= 100 ? 4 : x.end >= 80 ? 3 : x.end >= 50 ? 2 : x.end > 0 ? 1 : 0}">${x.end}</span>`;
     return `<div class="kpis"><div class="kpi"><small>Kenaikan SmartScore</small><b>+${fmtNum(sum((x) => x.gain))}</b></div><div class="kpi"><small>Menjadi mahir (≥80)</small><b>${sum((x) => x.prof)}</b></div><div class="kpi"><small>Menjadi tuntas (100)</small><b>${sum((x) => x.mast)}</b></div><div class="kpi"><small>Rata-rata kenaikan</small><b>+${Math.round(sum((x) => x.gain) / skillsTouched)}<span> per keterampilan</span></b></div></div>
       <p class="muted small">Skor awal = SmartScore sebelum periode dimulai, skor akhir = SmartScore di akhir periode. Ketuk nama siswa untuk rinciannya.</p>
-      ${rows.map((x) => `<details class="card prog"><summary><span class="av sm">${x.k.avatar}</span><span class="grow"><b>${esc(x.k.name)}</b><small>${x.items.length} keterampilan dilatih · ${x.prof} jadi mahir · ${x.mast} tuntas</small></span><span class="pill ${x.gain ? '' : 'warn'}">+${x.gain}</span></summary>
+      ${rows.map((x) => `<details class="card prog"><summary><span class="av sm">${avHTML(x.k.avatar)}</span><span class="grow"><b>${esc(x.k.name)}</b><small>${x.items.length} keterampilan dilatih · ${x.prof} jadi mahir · ${x.mast} tuntas</small></span><span class="pill ${x.gain ? '' : 'warn'}">+${x.gain}</span></summary>
         ${x.items.length ? `<div class="tscroll"><table class="tbl"><thead><tr><th>Keterampilan</th><th>Skor</th><th>Naik</th><th>Soal</th></tr></thead><tbody>${x.items.map((it) => `<tr><td class="wrap"><b>${SKILLS[it.id].code}</b> ${SKILLS[it.id].name}</td><td>${arrow(it)}</td><td class="${it.gain > 0 ? 'up' : it.gain < 0 ? 'down' : ''}">${it.gain > 0 ? '+' : ''}${it.gain}</td><td>${it.n}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted small">Tidak berlatih pada periode ini.</p>'}</details>`).join('')}`;
   }
   const fmtNum = (n) => Number(n).toLocaleString('id-ID');
@@ -603,14 +613,14 @@
         <p class="muted small">Bisa tambah banyak sekaligus: pisahkan nama dengan koma.</p></section>
       <section class="card"><h2>Cara masuk</h2><p><b>Siswa:</b> buka Metiq → "Saya Siswa" → masukkan kode kelas <b class="code">${ctx.c.code}</b> → ketuk nama.</p><p><b>Orang tua:</b> buka Metiq → "Saya Orang Tua" → masukkan kode orang tua masing-masing anak (lihat daftar di bawah).</p><button class="btn ghost sm" data-act="print">Cetak kartu kode</button></section>
     </div>
-    <section class="card"><h2>Daftar siswa (${ctx.kids.length})</h2>${ctx.kids.length ? `<div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Kode orang tua</th>${cloudOn() ? '<th>Akun orang tua</th>' : ''}<th></th></tr></thead><tbody>${ctx.kids.map((k) => `<tr><td>${k.avatar} ${esc(k.name)}</td><td><b class="code">${k.parentCode}</b></td>${cloudOn() ? `<td class="small">${(k.parents || []).map(esc).join('<br>') || '<span class="muted">–</span>'}</td>` : ''}<td class="r"><button class="btn sm ghost danger" data-act="rmkid" data-id="${k.id}">Hapus</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Belum ada siswa.</p>'}</section>
+    <section class="card"><h2>Daftar siswa (${ctx.kids.length})</h2>${ctx.kids.length ? `<div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Kode orang tua</th>${cloudOn() ? '<th>Akun orang tua</th>' : ''}<th></th></tr></thead><tbody>${ctx.kids.map((k) => `<tr><td><a class="avpick" href="#/avatar/siswa-${k.id}" title="Ganti avatar">${avHTML(k.avatar)}</a> ${esc(k.name)}</td><td><b class="code">${k.parentCode}</b></td>${cloudOn() ? `<td class="small">${(k.parents || []).map(esc).join('<br>') || '<span class="muted">–</span>'}</td>` : ''}<td class="r"><button class="btn sm ghost danger" data-act="rmkid" data-id="${k.id}">Hapus</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Belum ada siswa.</p>'}</section>
     <div class="grid2">
       <section class="card"><h2>Kelas</h2><form data-form="renameclass" class="form inline"><input name="name" value="${esc(ctx.c.name)}" required><button class="btn ghost">Ganti nama</button></form>
         <form data-form="newclass" class="form inline"><input name="name" placeholder="Nama kelas baru" required><button class="btn ghost">Tambah kelas</button></form></section>
       ${cloudOn() ? `<section class="card"><h2>Data</h2><p class="muted small">Data kelas tersimpan di server dan otomatis tersinkron ke HP siswa, orang tua, dan guru.</p><div class="row-btn"><button class="btn ghost sm" data-act="export">Unduh cadangan</button></div></section>`
       : `<section class="card"><h2>Cadangan data</h2><p class="muted small">Data tersimpan di perangkat ini. Unduh cadangan secara berkala, atau gabungkan data dari perangkat lain.</p><div class="row-btn"><button class="btn ghost sm" data-act="export">Unduh cadangan</button><label class="btn ghost sm">Gabungkan file<input type="file" accept=".json" data-act="import" hidden></label></div></section>`}
     </div>
-    <div class="printcards">${ctx.kids.map((k) => `<div class="pcard"><div class="av">${k.avatar}</div><b>${esc(k.name)}</b><div>Kode kelas: <b>${ctx.c.code}</b></div><div>Kode orang tua: <b>${k.parentCode}</b></div><small>metiq · ${esc(ctx.c.name)}</small></div>`).join('')}</div>`;
+    <div class="printcards">${ctx.kids.map((k) => `<div class="pcard"><div class="av">${avHTML(k.avatar)}</div><b>${esc(k.name)}</b><div>Kode kelas: <b>${ctx.c.code}</b></div><div>Kode orang tua: <b>${k.parentCode}</b></div><small>metiq · ${esc(ctx.c.name)}</small></div>`).join('')}</div>`;
   }
   function viewTeacherStudent(ctx, sid) {
     const k = S.student(sid); if (!k || k.classId !== ctx.c.id) return go('#/guru/siswa');
@@ -639,7 +649,7 @@
       if (weak[0]) story += ` Yang paling perlu dilatih: <b>${weak[0].skill.name.toLowerCase()}</b>${weak[0].tag && weak[0].tag !== 'konsep' ? ` — ${nm} ${TAGS[weak[0].tag].label.toLowerCase()}` : ''}.`;
     }
     return `
-      <section class="card report-head"><span class="av lg">${k.avatar}</span><div><h1>${audience === 'ortu' ? 'Laporan belajar ' : ''}${nm}</h1><p class="muted">${esc((S.cls(k.classId) || {}).name || '')}</p></div></section>
+      <section class="card report-head"><span class="av lg">${avHTML(k.avatar)}</span><div><h1>${audience === 'ortu' ? 'Laporan belajar ' : ''}${nm}</h1><p class="muted">${esc((S.cls(k.classId) || {}).name || '')}</p></div></section>
       <section class="card story"><p>${story}</p></section>
       <div class="kpis"><div class="kpi"><small>Total soal</small><b>${sAll.answered}</b></div><div class="kpi"><small>Ketepatan</small><b>${sAll.acc}%</b></div><div class="kpi"><small>Waktu belajar</small><b>${fmtTime(sAll.ms)}</b></div><div class="kpi"><small>Keterampilan mahir</small><b>${sAll.proficient}<span> · ${sAll.mastered}🏆</span></b></div></div>
       <section class="card"><h2>Aktivitas 7 hari terakhir</h2><div class="week">${s7.byDay.map((d) => `<div class="wd"><span class="wv">${d.n || ''}</span><i style="height:${Math.round((d.n / maxDay) * 100)}%"></i><small>${hariPendek[new Date(d.d0).getDay()]}</small></div>`).join('')}</div></section>
@@ -689,7 +699,7 @@
     app.innerHTML = shell(`
       <section class="dhead"><div><small class="muted">Akun orang tua</small><h1>Halo, ${esc(p.name || '')}</h1></div></section>
       ${kids.map((k) => { const s7 = stats(k.id, 7), all = stats(k.id); const c = S.cls(k.classId) || {};
-        return `<section class="card kidcard"><div class="report-head"><span class="av lg">${k.avatar}</span><div class="grow"><h2>${esc(k.name)}</h2><p class="muted small">${esc(c.name || '')}${c.teacherName ? ' · ' + esc(c.teacherName) : ''}</p></div></div>
+        return `<section class="card kidcard"><div class="report-head"><span class="av lg">${avHTML(k.avatar)}</span><div class="grow"><h2>${esc(k.name)}</h2><p class="muted small">${esc(c.name || '')}${c.teacherName ? ' · ' + esc(c.teacherName) : ''}</p></div></div>
           <div class="kpis"><div class="kpi"><small>Soal 7 hari</small><b>${s7.answered}</b></div><div class="kpi"><small>Ketepatan</small><b>${all.acc}%</b></div><div class="kpi"><small>Mahir</small><b>${all.proficient}</b></div><div class="kpi"><small>Terakhir</small><b class="sm">${ago(all.last)}</b></div></div>
           <div class="row-btn"><a class="btn" href="#/ortu/laporan/${k.id}">Lihat laporan</a><button class="btn ghost" data-act="askid" data-id="${k.id}">Belajar sebagai ${esc(k.name)}</button></div>
           <p class="center small"><button class="link muted" data-act="punlink" data-id="${k.id}">Lepas dari akun</button></p></section>`; }).join('') || '<section class="card center"><div class="bigemoji">🧒</div><p class="muted">Belum ada anak yang terhubung.</p></section>'}
@@ -702,6 +712,33 @@
     const k = ses.role === 'ortu' && S.student(sid || ses.id);
     if (!k) return go(ses.ptoken ? '#/ortu/anak' : '#/ortu');
     app.innerHTML = shell((ses.ptoken ? '<a class="back" href="#/ortu/anak">← Anak saya</a>' : '') + reportHTML(k, 'ortu') + `<p class="center muted small">SmartScore: 0–49 Mulai · 50–79 Berkembang · 80–99 Mahir · 100 Tuntas 🏆</p>`, { right: `<button class="link" data-act="logout">Keluar</button>` });
+  }
+
+  /* ---------- Pemilih avatar ---------- */
+  function avatarTarget(target) {
+    const ses = session.get();
+    if (target === 'saya' && ses.role === 'siswa') { const k = S.student(ses.id); return k && { who: k.name, cur: k.avatar, back: '#/belajar' }; }
+    if (target === 'guru' && ses.role === 'guru') { const t = S.teacher(ses.id); return t && { who: t.name, cur: t.avatar || 'svg:ustadzah', back: '#/guru/ringkasan' }; }
+    if (target.startsWith('siswa-') && ses.role === 'guru') { const k = S.student(target.slice(6)); return k && { who: k.name, cur: k.avatar, back: '#/guru/kelola' }; }
+    return null;
+  }
+  function viewAvatar(target) {
+    const t = avatarTarget(target || '');
+    if (!t) return go('#/');
+    app.innerHTML = shell(`
+      <a class="back" href="${t.back}">← Kembali</a>
+      <section class="card center"><div class="av lg avnow">${avHTML(t.cur)}</div><h1>Pilih avatar ${esc(t.who)}</h1></section>
+      ${window.METIQ_AVATARS.CATALOG.map(([cat, list]) => `<section class="card"><h2>${cat}</h2><div class="avgrid">${list.map((a) => `<button class="avopt ${a === t.cur ? 'on' : ''}" data-act="pickav" data-t="${target}" data-a="${esc(a)}" title="${esc(window.METIQ_AVATARS.NAMES[a] || '')}">${avHTML(a)}</button>`).join('')}</div></section>`).join('')}`);
+  }
+  async function saveAvatar(target, a) {
+    const ses = session.get(), t = avatarTarget(target);
+    if (!t) return;
+    try {
+      if (target === 'saya') { if (cloudOn()) await Cloud.rpc('student_set_avatar', { p_code: ses.code, p_student_id: ses.id, p_avatar: a }); S.setStudentAvatar(ses.id, a); }
+      else if (target === 'guru') { if (cloudOn()) await Cloud.rpc('teacher_set_avatar', { p_token: ses.token, p_avatar: a }); S.setTeacherAvatar(ses.id, a); }
+      else { const sid = target.slice(6); if (cloudOn()) await Cloud.rpc('teacher_set_student_avatar', { p_token: ses.token, p_student_id: sid, p_avatar: a }); S.setStudentAvatar(sid, a); }
+      toast('Avatar diganti ✔'); go(t.back);
+    } catch (e) { toast(e.status ? e.message : 'Tidak bisa terhubung ke server'); }
   }
 
   /* ---------- Pelajaran: materi singkat + contoh "Ayo coba!" per bab ---------- */
@@ -750,7 +787,7 @@
     const [a, b, c] = parts;
     const seq = ++routeSeq;
     S.setMode(cloudOn());
-    const needsData = a === 'belajar' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar');
+    const needsData = a === 'belajar' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar';
     if (needsData && !(await ensure())) return;
     if (seq !== routeSeq) return;
     window.scrollTo(0, 0);
@@ -763,6 +800,7 @@
       case 'guru': if (b === 'masuk' || b === 'daftar') return viewTeacherAuth(b); if (!b) { const ses = session.get(); return ses.role === 'guru' && (cloudOn() ? ses.token : S.teacher(ses.id)) ? go('#/guru/ringkasan') : viewTeacherAuth(); } return viewTeacher(b, c);
       case 'coba': return viewPreview(b);
       case 'pelajaran': return viewLesson(b);
+      case 'avatar': return viewAvatar(b);
       case 'ortu': return b === 'laporan' ? viewParentReport(c) : b === 'anak' ? viewParentHome() : b === 'daftar' ? viewParentRegister() : viewParentEnter();
       default: return viewHome();
     }
@@ -793,6 +831,8 @@
     else if (act === 'next') nextQ();
     else if (act === 'again') { P.score = 0; nextQ(); }
     else if (act === 'say') speak(P.q.speak || P.q.text);
+    else if (act === 'pickav') saveAvatar(el.dataset.t, el.dataset.a);
+    else if (act === 'sound') { const on = window.SFX.toggle(); el.textContent = on ? '🔔' : '🔕'; toast(on ? 'Suara dinyalakan' : 'Suara dimatikan'); }
     else if (act === 'lexnew') { const box = document.getElementById('lex-' + el.dataset.i); if (box) box.innerHTML = lessonExample(el.dataset.sk); }
     else if (act === 'lgo') { const sec = document.getElementById('lp-' + el.dataset.i); if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     else if (act === 'back') { if (history.length > 1) history.back(); else go('#/'); }

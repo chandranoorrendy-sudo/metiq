@@ -414,3 +414,21 @@ details[open].trouble > summary, details[open].prog > summary { margin-bottom: 1
 .ptop .ptitle { flex: 1; }
 .plesson { text-decoration: none; }
 .sgtag { display: inline-block; background: #e0464b; color: #fff; font-weight: 900; font-size: .72rem; letter-spacing: .5px; text-transform: uppercase; border-radius: 6px; padding: 2px 7px; margin-right: 6px; vertical-align: 1px; }
+
+/* Logo dan avatar */
+.logo-i { width: 30px; height: 30px; border-radius: 9px; margin-right: 6px; display: block; }
+.avsvg { display: inline-block; width: 1.2em; height: 1.2em; border-radius: 50%; overflow: hidden; vertical-align: -.25em; line-height: 0; }
+.avsvg svg { width: 100%; height: 100%; display: block; }
+.av .avsvg { width: 100%; height: 100%; }
+.av.sm { overflow: hidden; } .av.sm .avsvg { width: 100%; height: 100%; }
+.avedit { position: relative; text-decoration: none; color: inherit; }
+.avedit i { position: absolute; right: -4px; bottom: -4px; font-size: .75rem; font-style: normal; background: #fff; border-radius: 50%; width: 22px; height: 22px; display: grid; place-items: center; box-shadow: var(--shadow); }
+.dhead .av { width: 52px; height: 52px; font-size: 2rem; }
+.avnow { margin: 0 auto 8px; }
+.avgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(62px, 1fr)); gap: 10px; }
+.avopt { aspect-ratio: 1; border: 3px solid transparent; background: #f3f1ff; border-radius: 50%; font-size: 2rem; cursor: pointer; display: grid; place-items: center; padding: 4px; line-height: 1; }
+.avopt .avsvg { width: 100%; height: 100%; vertical-align: 0; }
+.avopt.on { border-color: var(--brand); background: #fff; }
+.avopt:active { transform: scale(.94); }
+.avpick { text-decoration: none; }
+.psound { font-size: 1.1rem; border: 0; cursor: pointer; }

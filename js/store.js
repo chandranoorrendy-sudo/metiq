@@ -70,6 +70,8 @@
     removeStudent(id) { db.students = db.students.filter((s) => s.id !== id); delete db.progress[id]; db.answers = db.answers.filter((a) => a.sid !== id); save(); },
     student(id) { return db.students.find((s) => s.id === id); },
     studentsOf(classId) { return db.students.filter((s) => s.classId === classId).sort((a, b) => a.name.localeCompare(b.name)); },
+    setStudentAvatar(id, avatar) { const s = Store.student(id); if (s) { s.avatar = avatar; save(); } },
+    setTeacherAvatar(id, avatar) { const t = Store.teacher(id); if (t) { t.avatar = avatar; save(); } },
     studentByParentCode(code) { return db.students.find((s) => s.parentCode === String(code).trim().toUpperCase()); },
 
     /* Kemajuan */

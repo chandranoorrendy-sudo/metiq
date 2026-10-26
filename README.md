@@ -16,6 +16,8 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 - `js/kit-upper.js`: perangkat bersama kelas 3–6 (desimal berkoma, pecahan, FPB/KPK, gambar sudut, koordinat, balok, diagram, pola kesalahan tambahan).
 - `js/grade3.js` … `js/grade6.js`: kelas 3 (55 keterampilan), 4 (55), 5 (49), 6 (51). Total 344 keterampilan.
 - `js/lessons-a.js` (kelas 1–3) dan `js/lessons-b.js` (kelas 4–6): Pelajaran untuk setiap bab (92 bab, 253 subbab) dengan langkah bernomor, catatan Cara Singapura, dan contoh "Ayo coba!" yang dibuat dari pembuat soal latihan. Rute `#/pelajaran/<bab>`.
+- `js/avatars.js`: katalog avatar (anak, guru, hewan, tumbuhan, bentuk, ikon) dan ilustrasi SVG Ustadz, Ustadzah, anak berhijab, anak berpeci. `js/sound.js`: efek suara Web Audio (benar, salah, Mahir, Tuntas, tugas selesai).
+- `icons/` dan `manifest.webmanifest`: ikon aplikasi untuk browser dan layar utama HP.
 - Setiap bab mencatat rujukan IXL, Singapore Math, dan Kurikulum Merdeka (`ixl`, `sg`, `km`), yang tampil di tab Referensi pada dasbor guru.
 - `js/store.js`: penyimpanan data (saat ini `localStorage` di perangkat), dan SmartScore.
 - `js/app.js`: tampilan siswa, guru, orang tua. Tab Analitik guru berisi Penggunaan, Titik masalah, Kisi skor, Log soal, dan Kemajuan, dengan filter tanggal. Kemajuan menghitung ulang SmartScore dari riwayat jawaban (`Store.nextScore`).
@@ -24,6 +26,7 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 ## Server (Supabase)
 - `js/config.js` berisi URL proyek dan publishable key (aman untuk browser). Kosongkan keduanya untuk mode lokal.
 - `supabase/schema.sql`: tabel dan fungsi RPC. Jalankan di SQL Editor Supabase saat membuat proyek baru.
+- `supabase/003_avatars.sql`: avatar guru dan fungsi mengganti avatar siswa/guru. Jalankan setelah 002.
 - `supabase/002_roles.sql`: admin (melihat semua kelas) dan akun orang tua (banyak anak, belajar sebagai anak). Jalankan setelah schema.sql; hasilnya menampilkan kode admin.
 - `js/cloud.js`: memanggil RPC dan mengirim jawaban siswa lewat kotak keluar (tetap aman saat offline).
 - Semua tabel dikunci (RLS tanpa policy); akses hanya lewat fungsi yang memeriksa token guru, kode kelas, atau kode orang tua.
