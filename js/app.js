@@ -1,6 +1,6 @@
 /* Metiq — aplikasi utama: rute, tampilan siswa, guru, dan orang tua. */
 (function () {
-  const { UNITS, SKILLS, TAGS, classify } = window.METIQ_CURRICULUM;
+  const { UNITS, SKILLS, TAGS, GRADES, unitsOf, classify } = window.METIQ_CURRICULUM;
   const S = window.Store;
   const app = document.getElementById('app');
   const DAY = 864e5;
@@ -12,6 +12,11 @@
   const fmtTime = (ms) => { const m = Math.round(ms / 60000); return m < 60 ? `${m} mnt` : `${Math.floor(m / 60)} jam ${m % 60} mnt`; };
   const ago = (ts) => { if (!ts) return 'belum pernah'; const d = Math.floor((Date.now() - ts) / DAY); return d <= 0 ? 'hari ini' : d === 1 ? 'kemarin' : `${d} hari lalu`; };
   const level = (s) => (s >= 100 ? ['Tuntas', 'lv4'] : s >= 80 ? ['Mahir', 'lv3'] : s >= 50 ? ['Berkembang', 'lv2'] : s > 0 ? ['Mulai', 'lv1'] : ['Belum', 'lv0']);
+  // Kelas yang sedang dipilih (seperti IXL, siswa boleh membuka kelas mana pun)
+  const getGrade = () => { let g = 1; try { g = +localStorage.getItem('metiq_grade') || 1; } catch (e) {} return GRADES.some((x) => x.id === g) ? g : 1; };
+  const setGrade = (g) => { try { localStorage.setItem('metiq_grade', g); } catch (e) {} };
+  const gradeTabs = () => `<div class="gtabs" role="tablist">${GRADES.map((g) => `<button role="tab" class="${g.id === getGrade() ? 'on' : ''}" data-act="grade" data-g="${g.id}">${g.name}</button>`).join('')}</div>`;
+  const curUnits = () => unitsOf(getGrade());
   const chip = (s) => { const [l, c] = level(s); return `<span class="chip ${c}" title="${l}">${s >= 100 ? '🏆' : s}</span>`; };
   const session = { get() { try { return JSON.parse(localStorage.getItem('metiq_session')) || {}; } catch (e) { return {}; } }, set(v) { try { localStorage.setItem('metiq_session', JSON.stringify(v)); } catch (e) {} } };
   const go = (h) => { location.hash = h; };
@@ -101,6 +106,11 @@
       return { ...r, tag: tc[0] && tc[0][0] !== 'konsep' ? tc[0][0] : (tc[1] ? tc[1][0] : (tc[0] || [])[0]), example: wrong[0] };
     });
   }
+  // Kelas yang pernah dikerjakan anak (untuk laporan); kelas 1 jika belum ada
+  function reportGrades(sid) {
+    const gs = [...new Set(skillRows(sid).map((r) => r.skill.grade))].sort();
+    return gs.length ? gs : [getGrade()];
+  }
   function unitScore(sid, u) {
     const prog = S.progressAll(sid);
     const sc = u.skills.map((s) => (prog[s.id] || {}).score || 0);
@@ -115,7 +125,7 @@
     app.innerHTML = shell(`
       <section class="hero">
         <h1>Belajar matematika kelas 1, <span>selangkah demi selangkah.</span></h1>
-        <p>${UNITS.length} bab dan ${Object.keys(SKILLS).length} keterampilan dalam bahasa Indonesia. Soal menyesuaikan kemampuan anak, dengan penjelasan setiap kali jawaban belum tepat.</p>
+        <p>${GRADES.map((g) => g.name).join(' dan ')}: ${UNITS.length} bab dan ${Object.keys(SKILLS).length} keterampilan dalam bahasa Indonesia. Soal menyesuaikan kemampuan anak, dengan penjelasan setiap kali jawaban belum tepat.</p>
         ${resume}
       </section>
       <section class="roles">
@@ -126,7 +136,7 @@
       <section class="card">
         <h2>Isi kurikulum</h2>
         <p class="muted">Gabungan daftar keterampilan IXL kelas 1 dan alur Singapore Math (pasangan bilangan, membuat 10, model batang), disesuaikan dengan konteks Indonesia.</p>
-        <div class="unit-mini">${UNITS.map((u) => `<span style="--c:${u.color}">${u.icon} ${u.name}</span>`).join('')}</div>
+        ${GRADES.map((g) => `<p class="small"><b>${g.name}</b></p><div class="unit-mini">${unitsOf(g.id).map((u) => `<span style="--c:${u.color}">${u.icon} ${u.name}</span>`).join('')}</div>`).join('')}
         <a class="btn ghost" href="#/kurikulum">Lihat semua keterampilan</a>
       </section>
       <p class="center muted small">Baru mencoba? <button class="link" data-act="demo">Isi data contoh</button> lalu masuk sebagai guru dengan PIN <b>1234</b>.</p>
@@ -136,9 +146,10 @@
   function viewCurriculum() {
     app.innerHTML = shell(`
       <a class="back" href="#/">← Kembali</a>
-      <h1>Kurikulum Matematika Kelas 1</h1>
-      <p class="muted">Setiap bab mencantumkan rujukan bab Singapore Math yang setara.</p>
-      ${UNITS.map((u) => `<section class="card unit" style="--c:${u.color}"><h2><span class="uicon">${u.icon}</span>${u.id}. ${u.name}</h2><p class="muted small">Singapore Math: ${u.sg}</p><ol>${u.skills.map((s) => `<li>${s.name}</li>`).join('')}</ol></section>`).join('')}
+      <h1>Kurikulum Matematika ${GRADES.map((g) => g.name).join(' dan ')}</h1>
+      <p class="muted">Setiap bab mencantumkan rujukan IXL, Singapore Math, dan Kurikulum Merdeka yang setara.</p>
+      ${gradeTabs()}
+      ${curUnits().map((u) => `<section class="card unit" style="--c:${u.color}"><h2><span class="uicon">${u.icon}</span>${u.id}. ${u.name}</h2><p class="muted small">IXL: ${u.ixl} · Singapore Math: ${u.sg} · Kurikulum Merdeka: ${u.km}</p><ol>${u.skills.map((s) => `<li>${s.name}</li>`).join('')}</ol></section>`).join('')}
     `);
   }
 
@@ -182,7 +193,8 @@
       ${unsent ? `<p class="offline">📶 ${unsent} jawaban menunggu internet untuk dikirim ke guru.</p>` : ''}
       <section class="hello"><span class="av">${st.avatar}</span><div><h1>Halo, ${esc(st.name)}!</h1><p class="muted">${esc(c ? c.name : '')} · ${st7.answered} soal minggu ini · ${Object.values(prog).filter((p) => p.score >= 100).length} 🏆</p></div></section>
       ${asg.length ? `<section class="card tugas"><h2>📌 Tugas dari guru</h2>${asg.map((a) => `<div class="asg">${a.note ? `<p><b>${esc(a.note)}</b>${a.due ? ` · <span class="muted">sampai ${esc(a.due)}</span>` : ''}</p>` : ''}<div class="sklist">${a.skills.filter((k) => SKILLS[k]).map((k) => skillLink(k, prog[k])).join('')}</div></div>`).join('')}</section>` : ''}
-      <div class="units">${UNITS.map((u) => {
+      ${gradeTabs()}
+      <div class="units">${curUnits().map((u) => {
         const us = unitScore(st.id, u);
         return `<details class="unit card" style="--c:${u.color}" ${open === u.id ? 'open' : ''} data-unit="${u.id}"><summary><span class="uicon">${u.icon}</span><span class="utitle"><b>${u.id}. ${u.name}</b><small>${us.prof} dari ${us.total} keterampilan mahir</small></span><span class="ubar"><i style="width:${us.avg}%"></i></span></summary><div class="sklist">${u.skills.map((s) => skillLink(s.id, prog[s.id])).join('')}</div></details>`;
       }).join('')}</div>
@@ -324,7 +336,7 @@
     const c = classes.find((x) => x.id === ses.classId) || classes[0];
     return { t, c, classes, kids: S.studentsOf(c.id) };
   }
-  const TABS = [['ringkasan', 'Ringkasan'], ['siswa', 'Siswa'], ['peta', 'Peta kemajuan'], ['keterampilan', 'Keterampilan'], ['tugas', 'Tugas'], ['kelola', 'Kelola kelas']];
+  const TABS = [['ringkasan', 'Ringkasan'], ['siswa', 'Siswa'], ['peta', 'Peta kemajuan'], ['keterampilan', 'Keterampilan'], ['tugas', 'Tugas'], ['kelola', 'Kelola kelas'], ['referensi', 'Referensi']];
   function teacherShell(ctx, tab, inner) {
     app.innerHTML = shell(`
       <section class="dhead"><div><small class="muted">${esc(ctx.t.name)}${ctx.t.isAdmin ? ' <span class="pill">Admin</span>' : ''}${ctx.c.teacherName && ctx.c.teacherId !== ctx.t.id ? ` · kelas milik ${esc(ctx.c.teacherName)}` : ''}</small><h1>${esc(ctx.c.name)}</h1></div>
@@ -349,6 +361,7 @@
     const { kids } = ctx;
     if (tab === 'siswa' && arg) return viewTeacherStudent(ctx, arg);
     if (tab === 'kelola') return teacherShell(ctx, tab, manageHTML(ctx));
+    if (tab === 'referensi') return teacherShell(ctx, tab, referenceHTML());
     if (tab === 'tugas') return teacherShell(ctx, tab, tasksHTML(ctx));
     if (!kids.length) return teacherShell(ctx, tab, emptyKids(ctx));
 
@@ -376,17 +389,61 @@
         </tbody></table></div></section>`);
     }
     if (tab === 'peta') {
-      return teacherShell(ctx, tab, `<section class="card"><p class="muted small">Rata-rata SmartScore per bab. Ketuk nama untuk detail.</p><div class="tscroll"><table class="tbl heat"><thead><tr><th>Siswa</th>${UNITS.map((u) => `<th title="${u.name}">${u.icon}<br>${u.id}</th>`).join('')}</tr></thead><tbody>
-        ${kids.map((k) => `<tr><td><a href="#/guru/siswa/${k.id}">${k.avatar} ${esc(k.name)}</a></td>${UNITS.map((u) => { const us = unitScore(k.id, u); return `<td class="hc ${level(us.avg)[1]}" title="${u.name}: ${us.avg}">${us.avg || ''}</td>`; }).join('')}</tr>`).join('')}
+      return teacherShell(ctx, tab, `${gradeTabs()}<section class="card"><p class="muted small">Rata-rata SmartScore per bab. Ketuk nama untuk detail.</p><div class="tscroll"><table class="tbl heat"><thead><tr><th>Siswa</th>${curUnits().map((u) => `<th title="${u.name}">${u.icon}<br>${u.id}</th>`).join('')}</tr></thead><tbody>
+        ${kids.map((k) => `<tr><td><a href="#/guru/siswa/${k.id}">${k.avatar} ${esc(k.name)}</a></td>${curUnits().map((u) => { const us = unitScore(k.id, u); return `<td class="hc ${level(us.avg)[1]}" title="${u.name}: ${us.avg}">${us.avg || ''}</td>`; }).join('')}</tr>`).join('')}
         </tbody></table></div><div class="legend">${[['Belum', 'lv0'], ['Mulai <50', 'lv1'], ['Berkembang 50–79', 'lv2'], ['Mahir 80–99', 'lv3'], ['Tuntas 100', 'lv4']].map(([l, c]) => `<span><i class="${c}"></i>${l}</span>`).join('')}</div></section>`);
     }
     if (tab === 'keterampilan') {
       const agg = classSkillAgg(kids);
-      return teacherShell(ctx, tab, UNITS.map((u) => `<section class="card unit" style="--c:${u.color}"><h2><span class="uicon">${u.icon}</span>${u.id}. ${u.name}</h2>
+      return teacherShell(ctx, tab, gradeTabs() + curUnits().map((u) => `<section class="card unit" style="--c:${u.color}"><h2><span class="uicon">${u.icon}</span>${u.id}. ${u.name}</h2>
         ${u.skills.map((s) => { const a = agg[s.id]; const prof = a ? a.students.filter((x) => x.p.score >= 80).length : 0; return `<details class="skd"><summary><span class="sk-code">${s.code}</span><span class="grow">${s.name}</span><span class="muted small">${a ? `${a.n} siswa · ${pct(a.ok, a.att)}%` : 'belum dicoba'}</span><span class="pill">${prof}/${kids.length} mahir</span></summary>
           ${a ? `<div class="skd-b">${a.students.sort((x, y) => x.p.score - y.p.score).map((x) => `<a class="lrow" href="#/guru/siswa/${x.k.id}"><span class="av sm">${x.k.avatar}</span><span class="grow">${esc(x.k.name)}<small>${x.p.att} soal · ${pct(x.p.ok, x.p.att)}% benar</small></span>${chip(x.p.score)}</a>`).join('')}</div>` : ''}<p class="small"><a href="#/coba/${s.id}">Coba soal contoh →</a></p></details>`; }).join('')}</section>`).join(''));
     }
     return go('#/guru/ringkasan');
+  }
+  /* Referensi kurikulum dan metode yang dipakai Metiq, untuk guru */
+  function referenceHTML() {
+    const nSkills = (g) => unitsOf(g).reduce((a, u) => a + u.skills.length, 0);
+    const levels = [['Belum dicoba', 'lv0'], ['Mulai 1–49', 'lv1'], ['Berkembang 50–79', 'lv2'], ['Mahir 80–99', 'lv3'], ['Tuntas 100', 'lv4']];
+    return `
+      <section class="card ref"><h2>📚 Sumber kurikulum</h2>
+        <p class="small muted">Metiq menyusun daftar keterampilan dari tiga sumber berikut. Semua soal, gambar, dan penjelasan di Metiq ditulis sendiri dalam bahasa Indonesia; tidak ada soal yang disalin dari sumber mana pun.</p>
+        <div class="refsrc"><h3>1. IXL Math</h3>
+          <p>Daftar keterampilan per kelas dipakai sebagai acuan cakupan dan urutan topik, serta cara latihan adaptif dengan SmartScore. Daftar dibaca pada 26 Oktober 2026.</p>
+          <ul>${GRADES.map((g) => `<li>${g.name}: <a href="${g.ixl}" target="_blank" rel="noopener">${g.ixl.replace('https://www.', '')}</a></li>`).join('')}</ul></div>
+        <div class="refsrc"><h3>2. Singapore Math</h3>
+          <p>Alur topik dan metode mengikuti seri Primary Mathematics / Dimensions Math (${GRADES.map((g) => g.sg.replace('Primary Mathematics / Dimensions Math ', '')).join('; ')}), yang disusun berdasarkan silabus matematika sekolah dasar Kementerian Pendidikan Singapura (MOE). Rujukan ditulis sebagai nama topik, bukan nomor bab, karena setiap edisi buku berbeda urutannya.</p></div>
+        <div class="refsrc"><h3>3. Kurikulum Merdeka (Indonesia)</h3>
+          <p>Setiap bab dipetakan ke elemen Capaian Pembelajaran (CP) Matematika <b>Fase A</b> (kelas 1–2): Bilangan, Aljabar, Pengukuran, Geometri, serta Analisis Data dan Peluang. Topik yang di CP baru muncul di <b>Fase B</b> (kelas 3–4), seperti perkalian, pembagian, dan bilangan sampai 1.000, ditandai <b>Pengayaan</b>. Silakan cocokkan dengan dokumen CP resmi terbaru dari Kemendikbudristek.</p></div>
+      </section>
+      <section class="card ref"><h2>🇸🇬 Metode Singapore Math di Metiq</h2>
+        <div class="refgrid">
+          <div><h3>Konkret → Piktorial → Abstrak</h3><p>Soal dimulai dengan gambar benda, lalu kalimat matematika. Saran latihan di rumah selalu dimulai dengan benda nyata.</p></div>
+          <div><h3>Pasangan bilangan</h3><p>Diagram "keseluruhan–bagian" untuk memahami bahwa 8 = 5 + 3. Dipakai di bab Pasangan bilangan (kelas 1) dan strategi mengurai bilangan (kelas 2).</p></div>
+          <div><h3>Membuat 10</h3><p>8 + 5 → 8 + 2 + 3 = 10 + 3. Muncul di penjumlahan sampai 20 dan di penjelasan soal yang hasilnya lebih dari 10.</p></div>
+          <div><h3>Model batang</h3><p>Batang bagian–keseluruhan dan batang perbandingan untuk soal cerita, termasuk soal dua langkah di kelas 2.</p></div>
+          <div><h3>Hitung mental</h3><p>Strategi kompensasi (+9 = +10 − 1), menghitung maju untuk mengurangi, serta menambah 10 atau 100.</p></div>
+          <div><h3>Perkalian sebagai kelompok</h3><p>Kelompok sama banyak, susunan baris–kolom, lalu tabel perkalian 2, 3, 4, 5, dan 10.</p></div>
+        </div>
+      </section>
+      ${GRADES.map((g) => `<section class="card ref"><h2>🗺️ Peta bab ${g.name} <span class="pill">${unitsOf(g.id).length} bab · ${nSkills(g.id)} keterampilan</span></h2>
+        <div class="tscroll"><table class="tbl reftbl"><thead><tr><th>Bab Metiq</th><th>IXL</th><th>Singapore Math</th><th>Kurikulum Merdeka</th></tr></thead><tbody>
+        ${unitsOf(g.id).map((u) => `<tr><td><b>${u.icon} ${u.id}. ${u.name}</b><small>${u.skills.length} keterampilan</small></td><td>${u.ixl}</td><td>${u.sg}</td><td>${/Pengayaan/.test(u.km) ? `<span class="pill warn">${u.km}</span>` : u.km}</td></tr>`).join('')}
+        </tbody></table></div></section>`).join('')}
+      <section class="card ref"><h2>🇮🇩 Penyesuaian untuk Indonesia</h2><ul>
+        <li>Uang memakai koin dan uang kertas Rupiah (koin Rp100–Rp1.000, uang kertas Rp1.000–Rp100.000).</li>
+        <li>Jam: "setengah tujuh" berarti pukul 06.30. Kelas 2 memakai jam 24 (pukul 19.00 = 7 malam) sebagai pengganti a.m./p.m.</li>
+        <li>Pengukuran hanya memakai satuan metrik (cm, m, g, kg, liter). Satuan inci dan kaki dari IXL tidak dipakai.</li>
+        <li>Nama orang, hari, bulan, dan konteks soal (warung, pasar, sekolah) disesuaikan dengan kehidupan sehari-hari di Indonesia.</li>
+      </ul></section>
+      <section class="card ref"><h2>📈 SmartScore dan tingkat penguasaan</h2>
+        <p>Seperti IXL, skor naik cepat di awal lalu makin pelan mendekati 100, dan turun jika jawaban salah. Siswa harus menjawab benar secara konsisten untuk tuntas.</p>
+        <div class="legend">${levels.map(([l, c]) => `<span><i class="${c}"></i>${l}</span>`).join('')}</div>
+        <p class="small muted">Laporan orang tua memasukkan keterampilan ke "Perlu ditingkatkan" jika sudah dicoba minimal 4 soal dan skornya di bawah 60, atau ketepatannya di bawah 70%.</p></section>
+      <section class="card ref"><h2>🔍 Pola kesalahan yang dideteksi</h2>
+        <p class="small muted">Setiap jawaban salah diperiksa untuk mencari polanya. Pola ini muncul di dasbor guru dan laporan orang tua, bersama saran latihan.</p>
+        ${Object.entries(TAGS).filter(([k]) => k !== 'konsep').map(([, t]) => `<div class="tagrow"><b>${t.label}</b><p class="small">${t.tip}</p></div>`).join('')}
+      </section>`;
   }
   function tasksHTML(ctx) {
     const asg = S.assignmentsOf(ctx.c.id);
@@ -394,7 +451,7 @@
       <section class="card"><h2>Buat tugas baru</h2><form data-form="assign" class="form">
         <label>Catatan untuk siswa<input name="note" placeholder="mis. Latihan untuk ulangan Jumat"></label>
         <label>Tenggat (opsional)<input name="due" type="date"></label>
-        <div class="pickskills">${UNITS.map((u) => `<fieldset><legend>${u.icon} ${u.id}. ${u.name}</legend>${u.skills.map((s) => `<label class="cb"><input type="checkbox" name="sk" value="${s.id}"> ${s.code} ${s.name}</label>`).join('')}</fieldset>`).join('')}</div>
+        <div class="pickskills">${UNITS.map((u) => `<fieldset><legend>${u.icon} Kelas ${u.grade} · ${u.id}. ${u.name}</legend>${u.skills.map((s) => `<label class="cb"><input type="checkbox" name="sk" value="${s.id}"> ${s.code} ${s.name}</label>`).join('')}</fieldset>`).join('')}</div>
         <button class="btn">Simpan tugas</button></form></section>`;
   }
   function manageHTML(ctx) {
@@ -450,7 +507,7 @@
           <p class="small tip">💡 ${w.tag && w.tag !== 'konsep' ? TAGS[w.tag].tip : UNITS.find((u) => u.id === w.skill.unit).tip}</p></div>`).join('') : `<p class="muted">Tidak ada keterampilan yang tertinggal. Mantap!</p>`}</section>
       </div>
       ${tags.length ? `<section class="card"><h2>🔍 Pola kesalahan dari jawaban ${nm} (30 hari)</h2>${tags.map(([t, n]) => `<div class="tagrow"><b>${TAGS[t].label}</b> <span class="pill">${n}×</span><p class="small">${audience === 'ortu' ? 'Di rumah: ' : 'Saran: '}${TAGS[t].tip}</p></div>`).join('')}</section>` : ''}
-      <section class="card"><h2>Kemajuan per bab</h2>${UNITS.map((u) => { const us = unitScore(k.id, u); return `<div class="uprog"><span>${u.icon} ${u.name}</span><span class="ubar"><i style="width:${us.avg}%;background:${u.color}"></i></span><small>${us.prof}/${us.total}</small></div>`; }).join('')}</section>
+      <section class="card"><h2>Kemajuan per bab</h2>${reportGrades(k.id).map((g, _, all) => (all.length > 1 ? `<p class="small"><b>Kelas ${g}</b></p>` : '') + unitsOf(g).map((u) => { const us = unitScore(k.id, u); return `<div class="uprog"><span>${u.icon} ${u.name}</span><span class="ubar"><i style="width:${us.avg}%;background:${u.color}"></i></span><small>${us.prof}/${us.total}</small></div>`; }).join('')).join('')}</section>
       ${audience === 'ortu' && recentWrong.length ? `<section class="card"><h2>Jawaban yang belum tepat (terbaru)</h2>${recentWrong.map((a) => `<div class="wa"><p>${esc(a.text)}</p><small>Jawaban ${nm}: <b class="strike">${esc(a.given)}</b> · Benar: <b>${esc(a.answer)}</b> · ${ago(a.ts)}</small></div>`).join('')}</section>` : ''}`;
   }
 
@@ -546,6 +603,7 @@
     if (!el && row && !e.target.closest('a')) return go(row.dataset.href);
     if (!el) return;
     const act = el.dataset.act;
+    if (act === 'grade') { setGrade(+el.dataset.g); sessionStorage.removeItem('metiq_open'); return route(); }
     if (act === 'key') {
       if (!P || P.locked) return;
       if (el.dataset.k === 'del') P.input = P.input.slice(0, -1); else if (P.input.length < 6) P.input += el.dataset.k;

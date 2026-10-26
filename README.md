@@ -1,6 +1,6 @@
-# Metiq — Matematika Kelas 1
+# Metiq — Matematika SD (Kelas 1–2)
 
-Latihan matematika kelas 1 dalam bahasa Indonesia, dengan dasbor guru dan laporan orang tua.
+Latihan matematika kelas 1 dan 2 dalam bahasa Indonesia, dengan dasbor guru dan laporan orang tua.
 Website statis (HTML/CSS/JS, tanpa build), bisa dibuka di browser HP.
 
 ## Menjalankan
@@ -11,7 +11,9 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 (guru contoh, PIN `1234`).
 
 ## Struktur
-- `js/curriculum.js`: 15 bab dan 63 keterampilan. Setiap keterampilan punya pembuat soal acak, gambar, penjelasan, dan pola kesalahan.
+- `js/curriculum.js`: kelas 1 (15 bab, 63 keterampilan) dan perangkat pembuat soal. Setiap keterampilan punya pembuat soal acak, gambar, penjelasan, dan pola kesalahan.
+- `js/grade2.js`: kelas 2 (16 bab, 71 keterampilan). Kelas berikutnya ditambahkan sebagai file baru dengan pola yang sama (`C.register(...)` dan `C.GRADES.push(...)`).
+- Setiap bab mencatat rujukan IXL, Singapore Math, dan Kurikulum Merdeka (`ixl`, `sg`, `km`), yang tampil di tab Referensi pada dasbor guru.
 - `js/store.js`: penyimpanan data (saat ini `localStorage` di perangkat), dan SmartScore.
 - `js/app.js`: tampilan siswa, guru, orang tua.
 - `css/style.css`: tampilan (mobile-first).

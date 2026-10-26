@@ -276,3 +276,51 @@ h2 .uicon { width: 32px; height: 32px; font-size: 1.05rem; vertical-align: middl
 .codein.sm { font-size: 1.2rem; letter-spacing: 3px; margin: 0; }
 .kpi b.sm { font-size: 1.05rem; }
 .kidcard .kpis { margin: 12px 0 4px; }
+
+/* Pilihan kelas */
+.gtabs { display: flex; gap: 6px; background: #fff; padding: 4px; border-radius: 14px; box-shadow: var(--shadow); margin-bottom: 14px; }
+.gtabs button { flex: 1; border: 0; background: none; font: inherit; font-weight: 800; padding: 10px; border-radius: 10px; color: var(--muted); cursor: pointer; }
+.gtabs button.on { background: var(--brand); color: #fff; }
+
+/* Kelas 2: visual tambahan */
+.flat { display: grid; grid-template-columns: repeat(10, 6px); grid-template-rows: repeat(10, 6px); border: 1px solid #1e7bb8; margin-right: 4px; }
+.flat i { display: block; width: 6px; height: 6px; background: #4aa3e8; border: .5px solid #1e7bb8; }
+.arr { display: grid; gap: 4px; font-size: 1.5rem; }
+.nl .qm { font-size: 18px; font-weight: 900; fill: var(--warn); text-anchor: middle; }
+.nl .arrow { stroke: var(--warn); stroke-width: 3; fill: none; stroke-linecap: round; }
+.bgraph { width: 100%; max-width: 360px; }
+.bgraph .t { font-weight: 900; font-size: 13px; text-anchor: middle; fill: var(--ink); }
+.bgraph .g { stroke: var(--line); }
+.bgraph .yl { font-size: 10px; text-anchor: end; fill: var(--muted); font-weight: 700; }
+.bgraph .xl { font-size: 11px; text-anchor: middle; font-weight: 800; fill: var(--ink); }
+.bgraph .b0 { fill: #ff7a59; } .bgraph .b1 { fill: #4d96ff; } .bgraph .b2 { fill: #2ecc71; } .bgraph .b3 { fill: #f9c74f; }
+.io { border-collapse: collapse; font-weight: 900; font-size: 1.15rem; }
+.io th, .io td { border: 2px solid var(--line); padding: 8px 12px; text-align: center; }
+.io th { background: #efecff; font-size: .85rem; }
+.io td.q { background: #fff3c4; color: var(--warn); }
+.rgrid-wrap { display: grid; justify-items: center; gap: 4px; }
+.rgrid-row { display: flex; align-items: center; gap: 6px; }
+.rgrid { display: grid; border: 3px solid var(--ink); }
+.rgrid i { display: block; width: 24px; height: 24px; border: 1px solid #9a9cc0; background: #dcd5ff; }
+.rl-top, .rl-side { font-weight: 800; font-size: .85rem; color: var(--muted); }
+.pairs { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; font-size: 1.6rem; }
+.pairs span { background: #f8f7ff; border-radius: 10px; padding: 2px 6px; }
+.scale-wrap { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: center; }
+.bigemoji.sm { font-size: 2.4rem; }
+.eq { font-size: 2rem; font-weight: 900; }
+.wts { display: flex; flex-wrap: wrap; gap: 6px; }
+.wt { background: #6b6f8e; color: #fff; font-weight: 900; padding: 8px 10px; border-radius: 8px 8px 12px 12px; font-size: .9rem; }
+.n50000 { background: #9cc7e8; } .n100000 { background: #f2a3a3; }
+
+/* Referensi guru */
+.ref h3 { font-size: 1rem; margin: 10px 0 4px; }
+.ref p, .ref li { font-size: .92rem; }
+.refsrc + .refsrc { border-top: 1px dashed var(--line); margin-top: 10px; }
+.refgrid { display: grid; gap: 10px; }
+.refgrid > div { background: #f8f7ff; border-radius: 12px; padding: 8px 12px; }
+.refgrid h3 { margin-top: 2px; } .refgrid p { margin: 0; }
+.reftbl td { white-space: normal; min-width: 120px; vertical-align: top; font-size: .85rem; }
+.reftbl td small { display: block; color: var(--muted); }
+.pill.warn { background: #fff1d6; color: #9a6200; white-space: normal; }
+@media (min-width: 640px) { .refgrid { grid-template-columns: 1fr 1fr; } }
+.b10.stackrows { flex-direction: column; align-items: center; gap: 8px; }

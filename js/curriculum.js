@@ -27,7 +27,8 @@
     if (n === 10) return 'sepuluh';
     if (n === 11) return 'sebelas';
     if (n < 20) return SATUAN[n - 10] + ' belas';
-    if (n === 100) return 'seratus';
+    if (n === 1000) return 'seribu';
+    if (n >= 100) { const h = Math.floor(n / 100), rest = n % 100; return (h === 1 ? 'seratus' : SATUAN[h] + ' ratus') + (rest ? ' ' + kata(rest) : ''); }
     const t = Math.floor(n / 10), o = n % 10;
     return SATUAN[t] + ' puluh' + (o ? ' ' + SATUAN[o] : '');
   }
@@ -198,7 +199,7 @@
   /* ---------- Kurikulum ---------- */
   const UNITS = [
     {
-      id: 'A', name: 'Bilangan sampai 10', icon: '🔢', color: '#ff7a59', sg: 'Primary 1A Bab 1',
+      id: 'A', name: 'Bilangan sampai 10', icon: '🔢', color: '#ff7a59', grade: 1, sg: '1A · Numbers to 10', ixl: 'A, B', km: 'Bilangan',
       tip: 'Ajak anak menghitung benda di rumah (sendok, sandal, kancing) sambil menunjuk satu per satu.',
       skills: [
         { id: 'A1', name: 'Membilang benda sampai 10', gen() { const [e, nm] = pick(BENDA), n = r(1, 10); return inp(`Ada berapa ${nm}?`, n, `Hitung sambil menunjuk satu per satu: ${range(1, n).join(', ')}. Jadi ada <b>${n}</b> ${nm}.`, { vis: V.objects(e, n), meta: { kind: 'count' } }); } },
@@ -210,7 +211,7 @@
       ],
     },
     {
-      id: 'B', name: 'Pasangan bilangan', icon: '🔗', color: '#7c5cff', sg: 'Primary 1A Bab 2 (Number Bonds)',
+      id: 'B', name: 'Pasangan bilangan', icon: '🔗', color: '#7c5cff', grade: 1, sg: '1A · Number Bonds', ixl: 'F, G', km: 'Bilangan',
       tip: 'Gunakan 10 kancing: pisahkan ke dua tangan, lalu tanya "kalau tangan kiri 3, tangan kanan berapa?"',
       skills: [
         { id: 'B1', name: 'Pasangan bilangan sampai 10', gen() { const w = r(2, 10), a = r(1, w - 1), b = w - a; const hide = Math.random() < 0.8 ? (Math.random() < 0.5 ? 'a' : 'b') : 'w'; const ans = hide === 'a' ? a : hide === 'b' ? b : w; return inp('Berapa bilangan yang hilang?', ans, `${a} dan ${b} membentuk ${w}, karena ${a} + ${b} = ${w}. Jawabannya <b>${ans}</b>.`, { log: `Pasangan bilangan: ${hide === 'w' ? '?' : w} terdiri dari ${hide === 'a' ? '?' : a} dan ${hide === 'b' ? '?' : b}`, vis: V.bond(hide === 'w' ? '?' : w, hide === 'a' ? '?' : a, hide === 'b' ? '?' : b), meta: hide === 'w' ? { op: '+', a, b } : { op: '-', a: w, b: hide === 'a' ? b : a } }); } },
@@ -219,7 +220,7 @@
       ],
     },
     {
-      id: 'C', name: 'Penjumlahan sampai 10', icon: '➕', color: '#00b894', sg: 'Primary 1A Bab 3',
+      id: 'C', name: 'Penjumlahan sampai 10', icon: '➕', color: '#00b894', grade: 1, sg: '1A · Addition', ixl: 'E, F, G, H', km: 'Bilangan',
       tip: 'Saat makan buah, tanya "ada 3 jeruk, ayah tambah 2, jadi berapa?" Minta anak menghitung lanjut dari 3: "4, 5".',
       skills: [
         { id: 'C1', name: 'Penjumlahan dengan gambar', gen() { const [e] = pick(BENDA), a = r(1, 6), b = r(1, 10 - a); return inp(`${a} + ${b} = ?`, a + b, `Gabungkan kedua kelompok lalu hitung semuanya: ${a} + ${b} = <b>${a + b}</b>.`, { vis: V.groups(e, a, b), meta: { op: '+', a, b } }); } },
@@ -229,7 +230,7 @@
       ],
     },
     {
-      id: 'D', name: 'Pengurangan sampai 10', icon: '➖', color: '#0984e3', sg: 'Primary 1A Bab 4',
+      id: 'D', name: 'Pengurangan sampai 10', icon: '➖', color: '#0984e3', grade: 1, sg: '1A · Subtraction', ixl: 'I, J, K, L, M, N, O', km: 'Bilangan',
       tip: 'Main "toko-tokoan": ada 8 kue, pembeli mengambil 3. Biarkan anak mengambil benda sungguhan lalu menghitung sisanya.',
       skills: [
         { id: 'D1', name: 'Pengurangan dengan gambar', gen() { const [e] = pick(BENDA), a = r(2, 10), b = r(1, a); return inp(`${a} − ${b} = ?`, a - b, `Ada ${a}, dicoret ${b}. Hitung yang tidak dicoret: <b>${a - b}</b>.`, { vis: V.objects(e, a, b), meta: { op: '-', a, b } }); } },
@@ -240,7 +241,7 @@
       ],
     },
     {
-      id: 'E', name: 'Bilangan sampai 20', icon: '🔟', color: '#e17055', sg: 'Primary 1A Bab 6',
+      id: 'E', name: 'Bilangan sampai 20', icon: '🔟', color: '#e17055', grade: 1, sg: '1A · Numbers to 20', ixl: 'AA (bilangan belasan)', km: 'Bilangan',
       tip: 'Ikat 10 sedotan dengan karet. Tunjukkan bahwa 13 = 1 ikat sepuluh dan 3 lepas.',
       skills: [
         { id: 'E1', name: 'Sepuluh dan satuan (11–20)', gen() { const n = r(11, 20); const t = Math.floor(n / 10), o = n % 10; if (Math.random() < 0.6) return inp('Bilangan berapa yang ditunjukkan?', n, `${t} batang sepuluh = ${t * 10}, ditambah ${o} kubus satuan. ${t * 10} + ${o} = <b>${n}</b>.`, { vis: V.blocks(t, o), meta: { kind: 'place' } }); return inp(`${n} = 10 + ?`, n - 10, `${n} terdiri dari 1 sepuluh dan ${n - 10} satuan. Jawabannya <b>${n - 10}</b>.`, { vis: V.blocks(t, o), meta: { op: '-', a: n, b: 10 } }); } },
@@ -249,7 +250,7 @@
       ],
     },
     {
-      id: 'F', name: 'Penjumlahan dan pengurangan sampai 20', icon: '🧮', color: '#00cec9', sg: 'Primary 1A Bab 7 (Make 10, Doubles)',
+      id: 'F', name: 'Penjumlahan dan pengurangan sampai 20', icon: '🧮', color: '#00cec9', grade: 1, sg: '1A · Addition and Subtraction within 20', ixl: 'P–Z', km: 'Bilangan; Aljabar (kesamaan)',
       tip: 'Latih "membuat 10": 8 + 5 → 8 butuh 2 untuk jadi 10, sisa 3, jadi 10 + 3 = 13.',
       skills: [
         { id: 'F1', name: 'Penjumlahan dobel dan hampir dobel', gen() { const a = r(1, 9); if (Math.random() < 0.55) return inp(`${a} + ${a} = ?`, a * 2, `Dobel ${a} artinya ${a} dua kali: ${a} + ${a} = <b>${a * 2}</b>.`, { vis: V.big(`${a} + ${a} = <span class="q">?</span>`), meta: { op: '+', a, b: a } }); return inp(`${a} + ${a + 1} = ?`, 2 * a + 1, `Gunakan dobel: ${a} + ${a} = ${2 * a}. Karena ${a + 1} satu lebih dari ${a}, jawabannya ${2 * a} + 1 = <b>${2 * a + 1}</b>.`, { vis: V.big(`${a} + ${a + 1} = <span class="q">?</span>`), meta: { op: '+', a, b: a + 1 } }); } },
@@ -263,7 +264,7 @@
       ],
     },
     {
-      id: 'G', name: 'Bilangan sampai 100', icon: '💯', color: '#fdcb6e', sg: 'Primary 1B Bab 10 & 16',
+      id: 'G', name: 'Bilangan sampai 100', icon: '💯', color: '#fdcb6e', grade: 1, sg: '1B · Numbers to 40, Numbers to 100', ixl: 'A, AA, BB, C', km: 'Bilangan',
       tip: 'Gunakan kalender atau tabel 1–100. Tanya "10 lebih banyak dari 34 berapa?" dan tunjuk angka di bawahnya.',
       skills: [
         { id: 'G1', name: 'Puluhan dan satuan sampai 100', gen() { const t = r(2, 9), o = r(0, 9), n = t * 10 + o; if (Math.random() < 0.6) return inp('Bilangan berapa yang ditunjukkan?', n, `${t} puluhan = ${t * 10}, ${o} satuan = ${o}. ${t * 10} + ${o} = <b>${n}</b>.`, { vis: V.blocks(t, o), meta: { kind: 'place' } }); return inp(`${t} puluhan dan ${o} satuan adalah bilangan berapa?`, n, `Angka puluhan ditulis di depan: <b>${n}</b>.`, { meta: { kind: 'place' } }); } },
@@ -275,7 +276,7 @@
       ],
     },
     {
-      id: 'H', name: 'Penjumlahan dan pengurangan sampai 100', icon: '🚀', color: '#a29bfe', sg: 'Primary 1B Bab 13 & 17',
+      id: 'H', name: 'Penjumlahan dan pengurangan sampai 100', icon: '🚀', color: '#a29bfe', grade: 1, sg: '1B · Addition and Subtraction to 100', ixl: 'CC, DD', km: 'Bilangan',
       tip: 'Tulis soal bersusun: satuan di bawah satuan, puluhan di bawah puluhan. Selalu mulai dari satuan.',
       skills: [
         { id: 'H1', name: 'Menjumlah dan mengurangi puluhan', gen() { const a = r(1, 8), b = r(1, 9 - a); if (Math.random() < 0.5) return inp(`${a * 10} + ${b * 10} = ?`, (a + b) * 10, `${a} puluh + ${b} puluh = ${a + b} puluh = <b>${(a + b) * 10}</b>.`, { vis: V.blocks(a, 0) + V.blocks(b, 0), meta: { op: '+', a: a * 10, b: b * 10 } }); const x = a + b; return inp(`${x * 10} − ${b * 10} = ?`, a * 10, `${x} puluh − ${b} puluh = ${a} puluh = <b>${a * 10}</b>.`, { vis: V.big(`${x * 10} − ${b * 10} = <span class="q">?</span>`), meta: { op: '-', a: x * 10, b: b * 10 } }); } },
@@ -287,7 +288,7 @@
       ],
     },
     {
-      id: 'I', name: 'Perkalian dan pembagian awal', icon: '🍱', color: '#fd79a8', sg: 'Primary 1B Bab 18 & 19',
+      id: 'I', name: 'Perkalian dan pembagian awal', icon: '🍱', color: '#fd79a8', grade: 1, sg: '1B · Multiplication, Division (pengenalan)', ixl: '— (tidak ada di IXL kelas 1)', km: 'Pengayaan (CP Fase B)',
       tip: 'Saat menata piring, tanya "ada 3 piring, tiap piring 2 kue, semuanya berapa?" Bagikan camilan sama rata ke saudara.',
       skills: [
         { id: 'I1', name: 'Kelompok sama banyak', gen() { const g = r(2, 5), e = r(2, 5), [em, nm] = pick([['🍪', 'kue'], ['🍓', 'stroberi'], ['🥚', 'telur'], ['🍬', 'permen']]); const vis = '<div class="eqg">' + range(1, g).map(() => `<div class="plate">${em.repeat(e)}</div>`).join('') + '</div>'; return inp(`Ada ${g} piring. Tiap piring berisi ${e} ${nm}. Berapa ${nm} semuanya?`, g * e, `${g} kelompok berisi ${e}: ${Array(g).fill(e).join(' + ')} = <b>${g * e}</b>.`, { vis, meta: { op: 'x', a: g, b: e } }); } },
@@ -296,7 +297,7 @@
       ],
     },
     {
-      id: 'J', name: 'Pengukuran', icon: '📏', color: '#55efc4', sg: 'Primary 1A Bab 9 & 1B Bab 15',
+      id: 'J', name: 'Pengukuran', icon: '📏', color: '#55efc4', grade: 1, sg: '1A/1B · Length, Weight', ixl: 'EE', km: 'Pengukuran',
       tip: 'Ukur meja dengan jengkal atau pensil. Bandingkan berat buku dan sandal dengan dua tangan.',
       skills: [
         { id: 'J1', name: 'Lebih panjang, lebih pendek', gen() { const cols = shuffle([['merah', '#ff6b6b'], ['biru', '#4d96ff'], ['hijau', '#2ecc71'], ['kuning', '#f9c74f']]).slice(0, 3); const lens = shuffle(range(3, 13)).slice(0, 3); const bars = cols.map(([nm, c], i) => ({ label: 'Pita ' + nm, len: lens[i], color: c })); const long = Math.random() < 0.5; const idx = lens.indexOf(long ? Math.max(...lens) : Math.min(...lens)); return ch(`Pita mana yang paling ${long ? 'panjang' : 'pendek'}?`, bars.map((b) => b.label), bars[idx].label, `Bandingkan ujung kanan setiap pita (semua mulai dari garis yang sama). <b>${bars[idx].label}</b> paling ${long ? 'panjang' : 'pendek'}.`, { vis: V.bars(bars) }); } },
@@ -306,7 +307,7 @@
       ],
     },
     {
-      id: 'K', name: 'Waktu', icon: '⏰', color: '#ffeaa7', sg: 'Primary 1B Bab 14',
+      id: 'K', name: 'Waktu', icon: '⏰', color: '#ffeaa7', grade: 1, sg: '1B · Time', ixl: 'FF, GG', km: 'Pengukuran',
       tip: 'Tanyakan jam saat kegiatan rutin (bangun, makan siang, tidur). Ingat: "setengah tujuh" = pukul 06.30.',
       skills: [
         { id: 'K1', name: 'Membaca jam (tepat)', gen() { const h = r(1, 12); const f = (x) => `pukul ${x}.00`; const opts = new Set([f(h), f(h % 12 + 1), f(h === 1 ? 12 : h - 1)]); const swapped = `pukul 12.${String(h * 5).padStart(2, '0')}`; if (h !== 12) opts.add(swapped); const tags = {}; tags[swapped] = 'jam-tertukar'; return ch('Pukul berapa sekarang?', shuffle([...opts]), f(h), `Jarum pendek menunjuk angka ${h}, jarum panjang menunjuk angka 12. Jadi <b>pukul ${h}.00</b>.`, { vis: V.clock(h, 0), optionTags: tags }); } },
@@ -315,7 +316,7 @@
       ],
     },
     {
-      id: 'L', name: 'Uang', icon: '💰', color: '#81ecec', sg: 'Primary 1B Bab 20 (dalam Rupiah)',
+      id: 'L', name: 'Uang', icon: '💰', color: '#81ecec', grade: 1, sg: '1B · Money (disesuaikan ke Rupiah)', ixl: 'HH, OO', km: 'Bilangan (konteks uang)',
       tip: 'Main jual-beli dengan uang koin sungguhan. Biarkan anak membayar jajan dan menghitung kembalian sederhana.',
       skills: [
         { id: 'L1', name: 'Mengenal uang Rupiah', gen() { const v = pick([100, 200, 500, 1000, 'n1000', 'n2000', 'n5000', 'n10000', 'n20000']); const val = typeof v === 'string' ? parseInt(v.slice(1)) : v; const pool = [100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000]; const opts = shuffle([val, ...shuffle(pool.filter((x) => x !== val)).slice(0, 3)]).map(rp); return ch('Berapa nilai uang ini?', opts, rp(val), `Lihat angka yang tertulis: <b>${rp(val)}</b>.`, { vis: V.money([v]) }); } },
@@ -324,7 +325,7 @@
       ],
     },
     {
-      id: 'M', name: 'Data dan grafik', icon: '📊', color: '#74b9ff', sg: 'Primary 1B Bab 21 (Picture Graphs)',
+      id: 'M', name: 'Data dan grafik', icon: '📊', color: '#74b9ff', grade: 1, sg: '1B · Picture Graphs', ixl: 'II, MM', km: 'Analisis Data dan Peluang',
       tip: 'Buat tabel turus bersama: hitung warna mobil yang lewat depan rumah selama 5 menit.',
       skills: [
         { id: 'M1', name: 'Membaca piktogram', gen() { const cats = shuffle([['🍎', 'Apel'], ['🍌', 'Pisang'], ['🍊', 'Jeruk'], ['🍇', 'Anggur'], ['🥭', 'Mangga']]).slice(0, 4); const counts = shuffle(range(1, 8)).slice(0, 4); const rows = cats.map((c, i) => [c[0], c[1], counts[i]]); const vis = V.pictograph('Buah Kesukaan Kelas 1', rows, 'Setiap gambar = 1 anak'); if (Math.random() < 0.5) { const i = r(0, 3); return inp(`Berapa anak yang suka ${rows[i][1].toLowerCase()}?`, rows[i][2], `Hitung gambar pada baris ${rows[i][1]}: <b>${rows[i][2]}</b>.`, { vis, meta: { kind: 'count' } }); } const most = Math.random() < 0.5; const v = most ? Math.max(...counts) : Math.min(...counts); const ans = rows.find((x) => x[2] === v)[1]; return ch(`Buah apa yang paling ${most ? 'banyak' : 'sedikit'} disukai?`, rows.map((x) => x[1]), ans, `Baris ${ans} punya ${v} gambar, paling ${most ? 'banyak' : 'sedikit'}. Jawabannya <b>${ans}</b>.`, { vis }); } },
@@ -333,7 +334,7 @@
       ],
     },
     {
-      id: 'N', name: 'Bangun dan pola', icon: '🔷', color: '#e84393', sg: 'Primary 1A Bab 5 (Shapes & Patterns)',
+      id: 'N', name: 'Bangun dan pola', icon: '🔷', color: '#e84393', grade: 1, sg: '1A · Shapes and Patterns', ixl: 'JJ, KK, LL', km: 'Geometri; Aljabar (pola)',
       tip: 'Cari bentuk di rumah: jam dinding (lingkaran), pintu (persegi panjang), kaleng susu (tabung).',
       skills: [
         { id: 'N1', name: 'Mengenal bangun datar', gen() { const names = ['segitiga', 'persegi', 'persegi panjang', 'lingkaran', 'belah ketupat', 'segi enam']; const n = pick(names); return ch('Apa nama bangun ini?', shuffle([n, ...shuffle(names.filter((x) => x !== n)).slice(0, 3)]), n, `Bangun ini adalah <b>${n}</b>.`, { vis: V.shape(n, pick(['#ff7a59', '#7c5cff', '#00b894', '#0984e3', '#e84393'])) }); } },
@@ -343,7 +344,7 @@
       ],
     },
     {
-      id: 'O', name: 'Pecahan sederhana', icon: '🍕', color: '#fab1a0', sg: 'Pengayaan (IXL Kelas 1)',
+      id: 'O', name: 'Pecahan sederhana', icon: '🍕', color: '#fab1a0', grade: 1, sg: '— (tidak ada di 1A/1B)', ixl: 'NN', km: 'Bilangan (pecahan setengah dan seperempat)',
       tip: 'Potong roti atau martabak menjadi 2 dan 4 bagian sama besar. Tanyakan "ini setengah atau seperempat?"',
       skills: [
         { id: 'O1', name: 'Setengah dan seperempat', gen() { const parts = pick([2, 4, 3]); const kind = pick(['circle', 'rect']); const nameOf = { 2: 'setengah', 3: 'sepertiga', 4: 'seperempat' }; return ch('Berapa bagian yang diwarnai?', ['setengah', 'sepertiga', 'seperempat'], nameOf[parts], `Bangun dibagi menjadi ${parts} bagian sama besar dan 1 diwarnai. Itu <b>${nameOf[parts]}</b>.`, { vis: V.fraction(kind, parts, 1) }); } },
@@ -363,11 +364,21 @@
     'jam-tertukar': { label: 'Tertukar jarum pendek dan panjang', tip: 'Jarum pendek = jam, jarum panjang = menit. Tunjukkan jam dinding setiap kegiatan rutin.' },
     'setengah-jam': { label: 'Bingung "setengah" pada jam', tip: '"Setengah tujuh" artinya pukul 06.30 — setengah jalan menuju jam tujuh, bukan 07.30.' },
     'penggaris': { label: 'Membaca penggaris tidak dari 0', tip: 'Ajarkan selalu meletakkan ujung benda di angka 0 pada penggaris.' },
+    'meminjam': { label: 'Salah saat meminjam (pengurangan bersusun)', tip: 'Anak sering mengurangi angka kecil dari angka besar di setiap kolom (mis. 52 − 27 dijawab 35). Latih dengan uang: tukar Rp1.000 menjadi 10 koin Rp100 sebelum mengambil.' },
+    'pembulatan': { label: 'Bingung arah pembulatan', tip: 'Gunakan garis bilangan: tandai dua puluhan terdekat, lalu lihat mana yang lebih dekat. Angka 5 dibulatkan ke atas.' },
     'konsep': { label: 'Konsep belum kuat', tip: 'Ulangi dengan benda nyata dulu (konkret), lalu gambar, baru angka.' },
   };
 
   const SKILLS = {};
-  UNITS.forEach((u) => u.skills.forEach((s, i) => { s.unit = u.id; s.code = u.id + '.' + (i + 1); SKILLS[s.id] = s; }));
+  // Menambahkan bab ke kurikulum; dipakai juga oleh file kelas lain (mis. grade2.js)
+  function register(units) {
+    units.forEach((u) => { if (!UNITS.includes(u)) UNITS.push(u); u.skills.forEach((s, i) => { s.unit = u.id; s.grade = u.grade; s.code = u.id + '.' + (i + 1); SKILLS[s.id] = s; }); });
+  }
+  register(UNITS);
+  const GRADES = [
+    { id: 1, name: 'Kelas 1', ixl: 'https://www.ixl.com/math/grade-1/skills', sg: 'Primary Mathematics / Dimensions Math 1A dan 1B' },
+  ];
+  const unitsOf = (g) => UNITS.filter((u) => u.grade === g);
 
   // Menebak pola kesalahan dari jawaban anak
   function classify(q, given) {
@@ -380,11 +391,23 @@
       if (m.op === '-' && g === m.a + m.b) return 'tertukar-operasi';
       if (m.op === '+' && g === Math.abs(m.a - m.b) && m.a !== m.b) return 'tertukar-operasi';
       if (c >= 10 && g >= 10 && String(g) === String(c).split('').reverse().join('') && g !== c) return 'tertukar-digit';
-      if (m.regroup && Math.abs(g - c) === 10) return 'menyimpan';
+      if (m.op === '-' && m.regroup) {
+        // mengurangi angka kecil dari besar di tiap kolom, tanpa meminjam
+        const da = String(m.a).split('').reverse(), db = String(m.b).split('').reverse();
+        const naive = +da.map((d, i) => Math.abs(+d - +(db[i] || 0))).reverse().join('');
+        if (g === naive) return 'meminjam';
+        if (Math.abs(g - c) === 10 || Math.abs(g - c) === 100) return 'meminjam';
+      }
+      if (m.kind === 'round' && g === m.wrong) return 'pembulatan';
+      if (m.regroup && (Math.abs(g - c) === 10 || Math.abs(g - c) === 100)) return 'menyimpan';
       if (Math.abs(g - c) === 1) return 'meleset-satu';
     }
     return 'konsep';
   }
 
-  window.METIQ_CURRICULUM = { UNITS, SKILLS, TAGS, classify, rp };
+  window.METIQ_CURRICULUM = {
+    UNITS, SKILLS, TAGS, GRADES, unitsOf, classify, rp, register,
+    // perangkat pembuat soal untuk file kelas lain
+    kit: { r, pick, shuffle, range, rp, numOpts, kata, V, inp, ch, compareQ, BENDA, NAMA, HARI, BULAN, two },
+  };
 })();
