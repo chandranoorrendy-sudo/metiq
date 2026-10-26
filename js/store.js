@@ -29,6 +29,7 @@
 
   const Store = {
     AVATARS,
+    nextScore,
     get db() { return db; },
     setMode(cloud) { const k = cloud ? KEYS.cloud : KEYS.local; if (k !== KEY) { KEY = k; load(); } },
     // Ganti salinan lokal dengan data dari server; jawaban yang belum terkirim tetap ditampilkan

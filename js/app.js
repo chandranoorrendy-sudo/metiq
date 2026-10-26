@@ -337,7 +337,7 @@
     const c = classes.find((x) => x.id === ses.classId) || classes[0];
     return { t, c, classes, kids: S.studentsOf(c.id) };
   }
-  const TABS = [['ringkasan', 'Ringkasan'], ['siswa', 'Siswa'], ['peta', 'Peta kemajuan'], ['keterampilan', 'Keterampilan'], ['tugas', 'Tugas'], ['kelola', 'Kelola kelas'], ['referensi', 'Referensi']];
+  const TABS = [['ringkasan', 'Ringkasan'], ['siswa', 'Siswa'], ['analitik', 'Analitik'], ['peta', 'Peta kemajuan'], ['keterampilan', 'Keterampilan'], ['tugas', 'Tugas'], ['kelola', 'Kelola kelas'], ['referensi', 'Referensi']];
   function teacherShell(ctx, tab, inner) {
     app.innerHTML = shell(`
       <section class="dhead"><div><small class="muted">${esc(ctx.t.name)}${ctx.t.isAdmin ? ' <span class="pill">Admin</span>' : ''}${ctx.c.teacherName && ctx.c.teacherId !== ctx.t.id ? ` · kelas milik ${esc(ctx.c.teacherName)}` : ''}</small><h1>${esc(ctx.c.name)}</h1></div>
@@ -365,6 +365,7 @@
     if (tab === 'referensi') return teacherShell(ctx, tab, referenceHTML());
     if (tab === 'tugas') return teacherShell(ctx, tab, tasksHTML(ctx));
     if (!kids.length) return teacherShell(ctx, tab, emptyKids(ctx));
+    if (tab === 'analitik') return teacherShell(ctx, tab, analyticsHTML(ctx, arg));
 
     if (tab === 'ringkasan') {
       const all = kids.map((k) => ({ k, s: stats(k.id, 7), all: stats(k.id) }));
@@ -447,6 +448,146 @@
         ${Object.entries(TAGS).filter(([k]) => k !== 'konsep').map(([, t]) => `<div class="tagrow"><b>${t.label}</b><p class="small">${t.tip}</p></div>`).join('')}
       </section>`;
   }
+  /* ---------- Analitik guru (mirip laporan IXL Analytics) ---------- */
+  const ss = {
+    get(k, d) { try { const v = sessionStorage.getItem('metiq_' + k); return v === null ? d : JSON.parse(v); } catch (e) { return d; } },
+    set(k, v) { try { sessionStorage.setItem('metiq_' + k, JSON.stringify(v)); } catch (e) {} },
+  };
+  const BLN = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  const fdate = (ts) => { const d = new Date(ts); return `${d.getDate()} ${BLN[d.getMonth()]}`; };
+  const ftime = (ts) => { const d = new Date(ts); return `${fdate(ts)}, ${String(d.getHours()).padStart(2, '0')}.${String(d.getMinutes()).padStart(2, '0')}`; };
+  const dayStart = (ts) => { const d = new Date(ts); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const isoDay = (ts) => { const d = new Date(ts); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+  const RANGE_LABEL = { 7: '7 hari', 30: '30 hari', 90: '90 hari', all: 'Semua' };
+  function getRange() {
+    const r = ss.get('range', { preset: 30 }), now = Date.now();
+    if (r.preset === 'custom' && r.from && r.to) return { from: new Date(r.from + 'T00:00:00').getTime(), to: new Date(r.to + 'T23:59:59').getTime() };
+    if (r.preset === 'all') return { from: 0, to: now };
+    return { from: dayStart(now) - ((+r.preset || 30) - 1) * DAY, to: now };
+  }
+  const inRange = (a, g) => a.ts >= g.from && a.ts <= g.to;
+  function rangeBar() {
+    const r = ss.get('range', { preset: 30 }), g = getRange();
+    return `<div class="rangebar">${[7, 30, 90, 'all'].map((p) => `<button class="${String(r.preset) === String(p) ? 'on' : ''}" data-act="range" data-p="${p}">${RANGE_LABEL[p]}</button>`).join('')}<button class="${r.preset === 'custom' ? 'on' : ''}" data-act="range" data-p="custom">Pilih tanggal</button></div>
+      ${r.preset === 'custom' ? `<div class="rangecustom"><label>Dari<input type="date" data-act="rfrom" value="${r.from || isoDay(Date.now() - 29 * DAY)}"></label><label>Sampai<input type="date" data-act="rto" value="${r.to || isoDay(Date.now())}"></label></div>` : ''}
+      <p class="muted small">Periode: ${g.from ? fdate(g.from) : 'semua data'} – ${fdate(g.to)}${cloudOn() ? ' · Server menyimpan riwayat jawaban 90 hari terakhir untuk dasbor.' : ''}</p>`;
+  }
+  const emptyCard = (title, text) => `<section class="card center"><div class="bigemoji">🔎</div><h2>${title}</h2><p class="muted">${text}</p></section>`;
+  const ASUB = [['penggunaan', 'Penggunaan'], ['masalah', 'Titik masalah'], ['kisi', 'Kisi skor'], ['log', 'Log soal'], ['kemajuan', 'Kemajuan']];
+  function analyticsHTML(ctx, sub) {
+    if (!ASUB.some((x) => x[0] === sub)) sub = 'penggunaan';
+    const g = getRange();
+    const ans = ctx.kids.flatMap((k) => S.answersOf(k.id).filter((a) => inRange(a, g)));
+    const nav = `<nav class="subtabs">${ASUB.map(([k, l]) => `<a href="#/guru/analitik/${k}" class="${k === sub ? 'on' : ''}">${l}</a>`).join('')}</nav>`;
+    const view = { penggunaan: usageHTML, masalah: troubleHTML, kisi: gridHTML, log: logHTML, kemajuan: progressHTML }[sub];
+    return nav + (sub === 'kisi' ? '' : rangeBar()) + view(ctx, ans, g);
+  }
+
+  // Penggunaan: berapa banyak dan seberapa sering siswa berlatih
+  function usageHTML(ctx, ans, g) {
+    const ms = ans.reduce((s, a) => s + Math.min(a.ms || 0, 180000), 0);
+    const active = new Set(ans.map((a) => a.sid)).size;
+    const from = dayStart(g.from || (ans.length ? Math.min(...ans.map((a) => a.ts)) : Date.now()));
+    const days = Math.round((dayStart(g.to) - from) / DAY) + 1, step = days > 45 ? 7 : 1;
+    const buckets = [];
+    for (let t = from; t <= g.to; t += step * DAY) buckets.push({ t, n: 0 });
+    ans.forEach((a) => { const b = buckets[Math.floor((dayStart(a.ts) - from) / (step * DAY))]; if (b) b.n++; });
+    const max = Math.max(1, ...buckets.map((b) => b.n));
+    const rows = ctx.kids.map((k) => {
+      const my = ans.filter((a) => a.sid === k.id);
+      return { k, n: my.length, ok: my.filter((a) => a.ok).length, ms: my.reduce((s, a) => s + Math.min(a.ms || 0, 180000), 0), sk: new Set(my.map((a) => a.skill)).size, days: new Set(my.map((a) => dayStart(a.ts))).size, last: Math.max(0, ...my.map((a) => a.ts)) };
+    }).sort((a, b) => b.n - a.n);
+    return `<div class="kpis"><div class="kpi"><small>Soal dijawab</small><b>${fmtNum(ans.length)}</b></div><div class="kpi"><small>Waktu belajar</small><b class="sm">${fmtTime(ms)}</b></div><div class="kpi"><small>Siswa aktif</small><b>${active}<span>/${ctx.kids.length}</span></b></div><div class="kpi"><small>Keterampilan dilatih</small><b>${new Set(ans.map((a) => a.skill)).size}</b></div></div>
+      <section class="card"><h2>Soal dijawab per ${step === 7 ? 'minggu' : 'hari'}</h2>${ans.length ? `<div class="ubars">${buckets.map((b) => `<div class="ub" title="${fdate(b.t)}: ${b.n} soal"><span class="ubv">${b.n && buckets.length <= 31 ? b.n : ''}</span><i style="height:${Math.round((b.n / max) * 100)}%"></i></div>`).join('')}</div><div class="ublab"><span>${fdate(buckets[0].t)}</span><span>${fdate(buckets[buckets.length - 1].t)}</span></div>` : '<p class="muted">Belum ada latihan pada periode ini.</p>'}</section>
+      <section class="card"><h2>Penggunaan per siswa</h2><div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Soal</th><th>Ketepatan</th><th>Waktu</th><th>Keterampilan</th><th>Hari aktif</th><th>Terakhir</th></tr></thead><tbody>
+      ${rows.map((x) => `<tr data-href="#/guru/siswa/${x.k.id}"><td><span class="av sm">${x.k.avatar}</span> ${esc(x.k.name)}</td><td>${x.n}</td><td>${x.n ? `<span class="accb ${pct(x.ok, x.n) >= 80 ? 'g' : pct(x.ok, x.n) >= 60 ? 'y' : 'r'}">${pct(x.ok, x.n)}%</span>` : '–'}</td><td>${fmtTime(x.ms)}</td><td>${x.sk}</td><td>${x.days}</td><td>${x.last ? ago(x.last) : '–'}</td></tr>`).join('')}
+      </tbody></table></div></section>`;
+  }
+
+  // Titik masalah: keterampilan dengan jawaban salah terbanyak, siapa yang salah, dan soal apa
+  function troubleHTML(ctx, ans) {
+    const wrong = {};
+    ans.filter((a) => !a.ok && SKILLS[a.skill]).forEach((a) => { (wrong[a.skill] = wrong[a.skill] || []).push(a); });
+    const list = Object.entries(wrong).filter(([, w]) => w.length >= 3)
+      .map(([id, w]) => ({ id, w, tot: ans.filter((a) => a.skill === id).length, sids: [...new Set(w.map((a) => a.sid))] }))
+      .sort((a, b) => b.w.length - a.w.length);
+    if (!list.length) return emptyCard('Belum ada titik masalah', 'Titik masalah muncul jika sebuah keterampilan punya minimal 3 jawaban salah pada periode ini.');
+    const lim = ss.get('troublelim', 15);
+    return `<p class="muted small">${list.length} keterampilan punya 3 jawaban salah atau lebih. Diurutkan dari yang paling banyak salah; ketuk untuk melihat siswa dan soalnya.</p>` + list.slice(0, lim).map((t) => {
+      const sk = SKILLS[t.id];
+      const per = t.sids.map((sid) => ({ k: S.student(sid), n: t.w.filter((a) => a.sid === sid).length })).filter((x) => x.k).sort((a, b) => b.n - a.n);
+      const tags = tagCounts(t.w).filter(([x]) => x !== 'konsep' && TAGS[x]).slice(0, 2);
+      const recent = t.w.slice().sort((a, b) => b.ts - a.ts).slice(0, 6);
+      return `<details class="card trouble"><summary><span class="grow"><b>${sk.code} ${sk.name}</b><small>Kelas ${sk.grade} · ${t.w.length} salah dari ${t.tot} soal · ${t.sids.length} siswa</small></span><span class="pill warn">${pct(t.w.length, t.tot)}% salah</span></summary>
+        <div class="kidchips">${per.map((x) => `<a href="#/guru/siswa/${x.k.id}" class="kchip">${x.k.avatar} ${esc(x.k.name)} <b>${x.n}×</b></a>`).join('')}</div>
+        ${tags.length ? `<p class="small"><b>Pola kesalahan:</b> ${tags.map(([x, n]) => `${TAGS[x].label} (${n}×)`).join('; ')}</p>` : ''}
+        <div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Soal</th><th>Jawaban</th><th>Benar</th></tr></thead><tbody>${recent.map((a) => { const k = S.student(a.sid); return `<tr><td>${k ? `${k.avatar} ${esc(k.name)}` : ''}</td><td class="wrap">${esc(a.text)}</td><td class="strike">${esc(a.given)}</td><td><b>${esc(a.answer)}</b></td></tr>`; }).join('')}</tbody></table></div>
+        <div class="row-btn left"><button class="btn sm ghost" data-act="assign1" data-id="${t.id}">Tugaskan ke kelas</button><a class="btn sm ghost" href="#/coba/${t.id}">Lihat soal contoh</a></div></details>`;
+    }).join('') + (list.length > lim ? `<div class="row-btn"><button class="btn ghost sm" data-act="troublemore">Tampilkan 15 lagi (${list.length - lim} tersisa)</button></div>` : '');
+  }
+
+  // Kisi skor: SmartScore setiap siswa untuk setiap keterampilan dalam satu bab
+  function gridHTML(ctx) {
+    const units = curUnits();
+    let uid = ss.get('gridUnit', null);
+    if (!units.some((u) => u.id === uid)) uid = (units.find((u) => ctx.kids.some((k) => u.skills.some((s) => S.progress(k.id, s.id).att))) || units[0]).id;
+    const u = units.find((x) => x.id === uid);
+    return gradeTabs() + `<div class="unitchips">${units.map((x) => `<button class="${x.id === uid ? 'on' : ''}" data-act="gridunit" data-u="${x.id}" title="${esc(x.name)}">${x.icon} ${x.id}</button>`).join('')}</div>
+      <section class="card"><h2><span class="uicon" style="--c:${u.color}">${u.icon}</span>${u.id}. ${u.name}</h2><p class="muted small">SmartScore saat ini. Sel kosong = belum dicoba.</p>
+      <div class="tscroll"><table class="tbl heat"><thead><tr><th>Siswa</th>${u.skills.map((s) => `<th title="${esc(s.name)}">${s.code}</th>`).join('')}</tr></thead><tbody>
+      ${ctx.kids.map((k) => `<tr><td><a href="#/guru/siswa/${k.id}">${k.avatar} ${esc(k.name)}</a></td>${u.skills.map((s) => { const p = S.progress(k.id, s.id); return `<td class="hc ${p.att ? level(p.score)[1] : 'lv0'}" title="${esc(s.name)}: ${p.att ? `${p.score} (${p.att} soal)` : 'belum dicoba'}">${p.att ? (p.score >= 100 ? '🏆' : p.score) : ''}</td>`; }).join('')}</tr>`).join('')}
+      </tbody></table></div>
+      <ol class="skl small">${u.skills.map((s) => `<li><b>${s.code}</b> ${s.name}</li>`).join('')}</ol>
+      <div class="legend">${[['Mulai <50', 'lv1'], ['Berkembang 50–79', 'lv2'], ['Mahir 80–99', 'lv3'], ['Tuntas 100', 'lv4']].map(([l, c]) => `<span><i class="${c}"></i>${l}</span>`).join('')}</div></section>`;
+  }
+
+  // Log soal: setiap soal yang dijawab, dengan filter siswa, keterampilan, dan hasil
+  function logHTML(ctx, ans) {
+    const f = ss.get('logf', { sid: '', skill: '', res: '' }), lim = ss.get('loglim', 50);
+    const used = [...new Set(ans.map((a) => a.skill))].filter((id) => SKILLS[id]).sort((a, b) => SKILLS[a].code.localeCompare(SKILLS[b].code, undefined, { numeric: true }));
+    const all = ans.filter((a) => (!f.sid || a.sid === f.sid) && (!f.skill || a.skill === f.skill) && (!f.res || (f.res === 'ok') === !!a.ok)).sort((a, b) => b.ts - a.ts);
+    const rows = all.slice(0, lim);
+    return `<div class="filters"><select data-act="logf" data-k="sid"><option value="">Semua siswa</option>${ctx.kids.map((k) => `<option value="${k.id}" ${f.sid === k.id ? 'selected' : ''}>${esc(k.name)}</option>`).join('')}</select>
+      <select data-act="logf" data-k="skill"><option value="">Semua keterampilan</option>${used.map((id) => `<option value="${id}" ${f.skill === id ? 'selected' : ''}>${SKILLS[id].code} ${esc(SKILLS[id].name)}</option>`).join('')}</select>
+      <select data-act="logf" data-k="res"><option value="">Benar dan salah</option><option value="ok" ${f.res === 'ok' ? 'selected' : ''}>Hanya benar</option><option value="no" ${f.res === 'no' ? 'selected' : ''}>Hanya salah</option></select></div>
+      <p class="muted small">${fmtNum(all.length)} soal${all.length > rows.length ? `, menampilkan ${rows.length} terbaru` : ''}.</p>
+      <section class="card"><div class="tscroll"><table class="tbl log"><thead><tr><th>Waktu</th><th>Siswa</th><th>Kode</th><th>Soal</th><th>Jawaban</th><th>Benar</th><th>Lama</th></tr></thead><tbody>
+      ${rows.map((a) => { const k = S.student(a.sid), sk = SKILLS[a.skill]; return `<tr class="${a.ok ? '' : 'bad'}"><td>${ftime(a.ts)}</td><td>${k ? `${k.avatar} ${esc(k.name)}` : ''}</td><td title="${sk ? esc(sk.name) : ''}">${sk ? sk.code : esc(a.skill)}</td><td class="wrap">${esc(a.text)}</td><td>${a.ok ? '✅' : '❌'} ${esc(a.given)}</td><td>${esc(a.answer)}</td><td>${Math.round((a.ms || 0) / 1000)} dtk</td></tr>`; }).join('') || '<tr><td colspan="7" class="muted">Tidak ada soal yang cocok.</td></tr>'}
+      </tbody></table></div>${all.length > rows.length ? '<div class="row-btn"><button class="btn ghost sm" data-act="logmore">Tampilkan 50 lagi</button></div>' : ''}</section>`;
+  }
+
+  // SmartScore pada waktu tertentu dihitung ulang dari riwayat jawaban
+  function scoreTimeline(sid) {
+    const out = {};
+    S.answersOf(sid).slice().sort((a, b) => a.ts - b.ts).forEach((a) => {
+      const t = out[a.skill] = out[a.skill] || [];
+      t.push({ ts: a.ts, s: S.nextScore(t.length ? t[t.length - 1].s : 0, a.ok) });
+    });
+    // Jika riwayat terpotong (mis. lebih lama dari 90 hari), geser agar skor akhir sama dengan skor tersimpan
+    Object.entries(out).forEach(([k, t]) => { const off = S.progress(sid, k).score - t[t.length - 1].s; if (off) t.forEach((x) => { x.s = Math.max(0, Math.min(100, x.s + off)); }); });
+    return out;
+  }
+  const scoreAt = (t, ts) => { let s = null; for (const x of t) { if (x.ts <= ts) s = x.s; else break; } return s; };
+
+  // Kemajuan: kenaikan SmartScore per keterampilan antara awal dan akhir periode
+  function progressHTML(ctx, ans, g) {
+    const rows = ctx.kids.map((k) => {
+      const tl = scoreTimeline(k.id);
+      const ids = [...new Set(ans.filter((a) => a.sid === k.id).map((a) => a.skill))].filter((id) => SKILLS[id] && tl[id]);
+      const items = ids.map((id) => { const start = scoreAt(tl[id], g.from - 1) || 0, end = scoreAt(tl[id], g.to) ?? start; return { id, start, end, gain: end - start, n: ans.filter((a) => a.sid === k.id && a.skill === id).length }; }).sort((a, b) => b.gain - a.gain);
+      return { k, items, gain: items.reduce((s, x) => s + Math.max(0, x.gain), 0), prof: items.filter((x) => x.end >= 80 && x.start < 80).length, mast: items.filter((x) => x.end >= 100 && x.start < 100).length };
+    }).sort((a, b) => b.gain - a.gain);
+    const sum = (f) => rows.reduce((s, x) => s + f(x), 0);
+    const skillsTouched = sum((x) => x.items.length);
+    if (!skillsTouched) return emptyCard('Belum ada kemajuan', 'Kemajuan dihitung dari keterampilan yang dilatih pada periode ini.');
+    const arrow = (x) => `<span class="sc lv-${x.start >= 100 ? 4 : x.start >= 80 ? 3 : x.start >= 50 ? 2 : x.start > 0 ? 1 : 0}">${x.start}</span> → <span class="sc lv-${x.end >= 100 ? 4 : x.end >= 80 ? 3 : x.end >= 50 ? 2 : x.end > 0 ? 1 : 0}">${x.end}</span>`;
+    return `<div class="kpis"><div class="kpi"><small>Kenaikan SmartScore</small><b>+${fmtNum(sum((x) => x.gain))}</b></div><div class="kpi"><small>Menjadi mahir (≥80)</small><b>${sum((x) => x.prof)}</b></div><div class="kpi"><small>Menjadi tuntas (100)</small><b>${sum((x) => x.mast)}</b></div><div class="kpi"><small>Rata-rata kenaikan</small><b>+${Math.round(sum((x) => x.gain) / skillsTouched)}<span> per keterampilan</span></b></div></div>
+      <p class="muted small">Skor awal = SmartScore sebelum periode dimulai, skor akhir = SmartScore di akhir periode. Ketuk nama siswa untuk rinciannya.</p>
+      ${rows.map((x) => `<details class="card prog"><summary><span class="av sm">${x.k.avatar}</span><span class="grow"><b>${esc(x.k.name)}</b><small>${x.items.length} keterampilan dilatih · ${x.prof} jadi mahir · ${x.mast} tuntas</small></span><span class="pill ${x.gain ? '' : 'warn'}">+${x.gain}</span></summary>
+        ${x.items.length ? `<div class="tscroll"><table class="tbl"><thead><tr><th>Keterampilan</th><th>Skor</th><th>Naik</th><th>Soal</th></tr></thead><tbody>${x.items.map((it) => `<tr><td class="wrap"><b>${SKILLS[it.id].code}</b> ${SKILLS[it.id].name}</td><td>${arrow(it)}</td><td class="${it.gain > 0 ? 'up' : it.gain < 0 ? 'down' : ''}">${it.gain > 0 ? '+' : ''}${it.gain}</td><td>${it.n}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted small">Tidak berlatih pada periode ini.</p>'}</details>`).join('')}`;
+  }
+  const fmtNum = (n) => Number(n).toLocaleString('id-ID');
+
   function tasksHTML(ctx) {
     const asg = S.assignmentsOf(ctx.c.id);
     return `<section class="card"><h2>Tugas aktif</h2>${asg.length ? asg.map((a) => `<div class="asg-t"><div class="grow"><b>${esc(a.note || 'Tugas')}</b>${a.due ? ` <span class="muted small">· sampai ${esc(a.due)}</span>` : ''}<div class="small">${a.skills.filter((k) => SKILLS[k]).map((k) => { const done = ctx.kids.filter((kid) => S.progress(kid.id, k).score >= 80).length; return `<span class="pill">${SKILLS[k].code} ${SKILLS[k].name} · ${done}/${ctx.kids.length} mahir</span>`; }).join(' ')}</div></div><button class="btn sm ghost" data-act="rmasg" data-id="${a.id}">Hapus</button></div>`).join('') : '<p class="muted">Belum ada tugas. Siswa akan melihat tugas di bagian atas halaman belajar mereka.</p>'}</section>
@@ -606,6 +747,14 @@
     if (!el) return;
     const act = el.dataset.act;
     if (act === 'grade') { setGrade(+el.dataset.g); sessionStorage.removeItem('metiq_open'); return route(); }
+    if (act === 'range') {
+      const p = el.dataset.p, cur = ss.get('range', { preset: 30 });
+      ss.set('range', p === 'custom' ? { preset: 'custom', from: cur.from || isoDay(Date.now() - 29 * DAY), to: cur.to || isoDay(Date.now()) } : { preset: p === 'all' ? 'all' : +p });
+      ss.set('loglim', 50); ss.set('troublelim', 15); return route();
+    }
+    if (act === 'gridunit') { ss.set('gridUnit', el.dataset.u); return route(); }
+    if (act === 'troublemore') { ss.set('troublelim', ss.get('troublelim', 15) + 15); return route(); }
+    if (act === 'logmore') { ss.set('loglim', ss.get('loglim', 50) + 50); return route(); }
     if (act === 'key') {
       if (!P || P.locked) return;
       if (el.dataset.k === 'del') P.input = P.input.slice(0, -1); else if (P.input.length < 12) P.input += el.dataset.k;
@@ -658,6 +807,8 @@
   document.addEventListener('change', (e) => {
     const el = e.target;
     if (el.dataset.act === 'switchclass') { const s = session.get(); s.classId = el.value; session.set(s); route(); }
+    if (el.dataset.act === 'rfrom' || el.dataset.act === 'rto') { const r = ss.get('range', { preset: 'custom' }); r.preset = 'custom'; r[el.dataset.act === 'rfrom' ? 'from' : 'to'] = el.value; if (r.from && r.to && r.from > r.to) [r.from, r.to] = [r.to, r.from]; ss.set('range', r); route(); }
+    if (el.dataset.act === 'logf') { const f = ss.get('logf', { sid: '', skill: '', res: '' }); f[el.dataset.k] = el.value; ss.set('logf', f); ss.set('loglim', 50); route(); }
     if (el.dataset.act === 'import' && el.files[0]) { el.files[0].text().then((t) => { try { S.importJSON(t); toast('Data berhasil digabungkan ✔'); route(); } catch (err) { toast('File tidak valid'); } }); }
   });
   document.addEventListener('toggle', (e) => { if (e.target.matches && e.target.matches('details.unit[data-unit]') && e.target.open) sessionStorage.setItem('metiq_open', e.target.dataset.unit); }, true);

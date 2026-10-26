@@ -359,3 +359,36 @@ h2 .uicon { width: 32px; height: 32px; font-size: 1.05rem; vertical-align: middl
 .pielg i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
 .bag { font-size: 1.5rem; letter-spacing: 2px; background: #f8f7ff; border: 3px dashed #c9c4ee; border-radius: 0 0 40px 40px; padding: 10px 14px; max-width: 280px; text-align: center; word-break: break-all; }
 .fstack { display: grid; gap: 6px; justify-items: center; } .fstack .frac { width: 200px; height: 90px; }
+
+/* Analitik guru */
+.subtabs { display: flex; gap: 4px; overflow-x: auto; scrollbar-width: none; border-bottom: 2px solid var(--line); margin-bottom: 12px; }
+.subtabs a { white-space: nowrap; padding: 8px 12px; text-decoration: none; color: var(--muted); font-weight: 800; font-size: .92rem; border-bottom: 3px solid transparent; margin-bottom: -2px; }
+.subtabs a.on { color: var(--brand); border-bottom-color: var(--brand); }
+.rangebar { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 6px; }
+.rangebar button { border: 2px solid var(--line); background: #fff; border-radius: 999px; padding: 6px 12px; font: inherit; font-weight: 800; font-size: .85rem; color: var(--ink); cursor: pointer; }
+.rangebar button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.rangecustom { display: flex; gap: 8px; flex-wrap: wrap; margin: 4px 0; }
+.rangecustom label { display: grid; gap: 2px; font-size: .8rem; font-weight: 800; color: var(--muted); flex: 1; min-width: 140px; }
+.ubars { display: flex; align-items: flex-end; gap: 2px; height: 140px; }
+.ub { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; min-width: 0; }
+.ub i { display: block; width: 100%; max-width: 28px; background: var(--brand-2); border-radius: 4px 4px 1px 1px; min-height: 2px; }
+.ubv { font-size: .68rem; font-weight: 800; color: var(--muted); }
+.ublab { display: flex; justify-content: space-between; font-size: .75rem; color: var(--muted); font-weight: 700; margin-top: 4px; }
+details.trouble > summary, details.prog > summary { display: flex; gap: 10px; align-items: center; cursor: pointer; list-style: none; }
+details.trouble > summary::-webkit-details-marker, details.prog > summary::-webkit-details-marker { display: none; }
+details.trouble summary small, details.prog summary small { display: block; color: var(--muted); font-weight: 600; }
+details[open].trouble > summary, details[open].prog > summary { margin-bottom: 10px; }
+.kidchips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.kchip { background: #fff1d6; border-radius: 999px; padding: 4px 10px; text-decoration: none; color: var(--ink); font-size: .85rem; font-weight: 700; }
+.row-btn.left { justify-content: flex-start; }
+.unitchips { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px; }
+.unitchips button { flex: none; border: 2px solid var(--line); background: #fff; border-radius: 10px; padding: 6px 10px; font: inherit; font-weight: 800; font-size: .85rem; cursor: pointer; color: var(--ink); }
+.unitchips button.on { border-color: var(--brand); background: #efecff; color: var(--brand); }
+.skl { columns: 2; column-gap: 18px; padding-left: 18px; margin: 12px 0 6px; } .skl li { break-inside: avoid; margin-bottom: 2px; }
+.filters { display: grid; gap: 8px; grid-template-columns: 1fr; margin-bottom: 8px; }
+.tbl td.wrap { white-space: normal; min-width: 160px; }
+.tbl.log tr.bad td { background: #fff8f8; }
+.tbl td.up { color: var(--ok); font-weight: 900; } .tbl td.down { color: var(--no); font-weight: 900; }
+.sc { display: inline-block; min-width: 30px; text-align: center; border-radius: 99px; padding: 1px 6px; font-weight: 900; font-size: .82rem; }
+.sc.lv-0 { background: var(--lv0); } .sc.lv-1 { background: var(--lv1); } .sc.lv-2 { background: var(--lv2); } .sc.lv-3 { background: var(--lv3); } .sc.lv-4 { background: var(--lv4); }
+@media (min-width: 640px) { .filters { grid-template-columns: 1fr 1.6fr 1fr; } .skl { columns: 3; } }

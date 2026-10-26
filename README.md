@@ -17,7 +17,7 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 - `js/grade3.js` … `js/grade6.js`: kelas 3 (55 keterampilan), 4 (55), 5 (49), 6 (51). Total 344 keterampilan.
 - Setiap bab mencatat rujukan IXL, Singapore Math, dan Kurikulum Merdeka (`ixl`, `sg`, `km`), yang tampil di tab Referensi pada dasbor guru.
 - `js/store.js`: penyimpanan data (saat ini `localStorage` di perangkat), dan SmartScore.
-- `js/app.js`: tampilan siswa, guru, orang tua.
+- `js/app.js`: tampilan siswa, guru, orang tua. Tab Analitik guru berisi Penggunaan, Titik masalah, Kisi skor, Log soal, dan Kemajuan, dengan filter tanggal. Kemajuan menghitung ulang SmartScore dari riwayat jawaban (`Store.nextScore`).
 - `css/style.css`: tampilan (mobile-first).
 
 ## Server (Supabase)
