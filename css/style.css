@@ -446,3 +446,16 @@ details[open].trouble > summary, details[open].prog > summary { margin-bottom: 1
 .dh-select { margin-top: 10px; width: 100%; padding: 9px 12px; }
 .role .ri .avsvg { width: 1.3em; height: 1.3em; vertical-align: middle; }
 .dhead .dh-select { width: 100%; }
+
+/* Notifikasi */
+.topr { display: flex; align-items: center; gap: 10px; }
+.bell { position: relative; font-size: 1.3rem; text-decoration: none; padding: 4px; line-height: 1; }
+.bell b { position: absolute; top: -4px; right: -8px; background: #e0464b; color: #fff; font-size: .68rem; min-width: 18px; height: 18px; border-radius: 9px; display: grid; place-items: center; padding: 0 4px; font-weight: 900; box-shadow: 0 0 0 2px #fff; }
+.notif { display: flex; gap: 10px; align-items: center; background: #fff; border-radius: 14px; padding: 12px; margin-bottom: 8px; text-decoration: none; color: var(--ink); box-shadow: var(--shadow); }
+.notif small { display: block; color: var(--muted); margin-top: 2px; }
+.notif.new, .notif-card.new { border-left: 5px solid var(--brand); }
+.notif-card p { margin: 8px 0; }
+.dot-new { width: 10px; height: 10px; border-radius: 50%; background: var(--brand); flex: none; }
+.okc { color: var(--ok); font-weight: 800; }
+.pill.okp { background: var(--ok-bg); color: var(--ok); }
+.asg-done { margin: 6px 0 0; }

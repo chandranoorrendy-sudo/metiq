@@ -187,13 +187,14 @@
     const c = S.cls(st.classId);
     const prog = S.progressAll(st.id);
     const asg = S.assignmentsOf(st.classId);
+    asg.forEach((a) => { if (!S.isDone(a.id, st.id) && asgComplete(a, st.id)) markDone(a.id, st.id, 'siswa'); });
     const st7 = stats(st.id, 7);
     const open = sessionStorage.getItem('metiq_open') || '';
     const unsent = cloudOn() ? Cloud.pendingCount(st.id) : 0;
     app.innerHTML = shell(`
       ${unsent ? `<p class="offline">📶 ${unsent} jawaban menunggu internet untuk dikirim ke guru.</p>` : ''}
       <section class="hello"><a class="av avedit" href="#/avatar/saya" aria-label="Ganti avatar">${avHTML(st.avatar)}<i>✏️</i></a><div><h1>Halo, ${esc(st.name)}!</h1><p class="muted">${esc(c ? c.name : '')} · ${st7.answered} soal minggu ini · ${Object.values(prog).filter((p) => p.score >= 100).length} 🏆</p></div></section>
-      ${asg.length ? `<section class="card tugas"><h2>📌 Tugas dari guru</h2>${asg.map((a) => `<div class="asg">${a.note ? `<p><b>${esc(a.note)}</b>${a.due ? ` · <span class="muted">sampai ${esc(a.due)}</span>` : ''}</p>` : ''}<div class="sklist">${a.skills.filter((k) => SKILLS[k]).map((k) => skillLink(k, prog[k])).join('')}</div></div>`).join('')}</section>` : ''}
+      ${asg.length ? `<section class="card tugas"><h2>📌 Tugas dari guru</h2>${asg.map((a) => `<div class="asg">${S.isDone(a.id, st.id) ? '<span class="pill okp">✅ Selesai</span>' : ''}${a.note ? `<p><b>${esc(a.note)}</b>${a.due ? ` · <span class="muted">sampai ${esc(fdue(a.due))}</span>` : ''}</p>` : ''}<div class="sklist">${a.skills.filter((k) => SKILLS[k]).map((k) => skillLink(k, prog[k])).join('')}</div></div>`).join('')}</section>` : ''}
       ${gradeTabs()}
       <div class="units">${curUnits().map((u) => {
         const us = unitScore(st.id, u);
@@ -264,6 +265,7 @@
     document.querySelectorAll('.opt').forEach((b) => { const v = q.options[+b.dataset.i]; if (v === q.answer) b.classList.add('right'); else if (v === given) b.classList.add('wrong'); b.disabled = true; });
     const fb = document.getElementById('fb');
     const finished = ok ? myAsg.filter(asgDone) : [];
+    finished.forEach((a) => markDone(a.id, P.sid, 'siswa'));
     if (ok) {
       if (P.score >= 100 && before < 100) window.SFX.mastered();
       else if (finished.length) { window.SFX.task(); toast(`📌 Tugas selesai: ${esc(finished[0].note || 'Tugas dari guru')}! 🎉`); }
@@ -357,7 +359,7 @@
         ${ctx.classes.length > 1 ? `<select class="dh-select" data-act="switchclass" aria-label="Pilih kelas">${ctx.classes.map((c) => `<option value="${c.id}" ${c.id === ctx.c.id ? 'selected' : ''}>${esc(c.name)}${ctx.t.isAdmin && c.teacherName ? ` · ${esc(c.teacherName)}` : ''}</option>`).join('')}</select>` : ''}
       </section>
       <nav class="tabs">${TABS.map(([k, l]) => `<a href="#/guru/${k}" class="${k === tab ? 'on' : ''}">${l}</a>`).join('')}</nav>
-      ${inner}`, { cls: 'wide', right: `<button class="link" data-act="logout">Keluar</button>` });
+      ${inner}`, { cls: 'wide', right: topRight() });
   }
   function emptyKids(ctx) {
     return `<section class="card center"><div class="bigemoji">🧑‍🤝‍🧑</div><h2>Belum ada siswa</h2><p class="muted">Tambahkan siswa di menu <a href="#/guru/kelola">Kelola kelas</a>. Siswa masuk dengan kode kelas <b>${ctx.c.code}</b>.</p></section>`;
@@ -600,10 +602,12 @@
         ${x.items.length ? `<div class="tscroll"><table class="tbl"><thead><tr><th>Keterampilan</th><th>Skor</th><th>Naik</th><th>Soal</th></tr></thead><tbody>${x.items.map((it) => `<tr><td class="wrap"><b>${SKILLS[it.id].code}</b> ${SKILLS[it.id].name}</td><td>${arrow(it)}</td><td class="${it.gain > 0 ? 'up' : it.gain < 0 ? 'down' : ''}">${it.gain > 0 ? '+' : ''}${it.gain}</td><td>${it.n}</td></tr>`).join('')}</tbody></table></div>` : '<p class="muted small">Tidak berlatih pada periode ini.</p>'}</details>`).join('')}`;
   }
   const fmtNum = (n) => Number(n).toLocaleString('id-ID');
+  // Tenggat dari kolom tanggal (yyyy-mm-dd) ditulis seperti "30 Okt"
+  const fdue = (d) => (/^\d{4}-\d{2}-\d{2}$/.test(d || '') ? fdate(new Date(d + 'T00:00:00').getTime()) : d);
 
   function tasksHTML(ctx) {
     const asg = S.assignmentsOf(ctx.c.id);
-    return `<section class="card"><h2>Tugas aktif</h2>${asg.length ? asg.map((a) => `<div class="asg-t"><div class="grow"><b>${esc(a.note || 'Tugas')}</b>${a.due ? ` <span class="muted small">· sampai ${esc(a.due)}</span>` : ''}<div class="small">${a.skills.filter((k) => SKILLS[k]).map((k) => { const done = ctx.kids.filter((kid) => S.progress(kid.id, k).score >= 80).length; return `<span class="pill">${SKILLS[k].code} ${SKILLS[k].name} · ${done}/${ctx.kids.length} mahir</span>`; }).join(' ')}</div></div><button class="btn sm ghost" data-act="rmasg" data-id="${a.id}">Hapus</button></div>`).join('') : '<p class="muted">Belum ada tugas. Siswa akan melihat tugas di bagian atas halaman belajar mereka.</p>'}</section>
+    return `<section class="card"><h2>Tugas aktif</h2>${asg.length ? asg.map((a) => `<div class="asg-t"><div class="grow"><b>${esc(a.note || 'Tugas')}</b>${a.due ? ` <span class="muted small">· sampai ${esc(fdue(a.due))}</span>` : ''}<div class="small">${a.skills.filter((k) => SKILLS[k]).map((k) => { const done = ctx.kids.filter((kid) => S.progress(kid.id, k).score >= 80).length; return `<span class="pill">${SKILLS[k].code} ${SKILLS[k].name} · ${done}/${ctx.kids.length} mahir</span>`; }).join(' ')}</div></div>${(() => { const d = S.doneFor(a.id).map((x) => S.student(x.sid)).filter((k) => k && k.classId === ctx.c.id); return `<p class="small asg-done">✅ Selesai: <b>${d.length}/${ctx.kids.length}</b> siswa${d.length ? ` — ${d.map((k) => esc(k.name)).join(', ')}` : ''}</p>`; })()}<button class="btn sm ghost" data-act="rmasg" data-id="${a.id}">Hapus</button></div>`).join('') : '<p class="muted">Belum ada tugas. Siswa akan melihat tugas di bagian atas halaman belajar mereka.</p>'}</section>
       <section class="card"><h2>Buat tugas baru</h2><form data-form="assign" class="form">
         <label>Catatan untuk siswa<input name="note" placeholder="mis. Latihan untuk ulangan Jumat"></label>
         <label>Tenggat (opsional)<input name="due" type="date"></label>
@@ -708,13 +712,68 @@
           <p class="center small"><button class="link muted" data-act="punlink" data-id="${k.id}">Lepas dari akun</button></p></section>`; }).join('') || '<section class="card center"><div class="bigemoji">🧒</div><p class="muted">Belum ada anak yang terhubung.</p></section>'}
       <section class="card"><h2>Tambah anak</h2><p class="muted small">Masukkan kode orang tua anak (dari guru).</p>
         <form data-form="plink" class="form inline"><input name="code" class="codein sm" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC123" required><button class="btn">Tambah</button></form></section>
-    `, { right: `<button class="link" data-act="logout">Keluar</button>` });
+    `, { right: topRight() });
   }
   function viewParentReport(sid) {
     const ses = session.get();
     const k = ses.role === 'ortu' && S.student(sid || ses.id);
     if (!k) return go(ses.ptoken ? '#/ortu/anak' : '#/ortu');
-    app.innerHTML = shell((ses.ptoken ? '<a class="back" href="#/ortu/anak">← Anak saya</a>' : '') + reportHTML(k, 'ortu') + `<p class="center muted small">SmartScore: 0–49 Mulai · 50–79 Berkembang · 80–99 Mahir · 100 Tuntas 🏆</p>`, { right: `<button class="link" data-act="logout">Keluar</button>` });
+    app.innerHTML = shell((ses.ptoken ? '<a class="back" href="#/ortu/anak">← Anak saya</a>' : '') + reportHTML(k, 'ortu') + `<p class="center muted small">SmartScore: 0–49 Mulai · 50–79 Berkembang · 80–99 Mahir · 100 Tuntas 🏆</p>`, { right: topRight() });
+  }
+
+  /* ---------- Notifikasi tugas ---------- */
+  // Waktu terakhir halaman notifikasi dibuka, disimpan per akun di perangkat ini
+  const seenKey = () => { const x = session.get(); return 'metiq_seen_' + (x.role === 'guru' ? 'g' + x.id : x.ptoken ? 'p' + (x.pid || x.ptoken.slice(0, 10)) : 'o' + (x.pcode || x.id)); };
+  const getSeen = () => { try { return +localStorage.getItem(seenKey()) || 0; } catch (e) { return 0; } };
+  const setSeen = () => { try { localStorage.setItem(seenKey(), String(Date.now())); } catch (e) {} };
+  const asgComplete = (a, sid) => a.skills.filter((k) => SKILLS[k]).every((k) => S.progress(sid, k).score >= 80);
+  // Catat tugas selesai di perangkat dan (jika memakai server) kirim ke guru
+  function markDone(aid, sid, by) {
+    if (S.isDone(aid, sid)) return Promise.resolve();
+    S.markDone(aid, sid, by);
+    if (!cloudOn()) return Promise.resolve();
+    const k = S.student(sid), c = k && S.cls(k.classId), code = session.get().code || (c && c.code);
+    if (!code) return Promise.resolve();
+    return Cloud.rpc('complete_assignment', { p_code: code, p_student_id: sid, p_assignment_id: aid, p_by: by }).catch(() => {});
+  }
+  // Guru: siswa yang menyelesaikan tugas. Orang tua: tugas baru untuk anaknya.
+  function notifItems() {
+    const x = session.get();
+    if (x.role === 'guru') {
+      return S.db.done.map((d) => ({ d, a: S.db.assignments.find((g) => g.id === d.aid), k: S.student(d.sid) }))
+        .filter((n) => n.a && n.k).map((n) => Object.assign(n, { at: n.d.at })).sort((p, q) => q.at - p.at);
+    }
+    if (x.role === 'ortu') {
+      const kids = x.ptoken ? S.db.students : [S.student(x.id)].filter(Boolean);
+      return kids.flatMap((k) => S.assignmentsOf(k.classId).map((a) => ({ at: a.createdAt || 0, a, k }))).sort((p, q) => q.at - p.at);
+    }
+    return [];
+  }
+  const bellHTML = () => { const seen = getSeen(), n = notifItems().filter((i) => i.at > seen).length; return `<a class="bell" href="#/notifikasi" aria-label="Notifikasi${n ? `, ${n} baru` : ''}">🔔${n ? `<b>${n > 9 ? '9+' : n}</b>` : ''}</a>`; };
+  const topRight = () => `<span class="topr">${bellHTML()}<button class="link" data-act="logout">Keluar</button></span>`;
+
+  function viewNotifications() {
+    const x = session.get();
+    if (x.role !== 'guru' && x.role !== 'ortu') return go('#/');
+    const seen = getSeen(), items = notifItems();
+    let body;
+    if (x.role === 'guru') {
+      body = items.length ? items.map((n) => `<a class="notif ${n.at > seen ? 'new' : ''}" href="#/guru/siswa/${n.k.id}"><span class="av sm">${avHTML(n.k.avatar)}</span><span class="grow"><b>${esc(n.k.name)}</b> menyelesaikan tugas <b>${esc(n.a.note || 'Tugas')}</b><small>${ftime(n.at)} · ${n.d.by === 'ortu' ? 'dilaporkan orang tua' : 'semua keterampilan sudah mahir'}</small></span>${n.at > seen ? '<i class="dot-new"></i>' : ''}</a>`).join('')
+        : emptyCard('Belum ada notifikasi', 'Notifikasi muncul saat siswa menyelesaikan tugas yang Anda berikan.');
+    } else {
+      body = items.length ? items.map((n) => {
+        const sk = n.a.skills.filter((k) => SKILLS[k]), prof = sk.filter((k) => S.progress(n.k.id, k).score >= 80).length;
+        const reported = S.isDone(n.a.id, n.k.id), done = reported || prof === sk.length, c = S.cls(n.k.classId) || {};
+        return `<section class="card notif-card ${n.at > seen ? 'new' : ''}"><div class="lrow"><span class="av sm">${avHTML(n.k.avatar)}</span><span class="grow"><b>📌 Tugas baru untuk ${esc(n.k.name)}</b><small>${esc(c.teacherName || 'Guru')}${n.at ? ` · ${ftime(n.at)}` : ''}${n.a.due ? ` · tenggat ${esc(fdue(n.a.due))}` : ''}</small></span>${n.at > seen ? '<i class="dot-new"></i>' : ''}</div>
+          <p><b>${esc(n.a.note || 'Tugas dari guru')}</b></p>
+          <div class="small">${sk.map((k) => `<span class="pill ${S.progress(n.k.id, k).score >= 80 ? 'okp' : ''}">${SKILLS[k].code} ${SKILLS[k].name}${S.progress(n.k.id, k).score >= 80 ? ' ✅' : ''}</span>`).join(' ')}</div>
+          <p class="small ${done ? 'okc' : 'muted'}">${done ? `✅ Sudah selesai${reported ? ' dan terkirim ke guru' : ''}` : `${prof} dari ${sk.length} keterampilan sudah mahir`}</p>
+          <div class="row-btn left">${x.ptoken && !done ? `<button class="btn sm" data-act="askid" data-id="${n.k.id}">Kerjakan sebagai ${esc(n.k.name)}</button>` : ''}${reported ? '' : `<button class="btn sm ghost" data-act="reportdone" data-a="${n.a.id}" data-s="${n.k.id}">Laporkan sudah dikerjakan</button>`}</div></section>`;
+      }).join('') : emptyCard('Belum ada tugas', 'Notifikasi muncul saat guru memberikan tugas baru untuk anak Anda.');
+    }
+    const back = x.role === 'guru' ? '#/guru/ringkasan' : x.ptoken ? '#/ortu/anak' : '#/ortu/laporan';
+    setSeen();
+    app.innerHTML = shell(`<a class="back" href="${back}">← Kembali</a><h1>🔔 Notifikasi</h1><p class="muted small">${x.role === 'guru' ? 'Siswa yang sudah menyelesaikan tugas, terbaru di atas.' : 'Tugas dari guru untuk anak Anda, terbaru di atas.'}</p>${body}`, { right: topRight() });
   }
 
   /* ---------- Pemilih avatar ---------- */
@@ -790,7 +849,7 @@
     const [a, b, c] = parts;
     const seq = ++routeSeq;
     S.setMode(cloudOn());
-    const needsData = a === 'belajar' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar';
+    const needsData = a === 'belajar' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi';
     if (needsData && !(await ensure())) return;
     if (seq !== routeSeq) return;
     window.scrollTo(0, 0);
@@ -804,6 +863,7 @@
       case 'coba': return viewPreview(b);
       case 'pelajaran': return viewLesson(b);
       case 'avatar': return viewAvatar(b);
+      case 'notifikasi': return viewNotifications();
       case 'ortu': return b === 'laporan' ? viewParentReport(c) : b === 'anak' ? viewParentHome() : b === 'daftar' ? viewParentRegister() : viewParentEnter();
       default: return viewHome();
     }
@@ -835,6 +895,7 @@
     else if (act === 'again') { P.score = 0; nextQ(); }
     else if (act === 'say') speak(P.q.speak || P.q.text);
     else if (act === 'pickav') saveAvatar(el.dataset.t, el.dataset.a);
+    else if (act === 'reportdone') { el.disabled = true; markDone(el.dataset.a, el.dataset.s, 'ortu').then(() => { toast('Terkirim ke guru ✔'); return cloudOn() ? ensure(true) : true; }).then(route); }
     else if (act === 'sound') { const on = window.SFX.toggle(); el.textContent = on ? '🔔' : '🔕'; toast(on ? 'Suara dinyalakan' : 'Suara dimatikan'); }
     else if (act === 'lexnew') { const box = document.getElementById('lex-' + el.dataset.i); if (box) box.innerHTML = lessonExample(el.dataset.sk); }
     else if (act === 'lgo') { const sec = document.getElementById('lp-' + el.dataset.i); if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -969,6 +1030,14 @@
       }
     } catch (err) { fail(err); }
   }
+
+  setInterval(async () => {
+    const x = session.get();
+    if (!cloudOn() || document.hidden || !document.querySelector('.bell')) return;
+    const call = x.role === 'guru' && x.token ? ['teacher_bundle', { p_token: x.token }] : x.role === 'ortu' && x.ptoken ? ['parent_home', { p_token: x.ptoken }] : x.role === 'ortu' && x.pcode ? ['parent_bundle', { p_code: x.pcode }] : null;
+    if (!call) return;
+    try { const b = await Cloud.rpc(call[0], call[1]); if (b) { S.loadBundle(b); loaded.at = Date.now(); const bell = document.querySelector('.bell'); if (bell) bell.outerHTML = bellHTML(); } } catch (e) { /* coba lagi menit berikutnya */ }
+  }, 60000);
 
   window.addEventListener('hashchange', route);
   route();
