@@ -68,4 +68,17 @@
   window.addEventListener('online', () => Cloud.flush());
   if (Cloud.enabled) setTimeout(Cloud.flush, 2000);
   window.Cloud = Cloud;
+
+  // Metiq pindah ke Vercel: alamat lama di GitHub Pages diarahkan ke alamat baru,
+  // setelah jawaban yang masih tersimpan di perangkat terkirim ke server.
+  const NEW_HOME = 'https://metiq-math.vercel.app/';
+  if (location.hostname.endsWith('github.io')) {
+    const move = () => location.replace(NEW_HOME + location.hash);
+    // selama masih ada jawaban yang belum terkirim (mis. sedang offline), tetap di sini dan coba lagi
+    const tryMove = async () => {
+      if (Cloud.enabled && Object.keys(outbox).length) await Cloud.flush();
+      if (!Cloud.enabled || !Object.keys(outbox).length) move(); else setTimeout(tryMove, 5000);
+    };
+    tryMove();
+  }
 })();
