@@ -432,3 +432,17 @@ details[open].trouble > summary, details[open].prog > summary { margin-bottom: 1
 .avopt:active { transform: scale(.94); }
 .avpick { text-decoration: none; }
 .psound { font-size: 1.1rem; border: 0; cursor: pointer; }
+
+/* Kepala dasbor guru yang ringkas */
+.dhead { display: block; margin-bottom: 10px; }
+.dh-row { display: flex; gap: 12px; align-items: center; }
+.dh-text { flex: 1; min-width: 0; }
+.dh-who { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: .85rem; font-weight: 700; color: var(--muted); }
+.dh-who .pill { margin: 0; font-size: .72rem; padding: 1px 8px; }
+.dh-text h1 { margin: 2px 0; font-size: 1.45rem; line-height: 1.15; overflow-wrap: anywhere; }
+.dh-meta { font-size: .85rem; color: var(--muted); }
+.dh-meta .code { color: var(--brand); font-size: .95rem; }
+.dhead .av { width: 48px; height: 48px; font-size: 1.8rem; flex: none; }
+.dh-select { margin-top: 10px; width: 100%; padding: 9px 12px; }
+.role .ri .avsvg { width: 1.3em; height: 1.3em; vertical-align: middle; }
+.dhead .dh-select { width: 100%; }

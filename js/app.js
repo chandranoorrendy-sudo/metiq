@@ -125,13 +125,13 @@
       : ses.role === 'guru' && S.teacher(ses.id) ? `<a class="resume" href="#/guru">Buka dasbor <b>${esc(S.teacher(ses.id).name)}</b> →</a>` : '';
     app.innerHTML = shell(`
       <section class="hero">
-        <h1>Belajar matematika kelas 1, <span>selangkah demi selangkah.</span></h1>
+        <h1>Belajar matematika SD kelas 1–6, <span>selangkah demi selangkah.</span></h1>
         <p>Kelas 1 sampai ${GRADES[GRADES.length - 1].name.replace('Kelas ', '')}: ${UNITS.length} bab dan ${Object.keys(SKILLS).length} keterampilan dalam bahasa Indonesia. Soal menyesuaikan kemampuan anak, dengan penjelasan setiap kali jawaban belum tepat.</p>
         ${resume}
       </section>
       <section class="roles">
         <a class="role r1" href="#/siswa"><span class="ri">🧒</span><b>Saya Siswa</b><small>Mulai latihan</small></a>
-        <a class="role r2" href="#/guru"><span class="ri">👩‍🏫</span><b>Saya Guru</b><small>Kelola kelas & lihat kemajuan</small></a>
+        <a class="role r2" href="#/guru"><span class="ri">${avHTML('svg:ustadzah')}</span><b>Saya Guru</b><small>Kelola kelas & lihat kemajuan</small></a>
         <a class="role r3" href="#/ortu"><span class="ri">👨‍👩‍👧</span><b>Saya Orang Tua</b><small>Lihat laporan anak</small></a>
       </section>
       <section class="card">
@@ -350,9 +350,12 @@
   const TABS = [['ringkasan', 'Ringkasan'], ['siswa', 'Siswa'], ['analitik', 'Analitik'], ['peta', 'Peta kemajuan'], ['keterampilan', 'Keterampilan'], ['tugas', 'Tugas'], ['kelola', 'Kelola kelas'], ['referensi', 'Referensi']];
   function teacherShell(ctx, tab, inner) {
     app.innerHTML = shell(`
-      <section class="dhead"><a class="av avedit" href="#/avatar/guru" aria-label="Ganti avatar">${avHTML(ctx.t.avatar || 'svg:ustadzah')}<i>✏️</i></a><div class="grow"><small class="muted">${esc(ctx.t.name)}${ctx.t.isAdmin ? ' <span class="pill">Admin</span>' : ''}${ctx.c.teacherName && ctx.c.teacherId !== ctx.t.id ? ` · kelas milik ${esc(ctx.c.teacherName)}` : ''}</small><h1>${esc(ctx.c.name)}</h1></div>
-        ${ctx.classes.length > 1 ? `<select data-act="switchclass">${ctx.classes.map((c) => `<option value="${c.id}" ${c.id === ctx.c.id ? 'selected' : ''}>${esc(c.name)}${ctx.t.isAdmin && c.teacherName ? ` (${esc(c.teacherName)})` : ''}</option>`).join('')}</select>` : ''}
-        <div class="codebox">Kode kelas <b>${ctx.c.code}</b></div></section>
+      <section class="dhead">
+        <div class="dh-row"><a class="av avedit" href="#/avatar/guru" aria-label="Ganti avatar">${avHTML(ctx.t.avatar || 'svg:ustadzah')}<i>✏️</i></a>
+          <div class="dh-text"><div class="dh-who">${esc(ctx.t.name)}${ctx.t.isAdmin ? ' <span class="pill">Admin</span>' : ''}</div><h1>${esc(ctx.c.name)}</h1>
+          <div class="dh-meta">Kode kelas <b class="code">${ctx.c.code}</b>${ctx.c.teacherName && ctx.c.teacherId !== ctx.t.id ? ` · milik ${esc(ctx.c.teacherName)}` : ''}</div></div></div>
+        ${ctx.classes.length > 1 ? `<select class="dh-select" data-act="switchclass" aria-label="Pilih kelas">${ctx.classes.map((c) => `<option value="${c.id}" ${c.id === ctx.c.id ? 'selected' : ''}>${esc(c.name)}${ctx.t.isAdmin && c.teacherName ? ` · ${esc(c.teacherName)}` : ''}</option>`).join('')}</select>` : ''}
+      </section>
       <nav class="tabs">${TABS.map(([k, l]) => `<a href="#/guru/${k}" class="${k === tab ? 'on' : ''}">${l}</a>`).join('')}</nav>
       ${inner}`, { cls: 'wide', right: `<button class="link" data-act="logout">Keluar</button>` });
   }
