@@ -142,6 +142,11 @@
           'Setelah tugas dari guru selesai (✅ Selesai), muncul pertanyaan <b>"Bagaimana tugas ini menurutmu?"</b>.',
           'Ketuk bintang (1 sampai 5), tulis pendapatmu jika mau, lalu ketuk <b>Kirim ulasan</b>.',
         ] },
+        { icon: '🎮', t: 'Permainan dan bintang', steps: [
+          'Ketuk <b>🎮 Permainan matematika</b> di beranda. Pilih kelasmu, lalu pilih permainan.',
+          '<b>⚡ Kilat</b>: jawab sebanyak mungkin dalam 60 detik. <b>🎈 Balon</b>: ketuk balon yang sesuai perintah. <b>🃏 Pasangan</b>: cocokkan kartu soal dengan jawabannya.',
+          'Setiap ronde memberi sampai <b>3 bintang ⭐</b>. Bintangmu tersimpan dan terlihat oleh guru dan orang tua.',
+        ] },
         { icon: '🎁', t: 'Papan hadiah', steps: [
           'Setiap kelas punya papan dengan 36 kotak. Di balik setiap kotak ada hadiah!',
           'Ketuk sebuah kotak untuk melihat tantangannya, misalnya "Jawab 50 soal" atau "Capai skor 80 di 3 keterampilan".',

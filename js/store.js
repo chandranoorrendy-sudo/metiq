@@ -78,6 +78,14 @@
     progress(sid, skillId) { return (db.progress[sid] || {})[skillId] || { score: 0, att: 0, ok: 0, ms: 0, last: 0 }; },
     progressAll(sid) { return db.progress[sid] || {}; },
     answersOf(sid) { return db.answers.filter((a) => a.sid === sid); },
+    recordGame(sid, gameId, points, stars, ms) {
+      const p = db.progress[sid] = db.progress[sid] || {}, key = 'g:' + gameId;
+      const cur = p[key] || { score: 0, att: 0, ok: 0, ms: 0, last: 0 };
+      cur.score = Math.max(cur.score, Math.min(100, points)); cur.att++; cur.ok += stars; cur.ms += Math.min(ms, 600000); cur.last = Date.now();
+      p[key] = cur; save();
+      return Object.assign({}, cur);
+    },
+    gameStars(sid) { return Object.entries(db.progress[sid] || {}).filter(([k]) => k.startsWith('g:')).reduce((t, [, v]) => t + (v.ok || 0), 0); },
     record(sid, skillId, ans) {
       const p = db.progress[sid] = db.progress[sid] || {};
       const cur = p[skillId] || { score: 0, att: 0, ok: 0, ms: 0, last: 0 };

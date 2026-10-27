@@ -34,6 +34,11 @@
       flushTimer = setTimeout(Cloud.flush, 1500);
     },
 
+    queueProgress(sid, code, key, progress) {
+      const box = outbox[sid] = outbox[sid] || { code, answers: [], progress: {} };
+      box.code = code; box.progress[key] = progress;
+      saveOut(); clearTimeout(flushTimer); flushTimer = setTimeout(Cloud.flush, 1500);
+    },
     pending(sid) { return outbox[sid] || null; },
     pendingCount(sid) { return outbox[sid] ? outbox[sid].answers.length : 0; },
 
