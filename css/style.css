@@ -489,3 +489,29 @@ details[open].trouble > summary, details[open].prog > summary { margin-bottom: 1
 h3.sub { font-size: .95rem; margin: 12px 0 2px; color: var(--muted); }
 .asg-t .pill, .asg .pill, .notif-card .pill, .lrow .pill { white-space: normal; }
 .pill.special { white-space: normal; }
+
+/* ---------- Dasbor siswa (gaya IXL): mau belajar apa, kemajuan minggu ini, papan hadiah ---------- */
+.dwork h2, .howdo h2 { margin-top: 0; }
+.dtabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin: 4px 0 12px; }
+.dtabs button { border: 2px solid var(--line); background: #fff; font: inherit; font-weight: 800; font-size: .84rem; padding: 7px 6px; border-radius: 12px; color: var(--ink); cursor: pointer; line-height: 1.2; min-width: 0; }
+.dtabs button.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+.dtabs button b { display: inline-block; min-width: 20px; padding: 0 5px; border-radius: 999px; background: #ef4444; color: #fff; font-size: .75rem; line-height: 20px; }
+.dempty { text-align: center; padding: 14px 6px; }
+.sk-name small { display: block; color: var(--muted); font-size: .78rem; font-weight: 700; }
+.wkstats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin: 10px 0; }
+.wkstats div { background: var(--bg, #f5f3ff); border-radius: 12px; padding: 10px 6px; text-align: center; }
+.wkstats b { display: block; white-space: nowrap; font-size: 1.2rem; font-weight: 900; color: var(--brand); }
+.wkstats small { color: var(--muted); font-weight: 700; font-size: .78rem; }
+.prizecard { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
+.prizecard small { display: block; color: var(--muted); font-weight: 700; }
+.pz-ico { font-size: 2.6rem; } .pz-go { font-size: 1.3rem; font-weight: 900; color: var(--brand); }
+h2.allsk { margin: 18px 0 8px; }
+.pzwrap { display: grid; gap: 14px; margin-bottom: 14px; }
+.pzboard { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; background: #4d7c3a; padding: 8px; border-radius: 16px; }
+.pz { aspect-ratio: 1; border: 0; border-radius: 8px; background: #dcefc8; color: #9cc483; font: inherit; font-weight: 900; font-size: 1.4rem; cursor: pointer; padding: 0; }
+.pz.open { background: linear-gradient(135deg, #fff7c2, #ffd84d); color: inherit; font-size: 1.6rem; box-shadow: inset 0 0 0 2px #e5b400; }
+.pz.sel { outline: 3px solid #fff; outline-offset: -3px; transform: scale(1.06); }
+.pzside h2 { margin-top: 0; }
+.pzinfo { background: #fffbe6; border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; min-height: 44px; }
+.pzbig { font-size: 1.8rem; vertical-align: middle; }
+@media (min-width: 760px) { .pzwrap { grid-template-columns: 1.4fr 1fr; align-items: start; } }

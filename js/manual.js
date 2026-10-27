@@ -116,6 +116,17 @@
           'Ketuk sebuah bab, lalu ketuk keterampilan yang ingin kamu latih.',
           'Jika ada <b>📌 Tugas dari guru</b>, kerjakan itu dulu ya!',
         ] },
+        { icon: '🤔', t: 'Mau belajar apa?', steps: [
+          '<b>📌 Dari guru</b>: tugas dari Bu/Pak Guru. Angka merah = tugas yang belum selesai.',
+          '<b>🕘 Terakhir</b>: keterampilan yang terakhir kamu latih, supaya mudah dilanjutkan.',
+          '<b>✨ Saran</b>: rekomendasi untukmu: mengulang yang masih sulit, melanjutkan, atau keterampilan baru.',
+          '<b>📈 Bagaimana kemajuanku?</b> menunjukkan jumlah soal, waktu belajar, dan keterampilan yang berkembang minggu ini. Ketuk <b>Lihat laporanku</b> untuk laporan lengkap.',
+        ] },
+        { icon: '🎁', t: 'Papan hadiah', steps: [
+          'Setiap kelas punya papan dengan 36 kotak. Di balik setiap kotak ada hadiah!',
+          'Ketuk sebuah kotak untuk melihat tantangannya, misalnya "Jawab 50 soal" atau "Capai skor 80 di 3 keterampilan".',
+          'Saat tantangan tercapai, kotaknya terbuka sendiri. Berapa banyak hadiah yang bisa kamu kumpulkan?',
+        ] },
         { icon: '✏️', t: 'Menjawab soal', steps: [
           'Baca soalnya. Ketuk 🔊 jika ingin soal dibacakan.',
           'Ketuk jawaban yang benar, atau ketik angka dengan tombol angka, lalu ketuk <b>Jawab</b>.',

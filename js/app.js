@@ -189,13 +189,32 @@
     const prog = S.progressAll(st.id);
     const asg = S.assignmentsFor(st.id);
     asg.forEach((a) => { if (!S.isDone(a.id, st.id) && asgComplete(a, st.id)) markDone(a.id, st.id, 'siswa'); });
-    const st7 = stats(st.id, 7);
+    const g = getGrade(), wk = weekStats(st.id), pb = prizeBoard(st.id, g);
+    const todo = asg.filter((a) => !S.isDone(a.id, st.id));
+    const tab = ss.get('dtab', todo.length ? 'guru' : 'rek');
+    const recent = Object.entries(prog).filter(([k, p]) => SKILLS[k] && p.last && p.att).sort((a, b) => b[1].last - a[1].last).slice(0, 6);
+    const rec = recommend(st.id, g);
     const open = sessionStorage.getItem('metiq_open') || '';
     const unsent = cloudOn() ? Cloud.pendingCount(st.id) : 0;
+    const panel = (id, inner) => `<div class="dpanel" data-p="${id}" ${tab === id ? '' : 'hidden'}>${inner}</div>`;
+    const tabBtn = (id, label) => `<button role="tab" class="${tab === id ? 'on' : ''}" data-act="dtab" data-t="${id}">${label}</button>`;
     app.innerHTML = shell(`
       ${unsent ? `<p class="offline">📶 ${unsent} jawaban menunggu internet untuk dikirim ke guru.</p>` : ''}
-      <section class="hello"><a class="av avedit" href="#/avatar/saya" aria-label="Ganti avatar">${avHTML(st.avatar)}<i>✏️</i></a><div><h1>Halo, ${esc(st.name)}!</h1><p class="muted">${esc(c ? c.name : '')} · ${st7.answered} soal minggu ini · ${Object.values(prog).filter((p) => p.score >= 100).length} 🏆</p></div></section>
-      ${asg.length ? `<section class="card tugas"><h2>📌 Tugas dari guru</h2>${asg.map((a) => `<div class="asg">${a.students && a.students.length ? '<span class="pill special">🎯 Khusus untukmu</span>' : ''}${S.isDone(a.id, st.id) ? '<span class="pill okp">✅ Selesai</span>' : ''}${a.note ? `<p><b>${esc(a.note)}</b>${a.due ? ` · <span class="muted">sampai ${esc(fdue(a.due))}</span>` : ''}</p>` : ''}<div class="sklist">${a.skills.filter((k) => SKILLS[k]).map((k) => skillLink(k, prog[k])).join('')}</div></div>`).join('')}</section>` : ''}
+      <section class="hello"><a class="av avedit" href="#/avatar/saya" aria-label="Ganti avatar">${avHTML(st.avatar)}<i>✏️</i></a><div><h1>Halo, ${esc(st.name)}!</h1><p class="muted">${greet()} · ${esc(c ? c.name : '')}</p></div></section>
+      <section class="card dwork"><h2>🤔 Mau belajar apa?</h2>
+        <div class="dtabs" role="tablist">${tabBtn('guru', `📌 Dari guru${todo.length ? ` <b>${todo.length}</b>` : ''}`)}${tabBtn('baru', '🕘 Terakhir')}${tabBtn('rek', '✨ Saran')}</div>
+        ${panel('guru', asg.length ? asg.map((a) => `<div class="asg">${a.students && a.students.length ? '<span class="pill special">🎯 Khusus untukmu</span>' : ''}${S.isDone(a.id, st.id) ? '<span class="pill okp">✅ Selesai</span>' : ''}${a.note ? `<p><b>${esc(a.note)}</b>${a.due ? ` · <span class="muted">sampai ${esc(fdue(a.due))}</span>` : ''}</p>` : ''}<div class="sklist">${a.skills.filter((k) => SKILLS[k]).map((k) => skillLink(k, prog[k])).join('')}</div></div>`).join('') : '<p class="muted dempty">Belum ada tugas. Tugas dari Bu/Pak Guru akan muncul di sini.</p>')}
+        ${panel('baru', recent.length ? `<div class="sklist">${recent.map(([k, p]) => skillLink(k, p, `Kelas ${SKILLS[k].grade} · ${ago(p.last)}`)).join('')}</div>` : '<p class="muted dempty">Keterampilan yang terakhir kamu latih akan muncul di sini. Ayo mulai!</p>')}
+        ${panel('rek', rec.length ? `<p class="small muted">Pilihan untukmu di <b>Kelas ${g}</b>:</p><div class="sklist">${rec.map((r) => skillLink(r.id, prog[r.id], r.why)).join('')}</div>` : `<p class="muted dempty">Hebat! Semua keterampilan Kelas ${g} sudah kamu kuasai. 🏆</p>`)}
+      </section>
+      <div class="grid2">
+        <section class="card howdo"><h2>📈 Bagaimana kemajuanku?</h2><p class="small muted">Minggu ini (${fdate(wk.from)} – hari ini)</p>
+          <div class="wkstats"><div><b>${wk.n}</b><small>soal dijawab</small></div><div><b>${fmtTime(wk.ms)}</b><small>waktu belajar</small></div><div><b>${wk.skills}</b><small>keterampilan berkembang</small></div></div>
+          ${wk.n ? '' : '<p class="small">Minggu ini belum berlatih. Ayo mulai! 💪</p>'}
+          <a class="btn sm ghost" href="#/laporanku">Lihat laporanku →</a></section>
+        <a class="card prizecard" href="#/hadiah"><span class="pz-ico">🎁</span><span class="grow"><b>Papan hadiah Kelas ${g}</b><small>${pb.open} dari ${pb.cells.length} hadiah terbuka</small><small>${pb.open < pb.cells.length ? `Hadiah berikutnya: ${nextWin(pb, true)}` : 'Semua hadiah sudah terbuka! 🎉'}</small></span><span class="pz-go">→</span></a>
+      </div>
+      <h2 class="allsk">📚 Semua keterampilan</h2>
       ${gradeTabs()}
       <div class="units">${curUnits().map((u) => {
         const us = unitScore(st.id, u);
@@ -203,9 +222,93 @@
       }).join('')}</div>
     `, { right: `<span class="topr"><a class="help" href="#/panduan/siswa" aria-label="Panduan">❓</a>${ses.back ? '<button class="link" data-act="backparent">← Akun orang tua</button>' : '<button class="link" data-act="logout">Keluar</button>'}</span>` });
   }
-  function skillLink(id, p) {
+
+  /* ---------- Dasbor siswa: sapaan, rekomendasi, kemajuan minggu ini, papan hadiah ---------- */
+  const greet = () => { const h = new Date().getHours(); return h < 11 ? 'Selamat pagi ☀️' : h < 15 ? 'Selamat siang 🌤️' : h < 18 ? 'Selamat sore 🌇' : 'Selamat malam 🌙'; };
+  // Minggu berjalan, mulai hari Senin
+  function weekStats(sid) {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    const from = d.getTime() - ((d.getDay() + 6) % 7) * DAY;
+    const ans = S.answersOf(sid).filter((a) => a.ts >= from);
+    return { from, n: ans.length, ms: ans.reduce((t, a) => t + Math.min(a.ms || 0, 180000), 0), skills: new Set(ans.filter((a) => a.ok).map((a) => a.skill)).size };
+  }
+  // Rekomendasi: ulangi yang lemah, lanjutkan yang sedang dikerjakan, lalu keterampilan baru setelah yang terakhir dikuasai
+  function recommend(sid, g) {
+    const prog = S.progressAll(sid), order = unitsOf(g).flatMap((u) => u.skills.map((x) => x.id));
+    let last = -1;
+    order.forEach((id, i) => { if ((prog[id] || {}).score >= 80) last = i; });
+    const out = weaknesses(sid).filter((w) => w.skill.grade === g).slice(0, 2).map((w) => ({ id: w.id, why: `Ulangi lagi · skormu ${w.score}` }));
+    order.filter((id) => prog[id] && prog[id].att && prog[id].score < 80 && !out.some((o) => o.id === id))
+      .sort((a, b) => (prog[b].last || 0) - (prog[a].last || 0)).slice(0, 2)
+      .forEach((id) => out.push({ id, why: `Lanjutkan · skormu ${prog[id].score}` }));
+    order.slice(last + 1).filter((id) => !(prog[id] && prog[id].att)).slice(0, Math.max(2, 6 - out.length))
+      .forEach((id) => out.push({ id, why: 'Keterampilan baru' }));
+    return out.slice(0, 6);
+  }
+
+  // Papan hadiah: 36 kotak per kelas; tiap kotak punya tantangan, dan hadiahnya terbuka saat tantangan tercapai.
+  // Dihitung dari SmartScore yang tersimpan permanen (jumlah soal, waktu, keterampilan mahir/tuntas).
+  const PRIZES = {
+    1: '🐶🐱🐭🐹🐰🦊🐻🐼🐨🐯🦁🐮🐷🐸🐵🐔🐧🐦🐤🦆🦉🐴🦄🐝🐛🦋🐌🐞🐢🐍🦖🐙🦀🐠🐬🐳',
+    2: '🍎🍐🍊🍋🍌🍉🍇🍓🍈🍒🍑🥭🍍🥥🥝🍅🥑🥦🥕🌽🥔🍠🥐🍞🧀🥚🍳🥞🍕🍔🍟🌭🍿🍩🍪🎂',
+    3: '🚗🚕🚙🚌🚎🚓🚑🚒🚐🚚🚛🚜🛵🚲🛴🚂🚆🚇🚊🚝🚄🚁🛸🚀⛵🚤🚠🚡🛺🚃🌍🌙⭐🪐🌟🚘',
+    4: '⚽🏀🏈⚾🥎🎾🏐🏉🥏🎱🏓🏸🏒🥍🏏🥅🎯🪁🛹🥊🥋🎽🛷🥌🎿🏆🥇🥈🥉🏅🎻🎸🎺🎷🥁🎹',
+    5: '🌵🎄🌲🌳🌴🌱🌿🍀🎍🍁🍂🍃🍄🌾💐🌷🌹🥀🌺🌸🌼🌻🌞🌝🌛🌈🌊🔥💧🌋🗻🐚🪸🪨🌰🎋',
+    6: '🔭🔬💡🔦🧭🧲🧪🧫🧬💎🔑🎁🎈🎀🎨🧩🎲🧸📚📐📏🧮🎓👑🎩🎒🧳⌛⏰📷🎥💻📱🎧🎤🪄',
+  };
+  const CHALLENGES = [
+    ...[10, 20, 30, 50, 75, 100, 150, 200, 250, 300, 400, 500].map((n) => ({ k: 'q', n })),
+    ...[5, 10, 15, 20, 30, 45, 60, 90, 120, 180].map((n) => ({ k: 't', n })),
+    ...[1, 2, 3, 4, 6, 8, 10, 12, 15, 20].map((n) => ({ k: 's', n })),
+    ...[1, 2, 3, 5].map((n) => ({ k: 'm', n })),
+  ];
+  const chLabel = (c) => ({ q: `Jawab ${c.n} soal`, t: `Berlatih selama ${c.n} menit`, s: `Capai skor 80 (Mahir) di ${c.n} keterampilan`, m: `Tuntaskan ${c.n} keterampilan (skor 100)` }[c.k]);
+  const chUnit = { q: 'soal', t: 'menit', s: 'keterampilan mahir', m: 'keterampilan tuntas' };
+  // Urutan kotak diacak tetap per kelas, agar tantangan mudah dan sulit tersebar di papan
+  function boardOrder(g) {
+    const idx = CHALLENGES.map((_, i) => i); let x = g * 9301 + 49297;
+    for (let i = idx.length - 1; i > 0; i--) { x = (x * 9301 + 49297) % 233280; const j = Math.floor((x / 233280) * (i + 1)); [idx[i], idx[j]] = [idx[j], idx[i]]; }
+    return idx;
+  }
+  function prizeBoard(sid, g) {
+    const rows = Object.entries(S.progressAll(sid)).filter(([k]) => SKILLS[k] && SKILLS[k].grade === g).map(([, p]) => p);
+    const st = { q: rows.reduce((t, p) => t + (p.att || 0), 0), t: Math.floor(rows.reduce((t, p) => t + (p.ms || 0), 0) / 60000), s: rows.filter((p) => p.score >= 80).length, m: rows.filter((p) => p.score >= 100).length };
+    const prizes = [...PRIZES[g]];
+    const cells = boardOrder(g).map((ci, pos) => { const c = CHALLENGES[ci]; return { pos, c, prize: prizes[ci], have: st[c.k], open: st[c.k] >= c.n }; });
+    const next = {};
+    CHALLENGES.forEach((c) => { if (st[c.k] < c.n && !(c.k in next)) next[c.k] = c.n - st[c.k]; });
+    return { st, cells, next, open: cells.filter((x) => x.open).length };
+  }
+  const nextWin = (pb, short) => { const parts = Object.entries(pb.next).map(([k, n]) => `${n} ${chUnit[k]} lagi`); return short ? parts.slice(0, 2).join(' atau ') : parts.join(', atau '); };
+  function viewPrizes() {
+    const ses = session.get(); const st = S.student(ses.id);
+    if (ses.role !== 'siswa' || !st) return go('#/siswa');
+    const g = getGrade(), pb = prizeBoard(st.id, g);
+    app.innerHTML = shell(`<a class="back" href="#/belajar">← Kembali</a>
+      <h1>🎁 Papan hadiah</h1><p class="muted">Ada apa di balik kotak itu? Setiap kotak punya tantangan. Selesaikan tantangannya untuk membuka hadiah!</p>
+      ${gradeTabs()}
+      <div class="pzwrap"><div class="pzboard">${pb.cells.map((x) => `<button class="pz ${x.open ? 'open' : ''}" data-act="pz" data-i="${x.pos}" aria-label="${x.open ? 'Hadiah terbuka' : 'Kotak tertutup'}">${x.open ? x.prize : '?'}</button>`).join('')}</div>
+        <aside class="card pzside"><h2>Kesibukanmu di Kelas ${g}</h2>
+          <div id="pzinfo" class="pzinfo small">👆 Ketuk sebuah kotak untuk melihat tantangannya.</div>
+          <div class="lrow"><span class="grow">Soal dijawab</span><b>${pb.st.q}</b></div>
+          <div class="lrow"><span class="grow">Waktu berlatih</span><b>${fmtTime(pb.st.t * 60000)}</b></div>
+          <div class="lrow"><span class="grow">Keterampilan mahir ⭐</span><b>${pb.st.s}</b></div>
+          <div class="lrow"><span class="grow">Keterampilan tuntas 🏆</span><b>${pb.st.m}</b></div>
+          <div class="lrow"><span class="grow">Hadiah terbuka 🎁</span><b>${pb.open}/${pb.cells.length}</b></div>
+          ${pb.open < pb.cells.length ? `<p class="small"><b>Hadiah berikutnya:</b> ${nextWin(pb)}.</p>` : `<p class="small"><b>Semua hadiah Kelas ${g} sudah terbuka! 🎉</b></p>`}
+        </aside></div>
+      <div class="row-btn"><a class="btn" href="#/belajar">Ayo berlatih</a></div>`,
+    { right: `<span class="topr"><a class="help" href="#/panduan/siswa" aria-label="Panduan">❓</a></span>` });
+  }
+  function viewMyReport() {
+    const ses = session.get(); const st = S.student(ses.id);
+    if (ses.role !== 'siswa' || !st) return go('#/siswa');
+    app.innerHTML = shell(`<a class="back" href="#/belajar">← Kembali</a>${reportHTML(st, 'siswa')}`, { right: `<span class="topr"><a class="help" href="#/panduan/siswa" aria-label="Panduan">❓</a></span>` });
+  }
+
+  function skillLink(id, p, sub) {
     const s = SKILLS[id]; const sc = p ? p.score : 0;
-    return `<a class="sk" href="#/latihan/${id}"><span class="sk-code">${s.code}</span><span class="sk-name">${s.name}</span>${chip(sc)}</a>`;
+    return `<a class="sk" href="#/latihan/${id}"><span class="sk-code">${s.code}</span><span class="sk-name">${s.name}${sub ? `<small>${sub}</small>` : ''}</span>${chip(sc)}</a>`;
   }
 
   /* ---------- Latihan ---------- */
@@ -256,6 +359,7 @@
     const tag = ok ? null : classify(q, given);
     const asgDone = (a) => a.skills.filter((k) => SKILLS[k]).every((k) => S.progress(P.sid, k).score >= 80);
     const myAsg = S.assignmentsFor(P.sid).filter((a) => a.skills.includes(P.sk.id) && !asgDone(a));
+    const pzBefore = prizeBoard(P.sid, P.sk.grade).open;
     const res = S.record(P.sid, P.sk.id, { ok, given: strip(given), answer: strip(q.answer), text: strip(q.log || q.text), tag, ms: Date.now() - P.qStart });
     if (cloudOn()) Cloud.queue(P.sid, session.get().code, S.lastAnswer(), Object.assign({}, res));
     const before = P.score; P.score = res.score;
@@ -265,6 +369,7 @@
     document.querySelectorAll('.opt').forEach((b) => { const v = q.options[+b.dataset.i]; if (v === q.answer) b.classList.add('right'); else if (v === given) b.classList.add('wrong'); b.disabled = true; });
     const fb = document.getElementById('fb');
     const finished = ok ? myAsg.filter(asgDone) : [];
+    if (prizeBoard(P.sid, P.sk.grade).open > pzBefore) setTimeout(() => toast('🎁 Hadiah baru terbuka di papan hadiahmu!'), finished.length || (P.score >= 80 && before < 80) ? 1300 : 300);
     finished.forEach((a) => markDone(a.id, P.sid, 'siswa'));
     if (ok) {
       if (P.score >= 100 && before < 100) window.SFX.mastered();
@@ -690,7 +795,7 @@
       if (weak[0]) story += ` Yang paling perlu dilatih: <b>${weak[0].skill.name.toLowerCase()}</b>${weak[0].tag && weak[0].tag !== 'konsep' ? ` — ${nm} ${TAGS[weak[0].tag].label.toLowerCase()}` : ''}.`;
     }
     return `
-      <section class="card report-head"><span class="av lg">${avHTML(k.avatar)}</span><div><h1>${audience === 'ortu' ? 'Laporan belajar ' : ''}${nm}</h1><p class="muted">${esc((S.cls(k.classId) || {}).name || '')}</p></div></section>
+      <section class="card report-head"><span class="av lg">${avHTML(k.avatar)}</span><div><h1>${audience === 'ortu' ? 'Laporan belajar ' : audience === 'siswa' ? 'Laporan belajarku: ' : ''}${nm}</h1><p class="muted">${esc((S.cls(k.classId) || {}).name || '')} · 🎁 ${GRADES.reduce((t, g) => t + prizeBoard(k.id, g.id).open, 0)} hadiah</p></div></section>
       <section class="card story"><p>${story}</p></section>
       <div class="kpis"><div class="kpi"><small>Total soal</small><b>${sAll.answered}</b></div><div class="kpi"><small>Ketepatan</small><b>${sAll.acc}%</b></div><div class="kpi"><small>Waktu belajar</small><b>${fmtTime(sAll.ms)}</b></div><div class="kpi"><small>Keterampilan mahir</small><b>${sAll.proficient}<span> · ${sAll.mastered}🏆</span></b></div></div>
       <section class="card"><h2>Aktivitas 7 hari terakhir</h2><div class="week">${s7.byDay.map((d) => `<div class="wd"><span class="wv">${d.n || ''}</span><i style="height:${Math.round((d.n / maxDay) * 100)}%"></i><small>${hariPendek[new Date(d.d0).getDay()]}</small></div>`).join('')}</div></section>
@@ -900,7 +1005,7 @@
     const [a, b, c] = parts;
     const seq = ++routeSeq;
     S.setMode(cloudOn());
-    const needsData = a === 'belajar' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi';
+    const needsData = a === 'belajar' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi';
     if (needsData && !(await ensure())) return;
     if (seq !== routeSeq) return;
     window.scrollTo(0, 0);
@@ -909,6 +1014,8 @@
       case 'kurikulum': return viewCurriculum();
       case 'siswa': return b ? viewStudentPick(b) : viewStudentEnter();
       case 'belajar': return viewStudentHome();
+      case 'hadiah': return viewPrizes();
+      case 'laporanku': return viewMyReport();
       case 'latihan': return viewPractice(b);
       case 'guru': if (b === 'masuk' || b === 'daftar') return viewTeacherAuth(b); if (!b) { const ses = session.get(); return ses.role === 'guru' && (cloudOn() ? ses.token : S.teacher(ses.id)) ? go('#/guru/ringkasan') : viewTeacherAuth(); } return viewTeacher(b, c);
       case 'coba': return viewPreview(b);
@@ -928,6 +1035,19 @@
     if (!el && row && !e.target.closest('a')) return go(row.dataset.href);
     if (!el) return;
     const act = el.dataset.act;
+    if (act === 'dtab') {
+      ss.set('dtab', el.dataset.t);
+      document.querySelectorAll('.dtabs button').forEach((b) => b.classList.toggle('on', b === el));
+      document.querySelectorAll('.dpanel').forEach((p) => { p.hidden = p.dataset.p !== el.dataset.t; });
+      return;
+    }
+    if (act === 'pz') {
+      const pb = prizeBoard(session.get().id, getGrade()), x = pb.cells[+el.dataset.i], box = document.getElementById('pzinfo');
+      document.querySelectorAll('.pz.sel').forEach((b) => b.classList.remove('sel')); el.classList.add('sel');
+      if (box) box.innerHTML = x.open ? `<span class="pzbig">${x.prize}</span> Hadiah ini kamu dapat karena: <b>${chLabel(x.c)}</b>. Hebat!`
+        : `🔒 Untuk membuka kotak ini: <b>${chLabel(x.c)}</b>.<br>Sekarang kamu punya ${x.have} ${chUnit[x.c.k]}, kurang <b>${x.c.n - x.have}</b> lagi.`;
+      return;
+    }
     if (act === 'grade') { setGrade(+el.dataset.g); sessionStorage.removeItem('metiq_open'); return route(); }
     if (act === 'range') {
       const p = el.dataset.p, cur = ss.get('range', { preset: 30 });
