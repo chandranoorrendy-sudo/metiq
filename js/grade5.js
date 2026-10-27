@@ -27,7 +27,7 @@
       ],
     },
     {
-      id: '5B', grade: 5, name: 'Perkalian dan pembagian', icon: '✖️', color: '#7c5cff',
+      id: '5B', grade: 5, name: 'Perkalian dan pembagian', icon: '✖️', color: '#1fbf9f',
       sg: '5A · Four Operations (multiply and divide by 2-digit)', ixl: 'D, E, G', km: 'Bilangan',
       tip: 'Perkirakan dulu: 312 × 48 kira-kira 300 × 50 = 15.000. Jika jawabanmu jauh dari itu, periksa lagi.',
       skills: [
@@ -101,7 +101,7 @@
       ],
     },
     {
-      id: '5I', grade: 5, name: 'Rasio', icon: '⚖️', color: '#a29bfe',
+      id: '5I', grade: 5, name: 'Rasio', icon: '⚖️', color: '#66ffdb',
       sg: '5B · Ratio', ixl: '— (IXL membahas rasio di kelas 6)', km: 'Bilangan (perbandingan)',
       tip: 'Saat memasak, rasio 2 gelas beras : 3 gelas air. Jika berasnya 4 gelas, airnya berapa?',
       skills: [

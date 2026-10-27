@@ -27,7 +27,7 @@
       ],
     },
     {
-      id: '4B', grade: 4, name: 'Penjumlahan dan pengurangan bilangan besar', icon: '➕', color: '#7c5cff',
+      id: '4B', grade: 4, name: 'Penjumlahan dan pengurangan bilangan besar', icon: '➕', color: '#1fbf9f',
       sg: '4A · Addition and Subtraction', ixl: 'D, E', km: 'Bilangan',
       tip: 'Periksa hasil dengan memperkirakan dulu: 48.920 + 31.150 kira-kira 49.000 + 31.000 = 80.000.',
       skills: [
@@ -79,7 +79,7 @@
       ],
     },
     {
-      id: '4G', grade: 4, name: 'Pola bilangan', icon: '🔁', color: '#a29bfe',
+      id: '4G', grade: 4, name: 'Pola bilangan', icon: '🔁', color: '#66ffdb',
       sg: '4A · Patterns', ixl: 'R, S', km: 'Aljabar (pola bilangan)',
       tip: 'Minta anak menebak aturan pola, lalu membuat pola sendiri untuk ditebak orang tua.',
       skills: [

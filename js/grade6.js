@@ -24,7 +24,7 @@
       ],
     },
     {
-      id: '6B', grade: 6, name: 'Faktorisasi prima, FPB, dan KPK', icon: '🧩', color: '#7c5cff',
+      id: '6B', grade: 6, name: 'Faktorisasi prima, FPB, dan KPK', icon: '🧩', color: '#1fbf9f',
       sg: '6A · (lanjutan Factors and Multiples)', ixl: 'F', km: 'Bilangan (KPK dan FPB; CP Fase C)',
       tip: 'Buat pohon faktor: 60 → 6 × 10 → 2 × 3 × 2 × 5. Urutkan menjadi 2 × 2 × 3 × 5.',
       skills: [
@@ -66,7 +66,7 @@
       ],
     },
     {
-      id: '6F', grade: 6, name: 'Rasio, laju, dan kecepatan', icon: '🚗', color: '#a29bfe',
+      id: '6F', grade: 6, name: 'Rasio, laju, dan kecepatan', icon: '🚗', color: '#66ffdb',
       sg: '6A · Ratio; 6B · Speed', ixl: 'S, T', km: 'Bilangan (perbandingan); Pengukuran (kecepatan)',
       tip: 'Dalam perjalanan, hitung kecepatan rata-rata: jarak ÷ waktu. 120 km dalam 2 jam = 60 km/jam.',
       skills: [

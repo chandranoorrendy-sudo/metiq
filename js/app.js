@@ -67,7 +67,7 @@
   }
 
   const shell = (inner, opts = {}) => `
-    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg" alt="">Metiq</a>${opts.right || ''}</header>
+    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=26" alt="">Metiq</a>${opts.right || ''}</header>
     <main class="wrap ${opts.cls || ''}">${inner}</main>`;
 
   /* ---------- Analitik (dipakai guru dan orang tua) ---------- */

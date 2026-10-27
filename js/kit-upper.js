@@ -119,7 +119,7 @@
       return s + '</svg>';
     },
     pie(slices) {
-      const cols = ['#ff7a59', '#4d96ff', '#2ecc71', '#f9c74f', '#a29bfe'];
+      const cols = ['#ff7a59', '#4d96ff', '#2ecc71', '#f9c74f', '#66ffdb'];
       let s = '<div class="piewrap"><svg class="pie" viewBox="0 0 160 160">', a0 = -Math.PI / 2;
       slices.forEach(([, p], i) => { const a1 = a0 + (p / 100) * 2 * Math.PI; s += `<path d="M80 80 L${80 + 70 * Math.cos(a0)} ${80 + 70 * Math.sin(a0)} A70 70 0 ${p > 50 ? 1 : 0} 1 ${80 + 70 * Math.cos(a1)} ${80 + 70 * Math.sin(a1)} Z" style="fill:${cols[i]}"/>`; a0 = a1; });
       s += '</svg><div class="pielg">' + slices.map(([l, p], i) => `<span><i style="background:${cols[i]}"></i>${l} ${p}%</span>`).join('') + '</div></div>';
@@ -129,7 +129,7 @@
       const d = [['U', 0], ['TL', 45], ['T', 90], ['TG', 135], ['S', 180], ['BD', 225], ['B', 270], ['BL', 315]];
       return `<svg class="ang" viewBox="0 0 160 160"><circle cx="80" cy="80" r="56" class="cring"/>${d.map(([l, a]) => { const t = ((a - 90) * Math.PI) / 180; return `<line x1="80" y1="80" x2="${80 + 50 * Math.cos(t)}" y2="${80 + 50 * Math.sin(t)}" class="${l.length === 1 ? '' : 'thin'}"/><text x="${80 + 68 * Math.cos(t)}" y="${84 + 68 * Math.sin(t)}" class="cl">${l}</text>`; }).join('')}</svg>`;
     },
-    poly(n, color = '#7c5cff') {
+    poly(n, color = '#1fbf9f') {
       const pts = range(0, n - 1).map((i) => { const a = (i / n) * 2 * Math.PI - Math.PI / 2; return `${60 + 52 * Math.cos(a)},${62 + 52 * Math.sin(a)}`; }).join(' ');
       return `<svg class="shape" viewBox="0 0 120 120" style="fill:${color}"><polygon points="${pts}"/></svg>`;
     },

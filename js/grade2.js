@@ -61,7 +61,7 @@
     rect(rows, cols, labels) {
       return `<div class="rgrid-wrap">${labels ? `<span class="rl-top">${cols} cm</span>` : ''}<div class="rgrid-row">${labels ? `<span class="rl-side">${rows} cm</span>` : ''}<div class="rgrid" style="grid-template-columns:repeat(${cols},24px)">${'<i></i>'.repeat(rows * cols)}</div></div></div>`;
     },
-    poly(n, color = '#7c5cff') {
+    poly(n, color = '#1fbf9f') {
       const pts = range(0, n - 1).map((i) => { const a = (i / n) * 2 * Math.PI - Math.PI / 2; return `${60 + 52 * Math.cos(a)},${62 + 52 * Math.sin(a)}`; }).join(' ');
       return `<svg class="shape" viewBox="0 0 120 120" style="fill:${color}"><polygon points="${pts}"/></svg>`;
     },
@@ -91,7 +91,7 @@
       ],
     },
     {
-      id: '2B', grade: 2, name: 'Fakta bilangan dan kesamaan', icon: '⚖️', color: '#7c5cff',
+      id: '2B', grade: 2, name: 'Fakta bilangan dan kesamaan', icon: '⚖️', color: '#1fbf9f',
       sg: '2A · Mental Calculation (Addition and Subtraction)', ixl: 'F, G, H, I, J, Y', km: 'Bilangan; Aljabar (kesamaan dua kalimat matematika)',
       tip: 'Main "kartu cepat" 5 menit sehari: tunjukkan 7 + 8, anak menjawab sebelum hitungan ke-3.',
       skills: [
@@ -125,7 +125,7 @@
       ],
     },
     {
-      id: '2E', grade: 2, name: 'Penjumlahan dan pengurangan sampai 1.000', icon: '🚀', color: '#a29bfe',
+      id: '2E', grade: 2, name: 'Penjumlahan dan pengurangan sampai 1.000', icon: '🚀', color: '#66ffdb',
       sg: '2A · Addition and Subtraction within 1,000', ixl: 'S, T, U, V, W', km: 'Pengayaan (CP Fase B)',
       tip: 'Tulis bersusun rapi dengan kolom ratusan, puluhan, satuan. Kotak-kotak buku matematika membantu.',
       skills: [
@@ -239,7 +239,7 @@
       sg: '2B · Shapes and Patterns', ixl: 'II, JJ, KK', km: 'Geometri; Aljabar (pola bilangan)',
       tip: 'Hitung sisi dan pojok benda di rumah: ubin, kotak susu, rubik. Susun ubin kecil untuk membuat persegi panjang.',
       skills: [
-        { id: '2O1', name: 'Nama segi banyak', gen() { const n = pick([3, 4, 5, 6, 8]); const nm = { 3: 'segitiga', 4: 'segi empat', 5: 'segi lima', 6: 'segi enam', 8: 'segi delapan' }; return ch('Apa nama bangun ini?', opts4(nm[n], Object.values(nm)), nm[n], `Hitung sisinya: ${n} sisi, jadi namanya <b>${nm[n]}</b>.`, { vis: W.poly(n, pick(['#ff7a59', '#7c5cff', '#00b894', '#0984e3'])) }); } },
+        { id: '2O1', name: 'Nama segi banyak', gen() { const n = pick([3, 4, 5, 6, 8]); const nm = { 3: 'segitiga', 4: 'segi empat', 5: 'segi lima', 6: 'segi enam', 8: 'segi delapan' }; return ch('Apa nama bangun ini?', opts4(nm[n], Object.values(nm)), nm[n], `Hitung sisinya: ${n} sisi, jadi namanya <b>${nm[n]}</b>.`, { vis: W.poly(n, pick(['#ff7a59', '#1fbf9f', '#00b894', '#0984e3'])) }); } },
         { id: '2O2', name: 'Sisi dan titik sudut', gen() { const n = pick([3, 4, 5, 6, 8]); const what = pick(['sisi', 'titik sudut']); return inp(`Berapa banyak ${what} bangun ini?`, n, `Hitung ${what === 'sisi' ? 'garis lurusnya' : 'pojoknya'} satu per satu. Segi banyak selalu punya jumlah sisi = jumlah titik sudut = <b>${n}</b>.`, { vis: W.poly(n, '#00b894'), meta: { kind: 'count' } }); } },
         { id: '2O3', name: 'Sisi, rusuk, dan titik sudut bangun ruang', gen() { const [nm, e, f, ed, v] = pick([['kubus', '🎲', 6, 12, 8], ['balok', '📦', 6, 12, 8], ['prisma segitiga', '🧀', 5, 9, 6]]); const [what, val] = pick([['sisi', f], ['rusuk', ed], ['titik sudut', v]]); return inp(`Berapa banyak ${what} pada ${nm}?`, val, `${nm[0].toUpperCase() + nm.slice(1)} punya ${f} sisi, ${ed} rusuk, dan ${v} titik sudut. Jawabannya <b>${val}</b>.`, { vis: `<div class="bigemoji">${e}</div>`, meta: { kind: 'count' } }); } },
         { id: '2O4', name: 'Luas dengan persegi satuan', gen() { const rows = r(2, 5), cols = r(2, 7); return inp('Ada berapa persegi kecil di dalam persegi panjang ini?', rows * cols, `${rows} baris, setiap baris ${cols} persegi: ${rows} × ${cols} = <b>${rows * cols}</b>.`, { vis: W.rect(rows, cols), meta: { op: 'x', a: rows, b: cols } }); } },

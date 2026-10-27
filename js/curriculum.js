@@ -106,7 +106,7 @@
       if (isNote) return `<span class="note n${val}"><b>${val.toLocaleString('id-ID')}</b><small>RUPIAH</small></span>`;
       return `<span class="coin c${val}">${val}</span>`;
     },
-    shape(name, color = '#7c5cff') {
+    shape(name, color = '#1fbf9f') {
       const P = {
         segitiga: '<polygon points="60,10 112,104 8,104"/>',
         persegi: '<rect x="14" y="14" width="92" height="92"/>',
@@ -212,7 +212,7 @@
       ],
     },
     {
-      id: 'B', name: 'Pasangan bilangan', icon: '🔗', color: '#7c5cff', grade: 1, sg: '1A · Number Bonds', ixl: 'F, G', km: 'Bilangan',
+      id: 'B', name: 'Pasangan bilangan', icon: '🔗', color: '#1fbf9f', grade: 1, sg: '1A · Number Bonds', ixl: 'F, G', km: 'Bilangan',
       tip: 'Gunakan 10 kancing: pisahkan ke dua tangan, lalu tanya "kalau tangan kiri 3, tangan kanan berapa?"',
       skills: [
         { id: 'B1', name: 'Pasangan bilangan sampai 10', gen() { const w = r(2, 10), a = r(1, w - 1), b = w - a; const hide = Math.random() < 0.8 ? (Math.random() < 0.5 ? 'a' : 'b') : 'w'; const ans = hide === 'a' ? a : hide === 'b' ? b : w; return inp('Berapa bilangan yang hilang?', ans, `${a} dan ${b} membentuk ${w}, karena ${a} + ${b} = ${w}. Jawabannya <b>${ans}</b>.`, { log: `Pasangan bilangan: ${hide === 'w' ? '?' : w} terdiri dari ${hide === 'a' ? '?' : a} dan ${hide === 'b' ? '?' : b}`, vis: V.bond(hide === 'w' ? '?' : w, hide === 'a' ? '?' : a, hide === 'b' ? '?' : b), meta: hide === 'w' ? { op: '+', a, b } : { op: '-', a: w, b: hide === 'a' ? b : a } }); } },
@@ -277,7 +277,7 @@
       ],
     },
     {
-      id: 'H', name: 'Penjumlahan dan pengurangan sampai 100', icon: '🚀', color: '#a29bfe', grade: 1, sg: '1B · Addition and Subtraction to 100', ixl: 'CC, DD', km: 'Bilangan',
+      id: 'H', name: 'Penjumlahan dan pengurangan sampai 100', icon: '🚀', color: '#66ffdb', grade: 1, sg: '1B · Addition and Subtraction to 100', ixl: 'CC, DD', km: 'Bilangan',
       tip: 'Tulis soal bersusun: satuan di bawah satuan, puluhan di bawah puluhan. Selalu mulai dari satuan.',
       skills: [
         { id: 'H1', name: 'Menjumlah dan mengurangi puluhan', gen() { const a = r(1, 8), b = r(1, 9 - a); if (Math.random() < 0.5) return inp(`${a * 10} + ${b * 10} = ?`, (a + b) * 10, `${a} puluh + ${b} puluh = ${a + b} puluh = <b>${(a + b) * 10}</b>.`, { vis: V.blocks(a, 0) + V.blocks(b, 0), meta: { op: '+', a: a * 10, b: b * 10 } }); const x = a + b; return inp(`${x * 10} − ${b * 10} = ?`, a * 10, `${x} puluh − ${b} puluh = ${a} puluh = <b>${a * 10}</b>.`, { vis: V.big(`${x * 10} − ${b * 10} = <span class="q">?</span>`), meta: { op: '-', a: x * 10, b: b * 10 } }); } },
@@ -338,7 +338,7 @@
       id: 'N', name: 'Bangun dan pola', icon: '🔷', color: '#e84393', grade: 1, sg: '1A · Shapes and Patterns', ixl: 'JJ, KK, LL', km: 'Geometri; Aljabar (pola)',
       tip: 'Cari bentuk di rumah: jam dinding (lingkaran), pintu (persegi panjang), kaleng susu (tabung).',
       skills: [
-        { id: 'N1', name: 'Mengenal bangun datar', gen() { const names = ['segitiga', 'persegi', 'persegi panjang', 'lingkaran', 'belah ketupat', 'segi enam']; const n = pick(names); return ch('Apa nama bangun ini?', shuffle([n, ...shuffle(names.filter((x) => x !== n)).slice(0, 3)]), n, `Bangun ini adalah <b>${n}</b>.`, { vis: V.shape(n, pick(['#ff7a59', '#7c5cff', '#00b894', '#0984e3', '#e84393'])) }); } },
+        { id: 'N1', name: 'Mengenal bangun datar', gen() { const names = ['segitiga', 'persegi', 'persegi panjang', 'lingkaran', 'belah ketupat', 'segi enam']; const n = pick(names); return ch('Apa nama bangun ini?', shuffle([n, ...shuffle(names.filter((x) => x !== n)).slice(0, 3)]), n, `Bangun ini adalah <b>${n}</b>.`, { vis: V.shape(n, pick(['#ff7a59', '#1fbf9f', '#00b894', '#0984e3', '#e84393'])) }); } },
         { id: 'N2', name: 'Sisi dan sudut', gen() { const data = { segitiga: 3, persegi: 4, 'persegi panjang': 4, 'belah ketupat': 4, 'segi enam': 6, lingkaran: 0, trapesium: 4 }; const n = pick(Object.keys(data)); const what = pick(['sisi', 'sudut']); return inp(`Berapa banyak ${what} ${n} ini?`, data[n], n === 'lingkaran' ? 'Lingkaran tidak punya sisi lurus dan tidak punya sudut. Jawabannya <b>0</b>.' : `Hitung ${what === 'sisi' ? 'garis lurusnya' : 'pojoknya'} satu per satu: <b>${data[n]}</b>.`, { vis: V.shape(n, '#00b894'), meta: { kind: 'count' } }); } },
         { id: 'N3', name: 'Bangun ruang di sekitar kita', gen() { const m = [['⚽', 'bola'], ['🏀', 'bola'], ['🌍', 'bola'], ['🎲', 'kubus'], ['🧊', 'kubus'], ['🥫', 'tabung'], ['🥁', 'tabung'], ['📦', 'balok'], ['🧱', 'balok'], ['🍦', 'kerucut'], ['🎉', 'kerucut']]; const [e, s] = pick(m); return ch('Benda ini berbentuk apa?', ['bola', 'kubus', 'tabung', 'balok', 'kerucut'], s, `${e} berbentuk <b>${s}</b>.`, { vis: `<div class="bigemoji">${e}</div>` }); } },
         { id: 'N4', name: 'Melanjutkan pola', gen() { const set = shuffle(['🔴', '🔵', '🟡', '🟢', '⭐', '🌙', '🔺', '🟪']); const pat = pick([[0, 1], [0, 0, 1], [0, 1, 1], [0, 1, 2], [0, 1, 2, 2]]); const len = pat.length * 2 + r(0, pat.length - 1); const seq = range(0, len - 1).map((i) => set[pat[i % pat.length]]); const ans = set[pat[len % pat.length]]; const opts = shuffle([...new Set([...pat.map((i) => set[i]), set[4], set[5]])]).slice(0, 4); if (!opts.includes(ans)) opts[0] = ans; return ch('Apa yang muncul berikutnya?', shuffle(opts), ans, `Polanya berulang: ${pat.map((i) => set[i]).join(' ')}. Berikutnya adalah <b>${ans}</b>.`, { vis: V.seq([...seq, '?']) }); } },

@@ -25,7 +25,7 @@
       ],
     },
     {
-      id: '3B', grade: 3, name: 'Pembulatan dan perkiraan', icon: '🎯', color: '#7c5cff',
+      id: '3B', grade: 3, name: 'Pembulatan dan perkiraan', icon: '🎯', color: '#1fbf9f',
       sg: '3A · Estimation (rounding)', ixl: 'C, D, E, F', km: 'Bilangan',
       tip: 'Saat belanja, minta anak memperkirakan total dengan membulatkan harga ke ribuan terdekat.',
       skills: [
@@ -89,7 +89,7 @@
       ],
     },
     {
-      id: '3H', grade: 3, name: 'Soal cerita dan bilangan yang hilang', icon: '📘', color: '#a29bfe',
+      id: '3H', grade: 3, name: 'Soal cerita dan bilangan yang hilang', icon: '📘', color: '#66ffdb',
       sg: '3A/3B · Word Problems (bar model, multiplication)', ixl: 'CC, DD, EE, T', km: 'Aljabar (kalimat matematika dengan nilai belum diketahui)',
       tip: 'Untuk "3 kali lebih banyak", gambar 1 batang untuk yang kecil dan 3 batang sama panjang untuk yang besar.',
       skills: [
