@@ -876,6 +876,7 @@
     5: ['5D1', '5E1', '5H1', '5J2', '5L2'],
     6: ['6A2', '6C1', '6D2', '6G2', '6I2'],
   };
+  const FAST = { 1: 8000, 2: 10000, 3: 12000, 4: 15000, 5: 18000, 6: 20000 }, GUESS = 3000;
   let D = null;
   const diagKid = () => { const ses = session.get(); return ses.role === 'siswa' && S.student(ses.id); };
   function viewDiag() {
@@ -898,7 +899,7 @@
   }
   function diagBand(g) {
     const q = DIAG[g].filter((id) => SKILLS[id]).sort(() => Math.random() - 0.5);
-    D.grade = g; D.bands[g] = { ok: [], bad: [], queue: q }; D.order.push(g);
+    D.grade = g; D.bands[g] = { ok: [], bad: [], fast: [], guess: [], queue: q }; D.order.push(g);
     diagNext();
   }
   function diagNext() {
@@ -913,7 +914,9 @@
   }
   function diagAnswer(ok) {
     P.locked = true; window.SFX.step();
-    const b = D.bands[D.grade]; (ok ? b.ok : b.bad).push(P.sk.id); D.n++;
+    const b = D.bands[D.grade], ms = Date.now() - P.qStart; (ok ? b.ok : b.bad).push(P.sk.id); D.n++;
+    if (ok && ms <= FAST[D.grade]) b.fast.push(P.sk.id);
+    if (!ok && ms < GUESS) b.guess.push(P.sk.id);
     document.querySelectorAll('.opt, .keypad button').forEach((x) => { x.disabled = true; });
     setTimeout(() => diagDecide(false), 350);
   }
@@ -926,11 +929,14 @@
     else if (empty || done >= 5 || D.n >= 20) v = 'mid'; // paling banyak 20 soal
     if (!v) return diagNext();
     b.v = v;
+    // semua benar dan cepat: soal kelas ini terlalu mudah, lompat 2 kelas (kelas yang dilewati diperiksa jika nanti gagal)
+    const easy = v === 'pass' && !b.bad.length && b.ok.length >= 3 && b.fast.length === b.ok.length;
+    if (easy && g + 2 <= 6 && !D.bands[g + 1] && !D.bands[g + 2]) { D.jumps = (D.jumps || 0) + 1; return diagBand(g + 2); }
     if (v === 'pass' && g < 6 && !D.bands[g + 1]) return diagBand(g + 1);
     if (v === 'fail' && g > 1 && !D.bands[g - 1]) return diagBand(g - 1);
     // kelas tempat siswa sebaiknya belajar sekarang
     const level = v === 'mid' ? g : v === 'pass' ? Math.min(6, g + (D.bands[g + 1] ? 1 : 0)) : g;
-    const answers = Object.keys(D.bands).sort().flatMap((k) => [...D.bands[k].ok.map((id) => [id, 1]), ...D.bands[k].bad.map((id) => [id, 0])]);
+    const answers = Object.keys(D.bands).sort().flatMap((k) => { const x = D.bands[k]; return [...x.ok.map((id) => [id, 1, x.fast.includes(id) ? 1 : 0, 0]), ...x.bad.map((id) => [id, 0, 0, x.guess.includes(id) ? 1 : 0])]; });
     const res = S.recordDiag(D.sid, { level, age: D.age, ms: Date.now() - D.t0, answers });
     if (cloudOn()) Object.entries(res).forEach(([key, v2]) => Cloud.queueProgress(D.sid, session.get().code, key, v2));
     setGrade(level); D = null; P = null;
@@ -942,11 +948,15 @@
     const st = diagKid(); if (!st) return go('#/siswa');
     const dg = S.diagOf(st.id); if (!dg) return go('#/asesmen');
     const prog = S.progressAll(st.id), good = diagSkills(dg, true), gaps = diagSkills(dg, false).filter((x) => SKILLS[x.id].grade <= dg.level);
+    const slow = good.filter((x) => !x.fast), allFast = good.length >= 3 && !slow.length && !gaps.length;
     const first = unitsOf(dg.level)[0];
     app.innerHTML = shell(`<section class="card center diag-res"><div class="bigemoji">🎉</div><h1>Asesmen selesai!</h1>
         <p>Terima kasih, <b>${esc(st.name)}</b>. Menurut asesmen ini, kamu siap belajar materi</p><div class="diag-level">Kelas ${dg.level}</div>
-        <p class="small muted">Usia ${dg.age} tahun · ${dg.items.length} soal · ${fmtTime(dg.ms)}</p></section>
+        <p class="small muted">Usia ${dg.age} tahun · ${dg.items.length} soal · ${fmtTime(dg.ms)}</p>
+        ${dg.level > Math.max(1, Math.min(6, dg.age - 6)) ? `<p class="small">⚡ Kamu menjawab cepat dan tepat, jadi Metiq memberimu soal yang lebih sulit. Levelmu di atas kelas untuk usiamu!</p>` : ''}
+        ${allFast && dg.level === 6 ? '<p class="small">🚀 Semua soal kunci dijawab cepat dan tepat. Coba juga bab-bab akhir Kelas 6 dan permainan tantangan.</p>' : ''}</section>
       ${good.length ? `<section class="card"><h2>💪 Yang sudah kamu kuasai</h2><div class="diag-chips">${good.map((x) => `<span class="pill okp">${SKILLS[x.id].code} ${SKILLS[x.id].name}</span>`).join(' ')}</div></section>` : ''}
+      ${slow.length ? `<section class="card"><h2>🐢 Sudah benar, tapi perlu lebih lancar</h2><p class="small muted">Kamu sudah paham, tetapi masih butuh waktu lama. Latihan sebentar supaya makin cepat.</p><div class="sklist">${slow.map((x) => skillLink(x.id, prog[x.id], `Kelas ${SKILLS[x.id].grade}`)).join('')}</div></section>` : ''}
       <section class="card"><h2>🎯 Yang perlu kamu pelajari</h2>${gaps.length ? `<p class="small muted">Mulailah dari sini. Daftar ini juga muncul di tab ✨ Saran.</p><div class="sklist">${gaps.map((x) => skillLink(x.id, prog[x.id], `Kelas ${SKILLS[x.id].grade}`)).join('')}</div>`
         : `<p>Hebat! Semua soal kunci sudah benar. Lanjutkan ke bab pertama Kelas ${dg.level}.</p><div class="sklist">${first.skills.slice(0, 3).map((x) => skillLink(x.id, prog[x.id])).join('')}</div>`}</section>
       <div class="row-btn"><a class="btn" href="#/belajar">Mulai belajar →</a></div>`,
@@ -960,6 +970,8 @@
     return `<section class="card diag-sum"><h2>🧭 Asesmen awal</h2>
       <p>${audience === 'siswa' ? 'Kamu' : esc(k.name)} ditempatkan di <b>materi Kelas ${dg.level}</b> <span class="muted small">(usia ${dg.age} tahun · ${fdate(dg.at)} · ${good.length}/${dg.items.length} soal kunci benar)</span>.</p>
       ${gaps.length ? `<p class="small"><b>Perlu dipelajari:</b> ${gaps.map((x) => `${SKILLS[x.id].code} ${SKILLS[x.id].name}${S.progress(k.id, x.id).score >= 80 ? ' ✅' : ''}`).join(' · ')}</p>` : '<p class="small">Semua soal kunci yang diberikan sudah dijawab benar.</p>'}
+      ${good.length ? `<p class="small">⚡ <b>${good.filter((x) => x.fast).length}</b> dari ${good.length} jawaban benar dijawab cepat${good.some((x) => !x.fast) ? ` · 🐢 benar tapi lambat (perlu kelancaran): ${good.filter((x) => !x.fast).map((x) => SKILLS[x.id].code).join(', ')}` : ''}.</p>` : ''}
+      ${audience !== 'siswa' && dg.items.filter((x) => x.guess).length >= 2 ? `<p class="small warnline">⚠️ ${dg.items.filter((x) => x.guess).length} jawaban salah diberikan sangat cepat (di bawah 3 detik). ${esc(k.name)} mungkin menebak; pertimbangkan untuk mengulang asesmen.</p>` : ''}
       ${audience === 'guru' && gaps.length ? '<p class="small muted">✅ = sudah mahir setelah berlatih. Gunakan daftar ini untuk memberi tugas khusus.</p>' : ''}
       ${audience === 'guru' ? `<div class="row-btn left"><button class="btn sm ghost" data-act="diagreset" data-s="${k.id}">↻ Ulangi asesmen</button></div>` : ''}</section>`;
   }

@@ -64,6 +64,7 @@
         { icon: '🧭', t: 'Asesmen awal siswa', steps: [
           'Setiap siswa mengerjakan asesmen awal sekali, saat pertama kali masuk: memilih umur, lalu 8–15 soal adaptif dari keterampilan kunci kelas 1–6.',
           'Hasilnya terlihat di tab <b>Siswa</b> → nama siswa → <b>🧭 Asesmen awal</b>: kelas tempat siswa sebaiknya belajar dan keterampilan yang perlu dipelajari.',
+          'Waktu menjawab ikut dipakai: semua benar dan cepat → asesmen melompat 2 kelas; benar tapi lambat → ditandai 🐢 perlu kelancaran; salah dalam kurang dari 3 detik → ⚠️ mungkin menebak.',
           'Ketuk <b>↻ Ulangi asesmen</b> jika siswa perlu mengerjakannya lagi, misalnya setelah satu semester. Siswa akan diminta mengerjakan asesmen saat masuk berikutnya.',
         ] },
         { icon: '🪪', t: 'NISN dan BBO Digital', steps: [
@@ -139,7 +140,7 @@
         ] },
         { icon: '🧭', t: 'Asesmen awal', steps: [
           'Saat pertama kali masuk, kamu diminta mengerjakan <b>asesmen awal</b>. Cukup sekali saja.',
-          'Pilih umurmu, lalu jawab sekitar 8–15 soal. Soal menjadi lebih mudah atau lebih sulit sesuai jawabanmu. Jika belum tahu, tebak saja.',
+          'Pilih umurmu, lalu jawab sekitar 8–15 soal. Soal menjadi lebih mudah atau lebih sulit sesuai jawabanmu. Jika semuanya benar dan cepat, soal langsung melompat lebih tinggi. Jika belum tahu, tebak saja.',
           'Hasilnya menunjukkan kamu sebaiknya belajar materi kelas berapa dan keterampilan apa yang perlu dipelajari. Daftar itu muncul di tab <b>✨ Saran</b>.',
         ] },
         { icon: '🤔', t: 'Mau belajar apa?', steps: [

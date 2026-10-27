@@ -83,7 +83,7 @@
     recordDiag(sid, r) {
       const p = db.progress[sid] = db.progress[sid] || {}, now = Date.now(), out = {}, v = Store.diagVersion(sid) + 1;
       p['a:diag'] = out['a:diag'] = { score: Math.min(100, r.level * 10), att: v, ok: r.age, ms: Math.min(r.ms, 3600000), last: now };
-      r.answers.forEach(([id, ok]) => { p['a:' + id] = out['a:' + id] = { score: ok ? 100 : 0, att: Math.max(v, ((p['a:' + id] || {}).att || 0) + 1), ok: ok ? 1 : 0, ms: v, last: now }; });
+      r.answers.forEach(([id, ok, fast, guess]) => { p['a:' + id] = out['a:' + id] = { score: ok ? (fast === 0 ? 80 : 100) : guess ? 1 : 0, att: Math.max(v, ((p['a:' + id] || {}).att || 0) + 1), ok: ok ? 1 : 0, ms: v, last: now }; });
       save();
       return out;
     },
@@ -97,7 +97,7 @@
       const p = db.progress[sid] || {}, d = p['a:diag'];
       if (!d || !d.score) return null;
       // hanya jawaban dari percobaan terakhir (ms menyimpan nomor percobaannya)
-      const items = Object.entries(p).filter(([k, v]) => k.startsWith('a:') && k !== 'a:diag' && v.ms === d.att).map(([k, v]) => ({ id: k.slice(2), ok: v.score >= 100 }));
+      const items = Object.entries(p).filter(([k, v]) => k.startsWith('a:') && k !== 'a:diag' && v.ms === d.att).map(([k, v]) => ({ id: k.slice(2), ok: v.score >= 80, fast: v.score >= 100, guess: v.score === 1 }));
       return { level: Math.round(d.score / 10), age: d.ok, at: d.last, ms: d.ms, items, version: d.att };
     },
     recordGame(sid, gameId, points, stars, ms) {
