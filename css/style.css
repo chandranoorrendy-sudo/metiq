@@ -477,3 +477,15 @@ details[open].trouble > summary, details[open].prog > summary { margin-bottom: 1
   body.pm .wrap > .mprint { display: block !important; }
   body.pm .card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
 }
+
+/* Tugas khusus siswa */
+.target { border: 2px solid var(--line); border-radius: 12px; padding: 8px 12px; margin: 0; }
+.target legend { font-weight: 900; padding: 0 4px; }
+.kidpick { display: none; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 2px 10px; margin: 6px 0 2px 28px; }
+.target:has(input[value="some"]:checked) .kidpick { display: grid; }
+.kidpick .avsvg, .asg-for .avsvg { width: 1.3em; height: 1.3em; }
+.asg-for { margin: 4px 0; font-weight: 700; }
+.pill.special { background: #fff1d6; color: #9a6200; }
+h3.sub { font-size: .95rem; margin: 12px 0 2px; color: var(--muted); }
+.asg-t .pill, .asg .pill, .notif-card .pill, .lrow .pill { white-space: normal; }
+.pill.special { white-space: normal; }

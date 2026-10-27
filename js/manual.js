@@ -30,10 +30,11 @@
         { icon: '📌', t: 'Memberi tugas', steps: [
           'Buka tab <b>Tugas</b>.',
           'Tulis catatan untuk siswa (misalnya "Latihan untuk ulangan Jumat") dan pilih tenggat jika perlu.',
+          'Pilih <b>Untuk siapa?</b>: <b>Seluruh kelas</b>, atau <b>Siswa tertentu</b> lalu centang siswanya. Tugas khusus hanya terlihat oleh siswa itu dan orang tuanya.',
           'Centang keterampilan yang ingin ditugaskan, dari kelas mana pun, lalu ketuk <b>Simpan tugas</b>.',
           'Tugas muncul di bagian atas halaman belajar siswa, dan lonceng 🔔 orang tua akan menyala.',
-          'Dari Ringkasan atau Analitik → Titik masalah, Anda juga bisa langsung menugaskan keterampilan yang sulit dengan tombol <b>Tugaskan</b>.',
-        ] },
+          'Dari Ringkasan atau Analitik → Titik masalah, Anda juga bisa langsung menugaskan keterampilan yang sulit ke seluruh kelas dengan tombol <b>Tugaskan</b>.',
+        ], tip: 'Untuk siswa yang tertinggal atau yang sudah sangat maju, buka tab Siswa → ketuk namanya → bagian <b>🎯 Tugas khusus</b>. Di sana ada saran <i>Perlu mengulang</i> dan <i>Materi lanjutan</i> dengan tombol Tugaskan.' },
         { icon: '🔔', t: 'Notifikasi tugas selesai', steps: [
           'Tugas dianggap selesai jika semua keterampilan di dalamnya mencapai tingkat <b>Mahir</b> (SmartScore 80 atau lebih), atau jika orang tua menekan <b>Laporkan sudah dikerjakan</b>.',
           'Saat itu lonceng 🔔 di kanan atas dasbor menunjukkan angka. Ketuk untuk melihat siapa yang sudah selesai.',

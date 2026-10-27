@@ -27,6 +27,7 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 ## Server (Supabase)
 - `js/config.js` berisi URL proyek dan publishable key (aman untuk browser). Kosongkan keduanya untuk mode lokal.
 - `supabase/schema.sql`: tabel dan fungsi RPC. Jalankan di SQL Editor Supabase saat membuat proyek baru.
+- `supabase/005_targeted_assignments.sql`: tugas untuk siswa tertentu (kolom `student_ids`; kosong = seluruh kelas). Jalankan setelah 004.
 - `supabase/004_assignment_done.sql`: catatan tugas selesai untuk notifikasi guru (siswa menyelesaikan tugas) dan orang tua (tugas baru). Jalankan setelah 003.
 - `supabase/003_avatars.sql`: avatar guru dan fungsi mengganti avatar siswa/guru. Jalankan setelah 002.
 - `supabase/002_roles.sql`: admin (melihat semua kelas) dan akun orang tua (banyak anak, belajar sebagai anak). Jalankan setelah schema.sql; hasilnya menampilkan kode admin.

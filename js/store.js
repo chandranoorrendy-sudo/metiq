@@ -101,7 +101,9 @@
     isDone(aid, sid) { return db.done.some((d) => d.aid === aid && d.sid === sid); },
     doneFor(aid) { return db.done.filter((d) => d.aid === aid); },
     markDone(aid, sid, by, at) { if (!Store.isDone(aid, sid)) { db.done.push({ aid, sid, at: at || Date.now(), by: by || 'siswa' }); save(); } },
-    addAssignment(classId, skills, note, due) { const a = { id: uid(), classId, skills, note: (note || '').trim(), due: due || '', createdAt: Date.now() }; db.assignments.push(a); save(); return a; },
+    // students: daftar id siswa sasaran; kosong = seluruh kelas
+    addAssignment(classId, skills, note, due, students) { const a = { id: uid(), classId, skills, note: (note || '').trim(), due: due || '', students: students && students.length ? students : null, createdAt: Date.now() }; db.assignments.push(a); save(); return a; },
+    assignmentsFor(sid) { const k = Store.student(sid); return k ? Store.assignmentsOf(k.classId).filter((a) => !a.students || !a.students.length || a.students.includes(sid)) : []; },
     removeAssignment(id) { db.assignments = db.assignments.filter((a) => a.id !== id); save(); },
 
     /* Ekspor / impor */
@@ -153,6 +155,10 @@
       batching = false;
       const a1 = Store.addAssignment(c.id, ['K1', 'K2', 'F2'], 'Latihan membaca jam dan membuat 10', '');
       const a2 = Store.addAssignment(c.id, ['C3', 'D3'], 'Fakta penjumlahan dan pengurangan sampai 10', '');
+      // Contoh tugas khusus: Farel mengulang, Alya mendapat materi lanjutan
+      const kidsDemo = Store.studentsOf(c.id), farel = kidsDemo.find((k) => k.name === 'Farel'), alya = kidsDemo.find((k) => k.name === 'Alya');
+      if (farel) Store.addAssignment(c.id, ['A5', 'C3'], 'Mengulang: membandingkan bilangan dan penjumlahan', '', [farel.id]);
+      if (alya) Store.addAssignment(c.id, ['2G1', '2G3'], 'Materi lanjutan: perkalian', '', [alya.id]);
       // Siswa yang sudah mahir di semua keterampilan tugas dianggap sudah menyelesaikannya
       [a1, a2].forEach((a) => Store.studentsOf(c.id).forEach((k, i) => {
         if (a.skills.every((sk) => Store.progress(k.id, sk).score >= 80)) Store.markDone(a.id, k.id, i % 3 === 2 ? 'ortu' : 'siswa', now - (i + 1) * 3600e3);
