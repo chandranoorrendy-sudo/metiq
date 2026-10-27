@@ -167,6 +167,8 @@
         { icon: '📖', t: 'Pelajaran', steps: [
           'Ketuk 📖 untuk membaca pelajaran bab itu.',
           'Ada langkah-langkah dan contoh soal. Ketuk <b>Lihat cara mengerjakan</b> untuk melihat jawabannya.',
+          'Di atas pelajaran ada <b>🎬 Animasi</b> singkat yang berputar sendiri. Ketuk ⏸ untuk berhenti, ↻ untuk mengulang, atau titik-titik di bawahnya untuk memilih langkah.',
+          'Jika jawabanmu belum tepat saat latihan, ketuk <b>🎬 Tonton animasi</b> di bagian Cara mengerjakan.',
         ] },
         { icon: '🎨', t: 'Avatar dan suara', steps: [
           'Ketuk avatarmu (ada ✏️) untuk memilih avatar baru: hewan, tumbuhan, bentuk, dan lainnya.',

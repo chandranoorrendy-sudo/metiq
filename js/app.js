@@ -385,7 +385,7 @@
       window.SFX.wrong();
       fb.innerHTML = `<div class="fb no"><h3>Belum tepat 🙂</h3>
         <p>Jawabanmu: <b class="strike">${esc(strip(given))}</b> · Jawaban yang benar: <b>${q.answer}</b></p>
-        <div class="explain"><b>Cara mengerjakan:</b><p>${q.explain}</p><a class="small" href="#/pelajaran/${P.sk.unit}">📖 Baca pelajaran bab ini</a></div>
+        <div class="explain"><b>Cara mengerjakan:</b><p>${q.explain}</p><a class="small" href="#/pelajaran/${P.sk.unit}">📖 Baca pelajaran bab ini</a>${window.METIQ_ANIM.has(P.sk.unit) ? ` · <button class="link small" data-act="anim" data-u="${P.sk.unit}">🎬 Tonton animasi</button>` : ''}<div class="anim-inline"></div></div>
         <button class="btn" data-act="next">Lanjut →</button></div>`;
       fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     }
@@ -1257,6 +1257,7 @@
     app.innerHTML = shell(`
       <button class="back link" data-act="back">← Kembali</button>
       <section class="card lhead" style="--c:${u.color}"><span class="uicon">${u.icon}</span><div class="grow"><small class="muted">Pelajaran · Kelas ${u.grade} · Bab ${u.id}</small><h1>${u.name}</h1><p>${les.intro}</p></div><button class="say" data-act="lsay" data-i="-1" aria-label="Bacakan">🔊</button></section>
+      ${window.METIQ_ANIM.has(uid) ? `<section class="card anim-card"><h2>🎬 Animasi: ${u.name}</h2><div id="anim-box"></div></section>` : ''}
       ${les.parts.length > 1 ? `<div class="ltoc">${les.parts.map((p, i) => `<button data-act="lgo" data-i="${i}">${i + 1}. ${p.t}</button>`).join('')}</div>` : ''}
       ${les.parts.map((p, i) => `<section class="card lpart" id="lp-${i}">
         <div class="lph"><span class="lnum" style="background:${u.color}">${i + 1}</span><h2>${p.t}</h2><button class="say sm" data-act="lsay" data-i="${i}" aria-label="Bacakan">🔊</button></div>
@@ -1267,6 +1268,7 @@
       </section>`).join('')}
       <section class="card"><h2>Latihan di bab ini</h2><div class="sklist">${u.skills.map((s) => (kid ? skillLink(s.id, prog[s.id]) : `<a class="sk" href="${practice(s.id)}"><span class="sk-code">${s.code}</span><span class="sk-name">${s.name}</span><span class="chip lv0">→</span></a>`)).join('')}</div></section>
     `);
+    window.METIQ_ANIM.mount(document.getElementById('anim-box'), uid);
   }
 
   /* Pratinjau soal untuk guru (tidak disimpan) */
@@ -1283,6 +1285,7 @@
   async function route() {
     clearInterval(timer);
     if (stopGame) { stopGame(); stopGame = null; }
+    window.METIQ_ANIM.stop();
     if ('speechSynthesis' in window) speechSynthesis.cancel();
     const parts = location.hash.replace(/^#\/?/, '').split('/');
     const [a, b, c] = parts;
@@ -1321,6 +1324,7 @@
     if (!el) return;
     const act = el.dataset.act;
     if (act === 'gstart') return startGame();
+    if (act === 'anim') { const box = el.closest('.explain').querySelector('.anim-inline'); el.remove(); return window.METIQ_ANIM.mount(box, el.dataset.u); }
     if (act === 'fbedit') { ss.set('fbedit', el.dataset.k); return route(); }
     if (act === 'export') return exportResearch(el.dataset.t);
     if (act === 'openclass') { const s = session.get(); s.classId = el.dataset.id; session.set(s); return go('#/guru/ringkasan'); }

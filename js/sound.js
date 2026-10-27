@@ -28,6 +28,7 @@
   window.SFX = {
     enabled,
     toggle() { const on = !enabled(); try { localStorage.setItem(KEY, on ? '1' : '0'); } catch (e) {} if (on) this.correct(); return on; },
+    step() { play(() => { tone(880, 0, 0.09, 'sine', 0.06); tone(1320, 0.06, 0.12, 'sine', 0.045); }); },
     correct() { play(() => { tone(784, 0, 0.12, 'sine', 0.2); tone(1175, 0.09, 0.2, 'sine', 0.18); }); },
     wrong() { play(() => { tone(330, 0, 0.3, 'triangle', 0.15, 220); }); },
     levelUp() { play(() => { [523, 659, 784, 1047].forEach((f, i) => tone(f, i * 0.08, 0.18, 'sine', 0.16)); }); },
