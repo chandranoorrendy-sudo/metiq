@@ -626,3 +626,9 @@ h2.allsk { margin: 18px 0 8px; }
 .cdesign-wrap summary { cursor: pointer; padding: 2px 0; }
 .cdesign-wrap[open] summary { margin-bottom: 8px; }
 @media (min-width: 760px) { .cdesign .refgrid { grid-template-columns: repeat(3, 1fr); } }
+
+/* ---------- Versi Alpha dan mode coba ---------- */
+.alpha { margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #ffe9d6; color: #9a4a00; font-size: .62rem; font-weight: 900; letter-spacing: .5px; text-transform: uppercase; vertical-align: middle; }
+.demobar { display: flex; align-items: center; gap: 8px; background: #fff3c4; border: 1px solid #f1d98a; border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; font-size: .86rem; }
+.trycard h2 { margin-top: 0; } .trybtns { display: grid; gap: 8px; } .trynote { margin: 10px 0 0; }
+@media (min-width: 760px) { .trybtns { grid-template-columns: repeat(3, 1fr); } }

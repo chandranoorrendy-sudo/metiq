@@ -177,6 +177,7 @@
       ],
     },
     faq: [
+      ['Bagaimana mencoba Metiq tanpa mendaftar?', 'Di beranda, ketuk Coba sebagai siswa, orang tua, atau guru. Atau masukkan kode 1234 di halaman siswa atau orang tua. Mode coba memakai data contoh satu sekolah yang hanya tersimpan di perangkat itu dan tidak terkirim ke server. Ketuk Keluar untuk kembali.'],
       ['Lupa kode kelas atau kode orang tua?', 'Tanyakan kepada guru. Guru bisa melihat semua kode di menu Kelola kelas.'],
       ['Apakah data hilang jika HP diganti?', 'Tidak. Data tersimpan di server. Cukup masuk lagi di HP lain.'],
       ['Bagaimana jika internet putus saat latihan?', 'Jawaban tetap tersimpan di HP dan akan terkirim otomatis saat internet tersambung lagi.'],

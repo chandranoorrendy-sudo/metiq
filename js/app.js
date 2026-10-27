@@ -67,8 +67,8 @@
   }
 
   const shell = (inner, opts = {}) => `
-    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=26" alt="">Metiq</a>${opts.right || ''}</header>
-    <main class="wrap ${opts.cls || ''}">${inner}</main>`;
+    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=26" alt="">Metiq<span class="alpha">Alpha</span></a>${opts.right || ''}</header>
+    <main class="wrap ${opts.cls || ''}">${session.get().demo ? `<div class="demobar">🧪 <span class="grow"><b>Mode coba</b> · data contoh, hanya tersimpan di perangkat ini</span><button class="link" data-act="logout">Keluar</button></div>` : ''}${inner}</main>`;
 
   /* ---------- Analitik (dipakai guru dan orang tua) ---------- */
   function stats(sid, days) {
@@ -143,7 +143,9 @@
         <div class="grade-sum">${GRADES.map((g) => `<a href="#/kurikulum" data-act="grade" data-g="${g.id}"><b>${g.name}</b><small>${unitsOf(g.id).length} bab · ${unitsOf(g.id).reduce((a, u) => a + u.skills.length, 0)} keterampilan</small></a>`).join('')}</div>
         <a class="btn ghost" href="#/kurikulum">Lihat semua keterampilan</a>
       </section>
-      <p class="center muted small">Baru mencoba? <button class="link" data-act="demo">Isi data contoh</button> lalu masuk sebagai guru dengan PIN <b>1234</b>.</p>
+      <section class="card trycard"><h2>🧪 Coba Metiq (versi Alpha)</h2>
+        <p class="small muted">Tanpa daftar. Memakai data contoh satu sekolah yang hanya tersimpan di perangkat ini, jadi aman untuk dicoba. Atau masukkan kode <b>1234</b> di halaman siswa atau orang tua.</p>
+        <div class="trybtns"><button class="btn" data-act="trydemo" data-r="siswa">🧒 Coba sebagai siswa</button><button class="btn ghost" data-act="trydemo" data-r="ortu">👨‍👩‍👧 Coba sebagai orang tua</button><button class="btn ghost" data-act="trydemo" data-r="guru">👩‍🏫 Coba sebagai guru</button></div></section>
     `);
   }
 
@@ -167,6 +169,7 @@
         <h1>Halo! Masukkan kode kelas</h1>
         <p class="muted">Minta kode kelas kepada Bu/Pak Guru.</p>
         <form data-form="classcode"><input name="code" class="codein" maxlength="5" autocomplete="off" autocapitalize="characters" placeholder="ABCDE" required><button class="btn">Masuk</button></form>
+        <p class="small muted trynote">Ingin mencoba dulu? Masukkan kode <b>1234</b>.</p>
       </section>`);
   }
   async function viewStudentPick(code) {
@@ -405,6 +408,7 @@
     const reg = mode === 'daftar';
     app.innerHTML = shell(`
       <a class="back" href="#/">← Kembali</a>
+      <p class="trynote center small"><button class="link" data-act="trydemo" data-r="guru">🧪 Coba dulu sebagai guru contoh (tanpa daftar) →</button></p>
       <section class="card narrow">
         <div class="bigemoji center">👩‍🏫</div>
         ${reg ? `<h1 class="center">Daftar sebagai guru</h1>
@@ -855,6 +859,16 @@
         <li>Komentar ulasan bisa memuat nama. Periksa sebelum dikutip di tesis.</li></ul></section>`;
   }
 
+  /* ---------- Mode coba (Alpha): data contoh lokal untuk siswa, orang tua, dan guru ---------- */
+  const TRY_CODE = '1234';
+  function startDemo(role) {
+    session.set({ demo: true }); S.setMode(false);
+    const t = S.seedDemo(), c = S.classesOf(t.id)[0], kids = S.studentsOf(c.id);
+    if (role === 'guru') { session.set({ role: 'guru', id: t.id, demo: true }); toast('Mode coba: Anda masuk sebagai guru contoh'); return go('#/guru/ringkasan'); }
+    if (role === 'ortu') { const k = kids.find((x) => x.name === 'Alya') || kids[0]; session.set({ role: 'ortu', id: k.id, demo: true }); toast(`Mode coba: laporan ${k.name}`); return go('#/ortu/laporan'); }
+    go('#/siswa/' + c.code);
+  }
+
   /* ---------- Permainan matematika ---------- */
   const G = window.METIQ_GAMES;
   let stopGame = null;
@@ -1130,7 +1144,8 @@
           <button class="btn">Masuk</button>
         </form><p class="center"><a href="#/ortu/daftar">Belum punya akun? Daftar</a></p></section>` : ''}
       <section class="card narrow center">${cloudOn() ? '<h2>Atau lihat laporan dengan kode</h2>' : '<div class="bigemoji">👨‍👩‍👧</div><h1>Laporan untuk orang tua</h1>'}<p class="muted">Masukkan kode orang tua (6 huruf/angka) dari guru.</p>
-        <form data-form="parentcode"><input name="code" class="codein" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC123" required><button class="btn ghost">Lihat laporan</button></form></section>`);
+        <form data-form="parentcode"><input name="code" class="codein" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC123" required><button class="btn ghost">Lihat laporan</button></form>
+        <p class="small muted trynote">Ingin mencoba dulu? Masukkan kode <b>1234</b> untuk melihat laporan anak contoh.</p></section>`);
   }
   function viewParentRegister() {
     app.innerHTML = shell(`
@@ -1400,7 +1415,8 @@
       const les = LESSONS[location.hash.split('/')[2]], i = +el.dataset.i;
       if (les) speak(i < 0 ? les.intro : `${les.parts[i].t}. ${les.parts[i].steps.join(' ')}`);
     }
-    else if (act === 'pickkid') { session.set({ role: 'siswa', id: el.dataset.id, code: el.dataset.code }); go('#/belajar'); }
+    else if (act === 'pickkid') { session.set({ role: 'siswa', id: el.dataset.id, code: el.dataset.code, demo: session.get().demo || undefined }); go('#/belajar'); }
+    else if (act === 'trydemo') startDemo(el.dataset.r);
     else if (act === 'askid') {
       const ses = session.get(), k = S.student(el.dataset.id), c = k && S.cls(k.classId);
       if (!k || !c) return;
@@ -1465,6 +1481,8 @@
   document.addEventListener('submit', (e) => {
     e.preventDefault();
     const f = e.target, fd = new FormData(f), kind = f.dataset.form;
+    // kode coba 1234 membuka data contoh (mode server maupun lokal)
+    if ((kind === 'classcode' || kind === 'parentcode') && String(fd.get('code')).trim() === TRY_CODE) return startDemo(kind === 'classcode' ? 'siswa' : 'ortu');
     if (kind === 'fb') {
       const rating = +fd.get('rating'), comment = String(fd.get('comment') || '').trim(), { a, s: sid, by } = f.dataset;
       if (!rating) return toast('Pilih bintangnya dulu ya ⭐');
