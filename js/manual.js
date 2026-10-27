@@ -61,6 +61,11 @@
           'Akun admin melihat dan mengelola <b>semua kelas</b> dari semua guru.',
           'Pilih kelas lewat kotak pilihan di bawah nama kelas; nama guru pemilik kelas ikut ditampilkan.',
         ] },
+        { icon: '🧭', t: 'Asesmen awal siswa', steps: [
+          'Setiap siswa mengerjakan asesmen awal sekali, saat pertama kali masuk: memilih umur, lalu 8–15 soal adaptif dari keterampilan kunci kelas 1–6.',
+          'Hasilnya terlihat di tab <b>Siswa</b> → nama siswa → <b>🧭 Asesmen awal</b>: kelas tempat siswa sebaiknya belajar dan keterampilan yang perlu dipelajari.',
+          'Ketuk <b>↻ Ulangi asesmen</b> jika siswa perlu mengerjakannya lagi, misalnya setelah satu semester. Siswa akan diminta mengerjakan asesmen saat masuk berikutnya.',
+        ] },
         { icon: '🪪', t: 'NISN dan BBO Digital', steps: [
           'Buka tab <b>Siswa</b> → ketuk nama siswa → bagian <b>🪪 Data siswa</b>, lalu isi <b>NISN</b> (10 angka) dan ketuk Simpan NISN.',
           'Setiap kali siswa dengan NISN menyelesaikan tugas, laporannya (tugas, keterampilan, dan SmartScore) otomatis dikirim ke <b>BBO Digital</b> untuk siswa tersebut.',

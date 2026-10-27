@@ -78,18 +78,27 @@
     progress(sid, skillId) { return (db.progress[sid] || {})[skillId] || { score: 0, att: 0, ok: 0, ms: 0, last: 0 }; },
     progressAll(sid) { return db.progress[sid] || {}; },
     answersOf(sid) { return db.answers.filter((a) => a.sid === sid); },
+    // Nomor percobaan selalu naik agar server menerima pembaruan (asesmen ulang atau diulang guru)
+    diagVersion(sid) { const d = (db.progress[sid] || {})['a:diag']; return d ? d.att : 0; },
     recordDiag(sid, r) {
-      const p = db.progress[sid] = db.progress[sid] || {}, now = Date.now(), out = {};
-      p['a:diag'] = out['a:diag'] = { score: Math.min(100, r.level * 10), att: r.age, ok: r.level, ms: Math.min(r.ms, 3600000), last: now };
-      r.answers.forEach(([id, ok]) => { p['a:' + id] = out['a:' + id] = { score: ok ? 100 : 0, att: 1, ok: ok ? 1 : 0, ms: 0, last: now }; });
+      const p = db.progress[sid] = db.progress[sid] || {}, now = Date.now(), out = {}, v = Store.diagVersion(sid) + 1;
+      p['a:diag'] = out['a:diag'] = { score: Math.min(100, r.level * 10), att: v, ok: r.age, ms: Math.min(r.ms, 3600000), last: now };
+      r.answers.forEach(([id, ok]) => { p['a:' + id] = out['a:' + id] = { score: ok ? 100 : 0, att: Math.max(v, ((p['a:' + id] || {}).att || 0) + 1), ok: ok ? 1 : 0, ms: v, last: now }; });
       save();
       return out;
     },
+    resetDiag(sid) {
+      const p = db.progress[sid] = db.progress[sid] || {};
+      p['a:diag'] = { score: 0, att: Store.diagVersion(sid) + 1, ok: 0, ms: 0, last: Date.now() };
+      save();
+      return { 'a:diag': Object.assign({}, p['a:diag']) };
+    },
     diagOf(sid) {
       const p = db.progress[sid] || {}, d = p['a:diag'];
-      if (!d) return null;
-      const items = Object.entries(p).filter(([k]) => k.startsWith('a:') && k !== 'a:diag').map(([k, v]) => ({ id: k.slice(2), ok: v.score >= 100 }));
-      return { level: d.ok, age: d.att, at: d.last, ms: d.ms, items };
+      if (!d || !d.score) return null;
+      // hanya jawaban dari percobaan terakhir (ms menyimpan nomor percobaannya)
+      const items = Object.entries(p).filter(([k, v]) => k.startsWith('a:') && k !== 'a:diag' && v.ms === d.att).map(([k, v]) => ({ id: k.slice(2), ok: v.score >= 100 }));
+      return { level: Math.round(d.score / 10), age: d.ok, at: d.last, ms: d.ms, items, version: d.att };
     },
     recordGame(sid, gameId, points, stars, ms) {
       const p = db.progress[sid] = db.progress[sid] || {}, key = 'g:' + gameId;

@@ -960,7 +960,8 @@
     return `<section class="card diag-sum"><h2>🧭 Asesmen awal</h2>
       <p>${audience === 'siswa' ? 'Kamu' : esc(k.name)} ditempatkan di <b>materi Kelas ${dg.level}</b> <span class="muted small">(usia ${dg.age} tahun · ${fdate(dg.at)} · ${good.length}/${dg.items.length} soal kunci benar)</span>.</p>
       ${gaps.length ? `<p class="small"><b>Perlu dipelajari:</b> ${gaps.map((x) => `${SKILLS[x.id].code} ${SKILLS[x.id].name}${S.progress(k.id, x.id).score >= 80 ? ' ✅' : ''}`).join(' · ')}</p>` : '<p class="small">Semua soal kunci yang diberikan sudah dijawab benar.</p>'}
-      ${audience === 'guru' && gaps.length ? '<p class="small muted">✅ = sudah mahir setelah berlatih. Gunakan daftar ini untuk memberi tugas khusus.</p>' : ''}</section>`;
+      ${audience === 'guru' && gaps.length ? '<p class="small muted">✅ = sudah mahir setelah berlatih. Gunakan daftar ini untuk memberi tugas khusus.</p>' : ''}
+      ${audience === 'guru' ? `<div class="row-btn left"><button class="btn sm ghost" data-act="diagreset" data-s="${k.id}">↻ Ulangi asesmen</button></div>` : ''}</section>`;
   }
 
   /* ---------- Mode coba (Alpha): data contoh lokal untuk siswa, orang tua, dan guru ---------- */
@@ -1475,6 +1476,17 @@
     const act = el.dataset.act;
     if (act === 'gstart') return startGame();
     if (act === 'dage') return diagStart(+el.dataset.a);
+    if (act === 'diagreset') {
+      const k = S.student(el.dataset.s), c = k && S.cls(k.classId);
+      if (!k || !confirm(`Ulangi asesmen awal untuk ${k.name}? Hasil lama tidak dipakai lagi, dan ${k.name} akan diminta mengerjakan asesmen saat masuk berikutnya.`)) return;
+      const rec = S.resetDiag(k.id);
+      if (!cloudOn()) { toast('Asesmen akan diulang ✔'); return route(); }
+      el.disabled = true;
+      // memakai kode kelas seperti saat siswa menyimpan progres
+      return Cloud.rpc('student_sync', { p_code: c.code, p_student_id: k.id, p_answers: [], p_progress: rec })
+        .then(() => ensure(true)).then(() => { toast('Asesmen akan diulang ✔'); route(); })
+        .catch((e) => { el.disabled = false; toast(e.status ? e.message : 'Tidak bisa terhubung ke server'); });
+    }
     if (act === 'dskip') { sessionStorage.setItem('metiq_diag_skip', session.get().id); return go('#/belajar'); }
     if (act === 'anim') { const box = el.closest('.explain').querySelector('.anim-inline'); el.remove(); return window.METIQ_ANIM.mount(box, el.dataset.u); }
     if (act === 'fbedit') { ss.set('fbedit', el.dataset.k); return route(); }
