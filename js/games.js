@@ -84,8 +84,24 @@
     { id: '6c', grade: 6, type: 'pasangan', icon: '🃏', name: 'Pasangan Persen', desc: 'Cocokkan persen dengan pecahannya.',
       pairs() { return shuffle([[50, 1, 2], [25, 1, 4], [75, 3, 4], [20, 1, 5], [10, 1, 10], [40, 2, 5], [60, 3, 5], [80, 4, 5], [30, 3, 10], [5, 1, 20], [12.5, 1, 8]]).slice(0, 6).map(([p, a, b]) => [`${f(p)}%`, fr(a, b)]); } },
   ];
+  // Balok jatuh: "Menara Pasangan" (dua balok bersentuhan yang jumlahnya = sasaran hilang)
+  // dan "Menara Kembar" (balok sama bergabung menjadi dua kali lipat). Nilai disimpan sebagai bilangan bulat.
+  const range = (a, b, s = 1) => { const r = []; for (let v = a; v <= b; v += s) r.push(v); return r; };
+  [
+    [1, 10, range(1, 9), (v) => String(v), 'Sepuluh'],
+    [2, 20, range(2, 18), (v) => String(v), 'Dua Puluh'],
+    [3, 100, [...range(10, 90, 10), 25, 75], (v) => String(v), 'Seratus'],
+    [4, 1000, [...range(100, 900, 100), 250, 750], (v) => v.toLocaleString('id-ID'), 'Seribu'],
+    [5, 100, [...range(10, 90, 10), 25, 75, 5, 95], (v) => f(v / 100), 'Satu'],
+    [6, 0, [...range(-9, -1), ...range(1, 9)], (v) => f(v), 'Nol'],
+  ].forEach(([grade, target, vals, show, word]) => {
+    GAMES.push({ id: grade + 'd', grade, type: 'susun', icon: '🧱', name: `Menara Pasangan ${word}`, target, vals, show, stars: [10, 20, 30],
+      desc: `Jatuhkan balok ke menara. Dua balok bersentuhan yang jumlahnya ${show(target)} akan hilang. Jangan sampai menara penuh!` });
+    GAMES.push({ id: grade + 'e', grade, type: 'kembar', icon: '🔢', name: 'Menara Kembar', base: grade <= 2 ? [1, 2, 4] : [2, 4, 8], show: (v) => v.toLocaleString('id-ID'), stars: [70, 90, 100],
+      desc: `Balok yang sama dan bersentuhan bergabung menjadi dua kali lipat (${grade <= 2 ? '2 + 2 = 4' : '8 + 8 = 16'}). Seberapa besar bilangan yang bisa kamu buat?` });
+  });
   GAMES.forEach((g) => { if (g.type === 'pasangan') g.stars = [10, 14, 17]; });
-  const TYPES = { kilat: 'Cepat tepat · 60 detik', balon: 'Pecahkan balon · 60 detik', pasangan: 'Kartu memori' };
+  const TYPES = { kilat: 'Cepat tepat · 60 detik', balon: 'Pecahkan balon · 60 detik', pasangan: 'Kartu memori', susun: 'Balok jatuh · jumlah sasaran', kembar: 'Balok jatuh · gabung kembar' };
   const starsFor = (g, pts) => g.stars.filter((t) => pts >= t).length;
 
   /* ---------- Mesin permainan ---------- */
@@ -141,6 +157,83 @@
         later(spawn, R(650, 1000));
       };
       newRule(); spawn(); clock();
+    } else if (g.type === 'susun' || g.type === 'kembar') {
+      const COLS = 5, ROWS = 7, sum = g.type === 'susun';
+      const grid = [...Array(COLS)].map(() => []); // grid[kolom][baris dari bawah]
+      let next, top = 0, chain = 0, mark = new Set();
+      const all = () => grid.flatMap((col, c) => col.map((v, r) => ({ c, r, v })));
+      const spawn = () => {
+        if (sum) {
+          // sering memberi pasangan dari balok yang sudah ada agar selalu ada langkah yang bisa dibuat
+          const have = all().filter((x) => g.vals.includes(g.target - x.v));
+          return have.length && Math.random() < 0.5 ? g.target - pick(have).v : pick(g.vals);
+        }
+        const small = all().map((x) => x.v).filter((v) => v <= g.base[2] * 2);
+        return small.length && Math.random() < 0.2 ? pick(small) : pick([g.base[0], g.base[0], g.base[1], g.base[1], g.base[2]]);
+      };
+      const color = (v) => {
+        if (sum) { const i = g.vals.indexOf(v), n = g.vals.length; return `hsl(${Math.round((i / n) * 330)}, 85%, ${v < 0 ? 72 : 78}%)`; }
+        const k = Math.round(Math.log2(v / g.base[0])); return `hsl(${(165 + k * 37) % 360}, 80%, ${Math.max(55, 82 - k * 2)}%)`;
+      };
+      const gravity = () => grid.forEach((col, c) => { grid[c] = col.filter((v) => v !== null); });
+      // satu langkah penyelesaian; true jika ada yang hilang/bergabung
+      const step = (lc, lr) => {
+        if (sum) {
+          for (const { c, r, v } of all()) {
+            for (const [dc, dr] of [[1, 0], [0, 1]]) {
+              const w = (grid[c + dc] || [])[r + dr];
+              if (w !== undefined && w !== null && v + w === g.target) { grid[c][r] = null; grid[c + dc][r + dr] = null; chain++; setPts(chain); return true; }
+            }
+          }
+          return false;
+        }
+        const cells = all();
+        // utamakan kelompok yang memuat balok yang baru jatuh
+        cells.sort((a, b) => (b.c === lc && b.r === lr) - (a.c === lc && a.r === lr));
+        for (const s0 of cells) {
+          const seen = new Set([s0.c + ':' + s0.r]), group = [s0], todo = [s0];
+          while (todo.length) {
+            const x = todo.pop();
+            for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+              const c = x.c + dc, r = x.r + dr, k = c + ':' + r;
+              if (!seen.has(k) && grid[c] && grid[c][r] === s0.v) { seen.add(k); const y = { c, r }; group.push(y); todo.push(y); }
+            }
+          }
+          if (group.length < 2) continue;
+          // balok gabungan tinggal di posisi paling bawah dari kelompok
+          const keep = group.reduce((a, b) => (b.r < a.r || (b.r === a.r && b.c === s0.c) ? b : a));
+          group.forEach((x) => { grid[x.c][x.r] = null; });
+          grid[keep.c][keep.r] = s0.v * 2 ** (group.length - 1);
+          top = Math.max(top, grid[keep.c][keep.r]); mark = new Set([keep.c + ':' + (keep.r)]);
+          const lv = Math.min(100, 10 * Math.round(Math.log2(top / g.base[0]))); if (lv > pts) setPts(lv - pts);
+          return true;
+        }
+        return false;
+      };
+      const render = (lc) => {
+        el.querySelector('#gtower').innerHTML = grid.map((col, c) => `<div class="gcol" data-c="${c}">${[...Array(ROWS)].map((_, r) => {
+          const v = col[r];
+          return v === undefined ? '<i class="gslot"></i>' : `<i class="gblk ${c === lc && r === col.length - 1 ? 'new' : ''} ${mark.has(c + ':' + r) ? 'merge' : ''}" style="background:${color(v)}">${g.show(v)}</i>`;
+        }).join('')}</div>`).join('');
+        const nx = el.querySelector('#gnext'); nx.textContent = g.show(next); nx.style.background = color(next);
+        if (!sum) el.querySelector('#gaux').textContent = top ? g.show(top) : '–';
+      };
+      el.innerHTML = `<div class="ghud"><div><small>Poin</small><b id="gpts">0</b></div><div><small>${sum ? 'Jumlah sasaran' : 'Terbesar'}</small><b id="gaux">${sum ? g.show(g.target) : '–'}</b></div><div><small>Berikutnya</small><b id="gnext" class="gnext"></b></div></div>
+        <p class="small muted center gtip">Ketuk kolom untuk menjatuhkan balok.</p><div class="gtower" id="gtower"></div><div class="row-btn"><button class="btn sm ghost" id="gquit">Selesai</button></div>`;
+      next = spawn(); render(-1);
+      el.querySelector('#gquit').addEventListener('click', end);
+      el.querySelector('#gtower').addEventListener('click', (e) => {
+        const col = e.target.closest('.gcol'); if (!col || !alive) return;
+        const c = +col.dataset.c;
+        if (grid[c].length >= ROWS) { col.classList.add('full'); later(() => col.classList.remove('full'), 300); sfx.wrong(); return; }
+        grid[c].push(next); chain = 0; mark = new Set();
+        if (!sum) top = Math.max(top, next);
+        const lr = grid[c].length - 1; let changed = false;
+        while (step(c, lr)) { gravity(); changed = true; }
+        if (changed) sfx.correct();
+        next = spawn(); render(changed ? -1 : c);
+        if (grid.every((col) => col.length >= ROWS)) later(end, 500);
+      });
     } else {
       const pairs = g.pairs(), cards = shuffle(pairs.flatMap(([a, b], i) => [{ i, html: a, k: 'q' }, { i, html: b, k: 'a' }]));
       let open = [], matched = 0, miss = 0;

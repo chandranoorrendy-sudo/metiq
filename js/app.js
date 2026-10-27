@@ -134,7 +134,7 @@
         <a class="role r2" href="#/guru"><span class="ri">${avHTML('svg:ustadzah')}</span><b>Saya Guru</b><small>Kelola kelas & lihat kemajuan</small></a>
         <a class="role r3" href="#/ortu"><span class="ri">👨‍👩‍👧</span><b>Saya Orang Tua</b><small>Lihat laporan anak</small></a>
       </section>
-      <a class="card mlink" href="#/permainan"><span class="micon">🎮</span><span class="grow"><b>Permainan matematika</b><small>18 permainan singkat untuk kelas 1–6. Kumpulkan bintang ⭐</small></span>→</a>
+      <a class="card mlink" href="#/permainan"><span class="micon">🎮</span><span class="grow"><b>Permainan matematika</b><small>${G.GAMES.length} permainan untuk kelas 1–6, termasuk menara balok angka. Kumpulkan bintang ⭐</small></span>→</a>
       <a class="card mlink" href="#/panduan/guru"><span class="micon">📘</span><span class="grow"><b>Panduan pemakaian</b><small>Cara memakai Metiq untuk guru, orang tua, dan siswa</small></span>→</a>
       <section class="card">
         <h2>Isi kurikulum</h2>
@@ -214,7 +214,7 @@
           ${wk.n ? '' : '<p class="small">Minggu ini belum berlatih. Ayo mulai! 💪</p>'}
           <a class="btn sm ghost" href="#/laporanku">Lihat laporanku →</a></section>
         <a class="card prizecard" href="#/hadiah"><span class="pz-ico">🎁</span><span class="grow"><b>Papan hadiah Kelas ${g}</b><small>${pb.open} dari ${pb.cells.length} hadiah terbuka</small><small>${pb.open < pb.cells.length ? `Hadiah berikutnya: ${nextWin(pb, true)}` : 'Semua hadiah sudah terbuka! 🎉'}</small></span><span class="pz-go">→</span></a>
-        <a class="card prizecard" href="#/permainan"><span class="pz-ico">🎮</span><span class="grow"><b>Permainan matematika</b><small>⭐ ${S.gameStars(st.id)} bintang terkumpul</small><small>Kilat, Balon, dan Pasangan untuk Kelas ${g}</small></span><span class="pz-go">→</span></a>
+        <a class="card prizecard" href="#/permainan"><span class="pz-ico">🎮</span><span class="grow"><b>Permainan matematika</b><small>⭐ ${S.gameStars(st.id)} bintang terkumpul</small><small>Kilat, Balon, Pasangan, dan Menara balok untuk Kelas ${g}</small></span><span class="pz-go">→</span></a>
       </div>
       <h2 class="allsk">📚 Semua keterampilan</h2>
       ${gradeTabs()}
@@ -843,7 +843,7 @@
   }
   function viewGame(id) {
     const x = G.byId(id); if (!x) return go('#/permainan');
-    const kid = gameKid(), how = { kilat: 'Jawab soal sebanyak mungkin dalam 60 detik. Jawaban benar berturut-turut membuat kombo 🔥.', balon: 'Balon terbang ke atas. Ketuk balon yang sesuai perintah di atas. Ketuk balon yang salah, poinmu berkurang 1. Perintah berganti setiap 5 balon.', pasangan: 'Buka dua kartu. Jika soal dan jawabannya cocok, kartu tetap terbuka. Semakin sedikit salah tebak, semakin banyak bintang.' }[x.type];
+    const kid = gameKid(), how = { kilat: 'Jawab soal sebanyak mungkin dalam 60 detik. Jawaban benar berturut-turut membuat kombo 🔥.', balon: 'Balon terbang ke atas. Ketuk balon yang sesuai perintah di atas. Ketuk balon yang salah, poinmu berkurang 1. Perintah berganti setiap 5 balon.', pasangan: 'Buka dua kartu. Jika soal dan jawabannya cocok, kartu tetap terbuka. Semakin sedikit salah tebak, semakin banyak bintang.', susun: `Ketuk sebuah kolom untuk menjatuhkan balok. Dua balok yang bersentuhan (samping atau atas-bawah) dan jumlahnya ${x.target !== undefined ? x.show(x.target) : ''} akan hilang. Hilang beruntun = poin bonus! Permainan selesai jika semua kolom penuh.`, kembar: `Ketuk sebuah kolom untuk menjatuhkan balok. Balok yang sama dan bersentuhan bergabung menjadi dua kali lipat. Setiap kali balok terbesarmu berlipat dua = 10 poin (mulai dari ${x.base ? x.base[0] : 1}). Permainan selesai jika semua kolom penuh.` }[x.type];
     app.innerHTML = shell(`<a class="back" href="#/permainan">← Semua permainan</a>
       <section class="card ghead"><span class="gicon g-${x.type}">${x.icon}</span><div class="grow"><small class="muted">Kelas ${x.grade} · ${G.TYPES[x.type]}</small><h1>${x.name}</h1></div></section>
       <div id="garea"><section class="card center gintro"><p>${how}</p><p class="small muted">⭐ ${x.stars[0]} poin · ⭐⭐ ${x.stars[1]} poin · ⭐⭐⭐ ${x.stars[2]} poin</p>${kid ? '' : '<p class="small muted">Kamu belum masuk sebagai siswa, jadi bintang tidak disimpan.</p>'}<button class="btn" data-act="gstart">▶ Mulai</button></section></div>`,
