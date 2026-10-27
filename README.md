@@ -17,6 +17,7 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 - `js/grade3.js` … `js/grade6.js`: kelas 3 (55 keterampilan), 4 (55), 5 (49), 6 (51). Total 344 keterampilan.
 - `js/lessons-a.js` (kelas 1–3) dan `js/lessons-b.js` (kelas 4–6): Pelajaran untuk setiap bab (92 bab, 253 subbab) dengan langkah bernomor, catatan Cara Singapura, dan contoh "Ayo coba!" yang dibuat dari pembuat soal latihan. Rute `#/pelajaran/<bab>`.
 - `js/avatars.js`: katalog avatar (anak, guru, hewan, tumbuhan, bentuk, ikon) dan ilustrasi SVG Ustadz, Ustadzah, anak berhijab, anak berpeci. `js/sound.js`: efek suara Web Audio (benar, salah, Mahir, Tuntas, tugas selesai).
+- `js/manual.js`: isi Panduan pemakaian untuk guru, orang tua, dan siswa (rute `#/panduan/<guru|ortu|siswa>`, bisa dicetak atau disimpan sebagai PDF).
 - `icons/` dan `manifest.webmanifest`: ikon aplikasi untuk browser dan layar utama HP.
 - Setiap bab mencatat rujukan IXL, Singapore Math, dan Kurikulum Merdeka (`ixl`, `sg`, `km`), yang tampil di tab Referensi pada dasbor guru.
 - `js/store.js`: penyimpanan data (saat ini `localStorage` di perangkat), dan SmartScore.

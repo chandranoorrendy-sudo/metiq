@@ -134,6 +134,7 @@
         <a class="role r2" href="#/guru"><span class="ri">${avHTML('svg:ustadzah')}</span><b>Saya Guru</b><small>Kelola kelas & lihat kemajuan</small></a>
         <a class="role r3" href="#/ortu"><span class="ri">👨‍👩‍👧</span><b>Saya Orang Tua</b><small>Lihat laporan anak</small></a>
       </section>
+      <a class="card mlink" href="#/panduan/guru"><span class="micon">📘</span><span class="grow"><b>Panduan pemakaian</b><small>Cara memakai Metiq untuk guru, orang tua, dan siswa</small></span>→</a>
       <section class="card">
         <h2>Isi kurikulum</h2>
         <p class="muted">Gabungan daftar keterampilan IXL kelas 1 dan alur Singapore Math (pasangan bilangan, membuat 10, model batang), disesuaikan dengan konteks Indonesia.</p>
@@ -200,7 +201,7 @@
         const us = unitScore(st.id, u);
         return `<details class="unit card" style="--c:${u.color}" ${open === u.id ? 'open' : ''} data-unit="${u.id}"><summary><span class="uicon">${u.icon}</span><span class="utitle"><b>${u.id}. ${u.name}</b><small>${us.prof} dari ${us.total} keterampilan mahir</small></span><span class="ubar"><i style="width:${us.avg}%"></i></span></summary><a class="lessonlink" href="#/pelajaran/${u.id}">📖 Pelajaran: ${u.name}</a><div class="sklist">${u.skills.map((s) => skillLink(s.id, prog[s.id])).join('')}</div></details>`;
       }).join('')}</div>
-    `, { right: ses.back ? `<button class="link" data-act="backparent">← Akun orang tua</button>` : `<button class="link" data-act="logout">Keluar</button>` });
+    `, { right: `<span class="topr"><a class="help" href="#/panduan/siswa" aria-label="Panduan">❓</a>${ses.back ? '<button class="link" data-act="backparent">← Akun orang tua</button>' : '<button class="link" data-act="logout">Keluar</button>'}</span>` });
   }
   function skillLink(id, p) {
     const s = SKILLS[id]; const sc = p ? p.score : 0;
@@ -721,6 +722,23 @@
     app.innerHTML = shell((ses.ptoken ? '<a class="back" href="#/ortu/anak">← Anak saya</a>' : '') + reportHTML(k, 'ortu') + `<p class="center muted small">SmartScore: 0–49 Mulai · 50–79 Berkembang · 80–99 Mahir · 100 Tuntas 🏆</p>`, { right: topRight() });
   }
 
+  /* ---------- Panduan pemakaian ---------- */
+  function viewManual(tab) {
+    const M = window.METIQ_MANUAL, ses = session.get();
+    if (!M[tab] || tab === 'faq') tab = ses.role === 'siswa' ? 'siswa' : ses.role === 'ortu' ? 'ortu' : 'guru';
+    const m = M[tab];
+    const tabs = [['guru', `${avHTML('svg:ustadzah')} Guru`], ['ortu', '👨‍👩‍👧 Orang Tua'], ['siswa', '🧒 Siswa']];
+    app.innerHTML = shell(`
+      <button class="back link noprint" data-act="back">← Kembali</button>
+      <div class="gtabs noprint">${tabs.map(([k, l]) => `<a class="${k === tab ? 'on' : ''}" href="#/panduan/${k}">${l}</a>`).join('')}</div>
+      <div class="mprint">
+        <section class="card mhead"><h1>📘 ${m.title}</h1><p>${m.intro}</p><p class="muted small">Metiq · ${esc(location.origin + location.pathname)}</p><button class="btn sm ghost noprint" data-act="printmanual">🖨️ Cetak / simpan PDF</button></section>
+        <div class="ltoc noprint">${m.sections.map((x, i) => `<button data-act="mgo" data-i="${i}">${x.icon} ${x.t}</button>`).join('')}</div>
+        ${m.sections.map((x, i) => `<section class="card msec" id="ms-${i}"><h2><span class="micon">${x.icon}</span>${i + 1}. ${x.t}</h2><ol class="lsteps">${x.steps.map((st) => `<li>${st}</li>`).join('')}</ol>${x.tip ? `<div class="mtip">💡 ${x.tip}</div>` : ''}</section>`).join('')}
+        <section class="card msec"><h2><span class="micon">❓</span>Pertanyaan umum</h2>${M.faq.map(([q, a]) => `<details class="faq" open><summary>${q}</summary><p>${a}</p></details>`).join('')}</section>
+      </div>`);
+  }
+
   /* ---------- Notifikasi tugas ---------- */
   // Waktu terakhir halaman notifikasi dibuka, disimpan per akun di perangkat ini
   const seenKey = () => { const x = session.get(); return 'metiq_seen_' + (x.role === 'guru' ? 'g' + x.id : x.ptoken ? 'p' + (x.pid || x.ptoken.slice(0, 10)) : 'o' + (x.pcode || x.id)); };
@@ -750,7 +768,7 @@
     return [];
   }
   const bellHTML = () => { const seen = getSeen(), n = notifItems().filter((i) => i.at > seen).length; return `<a class="bell" href="#/notifikasi" aria-label="Notifikasi${n ? `, ${n} baru` : ''}">🔔${n ? `<b>${n > 9 ? '9+' : n}</b>` : ''}</a>`; };
-  const topRight = () => `<span class="topr">${bellHTML()}<button class="link" data-act="logout">Keluar</button></span>`;
+  const topRight = () => `<span class="topr"><a class="help" href="#/panduan" aria-label="Panduan">❓</a>${bellHTML()}<button class="link" data-act="logout">Keluar</button></span>`;
 
   function viewNotifications() {
     const x = session.get();
@@ -864,6 +882,7 @@
       case 'pelajaran': return viewLesson(b);
       case 'avatar': return viewAvatar(b);
       case 'notifikasi': return viewNotifications();
+      case 'panduan': return viewManual(b);
       case 'ortu': return b === 'laporan' ? viewParentReport(c) : b === 'anak' ? viewParentHome() : b === 'daftar' ? viewParentRegister() : viewParentEnter();
       default: return viewHome();
     }
@@ -895,6 +914,8 @@
     else if (act === 'again') { P.score = 0; nextQ(); }
     else if (act === 'say') speak(P.q.speak || P.q.text);
     else if (act === 'pickav') saveAvatar(el.dataset.t, el.dataset.a);
+    else if (act === 'mgo') { const sec = document.getElementById('ms-' + el.dataset.i); if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    else if (act === 'printmanual') { document.body.classList.add('pm'); window.print(); setTimeout(() => document.body.classList.remove('pm'), 500); }
     else if (act === 'reportdone') { el.disabled = true; markDone(el.dataset.a, el.dataset.s, 'ortu').then(() => { toast('Terkirim ke guru ✔'); return cloudOn() ? ensure(true) : true; }).then(route); }
     else if (act === 'sound') { const on = window.SFX.toggle(); el.textContent = on ? '🔔' : '🔕'; toast(on ? 'Suara dinyalakan' : 'Suara dimatikan'); }
     else if (act === 'lexnew') { const box = document.getElementById('lex-' + el.dataset.i); if (box) box.innerHTML = lessonExample(el.dataset.sk); }

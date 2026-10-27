@@ -459,3 +459,21 @@ details[open].trouble > summary, details[open].prog > summary { margin-bottom: 1
 .okc { color: var(--ok); font-weight: 800; }
 .pill.okp { background: var(--ok-bg); color: var(--ok); }
 .asg-done { margin: 6px 0 0; }
+
+/* Panduan */
+.gtabs a { flex: 1 0 auto; text-align: center; text-decoration: none; font-weight: 800; padding: 10px; border-radius: 10px; color: var(--muted); white-space: nowrap; }
+.gtabs a.on { background: var(--brand); color: #fff; }
+.mhead h1 { margin-top: 0; } .mhead p { margin: 6px 0; }
+.msec h2 { display: flex; align-items: center; gap: 8px; }
+.micon { display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #efecff; font-size: 1.1rem; flex: none; }
+.mtip { background: #fff8e6; border-radius: 10px; padding: 8px 12px; font-size: .92rem; }
+.faq { border-bottom: 1px solid var(--line); padding: 8px 0; } .faq:last-child { border-bottom: 0; }
+.faq summary { font-weight: 800; cursor: pointer; } .faq p { margin: 6px 0 0; }
+.mlink { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
+.mlink small { display: block; color: var(--muted); }
+.help { font-size: 1.15rem; text-decoration: none; padding: 4px; line-height: 1; }
+@media print {
+  body.pm .top, body.pm .noprint { display: none !important; }
+  body.pm .wrap > .mprint { display: block !important; }
+  body.pm .card { box-shadow: none; border: 1px solid #ddd; break-inside: avoid; }
+}
