@@ -78,28 +78,43 @@
     progress(sid, skillId) { return (db.progress[sid] || {})[skillId] || { score: 0, att: 0, ok: 0, ms: 0, last: 0 }; },
     progressAll(sid) { return db.progress[sid] || {}; },
     answersOf(sid) { return db.answers.filter((a) => a.sid === sid); },
-    // Nomor percobaan selalu naik agar server menerima pembaruan (asesmen ulang atau diulang guru)
-    diagVersion(sid) { const d = (db.progress[sid] || {})['a:diag']; return d ? d.att : 0; },
-    recordDiag(sid, r) {
-      const p = db.progress[sid] = db.progress[sid] || {}, now = Date.now(), out = {}, v = Store.diagVersion(sid) + 1;
-      p['a:diag'] = out['a:diag'] = { score: Math.min(100, r.level * 10), att: v, ok: r.age, ms: Math.min(r.ms, 3600000), last: now };
-      r.answers.forEach(([id, ok, fast, guess]) => { p['a:' + id] = out['a:' + id] = { score: ok ? (fast === 0 ? 80 : 100) : guess ? 1 : 0, att: Math.max(v, ((p['a:' + id] || {}).att || 0) + 1), ok: ok ? 1 : 0, ms: v, last: now }; });
+    /* Asesmen: pf 'a' = asesmen awal (pretest), 'b' = asesmen akhir (posttest, dibuka admin).
+     * <pf>:diag -> score = kelas × 10 (0 = diulang), att = nomor percobaan (selalu naik), ok = usia, ms = lama, last = waktu
+     * <pf>:<keterampilan> -> score 100 benar & cepat, 80 benar tapi lambat, 1 salah sangat cepat, 0 salah; ms = nomor percobaan */
+    DIAG: {
+      1: ['A1', 'B2', 'C3', 'D3', 'G1'], 2: ['2A1', '2C1', '2D2', '2G3', '2I1'], 3: ['3A1', '3E3', '3F2', '3I3', '3K2'],
+      4: ['4C1', '4D2', '4E1', '4H4', '4J3'], 5: ['5D1', '5E1', '5H1', '5J2', '5L2'], 6: ['6A2', '6C1', '6D2', '6G2', '6I2'],
+    },
+    diagVersion(sid, pf = 'a') { const d = (db.progress[sid] || {})[pf + ':diag']; return d ? d.att : 0; },
+    recordDiag(sid, r, pf = 'a') {
+      const p = db.progress[sid] = db.progress[sid] || {}, now = r.at || Date.now(), out = {}, v = Store.diagVersion(sid, pf) + 1;
+      p[pf + ':diag'] = out[pf + ':diag'] = { score: Math.min(100, r.level * 10), att: v, ok: r.age, ms: Math.min(r.ms, 3600000), last: now };
+      r.answers.forEach(([id, ok, fast, guess]) => { const k = pf + ':' + id; p[k] = out[k] = { score: ok ? (fast === 0 ? 80 : 100) : guess ? 1 : 0, att: Math.max(v, ((p[k] || {}).att || 0) + 1), ok: ok ? 1 : 0, ms: v, last: now }; });
       save();
       return out;
     },
-    resetDiag(sid) {
+    resetDiag(sid, pf = 'a') {
       const p = db.progress[sid] = db.progress[sid] || {};
-      p['a:diag'] = { score: 0, att: Store.diagVersion(sid) + 1, ok: 0, ms: 0, last: Date.now() };
+      p[pf + ':diag'] = { score: 0, att: Store.diagVersion(sid, pf) + 1, ok: 0, ms: 0, last: Date.now() };
       save();
-      return { 'a:diag': Object.assign({}, p['a:diag']) };
+      return { [pf + ':diag']: Object.assign({}, p[pf + ':diag']) };
     },
-    diagOf(sid) {
-      const p = db.progress[sid] || {}, d = p['a:diag'];
+    diagOf(sid, pf = 'a') {
+      const p = db.progress[sid] || {}, d = p[pf + ':diag'];
       if (!d || !d.score) return null;
       // hanya jawaban dari percobaan terakhir (ms menyimpan nomor percobaannya)
-      const items = Object.entries(p).filter(([k, v]) => k.startsWith('a:') && k !== 'a:diag' && v.ms === d.att).map(([k, v]) => ({ id: k.slice(2), ok: v.score >= 80, fast: v.score >= 100, guess: v.score === 1 }));
+      const items = Object.entries(p).filter(([k, v]) => k.startsWith(pf + ':') && k !== pf + ':diag' && k !== pf + ':open' && v.ms === d.att).map(([k, v]) => ({ id: k.slice(2), ok: v.score >= 80, fast: v.score >= 100, guess: v.score === 1 }));
       return { level: Math.round(d.score / 10), age: d.ok, at: d.last, ms: d.ms, items, version: d.att };
     },
+    // Asesmen akhir dibuka (score 1) atau dibatalkan (score 0) oleh admin
+    openPost(sid, open, at) {
+      const p = db.progress[sid] = db.progress[sid] || {}, cur = p['b:open'];
+      p['b:open'] = { score: open ? 1 : 0, att: (cur ? cur.att : 0) + 1, ok: 0, ms: 0, last: at || Date.now() };
+      save();
+      return { 'b:open': Object.assign({}, p['b:open']) };
+    },
+    postOpenAt(sid) { const o = (db.progress[sid] || {})['b:open']; return o && o.score === 1 ? o.last : 0; },
+    postPending(sid) { const o = Store.postOpenAt(sid), d = Store.diagOf(sid, 'b'); return !!o && (!d || d.at < o); },
     recordGame(sid, gameId, points, stars, ms) {
       const p = db.progress[sid] = db.progress[sid] || {}, key = 'g:' + gameId;
       const cur = p[key] || { score: 0, att: 0, ok: 0, ms: 0, last: 0 };
@@ -210,10 +225,14 @@
         ['Bu Rina (Contoh)', 'Kelas 5A (Contoh)', 5, [['Salsa', 0.8], ['Tegar', null], ['Umar', 0.65], ['Vina', null], ['Wawan', 0.6]]],
       ];
       others.forEach(([tn, cn, g, kids]) => { const t2 = Store.createTeacher(tn, '1234'); t2.demo = true; const c2 = Store.createClass(t2.id, cn); fill(c2, g, kids); });
-      // Contoh hasil asesmen awal untuk Alya dan Farel (siswa lain akan diminta mengerjakannya saat masuk)
+      // Contoh asesmen awal (60 hari lalu) dan akhir (hari ini). Siswa lain diminta asesmen awal saat masuk.
+      const fake = (L) => [...(L > 1 ? Store.DIAG[L - 1].map((id) => [id, 1, 1, 0]) : []), ...Store.DIAG[L].map((id, i) => [id, i < 2 ? 1 : 0, i === 0 ? 1 : 0, 0])];
+      const plan = { Alya: [7, 2, 'buka'], Farel: [7, 1, 2], Bima: [7, 1, 2], Lala: [9, 2, 3], Miko: [9, 1, 2], Nina: [9, 2, 2], Oki: [9, 2], Salsa: [11, 3, 4], Umar: [11, 2, 4], Wawan: [11, 2, 3] };
       db.students.forEach((k) => {
-        if (k.name === 'Alya') Store.recordDiag(k.id, { level: 2, age: 7, ms: 412000, answers: [['A1', 1], ['B2', 1], ['C3', 1], ['D3', 1], ['2A1', 1], ['2C1', 0], ['2D2', 0], ['2G3', 1], ['2I1', 1]] });
-        if (k.name === 'Farel') Store.recordDiag(k.id, { level: 1, age: 7, ms: 498000, answers: [['A1', 1], ['B2', 0], ['C3', 1], ['D3', 0], ['G1', 0]] });
+        const x = plan[k.name]; if (!x) return;
+        Store.recordDiag(k.id, { level: x[1], age: x[0], ms: 420000, answers: fake(x[1]), at: now - 60 * 864e5 });
+        if (x[2] === 'buka') Store.openPost(k.id, true, now - 864e5);
+        else if (x[2]) { Store.openPost(k.id, true, now - 2 * 864e5); Store.recordDiag(k.id, { level: x[2], age: x[0], ms: 380000, answers: fake(x[2]), at: now - 864e5 }, 'b'); }
       });
       // Contoh laporan dibuka orang tua (sebagian orang tua rajin, sebagian belum pernah)
       db.students.forEach((k, i) => { const n = [5, 2, 0, 8, 1, 0, 3][i % 7]; for (let j = 0; j < n; j++) Store.logView(k.id, i % 2 ? 'kode' : 'akun', now - (j * 2 + i % 3) * 864e5); });

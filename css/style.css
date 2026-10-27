@@ -642,3 +642,4 @@ h2.allsk { margin: 18px 0 8px; }
 .diag-chips .pill { white-space: normal; }
 .diag-sum { border-left: 6px solid var(--tiffany-dark); }
 .warnline { color: #9a4a00; background: #fff3c4; border-radius: 10px; padding: 6px 10px; }
+.diag-gain { margin: 10px 0 0; font-weight: 800; }

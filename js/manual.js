@@ -65,7 +65,7 @@
           'Setiap siswa mengerjakan asesmen awal sekali, saat pertama kali masuk: memilih umur, lalu 8–15 soal adaptif dari keterampilan kunci kelas 1–6.',
           'Hasilnya terlihat di tab <b>Siswa</b> → nama siswa → <b>🧭 Asesmen awal</b>: kelas tempat siswa sebaiknya belajar dan keterampilan yang perlu dipelajari.',
           'Waktu menjawab ikut dipakai: semua benar dan cepat → asesmen melompat 2 kelas; benar tapi lambat → ditandai 🐢 perlu kelancaran; salah dalam kurang dari 3 detik → ⚠️ mungkin menebak.',
-          'Ketuk <b>↻ Ulangi asesmen</b> jika siswa perlu mengerjakannya lagi, misalnya setelah satu semester. Siswa akan diminta mengerjakan asesmen saat masuk berikutnya.',
+          '<b>Asesmen akhir</b> (posttest) dan <b>mengulang asesmen awal</b> hanya bisa dilakukan admin, agar data awal penelitian tidak tertimpa. Admin membukanya di tab 🏫 Sekolah → 🧭 Asesmen awal–akhir, atau di halaman siswa.',
         ] },
         { icon: '🪪', t: 'NISN dan BBO Digital', steps: [
           'Buka tab <b>Siswa</b> → ketuk nama siswa → bagian <b>🪪 Data siswa</b>, lalu isi <b>NISN</b> (10 angka) dan ketuk Simpan NISN.',
@@ -78,6 +78,7 @@
           '<b>Per kelas</b>: status setiap kelas (🟢 baik, 🟡 perlu dipantau, 🔴 perlu perhatian), siswa aktif, ketepatan, jumlah siswa yang belum paham, dan tugas selesai. Ketuk baris kelas untuk membuka kelas itu.',
           '<b>Materi sulit</b>: bab yang paling banyak belum dipahami di seluruh sekolah, lalu rincian keterampilan dan nama siswa di tiap kelas.',
           '<b>Per guru</b>: indikator kelas setiap guru, misalnya siswa aktif, pemahaman siswa, tugas yang diberikan, tugas khusus sebagai tindak lanjut, dan tugas terakhir. Gunakan sebagai bahan diskusi dan pendampingan guru.',
+          '<b>🧭 Asesmen awal–akhir</b>: buka asesmen akhir (posttest) per kelas atau per siswa, lalu bandingkan level awal dan akhir setiap siswa, kenaikannya, dan apakah siswa sudah mencapai kelas sesuai usianya. Datanya bisa diunduh di 📥 Data penelitian.',
           '<b>⭐ Ulasan</b>: rata-rata bintang dan komentar dari siswa dan orang tua setelah menyelesaikan tugas, per kelas.',
           '<b>📥 Data penelitian</b>: unduh data (CSV) dengan nama yang disamarkan: ringkasan per siswa, semua jawaban, tugas & ulasan, dan keterlibatan orang tua. Kunci kode (rahasia) dipakai untuk mencocokkan dengan nilai tes.',
           'Semua guru cukup memakai Metiq di kelasnya masing-masing. Datanya otomatis masuk ke dasbor koordinator, jadi tidak perlu membuat laporan terpisah.',
