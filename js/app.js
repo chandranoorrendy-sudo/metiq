@@ -138,7 +138,8 @@
       <a class="card mlink" href="#/panduan/guru"><span class="micon">📘</span><span class="grow"><b>Panduan pemakaian</b><small>Cara memakai Metiq untuk guru, orang tua, dan siswa</small></span>→</a>
       <section class="card">
         <h2>Isi kurikulum</h2>
-        <p class="muted">Gabungan daftar keterampilan IXL kelas 1 dan alur Singapore Math (pasangan bilangan, membuat 10, model batang), disesuaikan dengan konteks Indonesia.</p>
+        <p class="muted">${UNITS.length} bab dan ${Object.keys(SKILLS).length} keterampilan untuk kelas 1–6. Cakupan keterampilan mengacu pada IXL, cara menjelaskan memakai metode Singapore Math (pasangan bilangan, membuat 10, model batang, model luas), dan setiap bab dipetakan ke Capaian Pembelajaran Kurikulum Merdeka Fase A–C dengan konteks Indonesia.</p>
+        <p class="small"><a href="#/kurikulum">Bagaimana kurikulum ini disusun, dan mengapa? →</a></p>
         <div class="grade-sum">${GRADES.map((g) => `<a href="#/kurikulum" data-act="grade" data-g="${g.id}"><b>${g.name}</b><small>${unitsOf(g.id).length} bab · ${unitsOf(g.id).reduce((a, u) => a + u.skills.length, 0)} keterampilan</small></a>`).join('')}</div>
         <a class="btn ghost" href="#/kurikulum">Lihat semua keterampilan</a>
       </section>
@@ -151,6 +152,7 @@
       <a class="back" href="#/">← Kembali</a>
       <h1>Kurikulum Matematika SD</h1>
       <p class="muted">Setiap bab mencantumkan rujukan IXL, Singapore Math, dan Kurikulum Merdeka yang setara.</p>
+      <details class="card cdesign-wrap"><summary><b>🧭 Bagaimana kurikulum ini disusun, dan mengapa?</b></summary>${curriculumDesignHTML(false)}</details>
       ${gradeTabs()}
       ${curUnits().map((u) => `<section class="card unit" style="--c:${u.color}"><h2><span class="uicon">${u.icon}</span>${u.id}. ${u.name}</h2><p class="muted small">IXL: ${u.ixl} · Singapore Math: ${u.sg} · Kurikulum Merdeka: ${u.km}</p><a class="lessonlink" href="#/pelajaran/${u.id}">📖 Buka pelajaran</a><ol>${u.skills.map((s) => `<li>${s.name}</li>`).join('')}</ol></section>`).join('')}
     `);
@@ -527,11 +529,38 @@
     }
     return go('#/guru/ringkasan');
   }
+  // Penjelasan cara dan alasan penyusunan kurikulum (dipakai di Referensi guru dan halaman Kurikulum)
+  function curriculumDesignHTML(full) {
+    const n = (g) => unitsOf(g).reduce((a, u) => a + u.skills.length, 0);
+    return `<div class="cdesign">
+      <p>Metiq memadukan tiga rujukan, masing-masing untuk peran yang berbeda: <b>IXL</b> menentukan <i>apa</i> yang dilatih, <b>Singapore Math</b> menentukan <i>bagaimana</i> konsep dijelaskan, dan <b>Kurikulum Merdeka</b> memastikan semuanya sesuai dengan <i>yang wajib dicapai</i> siswa di Indonesia.</p>
+      <h3>Langkah penyusunan</h3>
+      <ol class="csteps">
+        <li><b>Cakupan dari IXL.</b> Daftar keterampilan matematika IXL kelas 1 sampai 6 dibaca satu per satu sebagai peta cakupan. IXL memecah materi menjadi keterampilan kecil (satu keterampilan = satu jenis soal), sehingga cocok untuk latihan adaptif dan untuk melacak bagian mana yang belum dikuasai.</li>
+        <li><b>Urutan dan cara menjelaskan dari Singapore Math.</b> Keterampilan dikelompokkan menjadi bab dan diurutkan mengikuti alur Primary Mathematics / Dimensions Math: konkret → gambar → abstrak, pasangan bilangan, membuat 10, model batang untuk soal cerita, dan model luas untuk perkalian. Alur ini dipakai di pelajaran, penjelasan saat jawaban salah, dan animasi.</li>
+        <li><b>Penyelarasan dengan Kurikulum Merdeka.</b> Setiap bab dipetakan ke elemen Capaian Pembelajaran (Bilangan, Aljabar, Pengukuran, Geometri, Analisis Data dan Peluang) dan fasenya: kelas 1–2 Fase A, kelas 3–4 Fase B, kelas 5–6 Fase C. Topik yang menurut CP baru diajarkan di fase berikutnya tetap disediakan tetapi diberi label <b>Pengayaan</b>.</li>
+        <li><b>Penyesuaian konteks Indonesia.</b> Topik IXL yang khas Amerika diganti: dolar menjadi Rupiah, inci dan pon menjadi satuan metrik, a.m./p.m. menjadi jam 24, titik desimal menjadi koma. Nama dan cerita soal memakai kehidupan sehari-hari di Indonesia.</li>
+        <li><b>Soal, pelajaran, dan umpan balik ditulis sendiri.</b> Tidak ada soal yang disalin. Setiap keterampilan punya pembuat soal acak sehingga soalnya selalu baru, beserta penjelasan langkah demi langkah dan deteksi pola kesalahan (misalnya "mengurangi angka kecil dari angka besar" saat meminjam).</li>
+      </ol>
+      <p class="small">Hasilnya ${UNITS.length} bab dan ${Object.keys(SKILLS).length} keterampilan: ${GRADES.map((g) => `${g.name} ${unitsOf(g.id).length} bab / ${n(g.id)} keterampilan`).join(', ')}.</p>
+      <h3>Mengapa memakai ketiganya?</h3>
+      <div class="refgrid">
+        <div><h3>IXL: rinci dan adaptif</h3><p>Cakupannya sangat lengkap dan terpecah kecil, dengan SmartScore yang menuntut siswa benar secara konsisten. Kekurangannya: berbahasa Inggris, konteks Amerika, dan lebih banyak "latihan" daripada "penjelasan mengapa".</p></div>
+        <div><h3>Singapore Math: pemahaman konsep</h3><p>Metodenya menekankan pemahaman, bukan hafalan, dengan gambar yang sama dipakai dari kelas 1 sampai 6 (pasangan bilangan, model batang). Singapura secara konsisten berada di peringkat teratas studi internasional TIMSS dan PISA.</p></div>
+        <div><h3>Kurikulum Merdeka: yang berlaku di sekolah</h3><p>Guru menilai siswa berdasarkan Capaian Pembelajaran. Pemetaan ke CP membuat latihan di Metiq langsung relevan dengan materi kelas, asesmen, dan rapor.</p></div>
+      </div>
+      ${full ? `<h3>Catatan untuk guru</h3><ul class="small">
+        <li>Kurikulum ini disusun oleh pengembang Metiq dengan bantuan AI (Claude), bukan oleh lembaga resmi. Guru dianjurkan meninjau bab yang dipakai dan memberi masukan jika ada urutan atau istilah yang perlu disesuaikan dengan sekolah.</li>
+        <li>Nama IXL dan Singapore Math dipakai sebagai rujukan cakupan dan metode; Metiq tidak berafiliasi dengan keduanya.</li>
+        <li>Untuk penelitian, sebutkan Metiq sebagai media latihan yang mengacu pada tiga rujukan ini, dan lampirkan peta bab di bawah sebagai kisi-kisi materi.</li></ul>` : ''}
+    </div>`;
+  }
   /* Referensi kurikulum dan metode yang dipakai Metiq, untuk guru */
   function referenceHTML() {
     const nSkills = (g) => unitsOf(g).reduce((a, u) => a + u.skills.length, 0);
     const levels = [['Belum dicoba', 'lv0'], ['Mulai 1–49', 'lv1'], ['Berkembang 50–79', 'lv2'], ['Mahir 80–99', 'lv3'], ['Tuntas 100', 'lv4']];
     return `
+      <section class="card ref"><h2>🧭 Cara kurikulum Metiq disusun</h2>${curriculumDesignHTML(true)}</section>
       <section class="card ref"><h2>📚 Sumber kurikulum</h2>
         <p class="small muted">Metiq menyusun daftar keterampilan dari tiga sumber berikut. Semua soal, gambar, dan penjelasan di Metiq ditulis sendiri dalam bahasa Indonesia; tidak ada soal yang disalin dari sumber mana pun.</p>
         <div class="refsrc"><h3>1. IXL Math</h3>

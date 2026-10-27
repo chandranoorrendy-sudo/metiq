@@ -1,5 +1,5 @@
 /* Metiq — Kurikulum Matematika Kelas 1
- * Disusun dari daftar keterampilan IXL kelas 1 dan alur Singapore Math (Primary 1A/1B):
+ * Disusun dari daftar keterampilan IXL dan alur Singapore Math, dipetakan ke Kurikulum Merdeka (kelas 1 di file ini; kelas 2–6 di grade2.js–grade6.js):
  * pendekatan Konkret–Piktorial–Abstrak, pasangan bilangan (number bond), membuat 10,
  * model batang (bar model), dan pengenalan perkalian/pembagian sebagai kelompok sama banyak.
  * Konteks disesuaikan untuk Indonesia (Rupiah, "setengah empat", nama hari/bulan).

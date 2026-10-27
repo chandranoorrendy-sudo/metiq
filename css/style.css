@@ -618,3 +618,11 @@ h2.allsk { margin: 18px 0 8px; }
 .an-svg .a-move { animation-name: an-move; animation-duration: .7s; } @keyframes an-move { from { transform: translate(var(--dx), var(--dy)); } }
 .an-svg.paused * { animation-play-state: paused; }
 @media (prefers-reduced-motion: reduce) { .an-svg * { animation-duration: .01s !important; } }
+
+/* ---------- Cara kurikulum disusun ---------- */
+.cdesign p, .cdesign li { font-size: .92rem; line-height: 1.55; }
+.csteps { padding-left: 20px; } .csteps li { margin-bottom: 8px; }
+.cdesign .refgrid { margin-bottom: 8px; }
+.cdesign-wrap summary { cursor: pointer; padding: 2px 0; }
+.cdesign-wrap[open] summary { margin-bottom: 8px; }
+@media (min-width: 760px) { .cdesign .refgrid { grid-template-columns: repeat(3, 1fr); } }
