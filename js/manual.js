@@ -132,6 +132,11 @@
           'Ketuk sebuah bab, lalu ketuk keterampilan yang ingin kamu latih.',
           'Jika ada <b>📌 Tugas dari guru</b>, kerjakan itu dulu ya!',
         ] },
+        { icon: '🧭', t: 'Asesmen awal', steps: [
+          'Saat pertama kali masuk, kamu diminta mengerjakan <b>asesmen awal</b>. Cukup sekali saja.',
+          'Pilih umurmu, lalu jawab sekitar 8–15 soal. Soal menjadi lebih mudah atau lebih sulit sesuai jawabanmu. Jika belum tahu, tebak saja.',
+          'Hasilnya menunjukkan kamu sebaiknya belajar materi kelas berapa dan keterampilan apa yang perlu dipelajari. Daftar itu muncul di tab <b>✨ Saran</b>.',
+        ] },
         { icon: '🤔', t: 'Mau belajar apa?', steps: [
           '<b>📌 Dari guru</b>: tugas dari Bu/Pak Guru. Angka merah = tugas yang belum selesai.',
           '<b>🕘 Terakhir</b>: keterampilan yang terakhir kamu latih, supaya mudah dilanjutkan.',

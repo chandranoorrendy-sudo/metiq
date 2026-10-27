@@ -191,6 +191,7 @@
   function viewStudentHome() {
     const ses = session.get(); const st = S.student(ses.id);
     if (ses.role !== 'siswa' || !st) return go('#/siswa');
+    if (!S.diagOf(st.id) && sessionStorage.getItem('metiq_diag_skip') !== st.id) return go('#/asesmen');
     const c = S.cls(st.classId);
     const prog = S.progressAll(st.id);
     const asg = S.assignmentsFor(st.id);
@@ -241,6 +242,11 @@
   }
   // Rekomendasi: ulangi yang lemah, lanjutkan yang sedang dikerjakan, lalu keterampilan baru setelah yang terakhir dikuasai
   function recommend(sid, g) {
+    const dg = S.diagOf(sid), gaps = dg ? dg.items.filter((x) => !x.ok && SKILLS[x.id] && S.progress(sid, x.id).score < 80).map((x) => ({ id: x.id, why: `Dari asesmen awal · Kelas ${SKILLS[x.id].grade}` })) : [];
+    if (gaps.length) return [...gaps.slice(0, 4), ...recommendBase(sid, g).filter((r) => !gaps.some((x) => x.id === r.id))].slice(0, 6);
+    return recommendBase(sid, g);
+  }
+  function recommendBase(sid, g) {
     const prog = S.progressAll(sid), order = unitsOf(g).flatMap((u) => u.skills.map((x) => x.id));
     let last = -1;
     order.forEach((id, i) => { if ((prog[id] || {}).score >= 80) last = i; });
@@ -362,6 +368,7 @@
     // titik ribuan dan spasi diabaikan; tanda minus dan koma desimal dibakukan
     const norm = (x) => String(x).trim().toLowerCase().replace(/[−–]/g, '-').replace(/[.\s]/g, '');
     const ok = q.type === 'choice' ? given === q.answer : norm(given) === norm(q.answer);
+    if (P.diag) return diagAnswer(ok);
     P.locked = true; P.count++;
     const tag = ok ? null : classify(q, given);
     const asgDone = (a) => a.skills.filter((k) => SKILLS[k]).every((k) => S.progress(P.sid, k).score >= 80);
@@ -859,6 +866,103 @@
         <li>Komentar ulasan bisa memuat nama. Periksa sebelum dikutip di tesis.</li></ul></section>`;
   }
 
+  /* ---------- Asesmen awal (sekali di awal): usia, lalu soal adaptif dari keterampilan kunci tiap kelas ---------- */
+  // Lima keterampilan kunci per kelas: bilangan, tambah/kurang, kali/bagi, pecahan/desimal, pengukuran/aljabar
+  const DIAG = {
+    1: ['A1', 'B2', 'C3', 'D3', 'G1'],
+    2: ['2A1', '2C1', '2D2', '2G3', '2I1'],
+    3: ['3A1', '3E3', '3F2', '3I3', '3K2'],
+    4: ['4C1', '4D2', '4E1', '4H4', '4J3'],
+    5: ['5D1', '5E1', '5H1', '5J2', '5L2'],
+    6: ['6A2', '6C1', '6D2', '6G2', '6I2'],
+  };
+  let D = null;
+  const diagKid = () => { const ses = session.get(); return ses.role === 'siswa' && S.student(ses.id); };
+  function viewDiag() {
+    const st = diagKid(); if (!st) return go('#/siswa');
+    if (S.diagOf(st.id)) return go('#/asesmen/hasil');
+    app.innerHTML = shell(`<section class="card narrow center diag-intro"><div class="bigemoji">🧭</div><h1>Asesmen awal</h1>
+      <p>Halo, <b>${esc(st.name)}</b>! Sebelum mulai, jawab beberapa soal singkat supaya Metiq tahu dari mana kamu sebaiknya belajar. Ini bukan ujian dan tidak ada nilai, jadi santai saja. 😊</p>
+      <h2>Berapa umurmu?</h2>
+      <div class="agepick">${[6, 7, 8, 9, 10, 11, 12].map((a) => `<button class="btn ghost" data-act="dage" data-a="${a}" aria-label="${a} tahun"><b>${a}${a === 12 ? '+' : ''}</b><small>tahun</small></button>`).join('')}</div>
+      <p class="small muted">Sekitar 8–15 soal · 5–10 menit · cukup sekali</p>
+      <p class="small"><button class="link" data-act="dskip">Nanti saja</button></p></section>`,
+    { right: `<span class="topr"><a class="help" href="#/panduan/siswa" aria-label="Panduan">❓</a></span>` });
+  }
+  function diagStart(age) {
+    const st = diagKid(); if (!st) return;
+    // titik mulai: satu kelas di bawah kelas sesuai usia (6–7 tahun = kelas 1), agar siswa memulai dengan percaya diri
+    const ageGrade = Math.max(1, Math.min(6, age - 6));
+    D = { sid: st.id, age, bands: {}, n: 0, t0: Date.now(), order: [] };
+    diagBand(Math.max(1, ageGrade - 1));
+  }
+  function diagBand(g) {
+    const q = DIAG[g].filter((id) => SKILLS[id]).sort(() => Math.random() - 0.5);
+    D.grade = g; D.bands[g] = { ok: [], bad: [], queue: q }; D.order.push(g);
+    diagNext();
+  }
+  function diagNext() {
+    const b = D.bands[D.grade], id = b.queue.shift();
+    if (!id) return diagDecide(true);
+    app.innerHTML = `<header class="ptop diag-top"><span class="pback">🧭</span><div class="ptitle"><small>Asesmen awal · bagian ${D.order.length}</small><b>Soal ${D.n + 1}</b></div><button class="pback psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button></header>
+      <div class="sbar"><i style="width:${Math.min(95, (D.n / 15) * 100)}%"></i></div>
+      <main class="wrap practice" id="pq"></main>`;
+    P = { sid: D.sid, sk: SKILLS[id], diag: true, score: 0, count: 0, start: Date.now(), q: null, input: '', locked: false };
+    nextQ();
+    const fb = document.getElementById('fb'); if (fb) fb.innerHTML = '<p class="center small muted">Kerjakan semampumu. Jika belum tahu, tebak saja lalu lanjut.</p>';
+  }
+  function diagAnswer(ok) {
+    P.locked = true; window.SFX.step();
+    const b = D.bands[D.grade]; (ok ? b.ok : b.bad).push(P.sk.id); D.n++;
+    document.querySelectorAll('.opt, .keypad button').forEach((x) => { x.disabled = true; });
+    setTimeout(() => diagDecide(false), 350);
+  }
+  // lulus = minimal 4 dari 5 (atau 3 benar pertama); belum = 3 salah; selain itu berhenti di kelas ini
+  function diagDecide(empty) {
+    const g = D.grade, b = D.bands[g], done = b.ok.length + b.bad.length;
+    let v = null;
+    if (b.ok.length >= 4 || (done === 3 && b.ok.length === 3)) v = 'pass';
+    else if (b.bad.length >= 3) v = 'fail';
+    else if (empty || done >= 5 || D.n >= 20) v = 'mid'; // paling banyak 20 soal
+    if (!v) return diagNext();
+    b.v = v;
+    if (v === 'pass' && g < 6 && !D.bands[g + 1]) return diagBand(g + 1);
+    if (v === 'fail' && g > 1 && !D.bands[g - 1]) return diagBand(g - 1);
+    // kelas tempat siswa sebaiknya belajar sekarang
+    const level = v === 'mid' ? g : v === 'pass' ? Math.min(6, g + (D.bands[g + 1] ? 1 : 0)) : g;
+    const answers = Object.keys(D.bands).sort().flatMap((k) => [...D.bands[k].ok.map((id) => [id, 1]), ...D.bands[k].bad.map((id) => [id, 0])]);
+    const res = S.recordDiag(D.sid, { level, age: D.age, ms: Date.now() - D.t0, answers });
+    if (cloudOn()) Object.entries(res).forEach(([key, v2]) => Cloud.queueProgress(D.sid, session.get().code, key, v2));
+    setGrade(level); D = null; P = null;
+    window.SFX.levelUp();
+    go('#/asesmen/hasil');
+  }
+  function diagSkills(dg, ok) { return dg.items.filter((x) => x.ok === ok && SKILLS[x.id]).sort((a, b) => SKILLS[a.id].grade - SKILLS[b.id].grade); }
+  function viewDiagResult() {
+    const st = diagKid(); if (!st) return go('#/siswa');
+    const dg = S.diagOf(st.id); if (!dg) return go('#/asesmen');
+    const prog = S.progressAll(st.id), good = diagSkills(dg, true), gaps = diagSkills(dg, false).filter((x) => SKILLS[x.id].grade <= dg.level);
+    const first = unitsOf(dg.level)[0];
+    app.innerHTML = shell(`<section class="card center diag-res"><div class="bigemoji">🎉</div><h1>Asesmen selesai!</h1>
+        <p>Terima kasih, <b>${esc(st.name)}</b>. Menurut asesmen ini, kamu siap belajar materi</p><div class="diag-level">Kelas ${dg.level}</div>
+        <p class="small muted">Usia ${dg.age} tahun · ${dg.items.length} soal · ${fmtTime(dg.ms)}</p></section>
+      ${good.length ? `<section class="card"><h2>💪 Yang sudah kamu kuasai</h2><div class="diag-chips">${good.map((x) => `<span class="pill okp">${SKILLS[x.id].code} ${SKILLS[x.id].name}</span>`).join(' ')}</div></section>` : ''}
+      <section class="card"><h2>🎯 Yang perlu kamu pelajari</h2>${gaps.length ? `<p class="small muted">Mulailah dari sini. Daftar ini juga muncul di tab ✨ Saran.</p><div class="sklist">${gaps.map((x) => skillLink(x.id, prog[x.id], `Kelas ${SKILLS[x.id].grade}`)).join('')}</div>`
+        : `<p>Hebat! Semua soal kunci sudah benar. Lanjutkan ke bab pertama Kelas ${dg.level}.</p><div class="sklist">${first.skills.slice(0, 3).map((x) => skillLink(x.id, prog[x.id])).join('')}</div>`}</section>
+      <div class="row-btn"><a class="btn" href="#/belajar">Mulai belajar →</a></div>`,
+    { right: `<span class="topr"><a class="help" href="#/panduan/siswa" aria-label="Panduan">❓</a></span>` });
+  }
+  // Ringkasan asesmen untuk laporan guru, orang tua, dan siswa
+  function diagSummaryHTML(k, audience) {
+    const dg = S.diagOf(k.id);
+    if (!dg) return audience === 'guru' ? `<section class="card diag-sum"><h2>🧭 Asesmen awal</h2><p class="muted small">${esc(k.name)} belum mengerjakan asesmen awal. Asesmen muncul otomatis saat ${esc(k.name)} pertama kali masuk sebagai siswa.</p></section>` : '';
+    const gaps = diagSkills(dg, false), good = diagSkills(dg, true);
+    return `<section class="card diag-sum"><h2>🧭 Asesmen awal</h2>
+      <p>${audience === 'siswa' ? 'Kamu' : esc(k.name)} ditempatkan di <b>materi Kelas ${dg.level}</b> <span class="muted small">(usia ${dg.age} tahun · ${fdate(dg.at)} · ${good.length}/${dg.items.length} soal kunci benar)</span>.</p>
+      ${gaps.length ? `<p class="small"><b>Perlu dipelajari:</b> ${gaps.map((x) => `${SKILLS[x.id].code} ${SKILLS[x.id].name}${S.progress(k.id, x.id).score >= 80 ? ' ✅' : ''}`).join(' · ')}</p>` : '<p class="small">Semua soal kunci yang diberikan sudah dijawab benar.</p>'}
+      ${audience === 'guru' && gaps.length ? '<p class="small muted">✅ = sudah mahir setelah berlatih. Gunakan daftar ini untuk memberi tugas khusus.</p>' : ''}</section>`;
+  }
+
   /* ---------- Mode coba (Alpha): data contoh lokal untuk siswa, orang tua, dan guru ---------- */
   const TRY_CODE = '1234';
   function startDemo(role) {
@@ -1117,6 +1221,7 @@
     return `
       <section class="card report-head"><span class="av lg">${avHTML(k.avatar)}</span><div><h1>${audience === 'ortu' ? 'Laporan belajar ' : audience === 'siswa' ? 'Laporan belajarku: ' : ''}${nm}</h1><p class="muted">${esc((S.cls(k.classId) || {}).name || '')} · 🎁 ${GRADES.reduce((t, g) => t + prizeBoard(k.id, g.id).open, 0)} hadiah · ⭐ ${S.gameStars(k.id)} bintang permainan</p></div></section>
       <section class="card story"><p>${story}</p></section>
+      ${diagSummaryHTML(k, audience)}
       <div class="kpis"><div class="kpi"><small>Total soal</small><b>${sAll.answered}</b></div><div class="kpi"><small>Ketepatan</small><b>${sAll.acc}%</b></div><div class="kpi"><small>Waktu belajar</small><b>${fmtTime(sAll.ms)}</b></div><div class="kpi"><small>Keterampilan mahir</small><b>${sAll.proficient}<span> · ${sAll.mastered}🏆</span></b></div></div>
       <section class="card"><h2>Aktivitas 7 hari terakhir</h2><div class="week">${s7.byDay.map((d) => `<div class="wd"><span class="wv">${d.n || ''}</span><i style="height:${Math.round((d.n / maxDay) * 100)}%"></i><small>${hariPendek[new Date(d.d0).getDay()]}</small></div>`).join('')}</div></section>
       <div class="grid2">
@@ -1335,7 +1440,7 @@
     const [a, b, c] = parts;
     const seq = ++routeSeq;
     S.setMode(cloudOn());
-    const needsData = a === 'belajar' || a === 'permainan' || a === 'main' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi';
+    const needsData = a === 'belajar' || a === 'asesmen' || a === 'permainan' || a === 'main' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi';
     if (needsData && !(await ensure())) return;
     if (seq !== routeSeq) return;
     window.scrollTo(0, 0);
@@ -1344,6 +1449,7 @@
       case 'kurikulum': return viewCurriculum();
       case 'siswa': return b ? viewStudentPick(b) : viewStudentEnter();
       case 'belajar': return viewStudentHome();
+      case 'asesmen': return b === 'hasil' ? viewDiagResult() : viewDiag();
       case 'permainan': return viewGames();
       case 'main': return viewGame(b);
       case 'hadiah': return viewPrizes();
@@ -1368,6 +1474,8 @@
     if (!el) return;
     const act = el.dataset.act;
     if (act === 'gstart') return startGame();
+    if (act === 'dage') return diagStart(+el.dataset.a);
+    if (act === 'dskip') { sessionStorage.setItem('metiq_diag_skip', session.get().id); return go('#/belajar'); }
     if (act === 'anim') { const box = el.closest('.explain').querySelector('.anim-inline'); el.remove(); return window.METIQ_ANIM.mount(box, el.dataset.u); }
     if (act === 'fbedit') { ss.set('fbedit', el.dataset.k); return route(); }
     if (act === 'export') return exportResearch(el.dataset.t);

@@ -78,6 +78,19 @@
     progress(sid, skillId) { return (db.progress[sid] || {})[skillId] || { score: 0, att: 0, ok: 0, ms: 0, last: 0 }; },
     progressAll(sid) { return db.progress[sid] || {}; },
     answersOf(sid) { return db.answers.filter((a) => a.sid === sid); },
+    recordDiag(sid, r) {
+      const p = db.progress[sid] = db.progress[sid] || {}, now = Date.now(), out = {};
+      p['a:diag'] = out['a:diag'] = { score: Math.min(100, r.level * 10), att: r.age, ok: r.level, ms: Math.min(r.ms, 3600000), last: now };
+      r.answers.forEach(([id, ok]) => { p['a:' + id] = out['a:' + id] = { score: ok ? 100 : 0, att: 1, ok: ok ? 1 : 0, ms: 0, last: now }; });
+      save();
+      return out;
+    },
+    diagOf(sid) {
+      const p = db.progress[sid] || {}, d = p['a:diag'];
+      if (!d) return null;
+      const items = Object.entries(p).filter(([k]) => k.startsWith('a:') && k !== 'a:diag').map(([k, v]) => ({ id: k.slice(2), ok: v.score >= 100 }));
+      return { level: d.ok, age: d.att, at: d.last, ms: d.ms, items };
+    },
     recordGame(sid, gameId, points, stars, ms) {
       const p = db.progress[sid] = db.progress[sid] || {}, key = 'g:' + gameId;
       const cur = p[key] || { score: 0, att: 0, ok: 0, ms: 0, last: 0 };
@@ -188,6 +201,11 @@
         ['Bu Rina (Contoh)', 'Kelas 5A (Contoh)', 5, [['Salsa', 0.8], ['Tegar', null], ['Umar', 0.65], ['Vina', null], ['Wawan', 0.6]]],
       ];
       others.forEach(([tn, cn, g, kids]) => { const t2 = Store.createTeacher(tn, '1234'); t2.demo = true; const c2 = Store.createClass(t2.id, cn); fill(c2, g, kids); });
+      // Contoh hasil asesmen awal untuk Alya dan Farel (siswa lain akan diminta mengerjakannya saat masuk)
+      db.students.forEach((k) => {
+        if (k.name === 'Alya') Store.recordDiag(k.id, { level: 2, age: 7, ms: 412000, answers: [['A1', 1], ['B2', 1], ['C3', 1], ['D3', 1], ['2A1', 1], ['2C1', 0], ['2D2', 0], ['2G3', 1], ['2I1', 1]] });
+        if (k.name === 'Farel') Store.recordDiag(k.id, { level: 1, age: 7, ms: 498000, answers: [['A1', 1], ['B2', 0], ['C3', 1], ['D3', 0], ['G1', 0]] });
+      });
       // Contoh laporan dibuka orang tua (sebagian orang tua rajin, sebagian belum pernah)
       db.students.forEach((k, i) => { const n = [5, 2, 0, 8, 1, 0, 3][i % 7]; for (let j = 0; j < n; j++) Store.logView(k.id, i % 2 ? 'kode' : 'akun', now - (j * 2 + i % 3) * 864e5); });
       const ahmad = db.classes.find((x) => x.name === 'Kelas 2A (Contoh)');

@@ -632,3 +632,12 @@ h2.allsk { margin: 18px 0 8px; }
 .demobar { display: flex; align-items: center; gap: 8px; background: #fff3c4; border: 1px solid #f1d98a; border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; font-size: .86rem; }
 .trycard h2 { margin-top: 0; } .trybtns { display: grid; gap: 8px; } .trynote { margin: 10px 0 0; }
 @media (min-width: 760px) { .trybtns { grid-template-columns: repeat(3, 1fr); } }
+
+/* ---------- Asesmen awal ---------- */
+.diag-intro h2 { margin: 16px 0 8px; }
+.agepick { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+.agepick .btn { flex-direction: column; gap: 0; padding: 8px 4px; } .agepick b { font-size: 1.5rem; line-height: 1.1; } .agepick small { font-size: .72rem; font-weight: 700; }
+.diag-top { background: var(--tiffany); }
+.diag-level { display: inline-block; margin: 6px 0 4px; padding: 8px 22px; border-radius: 16px; background: var(--tiffany); color: var(--on-tiffany); font-size: 2rem; font-weight: 900; }
+.diag-chips .pill { white-space: normal; }
+.diag-sum { border-left: 6px solid var(--tiffany-dark); }
