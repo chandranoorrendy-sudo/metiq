@@ -193,14 +193,15 @@
       const now = Date.now();
       batching = true;
       // kemampuan siswa 0–1; null = belum pernah berlatih
-      const fill = (cls, grade, kids) => {
+      // light = data lebih sedikit per keterampilan (untuk kelas tambahan agar penyimpanan tidak penuh)
+      const fill = (cls, grade, kids, light) => {
         const order = C.unitsOf(grade).flatMap((u) => u.skills.map((s) => s.id));
         kids.forEach(([name, skill], ki) => {
         const s = Store.addStudent(cls.id, name);
         if (skill === null) return;
         const reach = Math.floor(order.length * (0.25 + skill * 0.45));
         order.slice(0, reach).forEach((sk, si) => {
-          const n = 6 + Math.floor(Math.random() * 14);
+          const n = light ? 3 + Math.floor(Math.random() * 2) : 5 + Math.floor(Math.random() * 7);
           const hard = C.SKILLS[sk].unit === 'K' || sk === 'H4' || sk === 'G2' ? 0.18 : 0;
           for (let i = 0; i < n; i++) {
             const q = C.SKILLS[sk].gen();
@@ -225,9 +226,22 @@
         ['Bu Rina (Contoh)', 'Kelas 5A (Contoh)', 5, [['Salsa', 0.8], ['Tegar', null], ['Umar', 0.65], ['Vina', null], ['Wawan', 0.6]]],
       ];
       others.forEach(([tn, cn, g, kids]) => { const t2 = Store.createTeacher(tn, '1234'); t2.demo = true; const c2 = Store.createClass(t2.id, cn); fill(c2, g, kids); });
+      // Kelas paralel B (5 jenjang × 2 kelas = 10 kelas), dengan guru yang sudah ada dan dua guru baru
+      const tOf = (name) => db.teachers.find((x) => x.name.startsWith(name)) || (() => { const x = Store.createTeacher(name + ' (Contoh)', '1234'); x.demo = true; return x; })();
+      [
+        ['Bu Guru', 'Kelas 1B (Contoh)', 1, [['Ayu', 0.75], ['Bayu', 0.55], ['Cici', 0.65], ['Doni', 0.45]]],
+        ['Pak Ahmad', 'Kelas 2B (Contoh)', 2, [['Elsa', 0.6], ['Fajar', 0.5], ['Gina', 0.7], ['Hadi', null]]],
+        ['Bu Nur', 'Kelas 3B (Contoh)', 3, [['Intan', 0.8], ['Jaka', 0.75], ['Kirana', 0.85], ['Lutfi', 0.7]]],
+        ['Pak Dimas', 'Kelas 4A (Contoh)', 4, [['Maya', 0.7], ['Nanda', 0.6], ['Oscar', 0.5], ['Pita', 0.8]]],
+        ['Bu Nur', 'Kelas 4B (Contoh)', 4, [['Qori', 0.55], ['Rani', 0.45], ['Sandi', 0.6], ['Tia', null]]],
+        ['Bu Rina', 'Kelas 5B (Contoh)', 5, [['Ulfa', 0.5], ['Vino', 0.45], ['Wulan', 0.55], ['Yusuf', 0.4]]],
+      ].forEach(([tn, cn, g, kids]) => fill(Store.createClass(tOf(tn).id, cn), g, kids, true));
       // Contoh asesmen awal (60 hari lalu) dan akhir (hari ini). Siswa lain diminta asesmen awal saat masuk.
       const fake = (L) => [...(L > 1 ? Store.DIAG[L - 1].map((id) => [id, 1, 1, 0]) : []), ...Store.DIAG[L].map((id, i) => [id, i < 2 ? 1 : 0, i === 0 ? 1 : 0, 0])];
-      const plan = { Alya: [7, 2, 'buka'], Farel: [7, 1, 2], Bima: [7, 1, 2], Lala: [9, 2, 3], Miko: [9, 1, 2], Nina: [9, 2, 2], Oki: [9, 2], Salsa: [11, 3, 4], Umar: [11, 2, 4], Wawan: [11, 2, 3] };
+      const plan = { Alya: [7, 2, 'buka'], Farel: [7, 1, 2], Bima: [7, 1, 2], Lala: [9, 2, 3], Miko: [9, 1, 2], Nina: [9, 2, 2], Oki: [9, 2], Salsa: [11, 3, 4], Umar: [11, 2, 4], Wawan: [11, 2, 3],
+        Ayu: [7, 1, 2], Bayu: [7, 1, 1], Cici: [7, 1, 2], Doni: [7, 1], Gita: [8, 3, 3], Hana: [8, 2, 3], Elsa: [8, 1, 2], Fajar: [8, 1, 2], Gina: [8, 2, 3],
+        Intan: [9, 3, 4], Jaka: [9, 3, 3], Kirana: [9, 3, 4], Lutfi: [9, 2, 3], Maya: [10, 3, 4], Nanda: [10, 2, 3], Oscar: [10, 2, 2], Pita: [10, 4, 5],
+        Qori: [10, 2, 3], Rani: [10, 1, 2], Sandi: [10, 2, 3], Ulfa: [11, 2, 3], Vino: [11, 1, 2], Wulan: [11, 2, 4], Yusuf: [11, 1, 2] };
       db.students.forEach((k) => {
         const x = plan[k.name]; if (!x) return;
         Store.recordDiag(k.id, { level: x[1], age: x[0], ms: 420000, answers: fake(x[1]), at: now - 60 * 864e5 });

@@ -78,6 +78,7 @@
           '<b>Per kelas</b>: status setiap kelas (🟢 baik, 🟡 perlu dipantau, 🔴 perlu perhatian), siswa aktif, ketepatan, jumlah siswa yang belum paham, dan tugas selesai. Ketuk baris kelas untuk membuka kelas itu.',
           '<b>Materi sulit</b>: bab yang paling banyak belum dipahami di seluruh sekolah, lalu rincian keterampilan dan nama siswa di tiap kelas.',
           '<b>Per guru</b>: indikator kelas setiap guru, misalnya siswa aktif, pemahaman siswa, tugas yang diberikan, tugas khusus sebagai tindak lanjut, dan tugas terakhir. Gunakan sebagai bahan diskusi dan pendampingan guru.',
+          '<b>📊 Grafik</b>: sebaran ketertinggalan per kelas, perbandingan kelas paralel, peta penguasaan bab × kelas, dan asesmen awal → akhir. Ketuk batang atau kotak untuk melihat angkanya; setiap grafik juga bisa dilihat sebagai tabel.',
           '<b>🧭 Asesmen awal–akhir</b>: buka asesmen akhir (posttest) per kelas atau per siswa, lalu bandingkan level awal dan akhir setiap siswa, kenaikannya, dan apakah siswa sudah mencapai kelas sesuai usianya. Datanya bisa diunduh di 📥 Data penelitian.',
           '<b>⭐ Ulasan</b>: rata-rata bintang dan komentar dari siswa dan orang tua setelah menyelesaikan tugas, per kelas.',
           '<b>📥 Data penelitian</b>: unduh data (CSV) dengan nama yang disamarkan: ringkasan per siswa, semua jawaban, tugas & ulasan, dan keterlibatan orang tua. Kunci kode (rahasia) dipakai untuk mencocokkan dengan nilai tes.',

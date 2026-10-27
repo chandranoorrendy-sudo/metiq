@@ -643,3 +643,21 @@ h2.allsk { margin: 18px 0 8px; }
 .diag-sum { border-left: 6px solid var(--tiffany-dark); }
 .warnline { color: #9a4a00; background: #fff3c4; border-radius: 10px; padding: 6px 10px; }
 .diag-gain { margin: 10px 0 0; font-weight: 800; }
+
+/* ---------- Grafik koordinator ---------- */
+.vz h2 { margin-top: 0; }
+.vzsvg { display: block; width: 100%; height: auto; font-family: inherit; overflow: visible; margin: 6px 0; }
+.vzlegend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 6px 0; font-size: .78rem; font-weight: 700; color: #52514e; }
+.vzlegend span { display: inline-flex; align-items: center; gap: 6px; }
+.vzlegend i { width: 12px; height: 12px; border-radius: 3px; background: var(--c); }
+.vzlegend i.ring { border-radius: 50%; background: #fff; box-shadow: inset 0 0 0 2.5px var(--c); }
+.vzlegend i.dot { border-radius: 50%; }
+.vzlegend i.tick { width: 3px; height: 14px; border-radius: 2px; }
+.vzpills { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 6px; }
+.vzpills button { border: 1.5px solid var(--line); background: #fff; border-radius: 999px; padding: 5px 11px; font: inherit; font-size: .8rem; font-weight: 800; color: var(--ink); cursor: pointer; }
+.vzpills button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.vzmark { cursor: pointer; transition: opacity .12s; } .vzmark:hover, .vzmark:focus { opacity: .8; outline: none; } .vzhit { cursor: pointer; } .vzhit:focus { outline: none; }
+.vzhm { margin-top: 8px; } .vzhm + .vzhm { border-top: 1px dashed var(--line); padding-top: 6px; }
+.vztable { margin-top: 6px; } .vztable summary { cursor: pointer; font-size: .82rem; font-weight: 800; color: var(--brand); }
+.vztip { position: fixed; z-index: 50; display: none; pointer-events: none; background: #16302b; color: #fff; border-radius: 10px; padding: 6px 10px; box-shadow: 0 6px 18px rgba(0,0,0,.18); max-width: 240px; }
+.vztip b { display: block; font-size: .9rem; } .vztip small { display: block; opacity: .8; font-size: .74rem; }

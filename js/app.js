@@ -681,13 +681,13 @@
   }
   const openBtn = (c, label) => `<button class="btn sm ghost" data-act="openclass" data-id="${c.id}">${label || 'Buka kelas'}</button>`;
   function schoolHTML(ctx, sub) {
-    sub = ['kelas', 'materi', 'guru', 'asesmen', 'ulasan', 'data'].includes(sub) ? sub : 'kelas';
+    sub = ['kelas', 'grafik', 'materi', 'guru', 'asesmen', 'ulasan', 'data'].includes(sub) ? sub : 'kelas';
     const g = getRange();
     const all = ctx.classes.map((c) => classSummary(c, g)).sort((a, b) => b.status - a.status || b.pBehind - a.pBehind);
     const sum = (f) => all.reduce((t, s) => t + s[f], 0);
     const kidsN = sum('n'), answered = all.reduce((t, s) => t + s.answered, 0), correct = all.reduce((t, s) => t + Math.round(s.answered * s.acc / 100), 0);
     const teachers = [...new Set(all.map((s) => s.c.teacherId))];
-    const subs = [['kelas', '🏫 Per kelas'], ['materi', '🧗 Materi sulit'], ['guru', '👩‍🏫 Per guru'], ['asesmen', '🧭 Asesmen awal–akhir'], ['ulasan', '⭐ Ulasan'], ['data', '📥 Data penelitian']];
+    const subs = [['kelas', '🏫 Per kelas'], ['grafik', '📊 Grafik'], ['materi', '🧗 Materi sulit'], ['guru', '👩‍🏫 Per guru'], ['asesmen', '🧭 Asesmen awal–akhir'], ['ulasan', '⭐ Ulasan'], ['data', '📥 Data penelitian']];
     let body;
     if (sub === 'kelas') {
       body = `<section class="card"><h2>Kondisi tiap kelas</h2><p class="muted small">Diurutkan dari yang paling perlu perhatian. "Belum paham" = siswa yang minimal seperempat keterampilan yang sudah dicobanya masih lemah (skor di bawah 80 dengan banyak jawaban salah).</p>
@@ -705,6 +705,8 @@
         ${all.filter((s) => s.n).map((s) => `<section class="card"><div class="lrow"><span class="grow"><b>${esc(s.c.name)}</b> · ${esc(s.c.teacherName || '')}<small>${s.behind} dari ${s.n} siswa belum memahami sebagian materi</small></span>${statusPill(s.status)}</div>
           ${s.hard.length ? s.hard.slice(0, 5).map((h) => `<div class="hardrow"><div class="lrow"><span class="grow"><b>${SKILLS[h.id].code} ${SKILLS[h.id].name}</b><small>Kelas ${SKILLS[h.id].grade} · ketepatan rata-rata ${h.acc}%</small></span><span class="pill">${h.kids.length}/${s.n} siswa</span></div><p class="small muted">${h.kids.map((k) => esc(k.name)).join(', ')}</p></div>`).join('') : '<p class="muted small">Tidak ada materi yang tertinggal.</p>'}
           <div class="row-btn left">${openBtn(s.c)}</div></section>`).join('')}`;
+    } else if (sub === 'grafik') {
+      body = chartsHTML(all);
     } else if (sub === 'asesmen') {
       body = prepostHTML(all);
     } else if (sub === 'ulasan') {
@@ -986,6 +988,160 @@
       ${audience === 'guru' && gaps.length ? '<p class="small muted">✅ = sudah mahir setelah berlatih. Gunakan daftar ini untuk memberi tugas khusus.</p>' : ''}
       ${admin ? `<div class="row-btn left">${pending ? `<button class="btn sm ghost" data-act="postone" data-s="${k.id}" data-o="0">Batalkan asesmen akhir</button>` : `<button class="btn sm" data-act="postone" data-s="${k.id}" data-o="1">🏁 ${post ? 'Ulangi' : 'Buka'} asesmen akhir</button>`}<button class="btn sm ghost" data-act="diagreset" data-s="${k.id}">↻ Ulangi asesmen awal</button></div>` : ''}</section>`;
   }
+
+  /* ---------- Grafik koordinator (khusus admin) ----------
+   * Warna: dua slot kategori (biru, oranye) untuk kelas paralel; tangga biru satu-hue untuk ketertinggalan dan penguasaan.
+   * Palet sudah diperiksa dengan validator (CVD & kontras). Setiap grafik punya legenda, label langsung, tooltip, dan tabel. */
+  const VZ = { s1: '#2a78d6', s2: '#eb6834', s3: '#1baf7a', ord: ['#86b6ef', '#3987e5', '#256abf', '#104281'], none: '#e3e7e6', seq: ['#e8eef5', '#cde2fb', '#9ec5f4', '#6da7ec', '#3987e5', '#256abf', '#104281'], ink2: '#52514e', grid: '#e6ebe9' };
+  const gradeOfClass = (s) => s.grade || +((s.c.name.match(/\d/) || [])[0]) || null;
+  const shortName = (c) => (c.name.match(/\d+\s*[A-Za-z]?/) || [c.name])[0].replace(/\s+/g, '');
+  const tip = (title, value) => `data-tip-t="${esc(title)}" data-tip-v="${esc(value)}" tabindex="0"`;
+  const vzTable = (head, rows) => `<details class="vztable"><summary>Lihat sebagai tabel</summary><div class="tscroll"><table class="tbl"><thead><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr></thead><tbody>${rows.map((r) => `<tr>${r.map((x) => `<td>${x}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>`;
+  const legend = (items) => `<div class="vzlegend">${items.map(([c, l, kind]) => `<span><i class="${kind || ''}" style="--c:${c}"></i>${l}</span>`).join('')}</div>`;
+
+  function chartsHTML(all) {
+    const classes = all.filter((s) => s.n).map((s) => ({ ...s, g: gradeOfClass(s), short: shortName(s.c) })).sort((a, b) => (a.g || 9) - (b.g || 9) || a.short.localeCompare(b.short));
+    if (!classes.length) return emptyCard('Belum ada data', 'Grafik muncul setelah kelas memiliki siswa.');
+    return lagChart(classes) + parallelChart(classes) + heatmapChart(classes) + dumbbellChart(classes);
+  }
+
+  // 1. Sebaran ketertinggalan per kelas (batang bertumpuk 100%) dari asesmen terbaru tiap siswa
+  function lagChart(classes) {
+    const cats = [['Sesuai usia', VZ.ord[0]], ['Tertinggal 1 kelas', VZ.ord[1]], ['Tertinggal 2 kelas', VZ.ord[2]], ['Tertinggal ≥3 kelas', VZ.ord[3]], ['Belum asesmen', VZ.none]];
+    const data = classes.map((s) => {
+      const cnt = [0, 0, 0, 0, 0];
+      S.studentsOf(s.c.id).forEach((k) => { const d = S.diagOf(k.id, 'b') || S.diagOf(k.id); if (!d) return cnt[4]++; const gap = ageGradeOf(d.age) - d.level; cnt[gap <= 0 ? 0 : Math.min(3, gap)]++; });
+      return { s, cnt, n: cnt.reduce((t, x) => t + x, 0) };
+    });
+    const L = 64, W = 340, RW = W - L - 8, RH = 26, H = data.length * RH + 6;
+    const bars = data.map((d, i) => {
+      let x = L; const y = i * RH + 4;
+      const segs = d.cnt.map((v, ci) => {
+        if (!v) return ''; const w = (v / d.n) * RW, cx = x; x += w;
+        const dark = ci === 2 || ci === 3, lbl = w >= 16 ? `<text x="${cx + w / 2}" y="${y + 13}" text-anchor="middle" font-size="10" font-weight="800" fill="${dark ? '#fff' : ci === 4 ? VZ.ink2 : '#16302b'}" pointer-events="none">${v}</text>` : '';
+        return `<rect class="vzmark" x="${cx}" y="${y}" width="${Math.max(0, w)}" height="18" rx="${ci === 0 || x >= L + RW - 0.5 ? 4 : 0}" fill="${cats[ci][1]}" stroke="#fff" stroke-width="2" ${tip(`${d.s.c.name} · ${cats[ci][0]}`, `${v} dari ${d.n} siswa (${pct(v, d.n)}%)`)}/>${lbl}`;
+      }).join('');
+      return `<text x="${L - 6}" y="${y + 13}" text-anchor="end" font-size="11" font-weight="800" fill="#16302b">${esc(d.s.short)}</text>${segs}`;
+    }).join('');
+    const worst = data.slice().sort((a, b) => (b.cnt[2] + b.cnt[3]) / b.n - (a.cnt[2] + a.cnt[3]) / a.n)[0];
+    return `<section class="card vz"><h2>1. Sebaran ketertinggalan per kelas</h2>
+      <p class="small muted">Dari asesmen terbaru setiap siswa (akhir jika ada, jika tidak awal), dibandingkan dengan kelas sesuai usia. Semakin gelap, semakin jauh tertinggal.</p>
+      ${legend(cats.map(([l, c]) => [c, l]))}
+      <svg viewBox="0 0 ${W} ${H}" class="vzsvg" role="img" aria-label="Sebaran ketertinggalan per kelas">${bars}</svg>
+      ${worst && worst.cnt[2] + worst.cnt[3] ? `<p class="small">Paling perlu intervensi: <b>${esc(worst.s.c.name)}</b>, ${worst.cnt[2] + worst.cnt[3]} dari ${worst.n} siswa tertinggal 2 kelas atau lebih.</p>` : ''}
+      ${vzTable(['Kelas', ...cats.map((c) => c[0])], data.map((d) => [esc(d.s.c.name), ...d.cnt]))}</section>`;
+  }
+
+  // 2. Perbandingan kelas paralel per jenjang (batang berkelompok, satu ukuran dipilih)
+  function parallelChart(classes) {
+    const M = [['aktif', 'Siswa aktif', (s) => s.pActive], ['tepat', 'Ketepatan', (s) => (s.answered ? s.acc : null)], ['paham', 'Belum paham', (s) => s.pBehind], ['tugas', 'Tugas selesai', (s) => s.pDone]];
+    const mk = ss.get('vizm', 'aktif'), m = M.find((x) => x[0] === mk) || M[0];
+    const grades = [...new Set(classes.map((s) => s.g).filter(Boolean))].sort();
+    const W = 340, H = 190, top = 18, base = 150, L = 30, gw = (W - L - 6) / grades.length, maxSlots = Math.max(...grades.map((g) => classes.filter((s) => s.g === g).length));
+    const bw = Math.min(26, (gw - 14) / maxSlots - 3), Y = (v) => base - (v / 100) * (base - top);
+    const slotColor = [VZ.s1, VZ.s2, VZ.s3];
+    let o = [0, 50, 100].map((v) => `<line x1="${L}" x2="${W - 4}" y1="${Y(v)}" y2="${Y(v)}" stroke="${VZ.grid}" stroke-width="1"/><text x="${L - 4}" y="${Y(v) + 3}" text-anchor="end" font-size="9" fill="${VZ.ink2}">${v}%</text>`).join('');
+    grades.forEach((g, gi) => {
+      const cs = classes.filter((s) => s.g === g), x0 = L + gi * gw + (gw - cs.length * (bw + 3)) / 2;
+      cs.forEach((s, i) => {
+        const v = m[2](s), x = x0 + i * (bw + 3);
+        if (v === null || v === undefined) { o += `<text x="${x + bw / 2}" y="${base - 4}" text-anchor="middle" font-size="9" fill="${VZ.ink2}">–</text>`; }
+        else o += `<path class="vzmark" d="M${x} ${base}V${Y(v) + 4}q0 -4 4 -4h${bw - 8}q4 0 4 4V${base}Z" fill="${slotColor[i % 3]}" ${tip(`${s.c.name} · ${m[1]}`, `${v}%`)}/><text x="${x + bw / 2}" y="${Y(v) - 4}" text-anchor="middle" font-size="9" font-weight="800" fill="#16302b">${v}</text>`;
+        o += `<text x="${x + bw / 2}" y="${base + 12}" text-anchor="middle" font-size="9" font-weight="700" fill="${VZ.ink2}">${esc(s.short)}</text>`;
+      });
+      o += `<text x="${L + gi * gw + gw / 2}" y="${base + 28}" text-anchor="middle" font-size="10" font-weight="800" fill="#16302b">Kelas ${g}</text>`;
+    });
+    o += `<line x1="${L}" x2="${W - 4}" y1="${base}" y2="${base}" stroke="#16302b" stroke-width="1"/>`;
+    const suffix = (i) => { const sx = classes.filter((s) => s.g).map((s) => s.short.replace(/^\d+/, '')).filter(Boolean); const u = [...new Set(sx)].sort(); return u[i] ? `Kelas paralel ${u[i]}` : `Kelas paralel ke-${i + 1}`; };
+    return `<section class="card vz"><h2>2. Perbandingan kelas paralel</h2>
+      <p class="small muted">Kelas pada jenjang yang sama mempelajari materi yang sama, jadi perbandingannya adil. Mengikuti periode di atas.</p>
+      <div class="vzpills">${M.map(([k, l]) => `<button class="${k === m[0] ? 'on' : ''}" data-act="vizm" data-m="${k}">${l}</button>`).join('')}</div>
+      ${legend([...Array(Math.min(3, maxSlots))].map((_, i) => [slotColor[i], suffix(i)]))}
+      <svg viewBox="0 0 ${W} ${H}" class="vzsvg" role="img" aria-label="${m[1]} per kelas paralel">${o}</svg>
+      <p class="small muted">${m[0] === 'paham' ? 'Lebih rendah lebih baik: persentase siswa yang minimal seperempat keterampilannya masih lemah.' : 'Lebih tinggi lebih baik.'}</p>
+      ${vzTable(['Kelas', 'Jenjang', ...M.map((x) => x[1])], classes.map((s) => [esc(s.c.name), s.g || '–', ...M.map((x) => { const v = x[2](s); return v === null || v === undefined ? '–' : v + '%'; })]))}</section>`;
+  }
+
+  // 3. Peta penguasaan bab × kelas (per jenjang): rata-rata SmartScore bab di setiap kelas
+  function heatmapChart(classes) {
+    const bin = (v) => (v <= 0 ? -1 : v < 20 ? 1 : v < 40 ? 2 : v < 60 ? 3 : v < 80 ? 4 : v < 90 ? 5 : 6);
+    const grades = [...new Set(classes.map((s) => s.g).filter(Boolean))].sort(), weak = [];
+    const blocks = grades.map((g) => {
+      const cs = classes.filter((s) => s.g === g), units = unitsOf(g), cw = Math.min(20, 270 / units.length), L = 40, W = L + units.length * cw + 4, H = 16 + cs.length * (cw + 2);
+      let o = units.map((u, j) => `<text x="${L + j * cw + cw / 2}" y="11" text-anchor="middle" font-size="8" font-weight="800" fill="${VZ.ink2}">${u.id.replace(/^\d/, '')}</text>`).join('');
+      const unitAvg = units.map(() => []);
+      cs.forEach((s, i) => {
+        const kids = S.studentsOf(s.c.id), y = 16 + i * (cw + 2);
+        o += `<text x="${L - 5}" y="${y + cw / 2 + 4}" text-anchor="end" font-size="10" font-weight="800" fill="#16302b">${esc(s.short)}</text>`;
+        units.forEach((u, j) => {
+          const sc = kids.map((k) => unitScore(k.id, u)), avg = Math.round(sc.reduce((t, x) => t + x.avg, 0) / (sc.length || 1)), mahir = kids.filter((k) => unitScore(k.id, u).avg >= 80).length, b = bin(avg);
+          unitAvg[j].push(avg);
+          o += `<rect class="vzmark" x="${L + j * cw + 1}" y="${y}" width="${cw - 2}" height="${cw}" rx="3" fill="${b < 0 ? VZ.none : VZ.seq[b]}" ${tip(`${s.c.name} · Bab ${u.id} ${u.name}`, b < 0 ? 'belum dicoba' : `rata-rata ${avg} · ${mahir}/${kids.length} siswa rata-rata ≥ 80`)}/>`;
+        });
+      });
+      units.forEach((u, j) => { const a = unitAvg[j], m = Math.round(a.reduce((t, x) => t + x, 0) / a.length); if (m > 0 && m < 50) weak.push([g, u, m]); });
+      return `<div class="vzhm"><b class="small">Kelas ${g}</b><svg viewBox="0 0 ${W} ${H}" class="vzsvg" style="max-width:${W * 1.6}px" role="img" aria-label="Penguasaan bab kelas ${g}">${o}</svg></div>`;
+    }).join('');
+    const scale = [['belum dicoba', VZ.none], ['1–19', VZ.seq[1]], ['20–39', VZ.seq[2]], ['40–59', VZ.seq[3]], ['60–79', VZ.seq[4]], ['80–89', VZ.seq[5]], ['90–100', VZ.seq[6]]];
+    weak.sort((a, b) => a[2] - b[2]);
+    return `<section class="card vz"><h2>3. Peta penguasaan bab × kelas</h2>
+      <p class="small muted">Rata-rata SmartScore setiap bab di setiap kelas (semua siswa kelas dihitung). Kolom = bab jenjang itu; ketuk kotak untuk rinciannya.</p>
+      ${legend(scale.map(([l, c]) => [c, l]))}${blocks}
+      ${weak.length ? `<p class="small"><b>Bab yang masih lemah (rata-rata &lt; 50):</b> ${weak.slice(0, 6).map(([g, u, m]) => `Kelas ${g} · ${u.name} (${m})`).join(' · ')}</p>` : ''}
+      ${vzTable(['Kelas', 'Bab', 'Rata-rata SmartScore'], classes.flatMap((s) => unitsOf(s.g || 1).map((u) => { const kids = S.studentsOf(s.c.id); return [esc(s.c.name), `${u.id} ${u.name}`, Math.round(kids.reduce((t, k) => t + unitScore(k.id, u).avg, 0) / (kids.length || 1))]; })))}</section>`;
+  }
+
+  // 4. Asesmen awal → akhir (dumbbell): per kelas, atau per siswa untuk satu kelas
+  function dumbbellChart(classes) {
+    const sel = ss.get('vizdb', ''), one = classes.find((s) => s.c.id === sel);
+    const avg = (xs) => xs.reduce((t, x) => t + x, 0) / xs.length;
+    const rows = one
+      ? S.studentsOf(one.c.id).map((k) => { const a = S.diagOf(k.id), b = S.diagOf(k.id, 'b'); return a ? { label: k.name, pre: a.level, post: b ? b.level : null, age: ageGradeOf((b || a).age), n: 1 } : null; }).filter(Boolean)
+      : classes.map((s) => {
+        const both = S.studentsOf(s.c.id).map((k) => [S.diagOf(k.id), S.diagOf(k.id, 'b')]).filter(([a]) => a);
+        if (!both.length) return null;
+        const paired = both.filter(([, b]) => b);
+        return { label: s.short, pre: avg((paired.length ? paired : both).map(([a]) => a.level)), post: paired.length ? avg(paired.map(([, b]) => b.level)) : null, age: avg(both.map(([a, b]) => ageGradeOf((b || a).age))), n: paired.length, total: both.length };
+      }).filter(Boolean);
+    if (!rows.length) return `<section class="card vz"><h2>4. Asesmen awal → akhir</h2><p class="muted">Belum ada siswa yang mengerjakan asesmen awal.</p></section>`;
+    const L = one ? 70 : 44, W = 340, RH = 24, H = rows.length * RH + 30, X = (v) => L + 12 + ((v - 1) / 5) * (W - L - 30);
+    let o = [1, 2, 3, 4, 5, 6].map((v) => `<line x1="${X(v)}" x2="${X(v)}" y1="4" y2="${H - 22}" stroke="${VZ.grid}"/><text x="${X(v)}" y="${H - 8}" text-anchor="middle" font-size="9" fill="${VZ.ink2}">Kelas ${v}</text>`).join('');
+    rows.forEach((r, i) => {
+      const y = 14 + i * RH, f1 = (v) => dec(v);
+      o += `<text x="${L - 6}" y="${y + 4}" text-anchor="end" font-size="10" font-weight="800" fill="#16302b">${esc(r.label.length > 9 ? r.label.slice(0, 9) + '…' : r.label)}</text>`;
+      o += `<path d="M${X(r.age)} ${y - 8}v16" stroke="${VZ.s2}" stroke-width="3" stroke-linecap="round"/>`;
+      if (r.post !== null) o += `<line x1="${X(r.pre)}" x2="${X(r.post)}" y1="${y}" y2="${y}" stroke="${VZ.ord[1]}" stroke-width="3" stroke-linecap="round"/>`;
+      o += `<circle cx="${X(r.pre)}" cy="${y}" r="5" fill="#fff" stroke="${VZ.s1}" stroke-width="2.5"/>`;
+      if (r.post !== null) o += `<circle cx="${X(r.post)}" cy="${y}" r="5.5" fill="${VZ.s1}" stroke="#fff" stroke-width="2"/>`;
+      o += `<rect x="${L}" y="${y - 11}" width="${W - L}" height="22" fill="transparent" class="vzhit" ${tip(one ? r.label : `${r.label} · ${r.n} dari ${r.total} siswa sudah asesmen akhir`, `awal Kelas ${f1(r.pre)}${r.post !== null ? ` → akhir Kelas ${f1(r.post)} (${r.post - r.pre >= 0 ? '+' : ''}${dec(r.post - r.pre)})` : ' · belum asesmen akhir'} · sesuai usia Kelas ${f1(r.age)}`)}/>`;
+    });
+    const caught = one ? rows.filter((r) => r.post !== null && r.post >= r.age && r.pre < r.age).length : 0;
+    return `<section class="card vz"><h2>4. Asesmen awal → akhir</h2>
+      <p class="small muted">${one ? `Setiap baris satu siswa ${esc(one.c.name)}.` : 'Rata-rata level per kelas dari siswa yang sudah mengerjakan keduanya (jika belum ada asesmen akhir, hanya titik awal).'} Garis oranye = kelas sesuai usia: semakin dekat titik akhir ke garis itu, semakin terkejar ketertinggalannya.</p>
+      <div class="vzpills"><button class="${one ? '' : 'on'}" data-act="vizdb" data-c="">Semua kelas</button>${classes.map((s) => `<button class="${one && one.c.id === s.c.id ? 'on' : ''}" data-act="vizdb" data-c="${s.c.id}">${esc(s.short)}</button>`).join('')}</div>
+      ${legend([[VZ.s1, 'Awal', 'ring'], [VZ.s1, 'Akhir', 'dot'], [VZ.s2, 'Kelas sesuai usia', 'tick']])}
+      <svg viewBox="0 0 ${W} ${H}" class="vzsvg" role="img" aria-label="Level asesmen awal dan akhir">${o}</svg>
+      ${one && caught ? `<p class="small">🎯 ${caught} siswa sudah mengejar kelas sesuai usianya.</p>` : ''}
+      ${vzTable([one ? 'Siswa' : 'Kelas', 'Awal', 'Akhir', 'Naik', 'Sesuai usia'], rows.map((r) => [esc(r.label), dec(r.pre), r.post === null ? '–' : dec(r.post), r.post === null ? '–' : dec(r.post - r.pre), dec(r.age)]))}</section>`;
+  }
+
+  // Tooltip bersama untuk semua grafik (teks disisipkan sebagai textContent)
+  (function vizTooltip() {
+    let box = null;
+    const show = (el, x, y) => {
+      if (!box) { box = document.createElement('div'); box.className = 'vztip'; box.setAttribute('role', 'status'); document.body.appendChild(box); }
+      box.replaceChildren(); const v = document.createElement('b'), t = document.createElement('small');
+      v.textContent = el.dataset.tipV; t.textContent = el.dataset.tipT; box.append(v, t);
+      box.style.display = 'block';
+      const r = box.getBoundingClientRect();
+      box.style.left = Math.max(8, Math.min(window.innerWidth - r.width - 8, x - r.width / 2)) + 'px';
+      box.style.top = Math.max(8, y - r.height - 12) + 'px';
+    };
+    const hide = () => { if (box) box.style.display = 'none'; };
+    document.addEventListener('pointermove', (e) => { const el = e.target.closest && e.target.closest('[data-tip-v]'); if (el) show(el, e.clientX, e.clientY); else hide(); });
+    document.addEventListener('focusin', (e) => { const el = e.target.closest && e.target.closest('[data-tip-v]'); if (el) { const r = el.getBoundingClientRect(); show(el, r.left + r.width / 2, r.top); } });
+    document.addEventListener('focusout', hide); window.addEventListener('scroll', hide, { passive: true });
+  })();
 
   /* ---------- Asesmen awal dan akhir untuk penelitian (khusus admin) ---------- */
   // Simpan progres atas nama siswa memakai kode kelas, seperti saat siswa menyimpan progresnya sendiri
@@ -1552,6 +1708,8 @@
     if (act === 'anim') { const box = el.closest('.explain').querySelector('.anim-inline'); el.remove(); return window.METIQ_ANIM.mount(box, el.dataset.u); }
     if (act === 'fbedit') { ss.set('fbedit', el.dataset.k); return route(); }
     if (act === 'export') return exportResearch(el.dataset.t);
+    if (act === 'vizm') { ss.set('vizm', el.dataset.m); return route(); }
+    if (act === 'vizdb') { ss.set('vizdb', el.dataset.c); return route(); }
     if (act === 'openkid') { e.preventDefault(); const x = session.get(); x.classId = el.dataset.id; session.set(x); return go('#/guru/siswa/' + el.dataset.s); }
     if (act === 'openclass') { const s = session.get(); s.classId = el.dataset.id; session.set(s); return go('#/guru/ringkasan'); }
     if (act === 'dtab') {
