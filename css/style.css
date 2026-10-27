@@ -515,3 +515,11 @@ h2.allsk { margin: 18px 0 8px; }
 .pzinfo { background: #fffbe6; border-radius: 12px; padding: 10px 12px; margin-bottom: 8px; min-height: 44px; }
 .pzbig { font-size: 1.8rem; vertical-align: middle; }
 @media (min-width: 760px) { .pzwrap { grid-template-columns: 1.4fr 1fr; align-items: start; } }
+
+/* ---------- Dasbor koordinator ---------- */
+.tbl tr[data-act="openclass"] { cursor: pointer; } .tbl tr[data-act="openclass"]:hover { background: #faf9ff; }
+.accb.nowrap { white-space: nowrap; }
+.cwarn { border-left: 6px solid var(--warn); } .cwarn.r { border-left-color: var(--no); }
+.cwarn .lrow { border: 0; padding-top: 0; } .cwarn p { margin: 4px 0 0; }
+.hardrow { border-bottom: 1px solid var(--line); padding: 4px 0; } .hardrow .lrow { border: 0; padding-bottom: 0; } .hardrow p { margin: 2px 0 6px; }
+.infonote { background: #eef6ff; border-radius: 12px; padding: 10px 12px; }

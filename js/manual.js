@@ -61,6 +61,13 @@
           'Akun admin melihat dan mengelola <b>semua kelas</b> dari semua guru.',
           'Pilih kelas lewat kotak pilihan di bawah nama kelas; nama guru pemilik kelas ikut ditampilkan.',
         ] },
+        { icon: '🏫', t: 'Dasbor koordinator (admin)', steps: [
+          'Tab <b>🏫 Sekolah</b> hanya muncul untuk admin/koordinator. Pilih periode di atas: 7, 30, 90 hari, atau tanggal tertentu.',
+          '<b>Per kelas</b>: status setiap kelas (🟢 baik, 🟡 perlu dipantau, 🔴 perlu perhatian), siswa aktif, ketepatan, jumlah siswa yang belum paham, dan tugas selesai. Ketuk baris kelas untuk membuka kelas itu.',
+          '<b>Materi sulit</b>: bab yang paling banyak belum dipahami di seluruh sekolah, lalu rincian keterampilan dan nama siswa di tiap kelas.',
+          '<b>Per guru</b>: indikator kelas setiap guru, misalnya siswa aktif, pemahaman siswa, tugas yang diberikan, tugas khusus sebagai tindak lanjut, dan tugas terakhir. Gunakan sebagai bahan diskusi dan pendampingan guru.',
+          'Semua guru cukup memakai Metiq di kelasnya masing-masing. Datanya otomatis masuk ke dasbor koordinator, jadi tidak perlu membuat laporan terpisah.',
+        ] },
       ],
     },
     ortu: {

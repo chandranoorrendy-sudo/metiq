@@ -126,14 +126,17 @@
       const C = window.METIQ_CURRICULUM;
       let t = db.teachers.find((x) => x.demo);
       if (t) return t;
-      t = Store.createTeacher('Bu Guru (Contoh)', '1234'); t.demo = true;
+      // Guru contoh sekaligus koordinator (admin): melihat semua kelas di sekolah contoh
+      t = Store.createTeacher('Bu Guru (Contoh)', '1234'); t.demo = true; t.isAdmin = true;
       const c = Store.createClass(t.id, 'Kelas 1A (Contoh)');
-      const kids = [['Alya', 0.92], ['Bima', 0.78], ['Citra', 0.85], ['Dafa', 0.6], ['Eka', 0.7], ['Farel', 0.5]];
-      const order = C.UNITS.flatMap((u) => u.skills.map((s) => s.id));
       const now = Date.now();
       batching = true;
-      kids.forEach(([name, skill], ki) => {
-        const s = Store.addStudent(c.id, name);
+      // kemampuan siswa 0–1; null = belum pernah berlatih
+      const fill = (cls, grade, kids) => {
+        const order = C.unitsOf(grade).flatMap((u) => u.skills.map((s) => s.id));
+        kids.forEach(([name, skill], ki) => {
+        const s = Store.addStudent(cls.id, name);
+        if (skill === null) return;
         const reach = Math.floor(order.length * (0.25 + skill * 0.45));
         order.slice(0, reach).forEach((sk, si) => {
           const n = 6 + Math.floor(Math.random() * 14);
@@ -151,7 +154,18 @@
             db.answers[db.answers.length - 1].ts = ts;
           }
         });
-      });
+        });
+      };
+      fill(c, 1, [['Alya', 0.92], ['Bima', 0.78], ['Citra', 0.85], ['Dafa', 0.6], ['Eka', 0.7], ['Farel', 0.5]]);
+      // Kelas lain di sekolah contoh, dengan kondisi berbeda-beda untuk dasbor koordinator
+      const others = [
+        ['Pak Ahmad (Contoh)', 'Kelas 2A (Contoh)', 2, [['Gita', 0.9], ['Hana', 0.85], ['Iqbal', 0.8], ['Joko', 0.75], ['Kiki', 0.88]]],
+        ['Bu Sari (Contoh)', 'Kelas 3A (Contoh)', 3, [['Lala', 0.55], ['Miko', 0.45], ['Nina', 0.6], ['Oki', 0.5], ['Putri', 0.75], ['Raka', null]]],
+        ['Bu Rina (Contoh)', 'Kelas 5A (Contoh)', 5, [['Salsa', 0.8], ['Tegar', null], ['Umar', 0.65], ['Vina', null], ['Wawan', 0.6]]],
+      ];
+      others.forEach(([tn, cn, g, kids]) => { const t2 = Store.createTeacher(tn, '1234'); t2.demo = true; const c2 = Store.createClass(t2.id, cn); fill(c2, g, kids); });
+      const ahmad = db.classes.find((x) => x.name === 'Kelas 2A (Contoh)');
+      Store.addAssignment(ahmad.id, ['2G1', '2G2'], 'Latihan perkalian', '');
       batching = false;
       const a1 = Store.addAssignment(c.id, ['K1', 'K2', 'F2'], 'Latihan membaca jam dan membuat 10', '');
       const a2 = Store.addAssignment(c.id, ['C3', 'D3'], 'Fakta penjumlahan dan pengurangan sampai 10', '');
