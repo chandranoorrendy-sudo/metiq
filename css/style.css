@@ -523,3 +523,23 @@ h2.allsk { margin: 18px 0 8px; }
 .cwarn .lrow { border: 0; padding-top: 0; } .cwarn p { margin: 4px 0 0; }
 .hardrow { border-bottom: 1px solid var(--line); padding: 4px 0; } .hardrow .lrow { border: 0; padding-bottom: 0; } .hardrow p { margin: 2px 0 6px; }
 .infonote { background: #eef6ff; border-radius: 12px; padding: 10px 12px; }
+
+/* ---------- Ulasan tugas ---------- */
+.fbform { margin-top: 10px; padding: 10px 12px; background: #fffbe6; border-radius: 12px; display: grid; gap: 6px; }
+.fbform p { margin: 0; }
+.fbform textarea { width: 100%; font: inherit; padding: 8px 10px; border: 2px solid var(--line); border-radius: 10px; resize: vertical; box-sizing: border-box; }
+.fbform .btn { justify-self: start; }
+.starpick { display: inline-flex; flex-direction: row-reverse; justify-content: flex-end; gap: 2px; }
+.starpick label { position: relative; }
+.starpick input { position: absolute; inset: 0; width: 1px; height: 1px; min-width: 0; margin: 0; padding: 0; border: 0; opacity: 0; pointer-events: none; }
+.starpick span { font-size: 2rem; line-height: 1; color: #d9d6ea; cursor: pointer; padding: 2px; }
+.starpick label:hover span, .starpick label:hover ~ label span,
+.starpick label:has(input:checked) span, .starpick label:has(input:checked) ~ label span { color: #f5b301; }
+.starpick label:has(input:focus-visible) span { outline: 2px solid var(--brand); border-radius: 6px; }
+.stars { color: #f5b301; letter-spacing: 1px; white-space: nowrap; } .stars i { color: #d9d6ea; font-style: normal; }
+.fbdone { margin-top: 8px; padding: 8px 10px; background: #fffbe6; border-radius: 10px; }
+.fbbig { display: grid; justify-items: start; gap: 2px; margin-bottom: 10px; } .fbbig b { font-size: 2.2rem; font-weight: 900; line-height: 1; } .fbbig .stars { font-size: 1.3rem; } .fbbig small { color: var(--muted); font-weight: 700; }
+.fbbar { display: grid; grid-template-columns: 30px 1fr 30px; gap: 8px; align-items: center; font-size: .85rem; font-weight: 800; margin: 4px 0; }
+.fbbar i { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; } .fbbar i b { display: block; height: 100%; background: #f5b301; border-radius: 99px; }
+.fbitem { border-bottom: 1px solid var(--line); padding: 4px 0 8px; } .fbitem:last-child { border-bottom: 0; } .fbitem .lrow { border: 0; } .fbitem p { margin: 0 0 0 44px; }
+.nisnform { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; } .nisnform label { flex: 1 1 220px; }

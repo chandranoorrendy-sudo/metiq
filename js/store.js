@@ -5,7 +5,7 @@
 (function () {
   const KEYS = { local: 'metiq_v1', cloud: 'metiq_cloud_cache' };
   let KEY = KEYS.local;
-  const blank = () => ({ teachers: [], classes: [], students: [], progress: {}, answers: [], assignments: [], done: [] });
+  const blank = () => ({ teachers: [], classes: [], students: [], progress: {}, answers: [], assignments: [], done: [], feedback: [], views: [] });
   let db;
   function load() {
     try { db = JSON.parse(localStorage.getItem(KEY)) || blank(); } catch (e) { db = blank(); }
@@ -37,7 +37,7 @@
       db = blank();
       if (b.teacher) db.teachers = [b.teacher];
       if (b.parent) db.parent = b.parent;
-      ['classes', 'students', 'answers', 'assignments', 'done'].forEach((k) => { db[k] = b[k] || []; });
+      ['classes', 'students', 'answers', 'assignments', 'done', 'feedback', 'views'].forEach((k) => { db[k] = b[k] || []; });
       db.progress = b.progress || {};
       if (pending) {
         const have = new Set(db.answers.map((a) => a.id));
@@ -100,6 +100,22 @@
     // Tugas selesai: { aid, sid, at, by } — by = 'siswa' (otomatis) atau 'ortu' (dilaporkan orang tua)
     isDone(aid, sid) { return db.done.some((d) => d.aid === aid && d.sid === sid); },
     doneFor(aid) { return db.done.filter((d) => d.aid === aid); },
+    /* Ulasan tugas, laporan dibuka orang tua, NISN */
+    feedbackOf(aid) { return (db.feedback || []).filter((f) => f.aid === aid); },
+    myFeedback(aid, sid, by) { return (db.feedback || []).find((f) => f.aid === aid && f.sid === sid && f.by === by); },
+    addFeedback(aid, sid, by, rating, comment, at) {
+      db.feedback = (db.feedback || []).filter((f) => !(f.aid === aid && f.sid === sid && f.by === by));
+      db.feedback.push({ aid, sid, by, rating: +rating, comment: String(comment || '').trim().slice(0, 500) || null, at: at || Date.now() }); save();
+    },
+    allFeedback() { return db.feedback || []; },
+    logView(sid, via, at) {
+      db.views = db.views || [];
+      const last = db.views.filter((v) => v.sid === sid && v.via === via).pop();
+      if (!at && last && Date.now() - last.at < 10 * 60000) return;
+      db.views.push({ sid, via, at: at || Date.now() }); save();
+    },
+    viewsOf(sid) { return (db.views || []).filter((v) => v.sid === sid); },
+    setNisn(sid, nisn) { const k = Store.student(sid); if (k) { k.nisn = nisn || null; save(); } },
     markDone(aid, sid, by, at) { if (!Store.isDone(aid, sid)) { db.done.push({ aid, sid, at: at || Date.now(), by: by || 'siswa' }); save(); } },
     // students: daftar id siswa sasaran; kosong = seluruh kelas
     addAssignment(classId, skills, note, due, students) { const a = { id: uid(), classId, skills, note: (note || '').trim(), due: due || '', students: students && students.length ? students : null, createdAt: Date.now() }; db.assignments.push(a); save(); return a; },
@@ -164,6 +180,8 @@
         ['Bu Rina (Contoh)', 'Kelas 5A (Contoh)', 5, [['Salsa', 0.8], ['Tegar', null], ['Umar', 0.65], ['Vina', null], ['Wawan', 0.6]]],
       ];
       others.forEach(([tn, cn, g, kids]) => { const t2 = Store.createTeacher(tn, '1234'); t2.demo = true; const c2 = Store.createClass(t2.id, cn); fill(c2, g, kids); });
+      // Contoh laporan dibuka orang tua (sebagian orang tua rajin, sebagian belum pernah)
+      db.students.forEach((k, i) => { const n = [5, 2, 0, 8, 1, 0, 3][i % 7]; for (let j = 0; j < n; j++) Store.logView(k.id, i % 2 ? 'kode' : 'akun', now - (j * 2 + i % 3) * 864e5); });
       const ahmad = db.classes.find((x) => x.name === 'Kelas 2A (Contoh)');
       Store.addAssignment(ahmad.id, ['2G1', '2G2'], 'Latihan perkalian', '');
       batching = false;
@@ -174,8 +192,12 @@
       if (farel) Store.addAssignment(c.id, ['A5', 'C3'], 'Mengulang: membandingkan bilangan dan penjumlahan', '', [farel.id]);
       if (alya) Store.addAssignment(c.id, ['2G1', '2G3'], 'Materi lanjutan: perkalian', '', [alya.id]);
       // Siswa yang sudah mahir di semua keterampilan tugas dianggap sudah menyelesaikannya
+      const comments = { siswa: ['Seru! Soalnya pas.', 'Agak susah di soal cerita.', '', 'Aku suka membaca jam!'], ortu: ['Anak semangat mengerjakan, terima kasih Bu.', 'Perlu dibantu membaca soal.', ''] };
       [a1, a2].forEach((a) => Store.studentsOf(c.id).forEach((k, i) => {
-        if (a.skills.every((sk) => Store.progress(k.id, sk).score >= 80)) Store.markDone(a.id, k.id, i % 3 === 2 ? 'ortu' : 'siswa', now - (i + 1) * 3600e3);
+        if (!a.skills.every((sk) => Store.progress(k.id, sk).score >= 80)) return;
+        const by = i % 3 === 2 ? 'ortu' : 'siswa';
+        Store.markDone(a.id, k.id, by, now - (i + 1) * 3600e3);
+        Store.addFeedback(a.id, k.id, by, [5, 4, 3, 5, 4][i % 5], comments[by][i % comments[by].length], now - i * 3000e3);
       }));
       return t;
     },

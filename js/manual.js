@@ -61,11 +61,19 @@
           'Akun admin melihat dan mengelola <b>semua kelas</b> dari semua guru.',
           'Pilih kelas lewat kotak pilihan di bawah nama kelas; nama guru pemilik kelas ikut ditampilkan.',
         ] },
+        { icon: '🪪', t: 'NISN dan BBO Digital', steps: [
+          'Buka tab <b>Siswa</b> → ketuk nama siswa → bagian <b>🪪 Data siswa</b>, lalu isi <b>NISN</b> (10 angka) dan ketuk Simpan NISN.',
+          'Setiap kali siswa dengan NISN menyelesaikan tugas, laporannya (tugas, keterampilan, dan SmartScore) otomatis dikirim ke <b>BBO Digital</b> untuk siswa tersebut.',
+          'Status pengiriman terlihat di bagian yang sama: ✅ Diterima BBO, ⏳ Sedang dikirim, atau ⚠️ Gagal terkirim.',
+          'Di bagian itu juga terlihat berapa kali orang tua membuka laporan anak.',
+        ] },
         { icon: '🏫', t: 'Dasbor koordinator (admin)', steps: [
           'Tab <b>🏫 Sekolah</b> hanya muncul untuk admin/koordinator. Pilih periode di atas: 7, 30, 90 hari, atau tanggal tertentu.',
           '<b>Per kelas</b>: status setiap kelas (🟢 baik, 🟡 perlu dipantau, 🔴 perlu perhatian), siswa aktif, ketepatan, jumlah siswa yang belum paham, dan tugas selesai. Ketuk baris kelas untuk membuka kelas itu.',
           '<b>Materi sulit</b>: bab yang paling banyak belum dipahami di seluruh sekolah, lalu rincian keterampilan dan nama siswa di tiap kelas.',
           '<b>Per guru</b>: indikator kelas setiap guru, misalnya siswa aktif, pemahaman siswa, tugas yang diberikan, tugas khusus sebagai tindak lanjut, dan tugas terakhir. Gunakan sebagai bahan diskusi dan pendampingan guru.',
+          '<b>⭐ Ulasan</b>: rata-rata bintang dan komentar dari siswa dan orang tua setelah menyelesaikan tugas, per kelas.',
+          '<b>📥 Data penelitian</b>: unduh data (CSV) dengan nama yang disamarkan: ringkasan per siswa, semua jawaban, tugas & ulasan, dan keterlibatan orang tua. Kunci kode (rahasia) dipakai untuk mencocokkan dengan nilai tes.',
           'Semua guru cukup memakai Metiq di kelasnya masing-masing. Datanya otomatis masuk ke dasbor koordinator, jadi tidak perlu membuat laporan terpisah.',
         ] },
       ],
@@ -95,6 +103,7 @@
           'Ketuk lonceng untuk melihat tugasnya, tenggatnya, dan keterampilan mana yang sudah dikuasai anak (✅).',
           'Ketuk <b>Kerjakan sebagai [nama anak]</b> untuk langsung membuka latihan anak di HP Anda.',
           'Setelah anak mengerjakan, ketuk <b>Laporkan sudah dikerjakan</b>. Guru akan menerima notifikasi.',
+          'Setelah tugas selesai, beri <b>bintang ⭐ dan komentar</b> tentang tugas itu. Ulasan Anda membantu sekolah memperbaiki tugas.',
         ], tip: 'Tugas juga tercatat selesai secara otomatis jika anak sudah Mahir di semua keterampilan tugas.' },
         { icon: '🧒', t: 'Belajar bersama anak', steps: [
           'Di kartu anak, ketuk <b>Belajar sebagai [nama anak]</b>. Hasil latihan tercatat atas nama anak.',
@@ -128,6 +137,10 @@
           '<b>🕘 Terakhir</b>: keterampilan yang terakhir kamu latih, supaya mudah dilanjutkan.',
           '<b>✨ Saran</b>: rekomendasi untukmu: mengulang yang masih sulit, melanjutkan, atau keterampilan baru.',
           '<b>📈 Bagaimana kemajuanku?</b> menunjukkan jumlah soal, waktu belajar, dan keterampilan yang berkembang minggu ini. Ketuk <b>Lihat laporanku</b> untuk laporan lengkap.',
+        ] },
+        { icon: '⭐', t: 'Memberi ulasan tugas', steps: [
+          'Setelah tugas dari guru selesai (✅ Selesai), muncul pertanyaan <b>"Bagaimana tugas ini menurutmu?"</b>.',
+          'Ketuk bintang (1 sampai 5), tulis pendapatmu jika mau, lalu ketuk <b>Kirim ulasan</b>.',
         ] },
         { icon: '🎁', t: 'Papan hadiah', steps: [
           'Setiap kelas punya papan dengan 36 kotak. Di balik setiap kotak ada hadiah!',

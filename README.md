@@ -28,6 +28,19 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 - `js/config.js` berisi URL proyek dan publishable key (aman untuk browser). Kosongkan keduanya untuk mode lokal.
 - `supabase/schema.sql`: tabel dan fungsi RPC. Jalankan di SQL Editor Supabase saat membuat proyek baru.
 - `supabase/005_targeted_assignments.sql`: tugas untuk siswa tertentu (kolom `student_ids`; kosong = seluruh kelas). Jalankan setelah 004.
+- `supabase/006_research_feedback_bbo.sql`: NISN siswa, catatan orang tua membuka laporan, ulasan tugas (bintang + komentar), ringkasan tugas selesai, dan pengiriman laporan tugas ke BBO Digital (pg_net). Jalankan setelah 005.
+
+### Menghubungkan ke BBO Digital
+
+Setelah BBO Digital punya fungsi `metiq_ingest(p_secret text, p_report jsonb)`, isi pengaturan di SQL Editor Metiq:
+
+```sql
+insert into public.integrations (name, url, apikey, secret)
+values ('bbo', 'https://<proyek-bbo>.supabase.co', '<publishable key BBO>', '<rahasia bersama>')
+on conflict (name) do update set url = excluded.url, apikey = excluded.apikey, secret = excluded.secret, enabled = true;
+```
+
+Setiap tugas yang selesai oleh siswa ber-NISN dikirim otomatis; statusnya terlihat di halaman siswa (guru) dan di tabel `bbo_outbox`.
 - `supabase/004_assignment_done.sql`: catatan tugas selesai untuk notifikasi guru (siswa menyelesaikan tugas) dan orang tua (tugas baru). Jalankan setelah 003.
 - `supabase/003_avatars.sql`: avatar guru dan fungsi mengganti avatar siswa/guru. Jalankan setelah 002.
 - `supabase/002_roles.sql`: admin (melihat semua kelas) dan akun orang tua (banyak anak, belajar sebagai anak). Jalankan setelah schema.sql; hasilnya menampilkan kode admin.
