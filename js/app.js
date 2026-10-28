@@ -1190,22 +1190,25 @@
     app.innerHTML = shell(`<a class="back" href="#/">← Kembali</a>
       <section class="card narrow"><h1 class="center">${title}</h1>
         <p class="muted center small">Mode coba memakai data contoh satu sekolah. Tulis namamu supaya Metiq terasa milikmu sendiri.</p>
+        ${role === 'siswa' && deviceKids().length ? `<div class="trykids"><p class="small"><b>Sudah pernah mencoba di HP ini?</b></p>${deviceKids().map((d) => `<button class="btn ghost" data-act="trykid" data-s="${d.sid}">▶ Lanjut sebagai ${esc(d.name)}</button>`).join('')}<p class="small muted">Atau anak lain (kakak/adik) mulai dengan namanya sendiri:</p></div>` : ''}
         <form data-form="trystart" data-r="${role}" class="form">
-          <label>${role === 'siswa' ? 'Namamu' : 'Nama Anda'}<input name="name" required maxlength="40" value="${esc(nm)}" placeholder="${role === 'siswa' ? 'mis. Raka' : role === 'ortu' ? 'mis. Bu Sinta' : 'mis. Bu Rina'}" autocomplete="off"></label>
-          ${role === 'ortu' && deviceKid() ? `<label class="cb trylink"><input type="checkbox" name="link" value="1" checked><span>🔗 Lihat hasil <b>${esc(deviceKid().name)}</b>, yang sudah mencoba sebagai siswa di perangkat ini</span></label>` : ''}
-          ${role === 'ortu' ? `<label>Nama anak <small class="muted">(${deviceKid() ? 'jika tidak dihubungkan, ' : ''}untuk laporan contoh)</small><input name="child" maxlength="40" value="${esc(same ? t.child || '' : '')}" placeholder="mis. Alya" autocomplete="off"></label>` : ''}
+          <label>${role === 'siswa' ? (deviceKids().length ? 'Nama anak baru' : 'Namamu') : 'Nama Anda'}<input name="name" required maxlength="40" value="${role === 'siswa' && deviceKids().length ? '' : esc(nm)}" placeholder="${role === 'siswa' ? 'mis. Raka' : role === 'ortu' ? 'mis. Bu Sinta' : 'mis. Bu Rina'}" autocomplete="off"></label>
+          ${role === 'ortu' && deviceKids().length ? `<fieldset class="trylink"><legend>🔗 Anak yang sudah mencoba di perangkat ini</legend>${deviceKids().map((d) => `<label class="cb"><input type="checkbox" name="link" value="${d.sid}" checked><span>Lihat hasil <b>${esc(d.name)}</b></span></label>`).join('')}</fieldset>` : ''}
+          ${role === 'ortu' ? `<label>Nama anak <small class="muted">(${deviceKids().length ? 'jika tidak ada yang dicentang, ' : ''}untuk laporan contoh)</small><input name="child" maxlength="40" value="${esc(same ? t.child || '' : '')}" placeholder="mis. Alya" autocomplete="off"></label>` : ''}
           <button class="btn">Mulai mencoba →</button>
         </form>
         <p class="small muted trynote">Untuk membantu pengembangan Metiq, nama yang kamu tulis dan aktivitas di mode coba (halaman yang dibuka, soal, permainan) dicatat. Tidak ada data pribadi lain yang diminta.</p></section>`);
   }
   // Akun coba siswa yang dibuat di perangkat ini (dipakai lagi oleh siswa, dan bisa dilihat orang tua di perangkat yang sama)
-  // di luar mode coba, data contoh lokal tidak dimuat, jadi nama disimpan bersama penandanya
-  const deviceKid = () => {
-    const d = ls.get('metiq_try_kid', null); if (!d) return null;
-    if (!session.get().demo) return d.name ? d : null;
-    const k = S.student(d.sid); return k ? { sid: d.sid, name: k.name } : null;
+  // Anak-anak yang pernah mencoba sebagai siswa di perangkat ini (kakak-adik di satu HP).
+  // Di luar mode coba data contoh lokal tidak dimuat, jadi nama disimpan bersama penandanya.
+  const deviceKids = () => {
+    const old = ls.get('metiq_try_kid', null), list = ls.get('metiq_try_kids', old ? [old] : []);
+    if (!session.get().demo) return list.filter((d) => d.name);
+    return list.filter((d) => S.student(d.sid)).map((d) => ({ sid: d.sid, name: S.student(d.sid).name }));
   };
-  function startDemo(role, name, child, link) {
+  const saveDeviceKid = (sid, name) => { const list = ls.get('metiq_try_kids', []).filter((d) => d.sid !== sid); list.push({ sid, name }); ls.set('metiq_try_kids', list.slice(-8)); };
+  function startDemo(role, name, child, links, sid) {
     session.set({ demo: true }); S.setMode(false);
     const t = S.seedDemo(), c = S.classesOf(t.id)[0], kids = S.studentsOf(c.id);
     name = String(name || '').trim().slice(0, 40); child = String(child || '').trim().slice(0, 40);
@@ -1213,18 +1216,23 @@
     tlog('start', { role });
     if (role === 'guru') { if (name) S.renameTeacher(t.id, name); session.set({ role: 'guru', id: t.id, demo: true }); toast(`Selamat datang, ${esc(name || 'Bu/Pak Guru')}!`); return go('#/guru/ringkasan'); }
     if (role === 'ortu') {
-      const dk = link && deviceKid();
-      if (dk) { setTry({ role, name, child: dk.name }); session.set({ role: 'ortu', id: dk.sid, demo: true }); toast(`Selamat datang, ${esc(name || 'Ayah/Bunda')}! Ini hasil ${esc(dk.name)}.`); return go('#/ortu/laporan'); }
+      const mine = deviceKids().filter((d) => (links || []).includes(d.sid));
+      if (mine.length) {
+        setTry({ role, name, child: mine.map((d) => d.name).join(', ') });
+        session.set({ role: 'ortu', id: mine[0].sid, kids: mine.map((d) => d.sid), demo: true });
+        toast(`Selamat datang, ${esc(name || 'Ayah/Bunda')}!`);
+        return go(mine.length > 1 ? '#/ortu/anak' : '#/ortu/laporan');
+      }
       const k = kids.find((x) => x.name === 'Alya') || kids[0];
       if (child) S.renameStudent(k.id, child);
       session.set({ role: 'ortu', id: k.id, demo: true }); toast(`Selamat datang, ${esc(name || 'Ayah/Bunda')}!`); return go('#/ortu/laporan');
     }
     // siswa: akun siswa contoh baru dengan namanya sendiri (mulai dari asesmen awal)
-    const mine = deviceKid() && S.student(deviceKid().sid);
-    const k = mine || S.addStudent(c.id, name || 'Siswa');
-    if (mine && name) S.renameStudent(k.id, name);
-    ls.set('metiq_try_kid', { sid: k.id, name: S.student(k.id).name });
-    setTry({ role, name, child, sid: k.id });
+    // lanjut sebagai anak yang sudah ada, atau anak baru (anak dengan nama sama di perangkat ini dipakai lagi)
+    const again = sid ? deviceKids().find((d) => d.sid === sid) : deviceKids().find((d) => d.name.toLowerCase() === name.toLowerCase());
+    const k = again ? S.student(again.sid) : S.addStudent(c.id, name || 'Siswa');
+    saveDeviceKid(k.id, k.name);
+    setTry({ role, name: k.name, child, sid: k.id });
     session.set({ role: 'siswa', id: k.id, code: c.code, demo: true });
     go('#/belajar');
   }
@@ -1239,7 +1247,7 @@
       <div class="row-btn left"><button class="btn" data-act="realsignup">Daftar guru gratis →</button></div></section>`;
   }
   function realParentCard(k) {
-    const dk = deviceKid(), linked = dk && dk.sid === k.id;
+    const linked = deviceKids().some((d) => d.sid === k.id);
     return `<section class="card realcard"><h2>👨‍👩‍👧 ${linked ? `Ini hasil ${esc(k.name)} di perangkat ini` : 'Ini laporan contoh'}</h2>
       <p class="small">${linked ? `Laporan ini berisi asesmen, latihan, dan permainan yang dikerjakan ${esc(k.name)} saat mencoba sebagai siswa di perangkat ini.` : 'Laporan ini memakai data contoh.'}
         Jika anak Anda sudah memakai Metiq di sekolah, minta <b>kode orang tua</b> (6 huruf/angka) kepada gurunya, lalu ketuk <b>Keluar</b> dan masukkan kode itu di <i>Saya Orang Tua</i>. Laporan sungguhan akan terhubung di HP mana pun.</p>
@@ -1623,27 +1631,28 @@
         </form><p class="muted small center">Setelah masuk, tambahkan anak dengan kode orang tua dari guru.</p></section>`);
   }
   function viewParentHome() {
-    const ses = session.get();
-    if (!(ses.role === 'ortu' && ses.ptoken)) return go('#/ortu');
-    const p = S.db.parent || {};
-    const kids = S.db.students;
+    const ses = session.get(), demoKids = ses.role === 'ortu' && ses.demo && ses.kids;
+    if (!(ses.role === 'ortu' && (ses.ptoken || demoKids))) return go('#/ortu');
+    const p = demoKids ? { name: (tryInfo() || {}).name } : S.db.parent || {};
+    const kids = demoKids ? ses.kids.map((id) => S.student(id)).filter(Boolean) : S.db.students;
     app.innerHTML = shell(`
       <section class="dhead"><div><small class="muted">Akun orang tua</small><h1>Halo, ${esc(p.name || '')}</h1></div></section>
       ${kids.map((k) => { const s7 = stats(k.id, 7), all = stats(k.id); const c = S.cls(k.classId) || {};
         return `<section class="card kidcard"><div class="report-head"><span class="av lg">${avHTML(k.avatar)}</span><div class="grow"><h2>${esc(k.name)}</h2><p class="muted small">${esc(c.name || '')}${c.teacherName ? ' · ' + esc(c.teacherName) : ''}</p></div></div>
           <div class="kpis"><div class="kpi"><small>Soal 7 hari</small><b>${s7.answered}</b></div><div class="kpi"><small>Ketepatan</small><b>${all.acc}%</b></div><div class="kpi"><small>Mahir</small><b>${all.proficient}</b></div><div class="kpi"><small>Terakhir</small><b class="sm">${ago(all.last)}</b></div></div>
           <div class="row-btn"><a class="btn" href="#/ortu/laporan/${k.id}">Lihat laporan</a><button class="btn ghost" data-act="askid" data-id="${k.id}">Belajar sebagai ${esc(k.name)}</button></div>
-          <p class="center small"><button class="link muted" data-act="punlink" data-id="${k.id}">Lepas dari akun</button></p></section>`; }).join('') || '<section class="card center"><div class="bigemoji">🧒</div><p class="muted">Belum ada anak yang terhubung.</p></section>'}
-      <section class="card"><h2>Tambah anak</h2><p class="muted small">Masukkan kode orang tua anak (dari guru).</p>
-        <form data-form="plink" class="form inline"><input name="code" class="codein sm" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC123" required><button class="btn">Tambah</button></form></section>
+          ${demoKids ? '' : `<p class="center small"><button class="link muted" data-act="punlink" data-id="${k.id}">Lepas dari akun</button></p>`}</section>`; }).join('') || '<section class="card center"><div class="bigemoji">🧒</div><p class="muted">Belum ada anak yang terhubung.</p></section>'}
+      ${demoKids ? `<section class="card"><h2>Tambah anak</h2><p class="muted small">Di mode coba, anak lain ditambahkan dengan mencoba sebagai siswa di perangkat ini (Keluar → Coba sebagai siswa → nama anak), lalu masuk lagi sebagai orang tua.</p></section>${realParentCard(kids[0] || {})}`
+        : `<section class="card"><h2>Tambah anak</h2><p class="muted small">Masukkan kode orang tua anak (dari guru).</p>
+        <form data-form="plink" class="form inline"><input name="code" class="codein sm" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC123" required><button class="btn">Tambah</button></form></section>`}
     `, { right: topRight() });
   }
   function viewParentReport(sid) {
     const ses = session.get();
-    const k = ses.role === 'ortu' && S.student(sid || ses.id);
+    const k = ses.role === 'ortu' && S.student(sid || ses.id) && (!ses.kids || ses.kids.includes(sid || ses.id)) && S.student(sid || ses.id);
     if (!k) return go(ses.ptoken ? '#/ortu/anak' : '#/ortu');
     logParentView(k.id);
-    app.innerHTML = shell((ses.ptoken ? '<a class="back" href="#/ortu/anak">← Anak saya</a>' : '') + reportHTML(k, 'ortu') + `<p class="center muted small">SmartScore: 0–49 Mulai · 50–79 Berkembang · 80–99 Mahir · 100 Tuntas 🏆</p>` + (ses.demo ? realParentCard(k) : ''), { right: topRight() });
+    app.innerHTML = shell((ses.ptoken || (ses.kids && ses.kids.length > 1) ? '<a class="back" href="#/ortu/anak">← Anak saya</a>' : '') + reportHTML(k, 'ortu') + `<p class="center muted small">SmartScore: 0–49 Mulai · 50–79 Berkembang · 80–99 Mahir · 100 Tuntas 🏆</p>` + (ses.demo ? realParentCard(k) : ''), { right: topRight() });
   }
 
   /* ---------- Panduan pemakaian ---------- */
@@ -1690,7 +1699,7 @@
         .filter((n) => n.a && n.k).map((n) => Object.assign(n, { at: n.d.at })).sort((p, q) => q.at - p.at);
     }
     if (x.role === 'ortu') {
-      const kids = x.ptoken ? S.db.students : [S.student(x.id)].filter(Boolean);
+      const kids = x.ptoken ? S.db.students : (x.kids || [x.id]).map((id) => S.student(id)).filter(Boolean);
       return kids.flatMap((k) => S.assignmentsFor(k.id).map((a) => ({ at: a.createdAt || 0, a, k }))).sort((p, q) => q.at - p.at);
     }
     return [];
@@ -1906,12 +1915,13 @@
     }
     else if (act === 'pickkid') { session.set({ role: 'siswa', id: el.dataset.id, code: el.dataset.code, demo: session.get().demo || undefined }); go('#/belajar'); }
     else if (act === 'trydemo') go('#/mulai/' + el.dataset.r);
+    else if (act === 'trykid') startDemo('siswa', '', '', [], el.dataset.s);
     else if (act === 'realsignup') { tlog('view', { p: 'daftar' }); tflush(); session.set({}); S.setMode(cloudOn()); go('#/guru/daftar'); }
     else if (act === 'tdays') { ss.set('tdays', +el.dataset.d); return route(); }
     else if (act === 'askid') {
       const ses = session.get(), k = S.student(el.dataset.id), c = k && S.cls(k.classId);
       if (!k || !c) return;
-      session.set({ role: 'siswa', id: k.id, code: c.code, back: { role: 'ortu', ptoken: ses.ptoken, pid: ses.pid } });
+      session.set({ role: 'siswa', id: k.id, code: c.code, demo: ses.demo || undefined, back: ses.demo ? { role: 'ortu', id: ses.id, kids: ses.kids, demo: true } : { role: 'ortu', ptoken: ses.ptoken, pid: ses.pid } });
       go('#/belajar');
     } else if (act === 'backparent') {
       const ses = session.get(); if (ses.back) session.set(ses.back); go('#/ortu/anak');
@@ -1974,7 +1984,7 @@
     const f = e.target, fd = new FormData(f), kind = f.dataset.form;
     // kode coba 1234 membuka data contoh (mode server maupun lokal)
     if ((kind === 'classcode' || kind === 'parentcode') && String(fd.get('code')).trim() === TRY_CODE) return go('#/mulai/' + (kind === 'classcode' ? 'siswa' : 'ortu'));
-    if (kind === 'trystart') return startDemo(f.dataset.r, fd.get('name'), fd.get('child'), fd.get('link') === '1');
+    if (kind === 'trystart') return startDemo(f.dataset.r, fd.get('name'), fd.get('child'), fd.getAll('link'));
     if (kind === 'fb') {
       const rating = +fd.get('rating'), comment = String(fd.get('comment') || '').trim(), { a, s: sid, by } = f.dataset;
       if (!rating) return toast('Pilih bintangnya dulu ya ⭐');

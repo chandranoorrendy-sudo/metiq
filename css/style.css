@@ -678,3 +678,5 @@ h2.allsk { margin: 18px 0 8px; }
 .fbar small { color: var(--muted); white-space: nowrap; }
 .realcard { border: 2px solid var(--tiffany-dark); background: #f4fffc; } .realcard h2 { margin-top: 0; } .realcard ol { padding-left: 20px; } .realcard li { margin-bottom: 6px; }
 .trylink { background: #f2fdf9; border: 1.5px solid var(--tiffany-dark); border-radius: 12px; padding: 10px 12px; font-weight: 700; }
+.trykids { display: grid; gap: 8px; margin-bottom: 10px; } .trykids p { margin: 0; }
+fieldset.trylink { display: grid; gap: 6px; margin: 0; } fieldset.trylink legend { font-weight: 800; font-size: .88rem; padding: 0 4px; }
