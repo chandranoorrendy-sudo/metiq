@@ -57,6 +57,11 @@
           'Setiap bab punya <b>Pelajaran</b> berisi langkah, catatan Cara Singapura, dan contoh soal yang bisa diganti.',
           'Tab <b>Referensi</b> menjelaskan sumber kurikulum, metode Singapore Math, peta setiap bab, dan daftar pola kesalahan.',
         ] },
+        { icon: '🌐', t: 'Super admin dan admin sekolah', steps: [
+          '<b>Super admin</b> (pengelola Metiq) melihat semua sekolah dan keluarga homeschool di tab <b>🌐 Super admin</b>, dan menyetujui pengajuan akun.',
+          'Di <b>✋ Pengajuan</b>: periksa data pemohon, pilih sekolahnya (atau buat sekolah baru) untuk guru, pilih kelas untuk siswa, lalu ketuk <b>Setujui</b> atau <b>Tolak</b>. Kode kelas dan kode orang tua muncul di riwayat, dan bisa dikirim lewat WhatsApp.',
+          '<b>Admin sekolah</b> (koordinator) melihat semua kelas di sekolahnya di tab <b>🏫 Sekolah</b>. Super admin bisa menjadikan guru sebagai admin sekolah di <b>👩‍🏫 Guru</b>.',
+        ] },
         { icon: '🛡️', t: 'Khusus admin', steps: [
           'Akun admin melihat dan mengelola <b>semua kelas</b> dari semua guru.',
           'Pilih kelas lewat kotak pilihan di bawah nama kelas; nama guru pemilik kelas ikut ditampilkan.',
@@ -190,6 +195,7 @@
       ],
     },
     faq: [
+      ['Bagaimana mendapatkan akun Metiq?', 'Ketuk Ajukan akun sungguhan di beranda, pilih guru, keluarga homeschooling, orang tua, atau siswa, lalu isi formulir. Simpan kode pengajuan untuk mengecek status. Akun aktif setelah disetujui admin Metiq.'],
       ['Bagaimana mencoba Metiq tanpa mendaftar?', 'Di beranda, ketuk Coba sebagai siswa, orang tua, atau guru (atau masukkan kode 1234 di halaman siswa atau orang tua), lalu tulis nama. Mode coba memakai data contoh satu sekolah di perangkat itu. Beberapa anak (kakak-adik) bisa mencoba di HP yang sama dengan namanya masing-masing, lalu orang tua di HP itu bisa melihat hasil semua anaknya di halaman Anak saya. Ketuk Keluar untuk kembali.'],
       ['Bagaimana memakai Metiq dengan murid sungguhan?', 'Guru mendaftar gratis (Saya Guru → Daftar guru baru), menambahkan nama murid di Kelola kelas, lalu membagikan kode kelas ke murid dan kode orang tua ke wali murid. Data kelas sungguhan tersimpan di server dan terhubung di HP mana pun.'],
       ['Lupa kode kelas atau kode orang tua?', 'Tanyakan kepada guru. Guru bisa melihat semua kode di menu Kelola kelas.'],

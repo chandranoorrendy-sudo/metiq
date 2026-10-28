@@ -680,3 +680,12 @@ h2.allsk { margin: 18px 0 8px; }
 .trylink { background: #f2fdf9; border: 1.5px solid var(--tiffany-dark); border-radius: 12px; padding: 10px 12px; font-weight: 700; }
 .trykids { display: grid; gap: 8px; margin-bottom: 10px; } .trykids p { margin: 0; }
 fieldset.trylink { display: grid; gap: 6px; margin: 0; } fieldset.trylink legend { font-weight: 800; font-size: .88rem; padding: 0 4px; }
+
+/* ---------- Pengajuan akun dan super admin ---------- */
+.schoolpick { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: .88rem; margin: 0 0 10px; }
+.schoolpick select { flex: 1; max-width: 360px; }
+.reqcard.menunggu { border-left: 6px solid var(--warn); } .reqcard.disetujui { border-left: 6px solid var(--ok); } .reqcard.ditolak { border-left: 6px solid var(--no); }
+.reqcard .lrow { border: 0; padding-top: 0; } .reqcard p { margin: 6px 0; }
+.reqrow { display: flex; gap: 10px; align-items: center; border-bottom: 1px solid var(--line); padding: 8px 0; } .reqrow:last-child { border-bottom: 0; } .reqrow small { display: block; }
+b.code, .code { letter-spacing: 1px; color: var(--brand); }
+td.nowrap { white-space: nowrap; }
