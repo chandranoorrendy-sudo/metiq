@@ -148,10 +148,7 @@
           <p class="lp-roles">Atau masuk sebagai <a href="#/guru">guru</a> · <a href="#/ortu">orang tua</a></p>
           <p class="lp-free">🎁 <b>Gratis</b> untuk semua siswa SD.</p>
         </div>
-        <div class="lp-art" aria-hidden="true">
-          <div class="lp-blob"></div><span class="lp-bubble">5 + 3 = 8</span><span class="lp-star s1">★</span><span class="lp-star s2">★</span><span class="lp-tri">△</span><span class="lp-plus">＋</span>
-          <div class="lp-kid k1">${avHTML(kidAv[0])}</div><div class="lp-kid k2">${avHTML(kidAv[1])}</div><div class="lp-book">📖</div>
-        </div>
+        <div class="lp-art"><img src="img/hero-kids.webp?v=55" width="720" height="664" alt="Dua anak belajar matematika bersama: 5 + 3 = 8" fetchpriority="high"></div>
       </section>
 
       <section class="lp-stats">

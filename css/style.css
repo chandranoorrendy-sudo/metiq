@@ -804,3 +804,6 @@ details.realcard summary { cursor: pointer; list-style: none; } details.realcard
 .lp-kid .avsvg svg, .lp-gav .avsvg svg, .lp-wicon .avsvg svg { width: 100%; height: 100%; display: block; }
 .lp-kid { aspect-ratio: 1; max-width: 150px; }
 .lp-kid.k1 { left: 8%; } .lp-kid.k2 { right: 8%; }
+.lp-art { height: auto; display: flex; justify-content: center; }
+.lp-art img { width: 100%; max-width: 440px; height: auto; display: block; }
+@media (max-width: 760px) { .lp-art { height: auto; max-width: 300px; margin: 0 auto 4px; } }
