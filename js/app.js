@@ -1368,8 +1368,8 @@
     const box = document.getElementById('super-box'); if (!box) return;
     try {
       const tok = session.get().token;
-      const [ov, rq] = await Promise.all([Cloud.rpc('super_overview', { p_token: tok }), Cloud.rpc('super_requests', { p_token: tok })]);
-      SUP = { ov, rq, ctx };
+      const [ov, rq, parents] = await Promise.all([Cloud.rpc('super_overview', { p_token: tok }), Cloud.rpc('super_requests', { p_token: tok }), Cloud.rpc('super_parents', { p_token: tok }).catch(() => [])]);
+      SUP = { ov, rq, ctx, parents };
       if (document.getElementById('super-box')) box.innerHTML = superHTML(sub);
     } catch (e) {
       box.innerHTML = e.status === 404 ? emptyCard('Perlu menjalankan SQL 008', 'Jalankan supabase/006_research_feedback_bbo.sql lalu 008_schools_superadmin.sql di SQL Editor Supabase.') : emptyCard('Gagal memuat', e.status ? esc(e.message) : 'Tidak bisa terhubung ke server.');
@@ -1380,11 +1380,11 @@
     return `https://wa.me/${d.startsWith('0') ? '62' + d.slice(1) : d}?text=${encodeURIComponent(text)}`;
   }
   function superHTML(sub) {
-    sub = ['pengajuan', 'sekolah', 'kelas', 'guru'].includes(sub) ? sub : 'pengajuan';
+    sub = ['pengajuan', 'sekolah', 'kelas', 'guru', 'ortu'].includes(sub) ? sub : 'pengajuan';
     const { ov, rq } = SUP, pend = rq.filter((r) => r.status === 'menunggu'), schools = ov.schools || [];
     const kpi = (l, v) => `<div class="kpi"><small>${l}</small><b>${v}</b></div>`;
     const sum = (k) => schools.reduce((t, s) => t + (s[k] || 0), 0);
-    const subs = [['pengajuan', `✋ Pengajuan${pend.length ? ` (${pend.length})` : ''}`], ['sekolah', '🏫 Sekolah & keluarga'], ['kelas', '📚 Kelas'], ['guru', '👩‍🏫 Guru']];
+    const subs = [['pengajuan', `✋ Pengajuan${pend.length ? ` (${pend.length})` : ''}`], ['sekolah', '🏫 Sekolah & keluarga'], ['kelas', '📚 Kelas'], ['guru', '👩‍🏫 Guru'], ['ortu', '👨‍👩‍👧 Orang tua']];
     let body = '';
     if (sub === 'pengajuan') {
       const schoolOpts = (want) => `<option value="">➕ Sekolah baru (nama di bawah)</option>${schools.filter((s) => s.kind === 'sekolah').map((s) => `<option value="${s.id}" ${want && s.name.toLowerCase() === want.toLowerCase() ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}`;
@@ -1412,11 +1412,17 @@
       const max = Math.max(1, ...schools.map((s) => s.students));
       body = `<section class="card"><h2>Semua sekolah dan keluarga homeschool</h2><div class="tscroll"><table class="tbl"><thead><tr><th>Nama</th><th>Jenis</th><th>Admin</th><th>Guru</th><th>Kelas</th><th>Siswa</th><th>Aktif 7 hari</th><th>Soal 7 hari</th><th>Ketepatan</th><th></th></tr></thead><tbody>
         ${schools.map((s) => `<tr><td><b>${esc(s.name)}</b>${s.city ? `<small class="muted"> · ${esc(s.city)}</small>` : ''}</td><td>${s.kind === 'homeschool' ? '🏡 Homeschool' : '🏫 Sekolah'}</td><td class="wrap">${(s.admins || []).map(esc).join(', ') || '–'}</td><td>${s.teachers}</td><td>${s.classes}</td><td>${s.students}</td><td>${s.active7}/${s.students}</td><td>${fmtNum(s.answers7)}</td><td>${s.answers7 ? pct(s.correct7, s.answers7) + '%' : '–'}</td>
-          <td class="nowrap"><button class="link small" data-act="schooledit" data-id="${s.id}" data-n="${esc(s.name)}">Ubah nama</button> · <button class="link small" data-act="schoolview" data-id="${s.id}">Dasbor</button></td></tr>`).join('')}
+          <td class="nowrap"><button class="link small" data-act="schooledit" data-id="${s.id}" data-n="${esc(s.name)}">Ubah nama</button> · <button class="link small" data-act="schoolview" data-id="${s.id}">Dasbor</button> · <button class="link small danger" data-act="superdel" data-what="school" data-id="${s.id}">Hapus</button></td></tr>`).join('')}
         </tbody></table></div></section>
         <section class="card vz"><h2>Siswa per sekolah</h2><p class="small muted">Panjang batang = jumlah siswa; angka = siswa yang aktif 7 hari terakhir.</p>
           ${schools.filter((s) => s.students).sort((a, b) => b.students - a.students).map((s) => `<div class="fbar"><span>${s.kind === 'homeschool' ? '🏡' : '🏫'} ${esc(s.name)}</span><i><b style="width:${Math.round((s.students / max) * 100)}%"></b></i><small>${s.active7} aktif / ${s.students}</small></div>`).join('') || '<p class="muted">Belum ada siswa.</p>'}</section>
         <section class="card"><h2>Tambah sekolah</h2><form data-form="newschool" class="form inline"><input name="name" required maxlength="100" placeholder="Nama sekolah"><select name="kind"><option value="sekolah">Sekolah</option><option value="homeschool">Homeschool</option></select><button class="btn">Tambah</button></form></section>`;
+    } else if (sub === 'ortu') {
+      const ps = SUP.parents || [];
+      body = `<section class="card"><h2>Akun orang tua</h2><p class="small muted">Menghapus akun orang tua hanya menghapus akun dan tautannya; data belajar anak tetap ada.</p>
+        ${ps.length ? `<div class="tscroll"><table class="tbl"><thead><tr><th>Nama</th><th>Email</th><th>Status</th><th>Anak</th><th>Dibuat</th><th></th></tr></thead><tbody>
+        ${ps.map((x) => `<tr><td><b>${esc(x.name)}</b></td><td>${esc(x.email)}</td><td>${{ aktif: '✅ aktif', menunggu: '⏳ menunggu', ditolak: '❌ ditolak' }[x.status] || esc(x.status)}</td><td class="wrap">${(x.kids || []).map(esc).join(', ') || '–'}</td><td>${fdate(x.createdAt)}</td><td><button class="link small danger" data-act="superdel" data-what="parent" data-id="${x.id}">Hapus</button></td></tr>`).join('')}
+        </tbody></table></div>` : '<p class="muted">Belum ada akun orang tua.</p>'}</section>`;
     } else if (sub === 'kelas') {
       // semua kelas di semua sekolah, dengan pilihan guru kelasnya
       const sname = (id) => (schools.find((x) => x.id === id) || {}).name || 'Tanpa sekolah';
@@ -1431,8 +1437,8 @@
         </tbody></table></div></section>`;
     } else {
       const opts = (sel) => `<option value="">— tanpa sekolah —</option>${schools.map((s) => `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}`;
-      body = `<section class="card"><h2>Guru di semua sekolah</h2><p class="small muted">Pindahkan guru ke sekolah lain atau jadikan admin sekolah (koordinator). Admin sekolah melihat semua kelas di sekolahnya.</p><div class="tscroll"><table class="tbl"><thead><tr><th>Nama</th><th>Email</th><th>Kelas</th><th>Sekolah</th><th>Admin sekolah</th></tr></thead><tbody>
-        ${(ov.teachers || []).map((t) => `<tr><td><b>${esc(t.name)}</b>${t.isSuper ? ' <span class="pill">Super admin</span>' : ''}</td><td>${esc(t.email)}</td><td>${t.classes}</td><td><select data-act="teacherset" data-id="${t.id}" data-f="school">${opts(t.schoolId)}</select></td><td><label class="cb"><input type="checkbox" data-act="teacherset" data-id="${t.id}" data-f="admin" ${t.isSchoolAdmin ? 'checked' : ''}> admin</label></td></tr>`).join('')}
+      body = `<section class="card"><h2>Guru di semua sekolah</h2><p class="small muted">Pindahkan guru ke sekolah lain atau jadikan admin sekolah (koordinator). Admin sekolah melihat semua kelas di sekolahnya.</p><div class="tscroll"><table class="tbl"><thead><tr><th>Nama</th><th>Email</th><th>Kelas</th><th>Sekolah</th><th>Admin sekolah</th><th></th></tr></thead><tbody>
+        ${(ov.teachers || []).map((t) => `<tr><td><b>${esc(t.name)}</b>${t.isSuper ? ' <span class="pill">Super admin</span>' : ''}</td><td>${esc(t.email)}</td><td>${t.classes}</td><td><select data-act="teacherset" data-id="${t.id}" data-f="school">${opts(t.schoolId)}</select></td><td><label class="cb"><input type="checkbox" data-act="teacherset" data-id="${t.id}" data-f="admin" ${t.isSchoolAdmin ? 'checked' : ''}> admin</label></td><td>${t.isSuper ? '' : `<button class="link small danger" data-act="superdel" data-what="teacher" data-id="${t.id}">Hapus</button>`}</td></tr>`).join('')}
         </tbody></table></div></section>`;
     }
     return `<div class="kpis">${kpi('Sekolah · homeschool', `${schools.filter((s) => s.kind === 'sekolah').length}<span> · ${schools.filter((s) => s.kind === 'homeschool').length}</span>`)}${kpi('Guru · kelas', `${(ov.teachers || []).length}<span> · ${sum('classes')}</span>`)}${kpi('Siswa · aktif 7 hari', `${sum('students')}<span> · ${sum('active7')}</span>`)}${kpi('Orang tua · pengajuan', `${ov.parents}<span> · ${ov.pending}⏳</span>`)}</div>
@@ -1477,6 +1483,25 @@ Ketik nama kelas untuk konfirmasi: ${c.name}`);
     }
     try { await Cloud.rpc('teacher_delete_class', { p_token: session.get().token, p_class_id: id, p_confirm_name: typed }); after(); await ensure(true); route(); }
     catch (e) { toast(e.status === 404 ? 'Jalankan supabase/010_delete_class.sql dulu di Supabase' : e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
+  }
+  // Hapus sekolah, guru, atau akun orang tua (super admin); nama diketik ulang sebagai konfirmasi
+  async function superDelete(what, id) {
+    const ov = SUP.ov, x = what === 'school' ? (ov.schools || []).find((v) => v.id === id) : what === 'teacher' ? (ov.teachers || []).find((v) => v.id === id) : (SUP.parents || []).find((v) => v.id === id);
+    if (!x) return;
+    const warn = what === 'school' ? `Sekolah "${x.name}" akan dihapus beserta ${x.teachers} guru, ${x.classes} kelas, dan ${x.students} siswa dengan semua datanya. Akun super admin tidak ikut terhapus.`
+      : what === 'teacher' ? `Akun guru "${x.name}" akan dihapus beserta ${x.classes} kelasnya dan semua siswa di kelas itu.` : `Akun orang tua "${x.name}" akan dihapus. Data belajar anak tetap ada.`;
+    const typed = prompt(`${warn}
+Tindakan ini tidak bisa dibatalkan.
+
+Ketik nama untuk konfirmasi: ${x.name}`);
+    if (typed === null) return;
+    if (typed.trim().toLowerCase() !== x.name.trim().toLowerCase()) return toast('Nama tidak cocok. Tidak ada yang dihapus.');
+    const fn = { school: ['super_school_delete', 'p_school_id'], teacher: ['super_teacher_delete', 'p_teacher_id'], parent: ['super_parent_delete', 'p_parent_id'] }[what];
+    try {
+      await Cloud.rpc(fn[0], { p_token: session.get().token, [fn[1]]: id, p_confirm_name: typed });
+      if (what === 'school' && ss.get('schoolSel', '') === id) ss.set('schoolSel', '');
+      toast(`"${esc(x.name)}" dihapus`); await ensure(true); route();
+    } catch (e) { toast(e.status === 404 ? 'Jalankan supabase/011_delete_school.sql dulu di Supabase' : e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
   }
   async function superClassTeacher(el) {
     const c = S.cls(el.dataset.c), t = (SUP && SUP.ov.teachers || []).find((x) => x.id === el.value); if (!c || !t) return;
@@ -2166,6 +2191,7 @@ Ketik nama kelas untuk konfirmasi: ${c.name}`);
     else if (act === 'reqlogin') { const r = JSON.parse(el.dataset.r); session.set({ role: 'siswa', id: r.studentId, code: r.classCode }); go('#/belajar'); }
     else if (act === 'schooledit') superEditSchool(el.dataset.id, el.dataset.n);
     else if (act === 'delclass') deleteClass(el.dataset.id);
+    else if (act === 'superdel') superDelete(el.dataset.what, el.dataset.id);
     else if (act === 'schoolview') { ss.set('schoolSel', el.dataset.id); go('#/guru/sekolah'); }
     else if (act === 'tdays') { ss.set('tdays', +el.dataset.d); return route(); }
     else if (act === 'askid') {
