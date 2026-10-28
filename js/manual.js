@@ -158,7 +158,7 @@
         { icon: '🎮', t: 'Permainan dan bintang', steps: [
           'Ketuk <b>🎮 Permainan matematika</b> di beranda. Pilih kelasmu, lalu pilih permainan.',
           '<b>⚡ Kilat</b>: jawab sebanyak mungkin dalam 60 detik. <b>🎈 Balon</b>: ketuk balon yang sesuai perintah. <b>🃏 Pasangan</b>: cocokkan kartu soal dengan jawabannya.',
-          '<b>🧱 Menara Pasangan</b>: ketuk kolom untuk menjatuhkan balok; dua balok bersentuhan yang jumlahnya sama dengan sasaran akan hilang. <b>🔢 Menara Kembar</b>: balok yang sama bergabung menjadi dua kali lipat. Jangan sampai semua kolom penuh!',
+          '<b>🧱 Menara Pasangan</b>: ketuk kolom untuk menjatuhkan balok; dua balok bersentuhan yang jumlahnya sama dengan sasaran akan hilang. <b>🔢 Menara Kembar</b>: balok 2, 4, 8 … jatuh terus dan makin cepat. Geser ke balok yang sama (ketuk kolom atau ◀ ▶, lalu ▼ untuk menjatuhkan) agar menyatu menjadi dua kali lipat. Jika tumpukan masuk ke baris merah paling atas, permainan selesai!',
           'Setiap ronde memberi sampai <b>3 bintang ⭐</b>. Bintangmu tersimpan dan terlihat oleh guru dan orang tua.',
         ] },
         { icon: '🎁', t: 'Papan hadiah', steps: [

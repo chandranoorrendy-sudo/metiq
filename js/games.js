@@ -97,8 +97,10 @@
   ].forEach(([grade, target, vals, show, word]) => {
     GAMES.push({ id: grade + 'd', grade, type: 'susun', icon: '🧱', name: `Menara Pasangan ${word}`, target, vals, show, stars: [10, 20, 30],
       desc: `Jatuhkan balok ke menara. Dua balok bersentuhan yang jumlahnya ${show(target)} akan hilang. Jangan sampai menara penuh!` });
-    GAMES.push({ id: grade + 'e', grade, type: 'kembar', icon: '🔢', name: 'Menara Kembar', base: grade <= 2 ? [1, 2, 4] : [2, 4, 8], show: (v) => v.toLocaleString('id-ID'), stars: [70, 90, 100],
-      desc: `Balok yang sama dan bersentuhan bergabung menjadi dua kali lipat (${grade <= 2 ? '2 + 2 = 4' : '8 + 8 = 16'}). Seberapa besar bilangan yang bisa kamu buat?` });
+    // poin = 10 × (berapa kali 2 dilipatgandakan untuk mencapai balok terbesar): 64 = 50, 128 = 60, 256 = 70
+    GAMES.push({ id: grade + 'e', grade, type: 'kembar', icon: '🔢', name: 'Menara Kembar', drops: grade <= 2 ? [2, 2, 2, 4, 4, 8] : [2, 2, 4, 4, 8, 16], show: (v) => v.toLocaleString('id-ID'),
+      stars: grade <= 2 ? [40, 50, 60] : [50, 60, 70],
+      desc: `Balok terus jatuh. Arahkan ke balok yang sama agar menyatu menjadi dua kali lipat (${grade <= 2 ? '4 + 4 = 8' : '16 + 16 = 32'}). Jangan sampai menara melewati batas! Target ⭐⭐⭐: ${grade <= 2 ? 128 : 256}.` });
   });
   GAMES.forEach((g) => { if (g.type === 'pasangan') g.stars = [10, 14, 17]; });
   const TYPES = { kilat: 'Cepat tepat · 60 detik', balon: 'Pecahkan balon · 60 detik', pasangan: 'Kartu memori', susun: 'Balok jatuh · jumlah sasaran', kembar: 'Balok jatuh · gabung kembar' };
@@ -157,6 +159,103 @@
         later(spawn, R(650, 1000));
       };
       newRule(); spawn(); clock();
+    } else if (g.type === 'kembar') {
+      // Balok jatuh terus dan makin cepat; pemain menggeser kolomnya. Balok sama yang bersentuhan menyatu menjadi dua kali lipat.
+      // Baris paling atas adalah zona batas: jika tumpukan mencapainya, permainan selesai.
+      const COLS = 5, ROWS = 8, LIMIT = ROWS - 1;
+      const grid = [...Array(COLS)].map(() => []);
+      let cur = null, next = pick(g.drops), top = 2, speed = 800, landed = 0, mark = new Set(), over = false;
+      const color = (v) => { const k = Math.round(Math.log2(v)) - 1; return `hsl(${(165 + k * 37) % 360}, 80%, ${Math.max(55, 82 - k * 2)}%)`; };
+      const levelPts = () => Math.min(100, 10 * Math.round(Math.log2(top / 2)));
+      const spawnNext = () => {
+        // kadang memberi angka yang sudah ada di menara agar ada peluang menyatu
+        const have = grid.map((col) => col[col.length - 1]).filter((v) => v && v <= 32);
+        return have.length && Math.random() < 0.3 ? pick(have) : pick(g.drops);
+      };
+      const merge = (lc, lr) => {
+        for (;;) {
+          let done = false;
+          const cells = grid.flatMap((col, c) => col.map((v, r) => ({ c, r, v })));
+          cells.sort((a, b) => (b.c === lc && b.r === lr) - (a.c === lc && a.r === lr));
+          for (const s0 of cells) {
+            const seen = new Set([s0.c + ':' + s0.r]), group = [s0], todo = [s0];
+            while (todo.length) {
+              const x = todo.pop();
+              for (const [dc, dr] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+                const c = x.c + dc, r = x.r + dr, k = c + ':' + r;
+                if (!seen.has(k) && grid[c] && grid[c][r] === s0.v) { seen.add(k); const y = { c, r }; group.push(y); todo.push(y); }
+              }
+            }
+            if (group.length < 2) continue;
+            const keep = group.reduce((a, b) => (b.r < a.r || (b.r === a.r && b.c === lc) ? b : a));
+            group.forEach((x) => { grid[x.c][x.r] = null; });
+            grid[keep.c][keep.r] = s0.v * 2 ** (group.length - 1);
+            top = Math.max(top, grid[keep.c][keep.r]);
+            grid.forEach((col, c) => { grid[c] = col.filter((v) => v !== null); });
+            mark = new Set([keep.c + ':' + grid[keep.c].indexOf(s0.v * 2 ** (group.length - 1))]);
+            lc = keep.c; lr = grid[keep.c].length - 1; done = true; sfx.correct();
+            break;
+          }
+          if (!done) break;
+        }
+        const lv = levelPts(); if (lv > pts) setPts(lv - pts);
+      };
+      const render = () => {
+        const ghost = cur ? grid[cur.c].length : -1;
+        el.querySelector('#gtower').innerHTML = grid.map((col, c) => `<div class="gcol" data-c="${c}">${[...Array(ROWS)].map((_, r) => {
+          const v = col[r], fall = cur && cur.c === c && cur.r === r;
+          if (fall) return `<i class="gblk fall" style="background:${color(cur.v)}">${g.show(cur.v)}</i>`;
+          if (v !== undefined) return `<i class="gblk ${mark.has(c + ':' + r) ? 'merge' : ''}" style="background:${color(v)}">${g.show(v)}</i>`;
+          return `<i class="gslot ${r === LIMIT ? 'glimit' : ''} ${cur && cur.c === c && r === ghost && ghost < cur.r ? 'gghost' : ''}"></i>`;
+        }).join('')}</div>`).join('');
+        const nx = el.querySelector('#gnext'); nx.textContent = g.show(next); nx.style.background = color(next);
+        el.querySelector('#gaux').textContent = g.show(top);
+      };
+      const lose = () => {
+        over = true; cur = null; sfx.wrong(); render();
+        const msg = el.querySelector('#gmsg'); if (msg) msg.textContent = '🚧 Menara melewati batas!';
+        el.querySelector('#gtower').classList.add('gover');
+        later(end, 1200);
+      };
+      const land = () => {
+        const c = cur.c; grid[c].push(cur.v); cur = null; mark = new Set();
+        merge(c, grid[c].length - 1);
+        // melewati batas: ada balok yang tertinggal di baris paling atas (zona batas)
+        if (grid.some((col) => col.length > LIMIT)) return lose();
+        landed++; speed = Math.max(260, Math.round(800 * 0.97 ** landed));
+        spawn();
+      };
+      const spawn = () => {
+        cur = { c: 2, r: LIMIT, v: next }; next = spawnNext();
+        render(); later(fall, speed);
+      };
+      const fall = () => {
+        if (!alive || over || !cur) return;
+        if (cur.r - 1 >= grid[cur.c].length) { cur.r--; render(); later(fall, speed); } else land();
+      };
+      const shift = (d) => { if (!cur || over) return; const c = cur.c + d; if (c < 0 || c >= COLS || grid[c].length > cur.r) return; cur.c = c; render(); };
+      const drop = () => { if (!cur || over) return; cur.r = grid[cur.c].length; land(); };
+      el.innerHTML = `<div class="ghud"><div><small>Poin</small><b id="gpts">0</b></div><div><small>Terbesar</small><b id="gaux">2</b></div><div><small>Berikutnya</small><b id="gnext" class="gnext"></b></div></div>
+        <p class="small muted center gtip" id="gmsg">Ketuk kolom untuk menggeser balok · ketuk lagi untuk menjatuhkan</p>
+        <div class="gtower gk" id="gtower"></div>
+        <div class="gctrl"><button aria-label="Geser kiri" data-k="l">◀</button><button aria-label="Jatuhkan" data-k="d">▼</button><button aria-label="Geser kanan" data-k="r">▶</button></div>
+        <div class="row-btn"><button class="btn sm ghost" id="gquit">Selesai</button></div>`;
+      el.querySelector('#gquit').addEventListener('click', end);
+      el.querySelector('.gctrl').addEventListener('click', (e) => { const b = e.target.closest('[data-k]'); if (!b) return; ({ l: () => shift(-1), r: () => shift(1), d: drop })[b.dataset.k](); });
+      el.querySelector('#gtower').addEventListener('click', (e) => {
+        const col = e.target.closest('.gcol'); if (!col || !cur) return;
+        const c = +col.dataset.c;
+        if (c === cur.c) return drop();
+        const d = c > cur.c ? 1 : -1; while (cur && cur.c !== c && grid[cur.c + d].length <= cur.r) cur.c += d;
+        render();
+      });
+      const onKey = (e) => {
+        if (!alive || !document.body.contains(el)) return document.removeEventListener('keydown', onKey);
+        const k = { ArrowLeft: () => shift(-1), ArrowRight: () => shift(1), ArrowDown: drop, ' ': drop }[e.key];
+        if (k) { e.preventDefault(); k(); }
+      };
+      document.addEventListener('keydown', onKey);
+      spawn();
     } else if (g.type === 'susun' || g.type === 'kembar') {
       const COLS = 5, ROWS = 7, sum = g.type === 'susun';
       const grid = [...Array(COLS)].map(() => []); // grid[kolom][baris dari bawah]
