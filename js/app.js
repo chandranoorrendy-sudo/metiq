@@ -1421,7 +1421,7 @@
 
   /* ---------- Pengajuan akun sungguhan (disetujui super admin) ---------- */
   const REQ = {
-    guru: { icon: '👩‍🏫', title: 'Guru di sekolah', desc: 'Mengajar di sekolah atau kuttab. Mendapat kelas, kode kelas untuk murid, dan kode orang tua.' },
+    guru: { icon: '👩‍🏫', title: 'Guru di sekolah', desc: 'Mengajar kelas di sekolah atau kuttab (bukan untuk orang tua murid). Mendapat kelas, kode kelas untuk murid, dan kode orang tua.' },
     homeschool: { icon: '🏡', title: 'Keluarga homeschooling', desc: 'Orang tua mengajar anak sendiri: mendapat kelas keluarga, akun untuk setiap anak, tugas, dan laporan.' },
     ortu: { icon: '👨‍👩‍👧', title: 'Orang tua', desc: 'Anak sudah belajar dengan guru di Metiq. Satu akun untuk melihat laporan semua anak.' },
     siswa: { icon: '🧒', title: 'Siswa', desc: 'Belum punya kode kelas dari guru. Admin Metiq akan menempatkanmu di kelas yang sesuai.' },
@@ -1441,7 +1441,11 @@
       <label>Kata sandi untuk masuk nanti (min. 6 karakter)<input name="pass" type="password" minlength="6" required autocomplete="new-password"></label>
       <label>No. WhatsApp <small class="muted">(opsional, untuk dihubungi admin)</small><input name="contact" inputmode="tel" maxlength="20" placeholder="08…"></label>`;
     const fields = {
-      guru: `<label>Nama guru<input name="name" required maxlength="80" value="${esc(nm)}" placeholder="mis. Bu Rina"></label>${acct}
+      guru: `<div class="kindwarn"><b>👨‍👩‍👧 Anda orang tua?</b> Akun guru hanya untuk yang mengajar kelas di sekolah atau kuttab. Pilih yang sesuai:
+          <ul><li>Anak sudah belajar dengan guru di Metiq → <a href="#/ajukan/ortu">Orang tua</a> (atau cukup minta <b>kode orang tua</b> ke gurunya)</li>
+          <li>Anak belum punya kelas → <a href="#/ajukan/siswa">Siswa</a></li>
+          <li>Mengajar anak sendiri di rumah → <a href="#/ajukan/homeschool">Keluarga homeschooling</a></li></ul></div>
+        <label>Nama guru<input name="name" required maxlength="80" value="${esc(nm)}" placeholder="mis. Bu Rina"></label>${acct}
         <label>Nama sekolah / kuttab<input name="school" required maxlength="100" placeholder="mis. SD Harapan Bangsa"></label>
         <label>Nama kelas pertama<input name="className" maxlength="60" placeholder="mis. Kelas 3A"></label>`,
       homeschool: `<label>Nama orang tua<input name="name" required maxlength="80" value="${esc(nm)}" placeholder="mis. Bu Sinta"></label>${acct}
@@ -1459,6 +1463,7 @@
       <section class="card narrow"><div class="bigemoji center">${r.icon}</div><h1 class="center">Ajukan akun: ${r.title}</h1><p class="muted small center">${r.desc}</p>
         <form data-form="request" data-k="${kind}" class="form">${fields}
           <label>Catatan untuk admin <small class="muted">(opsional)</small><textarea name="note" rows="2" maxlength="300"></textarea></label>
+          ${kind === 'guru' ? '<label class="cb"><input type="checkbox" name="isteacher" required> <span>Saya guru yang mengajar kelas di sekolah atau kuttab (bukan orang tua murid).</span></label>' : ''}
           ${kind === 'guru' ? '<details class="small"><summary>Punya kode admin Metiq?</summary><label>Kode admin<input name="admin" autocomplete="off" autocapitalize="characters"></label></details>' : ''}
           <button class="btn">Kirim pengajuan</button></form>
         <p class="small muted center">Data mode coba tidak ikut pindah. Setelah dikirim, kamu mendapat <b>kode pengajuan</b> untuk mengecek statusnya.</p></section>`);
