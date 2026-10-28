@@ -34,6 +34,7 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 - `supabase/009_class_teacher.sql`: super admin menentukan guru sebuah kelas (tab 🌐 Super admin → 📚 Kelas). Jalankan setelah 008.
 - `supabase/010_delete_class.sql`: menghapus kelas beserta siswanya (guru kelas, admin sekolah, atau super admin; nama kelas diketik ulang sebagai konfirmasi). Jalankan setelah 009.
 - `supabase/011_delete_school.sql`: super admin menghapus sekolah (beserta guru, kelas, siswa), guru, dan akun orang tua, dengan konfirmasi nama. Super admin tidak ikut terhapus. Jalankan setelah 010.
+- `supabase/012_approve_with_class.sql`: saat menyetujui pengajuan guru, super admin bisa langsung memberinya kelas yang sudah ada (tanpa kelas baru). Jalankan setelah 011.
 
 ### Menghubungkan ke BBO Digital
 

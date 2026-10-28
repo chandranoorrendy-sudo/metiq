@@ -698,3 +698,27 @@ td.nowrap { white-space: nowrap; }
 .kidchip .av, .kidchip img, .kidchip svg { width: 22px; height: 22px; font-size: 1rem; }
 .grp form .cb { font-size: .88rem; } .grow2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 @media (max-width: 420px) { .grow2 { grid-template-columns: 1fr; } }
+
+/* ---------- Dasbor guru yang ringkas ---------- */
+.dhead { margin-bottom: 6px; }
+.dhead .av { width: 40px; height: 40px; font-size: 1.5rem; }
+.dh-text h1 { font-size: 1.25rem; margin: 1px 0; }
+.dh-title { display: block; width: 100%; margin: 1px 0; padding: 2px 26px 2px 0; border: 0; background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2316302b' stroke-width='2'/%3E%3C/svg%3E") no-repeat right 4px center; appearance: none; -webkit-appearance: none; font: inherit; font-size: 1.25rem; font-weight: 900; color: var(--ink); cursor: pointer; }
+.dh-code { flex: none; display: grid; justify-items: center; border: 0; border-radius: 12px; background: #f2fdf9; box-shadow: inset 0 0 0 1.5px var(--line); padding: 4px 10px; font: inherit; cursor: pointer; line-height: 1.15; }
+.dh-code small { font-size: .62rem; color: var(--muted); font-weight: 800; } .dh-code b { font-size: 1rem; letter-spacing: 1.5px; color: var(--brand); }
+.tabbar { position: sticky; top: 52px; z-index: 9; display: flex; gap: 6px; align-items: flex-start; background: var(--bg); padding: 6px 0 2px; margin: 0 -2px 8px; }
+.tabbar .tabs { flex: 1; min-width: 0; margin-bottom: 0; padding-bottom: 4px; }
+.tabs a { padding: 7px 12px; font-size: .86rem; }
+.tabmore { position: relative; flex: none; }
+.tabmore summary { list-style: none; white-space: nowrap; padding: 7px 12px; border-radius: 999px; background: #fff; box-shadow: var(--shadow); font-weight: 800; font-size: .86rem; cursor: pointer; }
+.tabmore summary::-webkit-details-marker { display: none; }
+.tabmore.on summary { background: var(--tiffany); color: var(--on-tiffany); }
+.tabmenu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 20; display: grid; min-width: 190px; background: #fff; border-radius: 14px; box-shadow: 0 10px 30px rgba(16, 48, 43, .18); padding: 6px; }
+.tabmenu a { padding: 9px 12px; border-radius: 10px; text-decoration: none; color: var(--ink); font-weight: 700; font-size: .9rem; } .tabmenu a.on, .tabmenu a:hover { background: #f2fdf9; }
+.quick { display: flex; flex-wrap: wrap; gap: 6px; margin: 0 0 12px; }
+.startcard h2 { margin-top: 0; } .startcard .lrow { padding: 6px 0; }
+.stepdot { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--line); font-weight: 900; color: #fff; font-size: .8rem; }
+.okstep .stepdot { background: var(--ok); border-color: var(--ok); } .okstep b { color: var(--muted); text-decoration: line-through; }
+.asgfoot { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 10px; border-radius: 12px; background: #f2fdf9; font-size: .88rem; } .asgfoot small { display: block; }
+details.realcard summary { cursor: pointer; list-style: none; } details.realcard summary::-webkit-details-marker { display: none; } details.realcard[open] summary { margin-bottom: 8px; }
+.dh-title { padding-right: 24px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10'%3E%3Cpath d='M2 2l6 6 6-6' fill='none' stroke='%2300806b' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E"); background-position: right 2px center; }

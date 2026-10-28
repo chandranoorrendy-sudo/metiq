@@ -151,6 +151,7 @@
           'Pilih kelasmu di atas: <b>Kelas 1, Kelas 2, …</b>',
           'Ketuk sebuah bab, lalu ketuk keterampilan yang ingin kamu latih.',
           'Jika ada <b>📌 Tugas dari guru</b>, kerjakan itu dulu ya!',
+          'Setelah mengerjakan minimal 5 soal di setiap keterampilan tugas, ketuk <b>✅ Kumpulkan</b>. Gurumu langsung mendapat notifikasi beserta skormu.',
         ] },
         { icon: '🧭', t: 'Asesmen awal', steps: [
           'Saat pertama kali masuk, kamu diminta mengerjakan <b>asesmen awal</b>. Cukup sekali saja.',

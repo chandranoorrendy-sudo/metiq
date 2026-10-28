@@ -214,7 +214,7 @@
       <section class="hello"><a class="av avedit" href="#/avatar/saya" aria-label="Ganti avatar">${avHTML(st.avatar)}<i>✏️</i></a><div><h1>Halo, ${esc(st.name)}!</h1><p class="muted">${greet()} · ${esc(c ? c.name : '')} · ⭐ ${S.gameStars(st.id)}</p></div></section>
       <section class="card dwork"><h2>🤔 Mau belajar apa?</h2>
         <div class="dtabs" role="tablist">${tabBtn('guru', `📌 Dari guru${todo.length ? ` <b>${todo.length}</b>` : ''}`)}${tabBtn('baru', '🕘 Terakhir')}${tabBtn('rek', '✨ Saran')}</div>
-        ${panel('guru', asg.length ? asg.map((a) => `<div class="asg">${a.students && a.students.length ? '<span class="pill special">🎯 Khusus untukmu</span>' : ''}${S.isDone(a.id, st.id) ? '<span class="pill okp">✅ Selesai</span>' : ''}${a.note ? `<p><b>${esc(a.note)}</b>${a.due ? ` · <span class="muted">sampai ${esc(fdue(a.due))}</span>` : ''}</p>` : ''}<div class="sklist">${a.skills.filter((k) => SKILLS[k]).map((k) => skillLink(k, prog[k])).join('')}</div>${feedbackHTML(a, st.id, 'siswa')}</div>`).join('') : '<p class="muted dempty">Belum ada tugas. Tugas dari Bu/Pak Guru akan muncul di sini.</p>')}
+        ${panel('guru', asg.length ? asg.map((a) => `<div class="asg">${a.students && a.students.length ? '<span class="pill special">🎯 Khusus untukmu</span>' : ''}${S.isDone(a.id, st.id) ? '<span class="pill okp">✅ Selesai</span>' : ''}${a.note ? `<p><b>${esc(a.note)}</b>${a.due ? ` · <span class="muted">sampai ${esc(fdue(a.due))}</span>` : ''}</p>` : ''}<div class="sklist">${a.skills.filter((k) => SKILLS[k]).map((k) => skillLink(k, prog[k])).join('')}</div>${S.isDone(a.id, st.id) ? '' : submitBar(a, prog)}${feedbackHTML(a, st.id, 'siswa')}</div>`).join('') : '<p class="muted dempty">Belum ada tugas. Tugas dari Bu/Pak Guru akan muncul di sini.</p>')}
         ${panel('baru', recent.length ? `<div class="sklist">${recent.map(([k, p]) => skillLink(k, p, `Kelas ${SKILLS[k].grade} · ${ago(p.last)}`)).join('')}</div>` : '<p class="muted dempty">Keterampilan yang terakhir kamu latih akan muncul di sini. Ayo mulai!</p>')}
         ${panel('rek', rec.length ? `<p class="small muted">Pilihan untukmu di <b>Kelas ${g}</b>:</p><div class="sklist">${rec.map((r) => skillLink(r.id, prog[r.id], r.why)).join('')}</div>` : `<p class="muted dempty">Hebat! Semua keterampilan Kelas ${g} sudah kamu kuasai. 🏆</p>`)}
       </section>
@@ -475,21 +475,29 @@
     const c = classes.find((x) => x.id === ses.classId) || classes[0];
     return { t, c, classes, kids: S.studentsOf(c.id) };
   }
-  const TABS = [['ringkasan', 'Ringkasan'], ['siswa', 'Siswa'], ['kelompok', '👥 Kelompok'], ['analitik', 'Analitik'], ['peta', 'Peta kemajuan'], ['keterampilan', 'Keterampilan'], ['tugas', 'Tugas'], ['kelola', 'Kelola kelas'], ['referensi', 'Referensi']];
+  // Urutan menurut seringnya dipakai; lima pertama selalu terlihat, sisanya di menu "Lainnya"
+  const TABS = [['ringkasan', '🏠 Ringkasan'], ['tugas', '📌 Tugas'], ['siswa', '🧒 Siswa'], ['kelompok', '👥 Kelompok'], ['kelola', '⚙️ Kelola kelas'],
+    ['analitik', '📈 Analitik'], ['peta', '🗺️ Peta kemajuan'], ['keterampilan', '🧩 Keterampilan'], ['referensi', '📚 Referensi']];
+  const TAB_MAIN = ['ringkasan', 'tugas', 'siswa', 'kelompok', 'kelola'];
   function teacherShell(ctx, tab, inner) {
+    const admin = [...(ctx.t.isAdmin && !session.get().demo ? [['super', '🌐 Super admin']] : []), ...(ctx.t.isAdmin || ctx.t.isSchoolAdmin ? [['sekolah', '🏫 Sekolah']] : [])];
+    const main = [...admin, ...TABS.filter(([k]) => TAB_MAIN.includes(k))], more = TABS.filter(([k]) => !TAB_MAIN.includes(k)), inMore = more.find(([k]) => k === tab);
     app.innerHTML = shell(`
       <section class="dhead">
         <div class="dh-row"><a class="av avedit" href="#/avatar/guru" aria-label="Ganti avatar">${avHTML(ctx.t.avatar || 'svg:ustadzah')}<i>✏️</i></a>
-          <div class="dh-text"><div class="dh-who">${esc(ctx.t.name)}${ctx.t.isAdmin ? ' <span class="pill">Super admin</span>' : ctx.t.isSchoolAdmin ? ' <span class="pill">Admin sekolah</span>' : ''}${ctx.t.schoolName ? ` <span class="muted small">· ${esc(ctx.t.schoolName)}</span>` : ''}</div><h1>${esc(ctx.c.name)}</h1>
-          <div class="dh-meta">Kode kelas <b class="code">${ctx.c.code}</b>${ctx.c.teacherName && ctx.c.teacherId !== ctx.t.id ? ` · milik ${esc(ctx.c.teacherName)}` : ''}</div></div></div>
-        ${ctx.classes.length > 1 ? `<select class="dh-select" data-act="switchclass" aria-label="Pilih kelas">${ctx.classes.map((c) => `<option value="${c.id}" ${c.id === ctx.c.id ? 'selected' : ''}>${esc(c.name)}${ctx.t.isAdmin && c.teacherName ? ` · ${esc(c.teacherName)}` : ''}</option>`).join('')}</select>` : ''}
+          <div class="dh-text"><div class="dh-who">${esc(ctx.t.name)}${ctx.t.isAdmin ? ' <span class="pill">Super admin</span>' : ctx.t.isSchoolAdmin ? ' <span class="pill">Admin sekolah</span>' : ''}${ctx.t.schoolName ? ` <span class="muted small">· ${esc(ctx.t.schoolName)}</span>` : ''}</div>
+            ${ctx.classes.length > 1 ? `<select class="dh-title" data-act="switchclass" aria-label="Pilih kelas">${ctx.classes.map((c) => `<option value="${c.id}" ${c.id === ctx.c.id ? 'selected' : ''}>${esc(c.name)}${(ctx.t.isAdmin || ctx.t.isSchoolAdmin) && c.teacherName && c.teacherId !== ctx.t.id ? ` · ${esc(c.teacherName)}` : ''}</option>`).join('')}</select>` : `<h1>${esc(ctx.c.name)}</h1>`}
+            ${ctx.c.teacherName && ctx.c.teacherId !== ctx.t.id ? `<div class="dh-meta">Guru kelas: ${esc(ctx.c.teacherName)}</div>` : ''}</div>
+          <button class="dh-code" data-act="shareclass" aria-label="Bagikan kode kelas"><small>Kode kelas</small><b>${ctx.c.code}</b><small>📤 bagikan</small></button></div>
       </section>
-      <nav class="tabs">${[...(ctx.t.isAdmin && !session.get().demo ? [['super', '🌐 Super admin']] : []), ...(ctx.t.isAdmin || ctx.t.isSchoolAdmin ? [['sekolah', '🏫 Sekolah']] : []), ...TABS].map(([k, l]) => `<a href="#/guru/${k}" class="${k === tab ? 'on' : ''}">${l}</a>`).join('')}</nav>
+      <div class="tabbar"><nav class="tabs">${main.map(([k, l]) => `<a href="#/guru/${k}" class="${k === tab ? 'on' : ''}">${l}</a>`).join('')}</nav>
+        <details class="tabmore ${inMore ? 'on' : ''}"><summary>${inMore ? inMore[1] : '⋯ Lainnya'}</summary><div class="tabmenu">${more.map(([k, l]) => `<a href="#/guru/${k}" class="${k === tab ? 'on' : ''}">${l}</a>`).join('')}</div></details></div>
       ${session.get().demo && tab === 'ringkasan' ? realTeacherCard() : ''}
       ${inner}`, { cls: 'wide', right: topRight() });
   }
+
   function emptyKids(ctx) {
-    return `<section class="card center"><div class="bigemoji">🧑‍🤝‍🧑</div><h2>Belum ada siswa</h2><p class="muted">Tambahkan siswa di menu <a href="#/guru/kelola">Kelola kelas</a>. Siswa masuk dengan kode kelas <b>${ctx.c.code}</b>.</p></section>`;
+    return startCard(ctx, true) + `<section class="card center"><div class="bigemoji">🧑‍🤝‍🧑</div><h2>Belum ada siswa</h2><p class="muted">Mulai dengan menambahkan murid di <a href="#/guru/kelola">⚙️ Kelola kelas</a>. Murid masuk dengan kode kelas <b>${ctx.c.code}</b>.</p></section>`;
   }
   function classSkillAgg(kids) {
     const agg = {};
@@ -521,7 +529,7 @@
       const hard = Object.entries(agg).filter(([, a]) => a.att >= 15).map(([id, a]) => ({ id, acc: pct(a.ok, a.att), n: a.n })).sort((a, b) => a.acc - b.acc).slice(0, 5);
       const tags = tagCounts(kids.flatMap((k) => S.answersOf(k.id).filter((a) => a.ts > Date.now() - 14 * DAY))).filter(([t]) => t !== 'konsep').slice(0, 4);
       const stars = all.slice().sort((a, b) => b.s.correct - a.s.correct).slice(0, 3).filter((x) => x.s.correct > 0);
-      return teacherShell(ctx, tab, `
+      return teacherShell(ctx, tab, `${startCard(ctx)}${quickActions()}${submittedHTML(ctx)}
         <div class="kpis"><div class="kpi"><small>Siswa aktif (7 hari)</small><b>${active}<span>/${kids.length}</span></b></div><div class="kpi"><small>Soal dijawab (7 hari)</small><b>${answered}</b></div><div class="kpi"><small>Ketepatan (7 hari)</small><b>${pct(correct, answered)}%</b></div><div class="kpi"><small>Keterampilan tuntas</small><b>${all.reduce((a, x) => a + x.all.mastered, 0)}</b></div></div>
         <div class="grid2">
           <section class="card"><h2>⚠️ Perlu perhatian</h2>${attention.length ? attention.map((x) => `<a class="lrow" href="#/guru/siswa/${x.k.id}"><span class="av sm">${avHTML(x.k.avatar)}</span><span class="grow"><b>${esc(x.k.name)}</b><small>${x.s.answered === 0 ? `Tidak berlatih 7 hari terakhir · terakhir ${ago(x.all.last)}` : `Ketepatan ${x.s.acc}% dari ${x.s.answered} soal`}</small></span>→</a>`).join('') : '<p class="muted">Semua siswa aktif dan ketepatannya baik. 👍</p>'}</section>
@@ -1162,6 +1170,48 @@
     document.addEventListener('focusout', hide); window.addEventListener('scroll', hide, { passive: true });
   })();
 
+  /* ---------- Alur kelas: langkah memulai, tombol cepat, tugas dikumpulkan, berbagi kode ---------- */
+  function shareText(text) {
+    if (navigator.share) return navigator.share({ text }).catch(() => {});
+    window.open('https://wa.me/?text=' + encodeURIComponent(text), '_blank', 'noopener');
+  }
+  // Kartu "Mulai kelas ini": muncul selama masih ada langkah yang belum selesai
+  function startCard(ctx, force) {
+    const kids = ctx.kids, joined = kids.filter((k) => S.answersOf(k.id).length || S.diagOf(k.id)).length, diag = kids.filter((k) => S.diagOf(k.id)).length;
+    const parents = kids.filter((k) => (k.parents || []).length || S.viewsOf(k.id).length).length, asg = S.assignmentsOf(ctx.c.id).length;
+    const steps = [
+      [kids.length > 0, 'Tambah murid', kids.length ? `${kids.length} murid` : 'Ketik nama-nama murid sekaligus', '<a class="btn sm ghost" href="#/guru/kelola">Tambah</a>'],
+      [joined > 0, 'Bagikan kode kelas ke murid', joined ? `${joined}/${kids.length} murid sudah masuk` : `Kode kelas ${ctx.c.code}`, '<button class="btn sm ghost" data-act="shareclass">Kirim</button>'],
+      [kids.length > 0 && diag === kids.length, 'Murid mengerjakan asesmen awal', `${diag}/${kids.length} selesai · otomatis saat murid pertama kali masuk`, '<a class="btn sm ghost" href="#/guru/kelompok">Lihat</a>'],
+      [asg > 0, 'Beri tugas pertama', asg ? `${asg} tugas` : 'Per kelas atau per kelompok level', '<button class="btn sm ghost" data-act="gotoform">Beri tugas</button>'],
+      [parents > 0, 'Bagikan kode orang tua', parents ? `${parents}/${kids.length} orang tua sudah terhubung` : 'Tombol 📤 di daftar murid', '<a class="btn sm ghost" href="#/guru/kelola">Bagikan</a>'],
+    ];
+    const done = steps.filter((x) => x[0]).length;
+    if (done === steps.length && !force) return '';
+    return `<section class="card startcard"><h2>🚀 Mulai kelas ini <span class="pill">${done}/${steps.length}</span></h2>
+      ${steps.map(([ok, t, sub, btn]) => `<div class="lrow ${ok ? 'okstep' : ''}"><span class="stepdot">${ok ? '✓' : ''}</span><span class="grow"><b>${t}</b><small>${sub}</small></span>${ok ? '' : btn}</div>`).join('')}</section>`;
+  }
+  const quickActions = () => `<div class="quick"><button class="btn sm" data-act="gotoform">📌 Beri tugas</button><a class="btn sm ghost" href="#/guru/kelompok">👥 Kelompok</a><a class="btn sm ghost" href="#/guru/kelola">➕ Murid</a><button class="btn sm ghost" data-act="shareclass">📤 Kode kelas</button></div>`;
+  // Hasil pengerjaan tugas untuk notifikasi dan ringkasan
+  function doneText(n) {
+    const sk = n.a.skills.filter((k) => SKILLS[k]), sc = sk.map((k) => S.progress(n.k.id, k).score), prof = sc.filter((v) => v >= 80).length;
+    return `${n.d.by === 'ortu' ? 'dilaporkan orang tua' : prof === sk.length ? 'semua keterampilan mahir' : 'dikumpulkan siswa'} · ${prof}/${sk.length} mahir${sk.length ? ` (skor ${sc.join(', ')})` : ''}`;
+  }
+  function submittedHTML(ctx) {
+    const ids = new Set(ctx.kids.map((k) => k.id));
+    const list = S.db.done.filter((d) => ids.has(d.sid) && d.at > Date.now() - 14 * DAY).map((d) => ({ d, a: S.db.assignments.find((g) => g.id === d.aid), k: S.student(d.sid), at: d.at })).filter((n) => n.a && n.k).sort((x, y) => y.at - x.at);
+    if (!list.length) return '';
+    return `<section class="card"><h2>📥 Baru dikumpulkan <span class="pill">${list.length}</span></h2>${list.slice(0, 5).map((n) => `<a class="lrow" href="#/guru/siswa/${n.k.id}"><span class="av sm">${avHTML(n.k.avatar)}</span><span class="grow"><b>${esc(n.k.name)}</b> · ${esc(n.a.note || 'Tugas')}<small>${ago(n.at)} · ${doneText(n)}</small></span>→</a>`).join('')}
+      ${list.length > 5 ? '<p class="small"><a href="#/notifikasi">Lihat semua →</a></p>' : ''}</section>`;
+  }
+  // Siswa: kemajuan tugas dan tombol Kumpulkan (setelah mencoba setiap keterampilan minimal 5 soal, atau sudah mahir)
+  function submitBar(a, prog) {
+    const sk = a.skills.filter((k) => SKILLS[k]), p = (k) => prog[k] || {}, prof = sk.filter((k) => p(k).score >= 80).length;
+    const ready = sk.every((k) => (p(k).att || 0) >= 5 || p(k).score >= 80), left = sk.filter((k) => !((p(k).att || 0) >= 5 || p(k).score >= 80));
+    return `<div class="asgfoot"><span class="grow"><b>${prof}/${sk.length}</b> keterampilan mahir${ready ? '' : `<small class="muted">Kerjakan minimal 5 soal di ${left.map((k) => SKILLS[k].code).join(', ')} untuk bisa mengumpulkan</small>`}</span>
+      ${ready ? `<button class="btn sm" data-act="submitasg" data-a="${a.id}">✅ Kumpulkan</button>` : ''}</div>`;
+  }
+
   /* ---------- Kelompok belajar: siswa dikelompokkan menurut level asesmen terbaru ---------- */
   function groupsHTML(ctx) {
     const rows = ctx.kids.map((k) => { const d = S.diagOf(k.id, 'b') || S.diagOf(k.id); return { k, d, level: d ? d.level : null, age: d ? ageGradeOf(d.age) : null }; });
@@ -1286,13 +1336,13 @@
   }
 
   function realTeacherCard() {
-    return `<section class="card realcard"><h2>🚀 Siap dipakai dengan murid sungguhan?</h2>
+    return `<details class="card realcard"><summary><b>🚀 Siap dipakai dengan murid sungguhan?</b> <span class="muted small">Ketuk untuk langkahnya</span></summary>
       <p class="small">Mode coba hanya berisi kelas contoh di perangkat ini. Untuk murid dan orang tua sungguhan, daftar sebagai guru, <b>gratis</b> dan sekitar 2 menit:</p>
       <ol class="small"><li>Ketuk <b>Daftar guru gratis</b>, isi nama, email, kata sandi, dan nama kelas.</li>
         <li>Tambahkan nama murid di <b>Kelola kelas</b>, lalu bagikan <b>kode kelas</b> (5 huruf) ke murid. Murid masuk lewat <i>Saya Siswa</i> dan memilih namanya.</li>
         <li>Setiap murid punya <b>kode orang tua</b> (6 huruf/angka) di Kelola kelas. Bagikan ke wali murid agar mereka bisa melihat laporan dan notifikasi tugas.</li></ol>
       <p class="small muted">Semua data kelas sungguhan tersimpan di server dan terhubung antar perangkat. Data mode coba tidak ikut pindah.</p>
-      <div class="row-btn left"><button class="btn" data-act="realsignup" data-k="guru">Ajukan akun guru →</button><button class="btn ghost" data-act="realsignup" data-k="homeschool">Keluarga homeschool →</button></div></section>`;
+      <div class="row-btn left"><button class="btn" data-act="realsignup" data-k="guru">Ajukan akun guru →</button><button class="btn ghost" data-act="realsignup" data-k="homeschool">Keluarga homeschool →</button></div></details>`;
   }
   function realParentCard(k) {
     const linked = deviceKids().some((d) => d.sid === k.id);
@@ -1433,7 +1483,8 @@
             ${res.classCode ? `<small>Kode kelas <b class="code">${esc(res.classCode)}</b>${res.parentCode ? ` · kode orang tua <b class="code">${esc(res.parentCode)}</b>` : ''}${(res.children || []).length ? ` · anak: ${res.children.map((c) => `${esc(c.name)} <b class="code">${esc(c.parentCode)}</b>`).join(', ')}` : ''}</small>` : ''}</span>
             ${msg && waLink(r.contact, msg) ? `<a class="btn sm ghost" href="${waLink(r.contact, msg)}" target="_blank" rel="noopener">Kirim via WA</a>` : ''}</div>`;
         }
-        const extra = r.kind === 'guru' ? `<label>Sekolah<select name="school">${schoolOpts(r.schoolName)}</select></label><label>Nama sekolah baru<input name="schoolName" maxlength="100" value="${esc(r.schoolName || '')}"></label><label class="cb"><input type="checkbox" name="admin" value="1"> Jadikan admin sekolah (koordinator)</label>`
+        const extra = r.kind === 'guru' ? `<label>Sekolah<select name="school">${schoolOpts(r.schoolName)}</select></label><label>Nama sekolah baru<input name="schoolName" maxlength="100" value="${esc(r.schoolName || '')}"></label>
+            <label>Kelas untuk guru ini<select name="classId"><option value="">➕ Buat kelas baru: ${esc(d.className || 'Kelas 1')}</option>${classOpts}</select></label><label class="cb"><input type="checkbox" name="admin" value="1"> Jadikan admin sekolah (koordinator)</label>`
           : r.kind === 'homeschool' ? `<p class="small muted">Akan dibuat: sekolah homeschool "${esc(r.schoolName || 'Homeschool ' + r.name)}", kelas keluarga, dan akun siswa untuk ${(d.children || []).length || 0} anak.</p>`
           : r.kind === 'siswa' ? `<label>Tempatkan di kelas<select name="classId" required><option value="">— pilih kelas —</option>${classOpts}</select></label>` : '';
         return `<section class="card reqcard menunggu"><div class="lrow"><span class="gicon g-pasangan">${k.icon || '✋'}</span><span class="grow"><b>${esc(r.name)}</b><small>${k.title || r.kind} · ${ftime(r.createdAt)} · kode ${esc(r.code)}</small></span></div>
@@ -1852,9 +1903,10 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     return `<div class="grid2">
       <section class="card"><h2>Tambah siswa</h2><form data-form="addkid" class="form inline"><input name="name" placeholder="Nama siswa" required><button class="btn">Tambah</button></form>
         <p class="muted small">Bisa tambah banyak sekaligus: pisahkan nama dengan koma.</p></section>
-      <section class="card"><h2>Cara masuk</h2><p><b>Siswa:</b> buka Metiq → "Saya Siswa" → masukkan kode kelas <b class="code">${ctx.c.code}</b> → ketuk nama.</p><p><b>Orang tua:</b> buka Metiq → "Saya Orang Tua" → masukkan kode orang tua masing-masing anak (lihat daftar di bawah).</p><button class="btn ghost sm" data-act="print">Cetak kartu kode</button></section>
+      <section class="card"><h2>📤 Bagikan kode</h2><p class="small"><b>Murid:</b> Metiq → Saya Siswa → kode kelas <b class="code">${ctx.c.code}</b> → pilih nama.<br><b>Orang tua:</b> Metiq → Saya Orang Tua → kode orang tua anaknya (tombol 📤 di daftar).</p>
+        <div class="row-btn left"><button class="btn sm" data-act="shareclass">Kirim kode kelas (grup WA)</button><button class="btn ghost sm" data-act="print">🖨️ Cetak kartu</button></div></section>
     </div>
-    <section class="card"><h2>Daftar siswa (${ctx.kids.length})</h2>${ctx.kids.length ? `<div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Kode orang tua</th>${cloudOn() ? '<th>Akun orang tua</th>' : ''}<th></th></tr></thead><tbody>${ctx.kids.map((k) => `<tr><td><a class="avpick" href="#/avatar/siswa-${k.id}" title="Ganti avatar">${avHTML(k.avatar)}</a> ${esc(k.name)}</td><td><b class="code">${k.parentCode}</b></td>${cloudOn() ? `<td class="small">${(k.parents || []).map(esc).join('<br>') || '<span class="muted">–</span>'}</td>` : ''}<td class="r"><button class="btn sm ghost danger" data-act="rmkid" data-id="${k.id}">Hapus</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Belum ada siswa.</p>'}</section>
+    <section class="card"><h2>Daftar siswa (${ctx.kids.length})</h2>${ctx.kids.length ? `<div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Kode orang tua</th>${cloudOn() ? '<th>Akun orang tua</th>' : ''}<th></th></tr></thead><tbody>${ctx.kids.map((k) => `<tr><td><a class="avpick" href="#/avatar/siswa-${k.id}" title="Ganti avatar">${avHTML(k.avatar)}</a> ${esc(k.name)}</td><td><b class="code">${k.parentCode}</b> <button class="link small" data-act="shareparent" data-id="${k.id}" aria-label="Kirim kode orang tua ${esc(k.name)}">📤</button></td>${cloudOn() ? `<td class="small">${(k.parents || []).map(esc).join('<br>') || '<span class="muted">–</span>'}</td>` : ''}<td class="r"><button class="btn sm ghost danger" data-act="rmkid" data-id="${k.id}">Hapus</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Belum ada siswa.</p>'}</section>
     <div class="grid2">
       <section class="card"><h2>Kelas</h2><form data-form="renameclass" class="form inline"><input name="name" value="${esc(ctx.c.name)}" required><button class="btn ghost">Ganti nama</button></form>
         <form data-form="newclass" class="form inline"><input name="name" placeholder="Nama kelas baru" required><button class="btn ghost">Tambah kelas</button></form>
@@ -2018,7 +2070,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const seen = getSeen(), items = notifItems();
     let body;
     if (x.role === 'guru') {
-      body = items.length ? items.map((n) => `<a class="notif ${n.at > seen ? 'new' : ''}" href="#/guru/siswa/${n.k.id}"><span class="av sm">${avHTML(n.k.avatar)}</span><span class="grow"><b>${esc(n.k.name)}</b> menyelesaikan tugas <b>${esc(n.a.note || 'Tugas')}</b><small>${ftime(n.at)} · ${n.d.by === 'ortu' ? 'dilaporkan orang tua' : 'semua keterampilan sudah mahir'}</small></span>${n.at > seen ? '<i class="dot-new"></i>' : ''}</a>`).join('')
+      body = items.length ? items.map((n) => `<a class="notif ${n.at > seen ? 'new' : ''}" href="#/guru/siswa/${n.k.id}"><span class="av sm">${avHTML(n.k.avatar)}</span><span class="grow"><b>${esc(n.k.name)}</b> menyelesaikan tugas <b>${esc(n.a.note || 'Tugas')}</b><small>${ftime(n.at)} · ${doneText(n)}</small></span>${n.at > seen ? '<i class="dot-new"></i>' : ''}</a>`).join('')
         : emptyCard('Belum ada notifikasi', 'Notifikasi muncul saat siswa menyelesaikan tugas yang Anda berikan.');
     } else {
       body = items.length ? items.map((n) => {
@@ -2226,6 +2278,10 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     else if (act === 'reqlogin') { const r = JSON.parse(el.dataset.r); session.set({ role: 'siswa', id: r.studentId, code: r.classCode }); go('#/belajar'); }
     else if (act === 'schooledit') superEditSchool(el.dataset.id, el.dataset.n);
     else if (act === 'delclass') deleteClass(el.dataset.id);
+    else if (act === 'shareclass') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. Latihan matematika ${ctx.c.name} sekarang di Metiq (gratis, bisa di HP):\n1. Buka https://metiq-math.vercel.app\n2. Ketuk "Saya Siswa"\n3. Masukkan kode kelas: ${ctx.c.code}\n4. Pilih nama kamu`); }
+    else if (act === 'shareparent') { const k = S.student(el.dataset.id), c = k && S.cls(k.classId); if (k) shareText(`Assalamu'alaikum Ayah/Bunda ${k.name}. Laporan belajar matematika ${k.name} (${c ? c.name : ''}) bisa dilihat di Metiq:\n1. Buka https://metiq-math.vercel.app\n2. Ketuk "Saya Orang Tua"\n3. Masukkan kode orang tua: ${k.parentCode}\nAyah/Bunda juga akan mendapat kabar setiap ada tugas dari guru.`); }
+    else if (act === 'submitasg') { el.disabled = true; markDone(el.dataset.a, session.get().id, 'siswa').then(() => { window.SFX.task(); toast('Tugas dikumpulkan! Gurumu mendapat notifikasi 📨'); route(); }); }
+    else if (act === 'gotoform') { go('#/guru/tugas'); setTimeout(() => { const f = document.getElementById('newasg'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 350); }
     else if (act === 'superdel') superDelete(el.dataset.what, el.dataset.id);
     else if (act === 'schoolview') { ss.set('schoolSel', el.dataset.id); go('#/guru/sekolah'); }
     else if (act === 'tdays') { ss.set('tdays', +el.dataset.d); return route(); }
