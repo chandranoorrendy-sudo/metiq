@@ -68,6 +68,11 @@
           'Akun admin melihat dan mengelola <b>semua kelas</b> dari semua guru.',
           'Pilih kelas lewat kotak pilihan di bawah nama kelas; nama guru pemilik kelas ikut ditampilkan.',
         ] },
+        { icon: '👥', t: 'Kelompok belajar (kelas dengan level berbeda)', steps: [
+          'Buka tab <b>👥 Kelompok</b>. Siswa dikelompokkan otomatis menurut level asesmen terbarunya, misalnya "Kelompok materi Kelas 2" dan "Kelompok materi Kelas 4".',
+          'Setiap kelompok mendapat saran keterampilan yang paling banyak belum dikuasai anggotanya. Angka 3/5 berarti 3 dari 5 anggota belum mahir.',
+          'Centang keterampilan yang diinginkan, lalu ketuk <b>📌 Beri tugas</b>. Tugas hanya terlihat oleh anggota kelompok itu, jadi setiap anak berlatih sesuai levelnya.',
+        ] },
         { icon: '🧭', t: 'Asesmen awal siswa', steps: [
           'Setiap siswa mengerjakan asesmen awal sekali, saat pertama kali masuk: memilih umur, lalu 8–15 soal adaptif dari keterampilan kunci kelas 1–6.',
           'Hasilnya terlihat di tab <b>Siswa</b> → nama siswa → <b>🧭 Asesmen awal</b>: kelas tempat siswa sebaiknya belajar dan keterampilan yang perlu dipelajari.',

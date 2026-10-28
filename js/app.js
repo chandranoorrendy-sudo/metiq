@@ -475,7 +475,7 @@
     const c = classes.find((x) => x.id === ses.classId) || classes[0];
     return { t, c, classes, kids: S.studentsOf(c.id) };
   }
-  const TABS = [['ringkasan', 'Ringkasan'], ['siswa', 'Siswa'], ['analitik', 'Analitik'], ['peta', 'Peta kemajuan'], ['keterampilan', 'Keterampilan'], ['tugas', 'Tugas'], ['kelola', 'Kelola kelas'], ['referensi', 'Referensi']];
+  const TABS = [['ringkasan', 'Ringkasan'], ['siswa', 'Siswa'], ['kelompok', '👥 Kelompok'], ['analitik', 'Analitik'], ['peta', 'Peta kemajuan'], ['keterampilan', 'Keterampilan'], ['tugas', 'Tugas'], ['kelola', 'Kelola kelas'], ['referensi', 'Referensi']];
   function teacherShell(ctx, tab, inner) {
     app.innerHTML = shell(`
       <section class="dhead">
@@ -509,6 +509,7 @@
     if (tab === 'super') { if (!ctx.t.isAdmin || session.get().demo) return go('#/guru/ringkasan'); teacherShell(ctx, tab, `<div id="super-box">${loadingHTML}</div>`); loadSuper(ctx, arg); return; }
     if (tab === 'tugas') return teacherShell(ctx, tab, tasksHTML(ctx));
     if (!kids.length) return teacherShell(ctx, tab, emptyKids(ctx));
+    if (tab === 'kelompok') return teacherShell(ctx, tab, groupsHTML(ctx));
     if (tab === 'analitik') return teacherShell(ctx, tab, analyticsHTML(ctx, arg));
 
     if (tab === 'ringkasan') {
@@ -1160,6 +1161,40 @@
     document.addEventListener('focusin', (e) => { const el = e.target.closest && e.target.closest('[data-tip-v]'); if (el) { const r = el.getBoundingClientRect(); show(el, r.left + r.width / 2, r.top); } });
     document.addEventListener('focusout', hide); window.addEventListener('scroll', hide, { passive: true });
   })();
+
+  /* ---------- Kelompok belajar: siswa dikelompokkan menurut level asesmen terbaru ---------- */
+  function groupsHTML(ctx) {
+    const rows = ctx.kids.map((k) => { const d = S.diagOf(k.id, 'b') || S.diagOf(k.id); return { k, d, level: d ? d.level : null, age: d ? ageGradeOf(d.age) : null }; });
+    const levels = [...new Set(rows.filter((r) => r.level).map((r) => r.level))].sort((a, b) => a - b);
+    const groups = levels.map((lv) => ({ lv, kids: rows.filter((r) => r.level === lv) }));
+    const none = rows.filter((r) => !r.level);
+    // saran: keterampilan kunci dan celah asesmen anggota yang belum mahir, diurutkan dari yang paling banyak dibutuhkan
+    const suggest = (g) => {
+      const cand = new Set(S.DIAG[g.lv] || []);
+      g.kids.forEach((r) => r.d.items.forEach((x) => { if (!x.ok && SKILLS[x.id] && SKILLS[x.id].grade <= g.lv) cand.add(x.id); }));
+      unitsOf(g.lv).slice(0, 3).forEach((u) => u.skills.slice(0, 2).forEach((x) => cand.add(x.id)));
+      return [...cand].filter((id) => SKILLS[id]).map((id) => ({ id, need: g.kids.filter((r) => S.progress(r.k.id, id).score < 80).length }))
+        .filter((x) => x.need > 0).sort((a, b) => b.need - a.need || SKILLS[a.id].grade - SKILLS[b.id].grade).slice(0, 5);
+    };
+    const kidChips = (list) => `<div class="gkids">${list.map((r) => `<a class="kidchip" href="#/guru/siswa/${r.k.id}">${avHTML(r.k.avatar)} ${esc(r.k.name)}${r.age && r.level < r.age ? ` <small class="muted">−${r.age - r.level}</small>` : ''}</a>`).join('')}</div>`;
+    const card = (g) => {
+      const sug = suggest(g), behind = g.kids.filter((r) => r.age && r.level < r.age).length;
+      const head = `Kelompok materi Kelas ${g.lv}`;
+      return `<section class="card grp"><div class="lrow"><span class="gicon g-pasangan">${g.lv}</span><span class="grow"><b>${head}</b><small>${g.kids.length} siswa${behind ? ` · ${behind} di bawah kelas sesuai usianya` : ''}</small></span></div>
+        ${kidChips(g.kids)}
+        ${sug.length ? `<form data-form="grouptask" data-sids="${g.kids.map((r) => r.k.id).join(',')}" class="form">
+          <p class="small"><b>Saran tugas untuk kelompok ini</b> <span class="muted">(angka = banyak anggota yang belum mahir)</span></p>
+          ${sug.map((x, i) => `<label class="cb"><input type="checkbox" name="sk" value="${x.id}" ${i < 3 ? 'checked' : ''}> ${SKILLS[x.id].code} ${SKILLS[x.id].name} <span class="pill">${x.need}/${g.kids.length}</span></label>`).join('')}
+          <div class="grow2"><label>Catatan<input name="note" maxlength="120" value="${esc(head)}: latihan bersama"></label><label>Tenggat (opsional)<input name="due" type="date"></label></div>
+          <button class="btn sm">📌 Beri tugas untuk ${g.kids.length} siswa ini</button></form>`
+        : '<p class="small muted">Semua anggota sudah mahir di keterampilan kunci level ini. Pertimbangkan materi kelas berikutnya.</p>'}</section>`;
+    };
+    return `<section class="card"><h2>👥 Kelompok belajar</h2>
+        <p class="small muted">Siswa dikelompokkan menurut level dari asesmen terbaru (asesmen akhir jika ada, jika tidak asesmen awal). Tugas kelompok hanya terlihat oleh anggota kelompok, sehingga setiap anak berlatih sesuai levelnya. Angka −1, −2 di samping nama = berapa kelas di bawah kelas sesuai usianya.</p>
+        <div class="kpis">${groups.map((g) => `<div class="kpi"><small>Materi Kelas ${g.lv}</small><b>${g.kids.length}<span> siswa</span></b></div>`).join('')}${none.length ? `<div class="kpi"><small>Belum asesmen</small><b>${none.length}</b></div>` : ''}</div></section>
+      ${groups.map(card).join('') || emptyCard('Belum ada hasil asesmen', 'Kelompok muncul setelah siswa mengerjakan asesmen awal. Asesmen muncul otomatis saat siswa pertama kali masuk.')}
+      ${none.length ? `<section class="card grp"><div class="lrow"><span class="gicon g-pasangan">?</span><span class="grow"><b>Belum mengerjakan asesmen</b><small>${none.length} siswa. Asesmen awal muncul otomatis saat mereka masuk berikutnya.</small></span></div>${kidChips(none)}</section>` : ''}`;
+  }
 
   /* ---------- Asesmen awal dan akhir untuk penelitian (khusus admin) ---------- */
   // Simpan progres atas nama siswa memakai kode kelas, seperti saat siswa menyimpan progresnya sendiri
@@ -2295,6 +2330,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (kind === 'addkid') { String(fd.get('name')).split(',').map((x) => x.trim()).filter(Boolean).forEach((n) => S.addStudent(ctx.c.id, n)); route(); }
     if (kind === 'renameclass') { S.renameClass(ctx.c.id, fd.get('name')); route(); }
     if (kind === 'newclass') { const c = S.createClass(ctx.t.id, fd.get('name')); const s = session.get(); s.classId = c.id; session.set(s); route(); }
+    if (kind === 'grouptask') { const sk = fd.getAll('sk'), sids = f.dataset.sids.split(','); if (!sk.length) return toast('Pilih minimal satu keterampilan'); S.addAssignment(ctx.c.id, sk, fd.get('note'), fd.get('due'), sids); toast(`Tugas dikirim ke ${sids.length} siswa ✔`); return route(); }
     if (kind === 'assign') { const sk = fd.getAll('sk'), sids = fd.get('target') === 'some' ? fd.getAll('sid') : []; if (!sk.length) return toast('Pilih minimal satu keterampilan'); if (fd.get('target') === 'some' && !sids.length) return toast('Pilih minimal satu siswa'); S.addAssignment(ctx.c.id, sk, fd.get('note'), fd.get('due'), sids); ss.set('asgFor', ''); ss.set('asgSkill', ''); toast('Tugas disimpan ✔'); route(); }
   });
 
@@ -2348,6 +2384,11 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         const id = await Cloud.rpc('teacher_create_class', { p_token: session.get().token, p_name: fd.get('name') });
         const s = session.get(); s.classId = id; session.set(s);
         await ensure(true); toast('Kelas baru dibuat ✔'); return route();
+      }
+      if (kind === 'grouptask') {
+        const sk = fd.getAll('sk'), sids = f.dataset.sids.split(',');
+        if (!sk.length) { done(); return toast('Pilih minimal satu keterampilan'); }
+        return tAct('teacher_add_assignment', { p_class_id: ctx.c.id, p_skills: sk, p_note: fd.get('note'), p_due: fd.get('due'), p_student_ids: sids }, `Tugas dikirim ke ${sids.length} siswa ✔`);
       }
       if (kind === 'assign') {
         const sk = fd.getAll('sk'), sids = fd.get('target') === 'some' ? fd.getAll('sid') : [];

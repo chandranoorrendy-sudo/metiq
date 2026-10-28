@@ -690,3 +690,11 @@ fieldset.trylink { display: grid; gap: 6px; margin: 0; } fieldset.trylink legend
 b.code, .code { letter-spacing: 1px; color: var(--brand); }
 td.nowrap { white-space: nowrap; }
 .link.danger { color: var(--no); }
+
+/* ---------- Kelompok belajar ---------- */
+.grp .lrow { border: 0; padding-top: 0; }
+.gkids { display: flex; flex-wrap: wrap; gap: 6px; margin: 6px 0 10px; }
+.kidchip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px 4px 4px; border-radius: 999px; background: #f2fdf9; border: 1px solid var(--line); text-decoration: none; color: var(--ink); font-weight: 700; font-size: .85rem; }
+.kidchip .av, .kidchip img, .kidchip svg { width: 22px; height: 22px; font-size: 1rem; }
+.grp form .cb { font-size: .88rem; } .grow2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (max-width: 420px) { .grow2 { grid-template-columns: 1fr; } }
