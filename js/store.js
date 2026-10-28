@@ -68,6 +68,7 @@
       db.assignments = db.assignments.filter((a) => a.classId !== id); db.done = db.done.filter((d) => !asg.includes(d.aid)); save();
     },
     renameClass(id, name) { const c = Store.cls(id); if (c) { c.name = name.trim(); save(); } },
+    setClassSettings(id, st) { const c = Store.cls(id); if (c) { c.settings = { konteks: st.konteks === 'islami' ? 'islami' : 'umum', adab: st.adab === true }; save(); } return c && c.settings; },
 
     /* Siswa */
     addStudent(classId, name, avatar) {

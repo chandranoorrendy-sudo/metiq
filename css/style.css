@@ -807,3 +807,10 @@ details.realcard summary { cursor: pointer; list-style: none; } details.realcard
 .lp-art { height: auto; display: flex; justify-content: center; }
 .lp-art img { width: 100%; max-width: 440px; height: auto; display: block; }
 @media (max-width: 760px) { .lp-art { height: auto; max-width: 300px; margin: 0 auto 4px; } }
+
+/* ---------- Lapisan iman (opsional per kelas) ---------- */
+.hikmah { border-left: 5px solid #16a085; }
+.hikmah blockquote { margin: 8px 0; padding: 10px 14px; background: #eefaf6; border-radius: 12px; }
+.hikmah cite { display: block; font-size: .85rem; color: var(--muted); font-style: normal; }
+.doa-ar { font-size: 1.5rem; line-height: 2; font-family: 'Amiri', 'Scheherazade New', 'Traditional Arabic', serif; margin: 6px 0; }
+.doa .doa-id { font-style: italic; }

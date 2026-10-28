@@ -257,6 +257,19 @@
         { id: '2P3', name: 'Memperkirakan hasil penjumlahan', gen() { const rnd = (x) => Math.round(x / 10) * 10; let a = r(12, 88), b = r(12, 88); if (a % 10 === 5) a++; if (b % 10 === 5) b++; const ans = rnd(a) + rnd(b); return inp(`Perkirakan ${a} + ${b} dengan membulatkan ke puluhan terdekat.`, ans, `${a} ≈ ${rnd(a)} dan ${b} ≈ ${rnd(b)}. ${rnd(a)} + ${rnd(b)} = <b>${ans}</b>. (Hasil sebenarnya ${a + b}.)`, { meta: { kind: 'estimate' } }); } },
       ],
     },
+    {
+      // Hanya tampil di kelas yang konteksnya islami (pengaturan kelas); lihat C.setKonteks
+      id: '2Q', grade: 2, iman: true, name: 'Matematika dalam ibadah', icon: '🕌', color: '#16a085',
+      sg: '— (konteks lokal: menerapkan penjumlahan, pengurangan, pembagian, dan urutan)', ixl: '—', km: 'Bilangan (konteks ibadah)',
+      tip: 'Hitung bersama anak rakaat shalat hari ini, hari puasa yang sudah dijalani, atau uang yang disisihkan untuk sedekah.',
+      skills: [
+        { id: '2Q1', name: 'Menjumlahkan rakaat shalat', gen() { const SH = [['Subuh', 2], ['Zuhur', 4], ['Asar', 4], ['Magrib', 3], ['Isya', 4]]; const [x, y] = shuffle(SH).slice(0, 2); return inp(`Shalat ${x[0]} ${x[1]} rakaat dan shalat ${y[0]} ${y[1]} rakaat. Berapa rakaat semuanya?`, x[1] + y[1], `Jumlahkan rakaatnya: ${x[1]} + ${y[1]} = <b>${x[1] + y[1]}</b> rakaat.`, { vis: V.groups('🟢', x[1], y[1]), meta: { op: '+', a: x[1], b: y[1] } }); } },
+        { id: '2Q2', name: 'Urutan waktu shalat', gen() { const W5 = ['Subuh', 'Zuhur', 'Asar', 'Magrib', 'Isya']; const after = Math.random() < 0.5; const i = after ? r(0, 3) : r(1, 4); const ref = W5[i], ans = W5[after ? i + 1 : i - 1]; return ch(`Shalat apa yang waktunya ${after ? 'sesudah' : 'sebelum'} ${ref}?`, shuffle(W5.filter((w) => w !== ref)), ans, `Urutan shalat dalam sehari: ${W5.join(' → ')}. ${after ? 'Sesudah' : 'Sebelum'} ${ref} adalah <b>${ans}</b>.`, { vis: V.seq(W5.map((w) => (w === ans ? '?' : w))) }); } },
+        { id: '2Q3', name: 'Menghitung hari puasa', gen() { const total = pick([29, 30]), done = r(5, total - 3); return inp(`Jika bulan Ramadan tahun ini ${total} hari dan kamu sudah berpuasa ${done} hari, berapa hari lagi puasanya?`, total - done, `Keseluruhan ${total} hari, sudah ${done} hari. Sisanya ${total} − ${done} = <b>${total - done}</b> hari.`, { vis: V.barModel([[[done, 'sudah', done], ['?', 'sisa', total - done]]], total), meta: { op: '-', a: total, b: done } }); } },
+        { id: '2Q4', name: 'Sedekah dan sisa uang', gen() { const have = pick([5000, 10000, 20000]), give = pick([1000, 2000, 5000].filter((x) => x < have)); return inp(`${pick(NAMA)} punya ${rp(have)}. Ia bersedekah ${rp(give)}. Berapa rupiah sisa uangnya? (tulis angkanya saja)`, have - give, `Uang awal dikurangi sedekah: ${rp(have)} − ${rp(give)} = <b>${rp(have - give)}</b>.`, { unit: 'Rp', meta: { op: '-', a: have, b: give } }); } },
+        { id: '2Q5', name: 'Berbagi takjil sama rata', gen() { const g = r(2, 5), e = r(2, 5), t = g * e; return inp(`Ada ${t} kurma untuk berbuka. Kurma dibagi rata kepada ${g} anak. Berapa kurma yang didapat setiap anak?`, e, `Bagikan satu per satu ke ${g} anak sampai habis. Setiap anak mendapat <b>${e}</b> kurma, karena ${g} × ${e} = ${t}.`, { vis: V.objects('🌴', t) + '<div class="kids">' + '🧒'.repeat(g) + '</div>', meta: { op: '/', a: t, b: g } }); } },
+      ],
+    },
   ];
 
   C.register(UNITS);

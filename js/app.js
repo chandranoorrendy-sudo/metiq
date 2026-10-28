@@ -26,6 +26,17 @@
   // Mode server aktif jika Supabase dikonfigurasi, kecuali saat mencoba data contoh
   const cloudOn = () => Cloud.enabled && !session.get().demo;
   const loadingHTML = '<div class="loading"><span class="spin"></span>Memuat…</div>';
+  // Pengaturan kelas (lapisan iman opsional). Kosong = perilaku standar.
+  const IMAN = window.METIQ_IMAN || {};
+  function curClass() {
+    const ses = session.get();
+    if (ses.role === 'siswa' || ses.role === 'ortu') { const k = S.student(ses.id); return k ? S.cls(k.classId) : null; }
+    if (ses.role === 'guru') return S.cls(ses.classId) || S.db.classes.find((c) => c.teacherId === ses.id) || S.db.classes[0] || null;
+    return null;
+  }
+  const settingsOf = (c) => { const x = (c && c.settings) || {}; return { konteks: x.konteks === 'islami' ? 'islami' : 'umum', adab: x.adab === true }; };
+  const curSettings = () => settingsOf(curClass());
+  const adabOn = () => session.get().role === 'siswa' && curSettings().adab;
   let loaded = { key: '', at: 0 };
   async function ensure(force) {
     if (!cloudOn()) return true;
@@ -267,8 +278,8 @@
           <div class="wkstats"><div><b>${wk.n}</b><small>soal dijawab</small></div><div><b>${fmtTime(wk.ms)}</b><small>waktu belajar</small></div><div><b>${wk.skills}</b><small>keterampilan berkembang</small></div></div>
           ${wk.n ? '' : '<p class="small">Minggu ini belum berlatih. Ayo mulai! 💪</p>'}
           <a class="btn sm ghost" href="#/laporanku">Lihat laporanku →</a></section>
-        <a class="card prizecard" href="#/hadiah"><span class="pz-ico">🎁</span><span class="grow"><b>Papan hadiah Kelas ${g}</b><small>${pb.open} dari ${pb.cells.length} hadiah terbuka</small><small>${pb.open < pb.cells.length ? `Hadiah berikutnya: ${nextWin(pb, true)}` : 'Semua hadiah sudah terbuka! 🎉'}</small></span><span class="pz-go">→</span></a>
-        <a class="card prizecard" href="#/permainan"><span class="pz-ico">🎮</span><span class="grow"><b>Permainan matematika</b><small>⭐ ${S.gameStars(st.id)} bintang terkumpul</small><small>Kilat, Balon, Pasangan, dan Menara balok untuk Kelas ${g}</small></span><span class="pz-go">→</span></a>
+        ${adabOn() ? '' : `<a class="card prizecard" href="#/hadiah"><span class="pz-ico">🎁</span><span class="grow"><b>Papan hadiah Kelas ${g}</b><small>${pb.open} dari ${pb.cells.length} hadiah terbuka</small><small>${pb.open < pb.cells.length ? `Hadiah berikutnya: ${nextWin(pb, true)}` : 'Semua hadiah sudah terbuka! 🎉'}</small></span><span class="pz-go">→</span></a>`}
+        <a class="card prizecard" href="#/permainan"><span class="pz-ico">🎮</span><span class="grow"><b>Permainan matematika</b><small>⭐ ${S.gameStars(st.id)} bintang terkumpul</small><small>${adabOn() ? 'Balon, Pasangan, dan Menara balok' : 'Kilat, Balon, Pasangan, dan Menara balok'} untuk Kelas ${g}</small></span><span class="pz-go">→</span></a>
       </div>
       <h2 class="allsk">📚 Semua keterampilan</h2>
       ${gradeTabs()}
@@ -344,6 +355,7 @@
   function viewPrizes() {
     const ses = session.get(); const st = S.student(ses.id);
     if (ses.role !== 'siswa' || !st) return go('#/siswa');
+    if (adabOn()) return go('#/belajar');
     const g = getGrade(), pb = prizeBoard(st.id, g);
     app.innerHTML = shell(`<a class="back" href="#/belajar">← Kembali</a>
       <h1>🎁 Papan hadiah</h1><p class="muted">Ada apa di balik kotak itu? Setiap kotak punya tantangan. Selesaikan tantangannya untuk membuka hadiah!</p>
@@ -378,6 +390,7 @@
     const ses = session.get(); const st = S.student(ses.id);
     if (ses.role !== 'siswa' || !st) return go('#/siswa');
     const sk = SKILLS[id]; if (!sk) return go('#/belajar');
+    if (adabOn() && sessionStorage.getItem('metiq_doa') !== st.id) return viewDoa();
     sessionStorage.setItem('metiq_open', sk.unit);
     const p = S.progress(st.id, id);
     P = { sid: st.id, sk, score: p.score, count: 0, start: Date.now(), q: null, input: '', locked: false };
@@ -391,6 +404,15 @@
     timer = setInterval(() => { const el = document.getElementById('ptime'); if (!el) return clearInterval(timer); const s = Math.floor((Date.now() - P.start) / 1000); el.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; }, 1000);
     if (P.score >= 100) return renderMastered(true);
     nextQ();
+  }
+  // Mode adab: berdoa sekali per sesi sebelum latihan. Teks doa hanya dari iman.js yang sudah diperiksa.
+  function viewDoa() {
+    const d = (IMAN._adab || {}).doa || {}, ok = d.verifiedAt && (d.ar || d.id);
+    app.innerHTML = shell(`<a class="back" href="#/belajar">← Kembali</a>
+      <section class="card narrow center doa"><div class="bigemoji">🤲</div><h1>${esc(d.judul || '')}</h1>
+        <p>${esc(d.ajakan || '')}</p>
+        ${ok ? `${d.ar ? `<p class="doa-ar" dir="rtl" lang="ar">${esc(d.ar)}</p>` : ''}${d.id ? `<p class="doa-id">${esc(d.id)}</p>` : ''}${d.ref ? `<p class="small muted">${esc(d.ref)}</p>` : ''}` : ''}
+        <button class="btn" data-act="doaok">${esc(d.tombol || 'Mulai belajar')}</button></section>`);
   }
   function nextQ() {
     let q, guard = 0;
@@ -432,14 +454,15 @@
     document.querySelectorAll('.opt').forEach((b) => { const v = q.options[+b.dataset.i]; if (v === q.answer) b.classList.add('right'); else if (v === given) b.classList.add('wrong'); b.disabled = true; });
     const fb = document.getElementById('fb');
     const finished = ok ? myAsg.filter(asgDone) : [];
-    if (prizeBoard(P.sid, P.sk.grade).open > pzBefore) setTimeout(() => toast('🎁 Hadiah baru terbuka di papan hadiahmu!'), finished.length || (P.score >= 80 && before < 80) ? 1300 : 300);
+    if (!adabOn() && prizeBoard(P.sid, P.sk.grade).open > pzBefore) setTimeout(() => toast('🎁 Hadiah baru terbuka di papan hadiahmu!'), finished.length || (P.score >= 80 && before < 80) ? 1300 : 300);
     finished.forEach((a) => markDone(a.id, P.sid, 'siswa'));
     if (ok) {
       if (P.score >= 100 && before < 100) window.SFX.mastered();
       else if (finished.length) { window.SFX.task(); toast(`📌 Tugas selesai: ${esc(finished[0].note || 'Tugas dari guru')}! 🎉`); }
       else if (P.score >= 80 && before < 80) { window.SFX.levelUp(); toast('⭐ Naik ke tingkat Mahir!'); }
       else window.SFX.correct();
-      fb.innerHTML = `<div class="fb ok">${['Hebat!', 'Pintar!', 'Benar sekali!', 'Mantap!', 'Keren!'][Math.floor(Math.random() * 5)]} 🎉</div>`;
+      const praise = adabOn() && (IMAN._adab || {}).pujian ? IMAN._adab.pujian : ['Hebat!', 'Pintar!', 'Benar sekali!', 'Mantap!', 'Keren!'];
+      fb.innerHTML = `<div class="fb ok">${praise[Math.floor(Math.random() * praise.length)]} 🎉</div>`;
       if (P.score >= 100 && before < 100) return setTimeout(() => renderMastered(false), 900);
       setTimeout(nextQ, 1000);
     } else {
@@ -1750,11 +1773,11 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       <h1>🎮 Permainan matematika</h1>
       <p class="muted">${kid ? `Kamu punya <b>⭐ ${S.gameStars(kid.id)} bintang</b>. Setiap ronde memberi sampai 3 bintang. Main lagi untuk mengumpulkan lebih banyak!` : 'Masuk sebagai siswa agar bintangmu tersimpan. Tanpa masuk, kamu tetap bisa mencoba.'}</p>
       ${gradeTabs()}
-      <div class="glist">${G.GAMES.filter((x) => x.grade === g).map((x) => { const b = best(x.id); return `<a class="card gitem" href="#/main/${x.id}"><span class="gicon g-${x.type}">${x.icon}</span><span class="grow"><b>${x.name}</b><small>${x.desc}</small><small class="gtype">${G.TYPES[x.type]}</small></span><span class="gbest">${b ? `${starRow(G.starsFor(x, b.score))}<small>terbaik ${b.score} poin · ${b.att}× main</small>` : '<small>Belum dimainkan</small>'}</span></a>`; }).join('')}</div>`,
+      <div class="glist">${G.GAMES.filter((x) => x.grade === g && !(adabOn() && x.type === 'kilat')).map((x) => { const b = best(x.id); return `<a class="card gitem" href="#/main/${x.id}"><span class="gicon g-${x.type}">${x.icon}</span><span class="grow"><b>${x.name}</b><small>${x.desc}</small><small class="gtype">${G.TYPES[x.type]}</small></span><span class="gbest">${b ? `${starRow(G.starsFor(x, b.score))}<small>terbaik ${b.score} poin · ${b.att}× main</small>` : '<small>Belum dimainkan</small>'}</span></a>`; }).join('')}</div>`,
     { right: `<span class="topr"><a class="help" href="#/panduan/siswa" aria-label="Panduan">❓</a></span>` });
   }
   function viewGame(id) {
-    const x = G.byId(id); if (!x) return go('#/permainan');
+    const x = G.byId(id); if (!x || (adabOn() && x.type === 'kilat')) return go('#/permainan');
     const kid = gameKid(), how = { kilat: 'Jawab soal sebanyak mungkin dalam 60 detik. Jawaban benar berturut-turut membuat kombo 🔥.', balon: 'Balon terbang ke atas. Ketuk balon yang sesuai perintah di atas. Ketuk balon yang salah, poinmu berkurang 1. Perintah berganti setiap 5 balon.', pasangan: 'Buka dua kartu. Jika soal dan jawabannya cocok, kartu tetap terbuka. Semakin sedikit salah tebak, semakin banyak bintang.', susun: `Ketuk sebuah kolom untuk menjatuhkan balok. Dua balok yang bersentuhan (samping atau atas-bawah) dan jumlahnya ${x.target !== undefined ? x.show(x.target) : ''} akan hilang. Hilang beruntun = poin bonus! Permainan selesai jika semua kolom penuh.`, kembar: `Balok jatuh terus dan makin cepat. Ketuk kolom (atau ◀ ▶) untuk menggeser balok, ketuk lagi kolom yang sama (atau ▼) untuk menjatuhkannya. Balok yang sama dan bersentuhan menyatu menjadi dua kali lipat. Jika tumpukan masuk ke baris merah paling atas, permainan selesai. Poin naik setiap balok terbesarmu berlipat dua (64 = 50 poin, 128 = 60, 256 = 70).` }[x.type];
     app.innerHTML = shell(`<a class="back" href="#/permainan">← Semua permainan</a>
       <section class="card ghead"><span class="gicon g-${x.type}">${x.icon}</span><div class="grow"><small class="muted">Kelas ${x.grade} · ${G.TYPES[x.type]}</small><h1>${x.name}</h1></div></section>
@@ -1943,6 +1966,14 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       ${next.length ? `<h3 class="sub">Materi lanjutan</h3>${next.map((id) => row(id, `Kelas ${SKILLS[id].grade} · belum pernah dicoba`)).join('')}` : ''}
       <div class="row-btn left"><button class="btn sm" data-act="asgform" data-s="${k.id}">Buat tugas khusus lainnya</button></div></section>`;
   }
+  function settingsCard(ctx) {
+    const st = settingsOf(ctx.c);
+    return `<section class="card"><h2>🌙 Pengaturan kelas</h2><form data-form="classset" class="form">
+        <label>Konteks soal<select name="konteks"><option value="umum" ${st.konteks === 'umum' ? 'selected' : ''}>Umum (standar)</option><option value="islami" ${st.konteks === 'islami' ? 'selected' : ''}>Islami: nama dan benda islami, bab Matematika dalam ibadah</option></select></label>
+        <label class="cb"><input type="checkbox" name="adab" value="1" ${st.adab ? 'checked' : ''}> <span>Mode adab: doa sebelum latihan, pujian islami, tanpa papan hadiah dan permainan Kilat</span></label>
+        <button class="btn ghost sm">Simpan pengaturan</button></form>
+      <p class="small muted">Hanya berlaku untuk kelas ini. Jika keduanya mati, Metiq tampil seperti biasa.</p></section>`;
+  }
   function manageHTML(ctx) {
     return `<div class="grid2">
       <section class="card"><h2>Tambah siswa</h2><form data-form="addkid" class="form inline"><input name="name" placeholder="Nama siswa" required><button class="btn">Tambah</button></form>
@@ -1955,6 +1986,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       <section class="card"><h2>Kelas</h2><form data-form="renameclass" class="form inline"><input name="name" value="${esc(ctx.c.name)}" required><button class="btn ghost">Ganti nama</button></form>
         <form data-form="newclass" class="form inline"><input name="name" placeholder="Nama kelas baru" required><button class="btn ghost">Tambah kelas</button></form>
         <p class="small"><button class="link danger" data-act="delclass" data-id="${ctx.c.id}">🗑️ Hapus "${esc(ctx.c.name)}"</button></p></section>
+      ${settingsCard(ctx)}
       ${cloudOn() ? `<section class="card"><h2>Data</h2><p class="muted small">Data kelas tersimpan di server dan otomatis tersinkron ke HP siswa, orang tua, dan guru.</p><div class="row-btn"><button class="btn ghost sm" data-act="export">Unduh cadangan</button></div></section>`
       : `<section class="card"><h2>Cadangan data</h2><p class="muted small">Data tersimpan di perangkat ini. Unduh cadangan secara berkala, atau gabungkan data dari perangkat lain.</p><div class="row-btn"><button class="btn ghost sm" data-act="export">Unduh cadangan</button><label class="btn ghost sm">Gabungkan file<input type="file" accept=".json" data-act="import" hidden></label></div></section>`}
     </div>
@@ -2175,6 +2207,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     app.innerHTML = shell(`
       <button class="back link" data-act="back">← Kembali</button>
       <section class="card lhead" style="--c:${u.color}"><span class="uicon">${u.icon}</span><div class="grow"><small class="muted">Pelajaran · Kelas ${u.grade} · Bab ${u.id}</small><h1>${u.name}</h1><p>${les.intro}</p></div><button class="say" data-act="lsay" data-i="-1" aria-label="Bacakan">🔊</button></section>
+      ${hikmahHTML(uid)}
       ${window.METIQ_ANIM.has(uid) ? `<section class="card anim-card"><h2>🎬 Animasi: ${u.name}</h2><div id="anim-box"></div></section>` : ''}
       ${les.parts.length > 1 ? `<div class="ltoc">${les.parts.map((p, i) => `<button data-act="lgo" data-i="${i}">${i + 1}. ${p.t}</button>`).join('')}</div>` : ''}
       ${les.parts.map((p, i) => `<section class="card lpart" id="lp-${i}">
@@ -2187,6 +2220,16 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       <section class="card"><h2>Latihan di bab ini</h2><div class="sklist">${u.skills.map((s) => (kid ? skillLink(s.id, prog[s.id]) : `<a class="sk" href="${practice(s.id)}"><span class="sk-code">${s.code}</span><span class="sk-name">${s.name}</span><span class="chip lv0">→</span></a>`)).join('')}</div></section>
     `);
     window.METIQ_ANIM.mount(document.getElementById('anim-box'), uid);
+  }
+
+  function hikmahHTML(uid) {
+    const h = IMAN[uid];
+    if (!h || !h.verifiedAt || curSettings().konteks !== 'islami') return '';
+    const d = h.dalil || {};
+    return `<section class="card hikmah"><h2>🌙 Hikmah: ${esc(h.tema || '')}</h2>
+      ${d.ar || d.id ? `<blockquote>${d.ar ? `<p class="doa-ar" dir="rtl" lang="ar">${esc(d.ar)}</p>` : ''}${d.id ? `<p>${esc(d.id)}</p>` : ''}${d.ref ? `<cite>${esc(d.ref)}</cite>` : ''}</blockquote>` : ''}
+      ${h.ajakan ? `<p>${esc(h.ajakan)}</p>` : ''}${h.refleksi ? `<p><b>Renungkan:</b> ${esc(h.refleksi)}</p>` : ''}${h.adab ? `<p><b>Adab:</b> ${esc(h.adab)}</p>` : ''}
+      <p class="small muted">Diperiksa oleh ${esc(h.verifiedBy || '-')} · ${esc(h.verifiedAt)}</p></section>`;
   }
 
   /* Pratinjau soal untuk guru (tidak disimpan) */
@@ -2213,6 +2256,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const needsData = a === 'belajar' || a === 'asesmen' || a === 'permainan' || a === 'main' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi';
     if (needsData && !(await ensure())) return;
     if (seq !== routeSeq) return;
+    window.METIQ_CURRICULUM.setKonteks(curSettings().konteks);
     window.scrollTo(0, 0);
     switch (a) {
       case '': case undefined: return viewHome();
@@ -2279,6 +2323,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       document.querySelectorAll('.dpanel').forEach((p) => { p.hidden = p.dataset.p !== el.dataset.t; });
       return;
     }
+    if (act === 'doaok') { sessionStorage.setItem('metiq_doa', session.get().id); return route(); }
     if (act === 'pz') {
       const pb = prizeBoard(session.get().id, getGrade()), x = pb.cells[+el.dataset.i], box = document.getElementById('pzinfo');
       document.querySelectorAll('.pz.sel').forEach((b) => b.classList.remove('sel')); el.classList.add('sel');
@@ -2430,6 +2475,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (!ctx) return;
     if (kind === 'addkid') { String(fd.get('name')).split(',').map((x) => x.trim()).filter(Boolean).forEach((n) => S.addStudent(ctx.c.id, n)); route(); }
     if (kind === 'renameclass') { S.renameClass(ctx.c.id, fd.get('name')); route(); }
+    if (kind === 'classset') { S.setClassSettings(ctx.c.id, { konteks: fd.get('konteks'), adab: fd.get('adab') === '1' }); toast('Pengaturan kelas disimpan ✔'); return route(); }
     if (kind === 'newclass') { const c = S.createClass(ctx.t.id, fd.get('name')); const s = session.get(); s.classId = c.id; session.set(s); route(); }
     if (kind === 'grouptask') { const sk = fd.getAll('sk'), sids = f.dataset.sids.split(','); if (!sk.length) return toast('Pilih minimal satu keterampilan'); S.addAssignment(ctx.c.id, sk, fd.get('note'), fd.get('due'), sids); toast(`Tugas dikirim ke ${sids.length} siswa ✔`); return route(); }
     if (kind === 'assign') { const sk = fd.getAll('sk'), sids = fd.get('target') === 'some' ? fd.getAll('sid') : []; if (!sk.length) return toast('Pilih minimal satu keterampilan'); if (fd.get('target') === 'some' && !sids.length) return toast('Pilih minimal satu siswa'); S.addAssignment(ctx.c.id, sk, fd.get('note'), fd.get('due'), sids); ss.set('asgFor', ''); ss.set('asgSkill', ''); toast('Tugas disimpan ✔'); route(); }
@@ -2480,6 +2526,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         const avatars = names.map((_, i) => free[i] || S.AVATARS[Math.floor(Math.random() * S.AVATARS.length)]);
         return tAct('teacher_add_students', { p_class_id: ctx.c.id, p_names: names, p_avatars: avatars }, `${names.length} siswa ditambahkan ✔`);
       }
+      if (kind === 'classset') return tAct('class_set_settings', { p_class_id: ctx.c.id, p_settings: { konteks: fd.get('konteks') === 'islami' ? 'islami' : 'umum', adab: fd.get('adab') === '1' } }, 'Pengaturan kelas disimpan ✔');
       if (kind === 'renameclass') return tAct('teacher_rename_class', { p_class_id: ctx.c.id, p_name: fd.get('name') }, 'Nama kelas diganti ✔');
       if (kind === 'newclass') {
         const id = await Cloud.rpc('teacher_create_class', { p_token: session.get().token, p_name: fd.get('name') });

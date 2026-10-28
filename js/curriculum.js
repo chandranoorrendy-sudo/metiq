@@ -40,6 +40,13 @@
   const HARI = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
   const BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
   const two = () => { const s = shuffle(NAMA); return [s[0], s[1]]; };
+  // Konteks islami (pengaturan kelas): nama dan benda diganti di tempat, agar semua file kelas yang memakai NAMA/BENDA ikut berubah
+  const NAMA_ISLAMI = ['Ahmad', 'Aisyah', 'Umar', 'Fatimah', 'Ali', 'Khadijah', 'Hasan', 'Maryam', 'Husain', 'Zainab', 'Bilal', 'Hafshah', 'Salman', 'Ruqayyah'];
+  const BENDA_ISLAMI = [['🌴', 'kurma'], ['⭐', 'bintang'], ['🐟', 'ikan'], ['🌸', 'bunga'], ['📖', 'buku'], ['🕌', 'gambar masjid'],
+    ['🐤', 'anak ayam'], ['🍌', 'pisang'], ['⚽', 'bola'], ['🧁', 'kue'], ['🥭', 'mangga'], ['🐱', 'kucing'], ['✏️', 'pensil'], ['🍇', 'anggur']];
+  const ASLI = { NAMA: NAMA.slice(), BENDA: BENDA.slice() };
+  let konteks = 'umum';
+  const IMAN_UNITS = [];
 
   /* ---------- Visual ---------- */
   const V = {
@@ -372,8 +379,22 @@
 
   const SKILLS = {};
   // Menambahkan bab ke kurikulum; dipakai juga oleh file kelas lain (mis. grade2.js)
+  // Bab ber-iman: true hanya masuk UNITS saat konteks islami. Keterampilannya tetap bisa dicari lewat SKILLS[id]
+  // (tidak terhitung di Object.keys) agar riwayat jawaban lama tetap terbaca setelah pengaturan dimatikan.
   function register(units) {
-    units.forEach((u) => { if (!UNITS.includes(u)) UNITS.push(u); u.skills.forEach((s, i) => { s.unit = u.id; s.grade = u.grade; s.code = u.id + '.' + (i + 1); SKILLS[s.id] = s; }); });
+    units.forEach((u) => {
+      if (u.iman) { if (!IMAN_UNITS.includes(u)) IMAN_UNITS.push(u); } else if (!UNITS.includes(u)) UNITS.push(u);
+      u.skills.forEach((s, i) => { s.unit = u.id; s.grade = u.grade; s.code = u.id + '.' + (i + 1); if (u.iman) Object.defineProperty(SKILLS, s.id, { value: s, enumerable: false, configurable: true }); else SKILLS[s.id] = s; });
+    });
+    if (konteks === 'islami') setKonteks('islami');
+  }
+  function setKonteks(k) {
+    konteks = k === 'islami' ? 'islami' : 'umum';
+    const isl = konteks === 'islami';
+    NAMA.splice(0, NAMA.length, ...(isl ? NAMA_ISLAMI : ASLI.NAMA));
+    BENDA.splice(0, BENDA.length, ...(isl ? BENDA_ISLAMI : ASLI.BENDA));
+    IMAN_UNITS.forEach((u) => { const i = UNITS.indexOf(u); if (isl && i < 0) UNITS.push(u); if (!isl && i >= 0) UNITS.splice(i, 1); });
+    return konteks;
   }
   register(UNITS);
   const GRADES = [
@@ -407,7 +428,7 @@
   }
 
   window.METIQ_CURRICULUM = {
-    UNITS, SKILLS, TAGS, GRADES, unitsOf, classify, rp, register,
+    UNITS, SKILLS, TAGS, GRADES, unitsOf, classify, rp, register, setKonteks, konteks: () => konteks,
     // perangkat pembuat soal untuk file kelas lain
     kit: { r, pick, shuffle, range, rp, numOpts, kata, V, inp, ch, compareQ, BENDA, NAMA, HARI, BULAN, two },
   };

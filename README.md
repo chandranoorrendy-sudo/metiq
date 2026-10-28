@@ -16,6 +16,7 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 - `js/kit-upper.js`: perangkat bersama kelas 3–6 (desimal berkoma, pecahan, FPB/KPK, gambar sudut, koordinat, balok, diagram, pola kesalahan tambahan).
 - `js/grade3.js` … `js/grade6.js`: kelas 3 (55 keterampilan), 4 (55), 5 (49), 6 (51). Total 344 keterampilan.
 - `js/lessons-a.js` (kelas 1–3) dan `js/lessons-b.js` (kelas 4–6): Pelajaran untuk setiap bab (92 bab, 253 subbab) dengan langkah bernomor, catatan Cara Singapura, dan contoh "Ayo coba!" yang dibuat dari pembuat soal latihan. Rute `#/pelajaran/<bab>`.
+- `js/iman.js`: lapisan iman opsional per kelas (Kelola kelas → 🌙 Pengaturan kelas). Konteks islami mengganti nama dan benda di soal (`C.setKonteks`) dan menampilkan bab 2Q Matematika dalam ibadah; mode adab menambah layar doa, pujian islami, dan menyembunyikan papan hadiah serta permainan Kilat. Kartu Hikmah dan teks doa hanya tampil setelah diisi dan diperiksa manusia (`verifiedBy`, `verifiedAt`); teks Al-Qur'an dan hadits tidak pernah dibuat otomatis.
 - `js/avatars.js`: katalog avatar (anak, guru, hewan, tumbuhan, bentuk, ikon) dan ilustrasi SVG Ustadz, Ustadzah, anak berhijab, anak berpeci. `js/sound.js`: efek suara Web Audio (benar, salah, Mahir, Tuntas, tugas selesai).
 - `js/manual.js`: isi Panduan pemakaian untuk guru, orang tua, dan siswa (rute `#/panduan/<guru|ortu|siswa>`, bisa dicetak atau disimpan sebagai PDF).
 - `icons/` dan `manifest.webmanifest`: ikon aplikasi untuk browser dan layar utama HP.
@@ -35,6 +36,7 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 - `supabase/010_delete_class.sql`: menghapus kelas beserta siswanya (guru kelas, admin sekolah, atau super admin; nama kelas diketik ulang sebagai konfirmasi). Jalankan setelah 009.
 - `supabase/011_delete_school.sql`: super admin menghapus sekolah (beserta guru, kelas, siswa), guru, dan akun orang tua, dengan konfirmasi nama. Super admin tidak ikut terhapus. Jalankan setelah 010.
 - `supabase/012_approve_with_class.sql`: saat menyetujui pengajuan guru, super admin bisa langsung memberinya kelas yang sudah ada (tanpa kelas baru). Jalankan setelah 011.
+- `supabase/013_class_settings.sql`: pengaturan per kelas (`classes.settings`: konteks umum/islami, mode adab) yang ikut terkirim di data kelas, dan fungsi `class_set_settings` untuk guru kelas, admin sekolah, atau super admin. Jalankan setelah 012.
 
 ### Menghubungkan ke BBO Digital
 

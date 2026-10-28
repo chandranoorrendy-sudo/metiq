@@ -161,6 +161,12 @@
     ['Membulatkan ke puluhan', ['Cari dua puluhan terdekat, misalnya 47 ada di antara 40 dan 50.', 'Lihat satuannya: 5 atau lebih dibulatkan ke atas, kurang dari 5 ke bawah.'], '2P1'],
     ['Memperkirakan', ['Bulatkan setiap bilangan dulu.', 'Jumlahkan bilangan yang sudah dibulatkan.'], '2P3'],
   ]);
+  add('2Q', 'Banyak ibadah sehari-hari memakai bilangan: jumlah rakaat, urutan waktu shalat, hari puasa, dan sedekah.', [
+    ['Menjumlahkan rakaat', ['Ingat jumlah rakaat: Subuh 2, Zuhur 4, Asar 4, Magrib 3, Isya 4.', 'Untuk dua shalat, jumlahkan rakaatnya.', 'Contoh: Magrib + Isya = 3 + 4 = 7 rakaat.'], '2Q1'],
+    ['Urutan waktu shalat', ['Urutannya: Subuh, Zuhur, Asar, Magrib, Isya.', 'Sesudah = satu langkah ke kanan, sebelum = satu langkah ke kiri.'], '2Q2'],
+    ['Sisa hari dan sisa uang', ['Keseluruhan dikurangi yang sudah = sisanya.', 'Hari puasa: jumlah hari Ramadan − hari yang sudah dijalani.', 'Sedekah: uang awal − uang yang disedekahkan.'], '2Q3', 'Model batang: satu batang keseluruhan dibagi menjadi bagian "sudah" dan "sisa".'],
+    ['Berbagi sama rata', ['Bagikan satu per satu sampai habis.', 'Periksa dengan perkalian: banyak anak × bagian tiap anak = semuanya.'], '2Q5'],
+  ]);
 
   /* ---------- Kelas 3 ---------- */
   add('3A', 'Bilangan sampai 10.000 punya empat tempat: ribuan, ratusan, puluhan, dan satuan.', [
