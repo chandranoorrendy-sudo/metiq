@@ -61,6 +61,7 @@
           '<b>Super admin</b> (pengelola Metiq) melihat semua sekolah dan keluarga homeschool di tab <b>🌐 Super admin</b>, dan menyetujui pengajuan akun.',
           'Di <b>✋ Pengajuan</b>: periksa data pemohon, pilih sekolahnya (atau buat sekolah baru) untuk guru, pilih kelas untuk siswa, lalu ketuk <b>Setujui</b> atau <b>Tolak</b>. Kode kelas dan kode orang tua muncul di riwayat, dan bisa dikirim lewat WhatsApp.',
           'Di <b>📚 Kelas</b>, super admin memilih guru untuk setiap kelas (misalnya kelas Awal 2B diajar Ustadz A). Guru itu harus sudah punya akun aktif.',
+          'Nama kelas diganti di tab <b>Kelola kelas → Ganti nama</b>. Kelas dihapus lewat tombol <b>🗑️ Hapus</b> di Kelola kelas atau di 📚 Kelas; ketik nama kelasnya untuk konfirmasi. Siswa dan semua datanya ikut terhapus.',
           '<b>Admin sekolah</b> (koordinator) melihat semua kelas di sekolahnya di tab <b>🏫 Sekolah</b>. Super admin bisa menjadikan guru sebagai admin sekolah di <b>👩‍🏫 Guru</b>.',
         ] },
         { icon: '🛡️', t: 'Khusus admin', steps: [

@@ -32,6 +32,7 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 - `supabase/007_trial_usage.sql`: catatan penggunaan Mode Coba (nama yang diketik penguji, peran, halaman, soal, permainan, asesmen) dan ringkasannya untuk admin (tab 🏫 Sekolah → 🧪 Mode coba). Jalankan setelah 006.
 - `supabase/008_schools_superadmin.sql`: banyak sekolah (termasuk keluarga homeschool), pengajuan akun guru/homeschool/orang tua/siswa yang disetujui super admin, admin sekolah, dan dasbor super admin. Butuh 006 sudah dijalankan. Data lama masuk ke sekolah "Kuttab Imam Al-Ghazali".
 - `supabase/009_class_teacher.sql`: super admin menentukan guru sebuah kelas (tab 🌐 Super admin → 📚 Kelas). Jalankan setelah 008.
+- `supabase/010_delete_class.sql`: menghapus kelas beserta siswanya (guru kelas, admin sekolah, atau super admin; nama kelas diketik ulang sebagai konfirmasi). Jalankan setelah 009.
 
 ### Menghubungkan ke BBO Digital
 

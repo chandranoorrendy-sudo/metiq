@@ -1425,9 +1425,9 @@
       const tOpts = (sel) => teachers.map((t) => `<option value="${t.id}" ${t.id === sel ? 'selected' : ''}>${esc(t.name)} · ${esc(sname(t.schoolId))}</option>`).join('');
       body = `<section class="card"><h2>Guru setiap kelas</h2>
         <p class="small muted">Pilih guru untuk sebuah kelas. Guru itu langsung bisa membuka kelas, siswanya, dan tugasnya. Sekolah kelas mengikuti sekolah gurunya. Guru baru harus punya akun aktif dulu (lewat pengajuan atau ditambahkan di tab 👩‍🏫 Guru).</p>
-        <div class="tscroll"><table class="tbl"><thead><tr><th>Sekolah</th><th>Kelas</th><th>Kode</th><th>Siswa</th><th>Guru</th></tr></thead><tbody>
+        <div class="tscroll"><table class="tbl"><thead><tr><th>Sekolah</th><th>Kelas</th><th>Kode</th><th>Siswa</th><th>Guru</th><th></th></tr></thead><tbody>
         ${classes.map((c) => `<tr><td>${esc(c.schoolName || 'Tanpa sekolah')}</td><td><b>${esc(c.name)}</b></td><td><b class="code">${esc(c.code)}</b></td><td>${S.studentsOf(c.id).length}</td>
-          <td><select data-act="classteacher" data-c="${c.id}" data-was="${c.teacherId}" aria-label="Guru ${esc(c.name)}">${tOpts(c.teacherId)}</select></td></tr>`).join('')}
+          <td><select data-act="classteacher" data-c="${c.id}" data-was="${c.teacherId}" aria-label="Guru ${esc(c.name)}">${tOpts(c.teacherId)}</select></td><td><button class="link small danger" data-act="delclass" data-id="${c.id}">Hapus</button></td></tr>`).join('')}
         </tbody></table></div></section>`;
     } else {
       const opts = (sel) => `<option value="">— tanpa sekolah —</option>${schools.map((s) => `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}`;
@@ -1459,6 +1459,24 @@
     const n = prompt('Nama sekolah', name || ''); if (!n || !n.trim()) return;
     try { await Cloud.rpc('super_school_save', { p_token: session.get().token, p_id: id, p_name: n.trim(), p_kind: s.kind || 'sekolah', p_city: s.city || null }); toast('Nama disimpan ✔'); await ensure(true); route(); }
     catch (e) { toast(e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
+  }
+  // Hapus kelas: nama kelas diketik ulang sebagai konfirmasi; siswa dan datanya ikut terhapus
+  async function deleteClass(id) {
+    const c = S.cls(id); if (!c) return;
+    const n = S.studentsOf(id).length;
+    const typed = prompt(`Hapus kelas "${c.name}"${n ? ` beserta ${n} siswa dan semua datanya (jawaban, skor, tugas, laporan)` : ''}?
+Tindakan ini tidak bisa dibatalkan.
+
+Ketik nama kelas untuk konfirmasi: ${c.name}`);
+    if (typed === null) return;
+    if (typed.trim().toLowerCase() !== c.name.trim().toLowerCase()) return toast('Nama kelas tidak cocok. Kelas tidak dihapus.');
+    const after = () => { const x = session.get(); if (x.classId === id) { delete x.classId; session.set(x); } toast(`"${esc(c.name)}" dihapus`); };
+    if (!cloudOn()) {
+      if (S.classesOf(c.teacherId).length <= 1) return toast('Ini satu-satunya kelas guru tersebut. Buat kelas lain dulu.');
+      S.deleteClass(id); after(); return route();
+    }
+    try { await Cloud.rpc('teacher_delete_class', { p_token: session.get().token, p_class_id: id, p_confirm_name: typed }); after(); await ensure(true); route(); }
+    catch (e) { toast(e.status === 404 ? 'Jalankan supabase/010_delete_class.sql dulu di Supabase' : e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
   }
   async function superClassTeacher(el) {
     const c = S.cls(el.dataset.c), t = (SUP && SUP.ov.teachers || []).find((x) => x.id === el.value); if (!c || !t) return;
@@ -1779,7 +1797,8 @@
     <section class="card"><h2>Daftar siswa (${ctx.kids.length})</h2>${ctx.kids.length ? `<div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Kode orang tua</th>${cloudOn() ? '<th>Akun orang tua</th>' : ''}<th></th></tr></thead><tbody>${ctx.kids.map((k) => `<tr><td><a class="avpick" href="#/avatar/siswa-${k.id}" title="Ganti avatar">${avHTML(k.avatar)}</a> ${esc(k.name)}</td><td><b class="code">${k.parentCode}</b></td>${cloudOn() ? `<td class="small">${(k.parents || []).map(esc).join('<br>') || '<span class="muted">–</span>'}</td>` : ''}<td class="r"><button class="btn sm ghost danger" data-act="rmkid" data-id="${k.id}">Hapus</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">Belum ada siswa.</p>'}</section>
     <div class="grid2">
       <section class="card"><h2>Kelas</h2><form data-form="renameclass" class="form inline"><input name="name" value="${esc(ctx.c.name)}" required><button class="btn ghost">Ganti nama</button></form>
-        <form data-form="newclass" class="form inline"><input name="name" placeholder="Nama kelas baru" required><button class="btn ghost">Tambah kelas</button></form></section>
+        <form data-form="newclass" class="form inline"><input name="name" placeholder="Nama kelas baru" required><button class="btn ghost">Tambah kelas</button></form>
+        <p class="small"><button class="link danger" data-act="delclass" data-id="${ctx.c.id}">🗑️ Hapus "${esc(ctx.c.name)}"</button></p></section>
       ${cloudOn() ? `<section class="card"><h2>Data</h2><p class="muted small">Data kelas tersimpan di server dan otomatis tersinkron ke HP siswa, orang tua, dan guru.</p><div class="row-btn"><button class="btn ghost sm" data-act="export">Unduh cadangan</button></div></section>`
       : `<section class="card"><h2>Cadangan data</h2><p class="muted small">Data tersimpan di perangkat ini. Unduh cadangan secara berkala, atau gabungkan data dari perangkat lain.</p><div class="row-btn"><button class="btn ghost sm" data-act="export">Unduh cadangan</button><label class="btn ghost sm">Gabungkan file<input type="file" accept=".json" data-act="import" hidden></label></div></section>`}
     </div>
@@ -2146,6 +2165,7 @@
     else if (act === 'realsignup') { tlog('view', { p: 'daftar' }); tflush(); session.set({}); S.setMode(cloudOn()); go('#/ajukan/' + (el.dataset.k || '')); }
     else if (act === 'reqlogin') { const r = JSON.parse(el.dataset.r); session.set({ role: 'siswa', id: r.studentId, code: r.classCode }); go('#/belajar'); }
     else if (act === 'schooledit') superEditSchool(el.dataset.id, el.dataset.n);
+    else if (act === 'delclass') deleteClass(el.dataset.id);
     else if (act === 'schoolview') { ss.set('schoolSel', el.dataset.id); go('#/guru/sekolah'); }
     else if (act === 'tdays') { ss.set('tdays', +el.dataset.d); return route(); }
     else if (act === 'askid') {

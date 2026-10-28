@@ -61,6 +61,12 @@
     classByCode(code) { return db.classes.find((c) => c.code === String(code).trim().toUpperCase()); },
     renameTeacher(id, name) { const t = Store.teacher(id); if (t) { t.name = name.trim(); save(); } },
     renameStudent(id, name) { const k = Store.student(id); if (k) { k.name = name.trim(); save(); } },
+    deleteClass(id) {
+      const kids = db.students.filter((k) => k.classId === id).map((k) => k.id), asg = db.assignments.filter((a) => a.classId === id).map((a) => a.id);
+      db.classes = db.classes.filter((c) => c.id !== id); db.students = db.students.filter((k) => k.classId !== id);
+      db.answers = db.answers.filter((x) => !kids.includes(x.sid)); kids.forEach((k) => { delete db.progress[k]; });
+      db.assignments = db.assignments.filter((a) => a.classId !== id); db.done = db.done.filter((d) => !asg.includes(d.aid)); save();
+    },
     renameClass(id, name) { const c = Store.cls(id); if (c) { c.name = name.trim(); save(); } },
 
     /* Siswa */

@@ -689,3 +689,4 @@ fieldset.trylink { display: grid; gap: 6px; margin: 0; } fieldset.trylink legend
 .reqrow { display: flex; gap: 10px; align-items: center; border-bottom: 1px solid var(--line); padding: 8px 0; } .reqrow:last-child { border-bottom: 0; } .reqrow small { display: block; }
 b.code, .code { letter-spacing: 1px; color: var(--brand); }
 td.nowrap { white-space: nowrap; }
+.link.danger { color: var(--no); }
