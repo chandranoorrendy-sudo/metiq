@@ -67,7 +67,7 @@
   }
 
   const shell = (inner, opts = {}) => `
-    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=26" alt="">Metiq<span class="alpha">Alpha</span></a>${opts.right || ''}</header>
+    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=26" alt="">Metiq<span class="alpha">Beta</span></a>${opts.right || ''}</header>
     <main class="wrap ${opts.cls || ''}">${session.get().demo ? `<div class="demobar">🧪 <span class="grow"><b>Mode coba</b>${tryInfo() && tryInfo().name ? ` · ${esc(tryInfo().name)}` : ''} · data contoh di perangkat ini</span><button class="link" data-act="logout">Keluar</button></div>` : ''}${inner}</main>`;
 
   /* ---------- Analitik (dipakai guru dan orang tua) ---------- */
@@ -143,7 +143,7 @@
         <div class="grade-sum">${GRADES.map((g) => `<a href="#/kurikulum" data-act="grade" data-g="${g.id}"><b>${g.name}</b><small>${unitsOf(g.id).length} bab · ${unitsOf(g.id).reduce((a, u) => a + u.skills.length, 0)} keterampilan</small></a>`).join('')}</div>
         <a class="btn ghost" href="#/kurikulum">Lihat semua keterampilan</a>
       </section>
-      <section class="card trycard"><h2>🧪 Coba Metiq (versi Alpha)</h2>
+      <section class="card trycard"><h2>🧪 Coba Metiq (versi Beta)</h2>
         <p class="small muted">Tanpa daftar. Memakai data contoh satu sekolah yang hanya tersimpan di perangkat ini, jadi aman untuk dicoba. Atau masukkan kode <b>1234</b> di halaman siswa atau orang tua.</p>
         <div class="trybtns"><button class="btn" data-act="trydemo" data-r="siswa">🧒 Coba sebagai siswa</button><button class="btn ghost" data-act="trydemo" data-r="ortu">👨‍👩‍👧 Coba sebagai orang tua</button><button class="btn ghost" data-act="trydemo" data-r="guru">👩‍🏫 Coba sebagai guru</button></div></section>
     `);
@@ -484,6 +484,7 @@
         ${ctx.classes.length > 1 ? `<select class="dh-select" data-act="switchclass" aria-label="Pilih kelas">${ctx.classes.map((c) => `<option value="${c.id}" ${c.id === ctx.c.id ? 'selected' : ''}>${esc(c.name)}${ctx.t.isAdmin && c.teacherName ? ` · ${esc(c.teacherName)}` : ''}</option>`).join('')}</select>` : ''}
       </section>
       <nav class="tabs">${(ctx.t.isAdmin ? [['sekolah', '🏫 Sekolah'], ...TABS] : TABS).map(([k, l]) => `<a href="#/guru/${k}" class="${k === tab ? 'on' : ''}">${l}</a>`).join('')}</nav>
+      ${session.get().demo && tab === 'ringkasan' ? realTeacherCard() : ''}
       ${inner}`, { cls: 'wide', right: topRight() });
   }
   function emptyKids(ctx) {
@@ -1179,7 +1180,7 @@
         </tbody></table></div></section>`; }).join('')}`;
   }
 
-  /* ---------- Mode coba (Alpha): data contoh lokal untuk siswa, orang tua, dan guru ---------- */
+  /* ---------- Mode coba (versi Beta): data contoh lokal untuk siswa, orang tua, dan guru ---------- */
   const TRY_CODE = '1234';
   // Formulir nama sebelum masuk mode coba (siswa, orang tua, guru)
   function viewTryStart(role) {
@@ -1191,12 +1192,20 @@
         <p class="muted center small">Mode coba memakai data contoh satu sekolah. Tulis namamu supaya Metiq terasa milikmu sendiri.</p>
         <form data-form="trystart" data-r="${role}" class="form">
           <label>${role === 'siswa' ? 'Namamu' : 'Nama Anda'}<input name="name" required maxlength="40" value="${esc(nm)}" placeholder="${role === 'siswa' ? 'mis. Raka' : role === 'ortu' ? 'mis. Bu Sinta' : 'mis. Bu Rina'}" autocomplete="off"></label>
-          ${role === 'ortu' ? `<label>Nama anak <small class="muted">(untuk laporan contoh)</small><input name="child" maxlength="40" value="${esc(same ? t.child || '' : '')}" placeholder="mis. Alya" autocomplete="off"></label>` : ''}
+          ${role === 'ortu' && deviceKid() ? `<label class="cb trylink"><input type="checkbox" name="link" value="1" checked><span>🔗 Lihat hasil <b>${esc(deviceKid().name)}</b>, yang sudah mencoba sebagai siswa di perangkat ini</span></label>` : ''}
+          ${role === 'ortu' ? `<label>Nama anak <small class="muted">(${deviceKid() ? 'jika tidak dihubungkan, ' : ''}untuk laporan contoh)</small><input name="child" maxlength="40" value="${esc(same ? t.child || '' : '')}" placeholder="mis. Alya" autocomplete="off"></label>` : ''}
           <button class="btn">Mulai mencoba →</button>
         </form>
         <p class="small muted trynote">Untuk membantu pengembangan Metiq, nama yang kamu tulis dan aktivitas di mode coba (halaman yang dibuka, soal, permainan) dicatat. Tidak ada data pribadi lain yang diminta.</p></section>`);
   }
-  function startDemo(role, name, child) {
+  // Akun coba siswa yang dibuat di perangkat ini (dipakai lagi oleh siswa, dan bisa dilihat orang tua di perangkat yang sama)
+  // di luar mode coba, data contoh lokal tidak dimuat, jadi nama disimpan bersama penandanya
+  const deviceKid = () => {
+    const d = ls.get('metiq_try_kid', null); if (!d) return null;
+    if (!session.get().demo) return d.name ? d : null;
+    const k = S.student(d.sid); return k ? { sid: d.sid, name: k.name } : null;
+  };
+  function startDemo(role, name, child, link) {
     session.set({ demo: true }); S.setMode(false);
     const t = S.seedDemo(), c = S.classesOf(t.id)[0], kids = S.studentsOf(c.id);
     name = String(name || '').trim().slice(0, 40); child = String(child || '').trim().slice(0, 40);
@@ -1204,17 +1213,37 @@
     tlog('start', { role });
     if (role === 'guru') { if (name) S.renameTeacher(t.id, name); session.set({ role: 'guru', id: t.id, demo: true }); toast(`Selamat datang, ${esc(name || 'Bu/Pak Guru')}!`); return go('#/guru/ringkasan'); }
     if (role === 'ortu') {
+      const dk = link && deviceKid();
+      if (dk) { setTry({ role, name, child: dk.name }); session.set({ role: 'ortu', id: dk.sid, demo: true }); toast(`Selamat datang, ${esc(name || 'Ayah/Bunda')}! Ini hasil ${esc(dk.name)}.`); return go('#/ortu/laporan'); }
       const k = kids.find((x) => x.name === 'Alya') || kids[0];
       if (child) S.renameStudent(k.id, child);
       session.set({ role: 'ortu', id: k.id, demo: true }); toast(`Selamat datang, ${esc(name || 'Ayah/Bunda')}!`); return go('#/ortu/laporan');
     }
     // siswa: akun siswa contoh baru dengan namanya sendiri (mulai dari asesmen awal)
-    const mine = (tryInfo() || {}).sid && S.student(tryInfo().sid);
+    const mine = deviceKid() && S.student(deviceKid().sid);
     const k = mine || S.addStudent(c.id, name || 'Siswa');
     if (mine && name) S.renameStudent(k.id, name);
+    ls.set('metiq_try_kid', { sid: k.id, name: S.student(k.id).name });
     setTry({ role, name, child, sid: k.id });
     session.set({ role: 'siswa', id: k.id, code: c.code, demo: true });
     go('#/belajar');
+  }
+
+  function realTeacherCard() {
+    return `<section class="card realcard"><h2>🚀 Siap dipakai dengan murid sungguhan?</h2>
+      <p class="small">Mode coba hanya berisi kelas contoh di perangkat ini. Untuk murid dan orang tua sungguhan, daftar sebagai guru, <b>gratis</b> dan sekitar 2 menit:</p>
+      <ol class="small"><li>Ketuk <b>Daftar guru gratis</b>, isi nama, email, kata sandi, dan nama kelas.</li>
+        <li>Tambahkan nama murid di <b>Kelola kelas</b>, lalu bagikan <b>kode kelas</b> (5 huruf) ke murid. Murid masuk lewat <i>Saya Siswa</i> dan memilih namanya.</li>
+        <li>Setiap murid punya <b>kode orang tua</b> (6 huruf/angka) di Kelola kelas. Bagikan ke wali murid agar mereka bisa melihat laporan dan notifikasi tugas.</li></ol>
+      <p class="small muted">Semua data kelas sungguhan tersimpan di server dan terhubung antar perangkat. Data mode coba tidak ikut pindah.</p>
+      <div class="row-btn left"><button class="btn" data-act="realsignup">Daftar guru gratis →</button></div></section>`;
+  }
+  function realParentCard(k) {
+    const dk = deviceKid(), linked = dk && dk.sid === k.id;
+    return `<section class="card realcard"><h2>👨‍👩‍👧 ${linked ? `Ini hasil ${esc(k.name)} di perangkat ini` : 'Ini laporan contoh'}</h2>
+      <p class="small">${linked ? `Laporan ini berisi asesmen, latihan, dan permainan yang dikerjakan ${esc(k.name)} saat mencoba sebagai siswa di perangkat ini.` : 'Laporan ini memakai data contoh.'}
+        Jika anak Anda sudah memakai Metiq di sekolah, minta <b>kode orang tua</b> (6 huruf/angka) kepada gurunya, lalu ketuk <b>Keluar</b> dan masukkan kode itu di <i>Saya Orang Tua</i>. Laporan sungguhan akan terhubung di HP mana pun.</p>
+      <div class="row-btn left"><button class="btn sm ghost" data-act="logout">Keluar dari mode coba</button></div></section>`;
   }
 
   /* ---------- Catatan penggunaan mode coba (dikirim ke server untuk dasbor admin) ---------- */
@@ -1614,7 +1643,7 @@
     const k = ses.role === 'ortu' && S.student(sid || ses.id);
     if (!k) return go(ses.ptoken ? '#/ortu/anak' : '#/ortu');
     logParentView(k.id);
-    app.innerHTML = shell((ses.ptoken ? '<a class="back" href="#/ortu/anak">← Anak saya</a>' : '') + reportHTML(k, 'ortu') + `<p class="center muted small">SmartScore: 0–49 Mulai · 50–79 Berkembang · 80–99 Mahir · 100 Tuntas 🏆</p>`, { right: topRight() });
+    app.innerHTML = shell((ses.ptoken ? '<a class="back" href="#/ortu/anak">← Anak saya</a>' : '') + reportHTML(k, 'ortu') + `<p class="center muted small">SmartScore: 0–49 Mulai · 50–79 Berkembang · 80–99 Mahir · 100 Tuntas 🏆</p>` + (ses.demo ? realParentCard(k) : ''), { right: topRight() });
   }
 
   /* ---------- Panduan pemakaian ---------- */
@@ -1877,6 +1906,7 @@
     }
     else if (act === 'pickkid') { session.set({ role: 'siswa', id: el.dataset.id, code: el.dataset.code, demo: session.get().demo || undefined }); go('#/belajar'); }
     else if (act === 'trydemo') go('#/mulai/' + el.dataset.r);
+    else if (act === 'realsignup') { tlog('view', { p: 'daftar' }); tflush(); session.set({}); S.setMode(cloudOn()); go('#/guru/daftar'); }
     else if (act === 'tdays') { ss.set('tdays', +el.dataset.d); return route(); }
     else if (act === 'askid') {
       const ses = session.get(), k = S.student(el.dataset.id), c = k && S.cls(k.classId);
@@ -1944,7 +1974,7 @@
     const f = e.target, fd = new FormData(f), kind = f.dataset.form;
     // kode coba 1234 membuka data contoh (mode server maupun lokal)
     if ((kind === 'classcode' || kind === 'parentcode') && String(fd.get('code')).trim() === TRY_CODE) return go('#/mulai/' + (kind === 'classcode' ? 'siswa' : 'ortu'));
-    if (kind === 'trystart') return startDemo(f.dataset.r, fd.get('name'), fd.get('child'));
+    if (kind === 'trystart') return startDemo(f.dataset.r, fd.get('name'), fd.get('child'), fd.get('link') === '1');
     if (kind === 'fb') {
       const rating = +fd.get('rating'), comment = String(fd.get('comment') || '').trim(), { a, s: sid, by } = f.dataset;
       if (!rating) return toast('Pilih bintangnya dulu ya ⭐');

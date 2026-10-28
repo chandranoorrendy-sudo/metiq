@@ -627,7 +627,7 @@ h2.allsk { margin: 18px 0 8px; }
 .cdesign-wrap[open] summary { margin-bottom: 8px; }
 @media (min-width: 760px) { .cdesign .refgrid { grid-template-columns: repeat(3, 1fr); } }
 
-/* ---------- Versi Alpha dan mode coba ---------- */
+/* ---------- Versi Beta dan mode coba ---------- */
 .alpha { margin-left: 6px; padding: 1px 7px; border-radius: 999px; background: #ffe9d6; color: #9a4a00; font-size: .62rem; font-weight: 900; letter-spacing: .5px; text-transform: uppercase; vertical-align: middle; }
 .demobar { display: flex; align-items: center; gap: 8px; background: #fff3c4; border: 1px solid #f1d98a; border-radius: 12px; padding: 8px 12px; margin-bottom: 12px; font-size: .86rem; }
 .trycard h2 { margin-top: 0; } .trybtns { display: grid; gap: 8px; } .trynote { margin: 10px 0 0; }
@@ -676,3 +676,5 @@ h2.allsk { margin: 18px 0 8px; }
 .fbar { display: grid; grid-template-columns: minmax(120px, 1.2fr) 1fr auto; gap: 8px; align-items: center; font-size: .82rem; font-weight: 700; margin: 6px 0; }
 .fbar i { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; } .fbar i b { display: block; height: 100%; background: #2a78d6; border-radius: 99px; }
 .fbar small { color: var(--muted); white-space: nowrap; }
+.realcard { border: 2px solid var(--tiffany-dark); background: #f4fffc; } .realcard h2 { margin-top: 0; } .realcard ol { padding-left: 20px; } .realcard li { margin-bottom: 6px; }
+.trylink { background: #f2fdf9; border: 1.5px solid var(--tiffany-dark); border-radius: 12px; padding: 10px 12px; font-weight: 700; }

@@ -190,7 +190,8 @@
       ],
     },
     faq: [
-      ['Bagaimana mencoba Metiq tanpa mendaftar?', 'Di beranda, ketuk Coba sebagai siswa, orang tua, atau guru. Atau masukkan kode 1234 di halaman siswa atau orang tua. Mode coba memakai data contoh satu sekolah yang hanya tersimpan di perangkat itu dan tidak terkirim ke server. Ketuk Keluar untuk kembali.'],
+      ['Bagaimana mencoba Metiq tanpa mendaftar?', 'Di beranda, ketuk Coba sebagai siswa, orang tua, atau guru (atau masukkan kode 1234 di halaman siswa atau orang tua), lalu tulis nama. Mode coba memakai data contoh satu sekolah di perangkat itu. Jika anak sudah mencoba sebagai siswa, orang tua di perangkat yang sama bisa langsung melihat hasilnya. Ketuk Keluar untuk kembali.'],
+      ['Bagaimana memakai Metiq dengan murid sungguhan?', 'Guru mendaftar gratis (Saya Guru → Daftar guru baru), menambahkan nama murid di Kelola kelas, lalu membagikan kode kelas ke murid dan kode orang tua ke wali murid. Data kelas sungguhan tersimpan di server dan terhubung di HP mana pun.'],
       ['Lupa kode kelas atau kode orang tua?', 'Tanyakan kepada guru. Guru bisa melihat semua kode di menu Kelola kelas.'],
       ['Apakah data hilang jika HP diganti?', 'Tidak. Data tersimpan di server. Cukup masuk lagi di HP lain.'],
       ['Bagaimana jika internet putus saat latihan?', 'Jawaban tetap tersimpan di HP dan akan terkirim otomatis saat internet tersambung lagi.'],
