@@ -68,7 +68,7 @@
 
   const shell = (inner, opts = {}) => `
     <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=26" alt="">Metiq<span class="alpha">Alpha</span></a>${opts.right || ''}</header>
-    <main class="wrap ${opts.cls || ''}">${session.get().demo ? `<div class="demobar">🧪 <span class="grow"><b>Mode coba</b> · data contoh, hanya tersimpan di perangkat ini</span><button class="link" data-act="logout">Keluar</button></div>` : ''}${inner}</main>`;
+    <main class="wrap ${opts.cls || ''}">${session.get().demo ? `<div class="demobar">🧪 <span class="grow"><b>Mode coba</b>${tryInfo() && tryInfo().name ? ` · ${esc(tryInfo().name)}` : ''} · data contoh di perangkat ini</span><button class="link" data-act="logout">Keluar</button></div>` : ''}${inner}</main>`;
 
   /* ---------- Analitik (dipakai guru dan orang tua) ---------- */
   function stats(sid, days) {
@@ -372,6 +372,7 @@
     const norm = (x) => String(x).trim().toLowerCase().replace(/[−–]/g, '-').replace(/[.\s]/g, '');
     const ok = q.type === 'choice' ? given === q.answer : norm(given) === norm(q.answer);
     if (P.diag) return diagAnswer(ok);
+    tlog('answer', { s: P.sk.id, ok, ms: Date.now() - P.qStart });
     P.locked = true; P.count++;
     const tag = ok ? null : classify(q, given);
     const asgDone = (a) => a.skills.filter((k) => SKILLS[k]).every((k) => S.progress(P.sid, k).score >= 80);
@@ -502,7 +503,7 @@
     if (tab === 'siswa' && arg) return viewTeacherStudent(ctx, arg);
     if (tab === 'kelola') return teacherShell(ctx, tab, manageHTML(ctx));
     if (tab === 'referensi') return teacherShell(ctx, tab, referenceHTML());
-    if (tab === 'sekolah') return ctx.t.isAdmin ? teacherShell(ctx, tab, schoolHTML(ctx, arg)) : go('#/guru/ringkasan');
+    if (tab === 'sekolah') { if (!ctx.t.isAdmin) return go('#/guru/ringkasan'); teacherShell(ctx, tab, schoolHTML(ctx, arg)); if (arg === 'coba') loadTrialStats(); return; }
     if (tab === 'tugas') return teacherShell(ctx, tab, tasksHTML(ctx));
     if (!kids.length) return teacherShell(ctx, tab, emptyKids(ctx));
     if (tab === 'analitik') return teacherShell(ctx, tab, analyticsHTML(ctx, arg));
@@ -681,13 +682,13 @@
   }
   const openBtn = (c, label) => `<button class="btn sm ghost" data-act="openclass" data-id="${c.id}">${label || 'Buka kelas'}</button>`;
   function schoolHTML(ctx, sub) {
-    sub = ['kelas', 'grafik', 'materi', 'guru', 'asesmen', 'ulasan', 'data'].includes(sub) ? sub : 'kelas';
+    sub = ['kelas', 'grafik', 'materi', 'guru', 'asesmen', 'ulasan', 'data', 'coba'].includes(sub) ? sub : 'kelas';
     const g = getRange();
     const all = ctx.classes.map((c) => classSummary(c, g)).sort((a, b) => b.status - a.status || b.pBehind - a.pBehind);
     const sum = (f) => all.reduce((t, s) => t + s[f], 0);
     const kidsN = sum('n'), answered = all.reduce((t, s) => t + s.answered, 0), correct = all.reduce((t, s) => t + Math.round(s.answered * s.acc / 100), 0);
     const teachers = [...new Set(all.map((s) => s.c.teacherId))];
-    const subs = [['kelas', '🏫 Per kelas'], ['grafik', '📊 Grafik'], ['materi', '🧗 Materi sulit'], ['guru', '👩‍🏫 Per guru'], ['asesmen', '🧭 Asesmen awal–akhir'], ['ulasan', '⭐ Ulasan'], ['data', '📥 Data penelitian']];
+    const subs = [['kelas', '🏫 Per kelas'], ['grafik', '📊 Grafik'], ['materi', '🧗 Materi sulit'], ['guru', '👩‍🏫 Per guru'], ['asesmen', '🧭 Asesmen awal–akhir'], ['ulasan', '⭐ Ulasan'], ['data', '📥 Data penelitian'], ['coba', '🧪 Mode coba']];
     let body;
     if (sub === 'kelas') {
       body = `<section class="card"><h2>Kondisi tiap kelas</h2><p class="muted small">Diurutkan dari yang paling perlu perhatian. "Belum paham" = siswa yang minimal seperempat keterampilan yang sudah dicobanya masih lemah (skor di bawah 80 dengan banyak jawaban salah).</p>
@@ -705,6 +706,8 @@
         ${all.filter((s) => s.n).map((s) => `<section class="card"><div class="lrow"><span class="grow"><b>${esc(s.c.name)}</b> · ${esc(s.c.teacherName || '')}<small>${s.behind} dari ${s.n} siswa belum memahami sebagian materi</small></span>${statusPill(s.status)}</div>
           ${s.hard.length ? s.hard.slice(0, 5).map((h) => `<div class="hardrow"><div class="lrow"><span class="grow"><b>${SKILLS[h.id].code} ${SKILLS[h.id].name}</b><small>Kelas ${SKILLS[h.id].grade} · ketepatan rata-rata ${h.acc}%</small></span><span class="pill">${h.kids.length}/${s.n} siswa</span></div><p class="small muted">${h.kids.map((k) => esc(k.name)).join(', ')}</p></div>`).join('') : '<p class="muted small">Tidak ada materi yang tertinggal.</p>'}
           <div class="row-btn left">${openBtn(s.c)}</div></section>`).join('')}`;
+    } else if (sub === 'coba') {
+      body = `<div id="trial-box">${loadingHTML}</div>`;
     } else if (sub === 'grafik') {
       body = chartsHTML(all);
     } else if (sub === 'asesmen') {
@@ -947,6 +950,7 @@
     const level = v === 'mid' ? g : v === 'pass' ? Math.min(6, g + (D.bands[g + 1] ? 1 : 0)) : g;
     const answers = Object.keys(D.bands).sort().flatMap((k) => { const x = D.bands[k]; return [...x.ok.map((id) => [id, 1, x.fast.includes(id) ? 1 : 0, 0]), ...x.bad.map((id) => [id, 0, 0, x.guess.includes(id) ? 1 : 0])]; });
     const pf = D.pf, res = S.recordDiag(D.sid, { level, age: D.age, ms: Date.now() - D.t0, answers }, pf);
+    tlog('diag', { pf, level, age: D.age, n: answers.length });
     if (cloudOn()) Object.entries(res).forEach(([key, v2]) => Cloud.queueProgress(D.sid, session.get().code, key, v2));
     setGrade(level); D = null; P = null;
     window.SFX.levelUp();
@@ -1177,12 +1181,125 @@
 
   /* ---------- Mode coba (Alpha): data contoh lokal untuk siswa, orang tua, dan guru ---------- */
   const TRY_CODE = '1234';
-  function startDemo(role) {
+  // Formulir nama sebelum masuk mode coba (siswa, orang tua, guru)
+  function viewTryStart(role) {
+    if (!['siswa', 'ortu', 'guru'].includes(role)) return go('#/');
+    const t = tryInfo() || {}, same = t.role === role, nm = same ? t.name || '' : '';
+    const title = { siswa: '🧒 Coba sebagai siswa', ortu: '👨‍👩‍👧 Coba sebagai orang tua', guru: '👩‍🏫 Coba sebagai guru' }[role];
+    app.innerHTML = shell(`<a class="back" href="#/">← Kembali</a>
+      <section class="card narrow"><h1 class="center">${title}</h1>
+        <p class="muted center small">Mode coba memakai data contoh satu sekolah. Tulis namamu supaya Metiq terasa milikmu sendiri.</p>
+        <form data-form="trystart" data-r="${role}" class="form">
+          <label>${role === 'siswa' ? 'Namamu' : 'Nama Anda'}<input name="name" required maxlength="40" value="${esc(nm)}" placeholder="${role === 'siswa' ? 'mis. Raka' : role === 'ortu' ? 'mis. Bu Sinta' : 'mis. Bu Rina'}" autocomplete="off"></label>
+          ${role === 'ortu' ? `<label>Nama anak <small class="muted">(untuk laporan contoh)</small><input name="child" maxlength="40" value="${esc(same ? t.child || '' : '')}" placeholder="mis. Alya" autocomplete="off"></label>` : ''}
+          <button class="btn">Mulai mencoba →</button>
+        </form>
+        <p class="small muted trynote">Untuk membantu pengembangan Metiq, nama yang kamu tulis dan aktivitas di mode coba (halaman yang dibuka, soal, permainan) dicatat. Tidak ada data pribadi lain yang diminta.</p></section>`);
+  }
+  function startDemo(role, name, child) {
     session.set({ demo: true }); S.setMode(false);
     const t = S.seedDemo(), c = S.classesOf(t.id)[0], kids = S.studentsOf(c.id);
-    if (role === 'guru') { session.set({ role: 'guru', id: t.id, demo: true }); toast('Mode coba: Anda masuk sebagai guru contoh'); return go('#/guru/ringkasan'); }
-    if (role === 'ortu') { const k = kids.find((x) => x.name === 'Alya') || kids[0]; session.set({ role: 'ortu', id: k.id, demo: true }); toast(`Mode coba: laporan ${k.name}`); return go('#/ortu/laporan'); }
-    go('#/siswa/' + c.code);
+    name = String(name || '').trim().slice(0, 40); child = String(child || '').trim().slice(0, 40);
+    setTry({ role, name, child });
+    tlog('start', { role });
+    if (role === 'guru') { if (name) S.renameTeacher(t.id, name); session.set({ role: 'guru', id: t.id, demo: true }); toast(`Selamat datang, ${esc(name || 'Bu/Pak Guru')}!`); return go('#/guru/ringkasan'); }
+    if (role === 'ortu') {
+      const k = kids.find((x) => x.name === 'Alya') || kids[0];
+      if (child) S.renameStudent(k.id, child);
+      session.set({ role: 'ortu', id: k.id, demo: true }); toast(`Selamat datang, ${esc(name || 'Ayah/Bunda')}!`); return go('#/ortu/laporan');
+    }
+    // siswa: akun siswa contoh baru dengan namanya sendiri (mulai dari asesmen awal)
+    const mine = (tryInfo() || {}).sid && S.student(tryInfo().sid);
+    const k = mine || S.addStudent(c.id, name || 'Siswa');
+    if (mine && name) S.renameStudent(k.id, name);
+    setTry({ role, name, child, sid: k.id });
+    session.set({ role: 'siswa', id: k.id, code: c.code, demo: true });
+    go('#/belajar');
+  }
+
+  /* ---------- Catatan penggunaan mode coba (dikirim ke server untuk dasbor admin) ---------- */
+  const TRY_KEY = 'metiq_try', TRYQ_KEY = 'metiq_try_q';
+  const ls = { get: (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch (e) { return d; } }, set: (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) {} } };
+  const tryInfo = () => ls.get(TRY_KEY, null);
+  function setTry(x) {
+    let vid = ls.get('metiq_vid', ''); if (!vid) { vid = 'v' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10); ls.set('metiq_vid', vid); }
+    ls.set(TRY_KEY, Object.assign({}, tryInfo() && tryInfo().role === x.role ? tryInfo() : {}, x, { vid }));
+  }
+  let tflushTimer = null, lastView = '';
+  function tlog(e, d) {
+    const t = tryInfo(); if (!t || !session.get().demo) return;
+    if (e === 'view') { const k = JSON.stringify(d); if (k === lastView) return; lastView = k; }
+    const q = ls.get(TRYQ_KEY, []); q.push({ e, d, ts: Date.now() }); ls.set(TRYQ_KEY, q.slice(-500));
+    clearTimeout(tflushTimer); tflushTimer = setTimeout(tflush, 8000);
+  }
+  let tflushing = false;
+  async function tflush() {
+    const t = tryInfo(), q = ls.get(TRYQ_KEY, []);
+    if (tflushing || !t || !q.length || !Cloud.enabled) return;
+    tflushing = true;
+    const batch = q.slice(0, 100);
+    try {
+      await Cloud.rpc('trial_log', { p_visitor: t.vid, p_role: t.role, p_name: t.name || null, p_child: t.child || null, p_events: batch });
+      ls.set(TRYQ_KEY, ls.get(TRYQ_KEY, []).slice(batch.length));
+    } catch (e) {
+      // server belum siap (SQL 007 belum dijalankan) atau offline: coba lagi nanti, antrean dibatasi 500
+    } finally { tflushing = false; }
+    if (ls.get(TRYQ_KEY, []).length) { clearTimeout(tflushTimer); tflushTimer = setTimeout(tflush, 30000); }
+  }
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') tflush(); });
+  setTimeout(tflush, 4000);
+
+  // Dasbor admin: penggunaan mode coba
+  const FEATURE = {
+    'view:belajar': '🏠 Beranda siswa', 'view:latihan': '✏️ Halaman latihan', 'view:pelajaran': '📖 Pelajaran', 'view:permainan': '🎮 Daftar permainan', 'view:main': '🎮 Halaman permainan',
+    'view:hadiah': '🎁 Papan hadiah', 'view:asesmen': '🧭 Asesmen', 'view:laporanku': '📄 Laporanku', 'view:ortu': '👨‍👩‍👧 Laporan orang tua', 'view:notifikasi': '🔔 Notifikasi',
+    'view:guru/ringkasan': '👩‍🏫 Ringkasan guru', 'view:guru/siswa': '👩‍🏫 Daftar & halaman siswa', 'view:guru/analitik': '📈 Analitik guru', 'view:guru/tugas': '📌 Tugas', 'view:guru/sekolah': '🏫 Dasbor sekolah',
+    'view:guru/peta': '🗺️ Peta kemajuan', 'view:guru/keterampilan': '🧩 Keterampilan', 'view:guru/kelola': '⚙️ Kelola kelas', 'view:guru/referensi': '📚 Referensi', 'view:panduan': '❓ Panduan',
+    answer: '✅ Soal dijawab', game: '🏁 Ronde permainan selesai', diag: '🧭 Asesmen selesai', feedback: '⭐ Ulasan dikirim', start: '🧪 Mulai mode coba',
+  };
+  const ROLE_LABEL = { siswa: 'Siswa', ortu: 'Orang tua', guru: 'Guru' };
+  async function loadTrialStats() {
+    const box = document.getElementById('trial-box'); if (!box) return;
+    const ses = session.get();
+    if (!cloudOn() || !ses.token) { box.innerHTML = emptyCard('Hanya di akun admin asli', 'Statistik mode coba diambil dari server, jadi hanya terlihat saat masuk dengan akun admin sungguhan (bukan mode coba).'); return; }
+    const days = ss.get('tdays', 14);
+    try {
+      const r = await Cloud.rpc('admin_trial_stats', { p_token: ses.token, p_days: days });
+      if (document.getElementById('trial-box')) box.innerHTML = trialHTML(r, days);
+    } catch (e) {
+      box.innerHTML = e.status === 404 ? emptyCard('Perlu menjalankan SQL 007', 'Jalankan supabase/007_trial_usage.sql di SQL Editor Supabase agar penggunaan mode coba tercatat dan tampil di sini.')
+        : emptyCard('Gagal memuat', e.status ? esc(e.message) : 'Tidak bisa terhubung ke server.');
+    }
+  }
+  function trialHTML(r, days) {
+    const vs = r.visitors || [], byRole = (x) => vs.filter((v) => v.role === x).length, ans = vs.reduce((t, v) => t + v.answers, 0), ok = vs.reduce((t, v) => t + v.correct, 0);
+    const pills = `<div class="vzpills">${[7, 14, 30].map((d) => `<button class="${d === days ? 'on' : ''}" data-act="tdays" data-d="${d}">${d} hari</button>`).join('')}</div>`;
+    if (!vs.length) return pills + emptyCard('Belum ada penggunaan', `Belum ada yang memakai mode coba dalam ${days} hari terakhir. Bagikan tautan metiq-math.vercel.app dan minta penguji mengetuk "Coba sebagai …" di beranda.`);
+    // grafik harian: pengunjung unik per peran (batang bertumpuk, warna kategori tetap per peran)
+    const dayList = [...Array(days)].map((_, i) => isoDay(Date.now() - (days - 1 - i) * DAY)), roles = ['siswa', 'ortu', 'guru'], col = { siswa: VZ.s1, ortu: VZ.s2, guru: VZ.s3 };
+    const val = (d, rl) => ((r.daily || []).find((x) => x.day === d && x.role === rl) || {}).visitors || 0;
+    const max = Math.max(1, ...dayList.map((d) => roles.reduce((t, rl) => t + val(d, rl), 0)));
+    const W = 340, H = 160, L = 22, base = 128, bw = Math.max(4, (W - L - 6) / days - 3), Y = (v) => (v / max) * (base - 14);
+    let svg = `<line x1="${L}" x2="${W - 4}" y1="${base}" y2="${base}" stroke="#16302b"/><text x="${L - 4}" y="${base - Y(max) + 3}" text-anchor="end" font-size="9" fill="${VZ.ink2}">${max}</text>`;
+    dayList.forEach((d, i) => {
+      const x = L + i * ((W - L - 6) / days) + 1.5; let y = base;
+      roles.forEach((rl) => { const v = val(d, rl); if (!v) return; const h = Y(v); y -= h; svg += `<rect class="vzmark" x="${x}" y="${y}" width="${bw}" height="${Math.max(1, h - 1)}" rx="2" fill="${col[rl]}" ${tip(`${fdate(new Date(d + 'T12:00:00').getTime())} · ${ROLE_LABEL[rl]}`, `${v} pengunjung`)}/>`; });
+      const tot = roles.reduce((t, rl) => t + val(d, rl), 0);
+      if (tot) svg += `<text x="${x + bw / 2}" y="${y - 3}" text-anchor="middle" font-size="8" font-weight="800" fill="#16302b">${tot}</text>`;
+      if (days <= 14 || i % 3 === 0) svg += `<text x="${x + bw / 2}" y="${base + 11}" text-anchor="middle" font-size="8" fill="${VZ.ink2}">${new Date(d + 'T12:00:00').getDate()}</text>`;
+    });
+    const feats = (r.features || []).filter((f) => FEATURE[f.k]).slice(0, 12), fmax = Math.max(1, ...feats.map((f) => f.v));
+    return `${pills}
+      <div class="kpis"><div class="kpi"><small>Pengunjung mode coba</small><b>${vs.length}</b></div><div class="kpi"><small>Siswa · ortu · guru</small><b class="sm">${byRole('siswa')} · ${byRole('ortu')} · ${byRole('guru')}</b></div>
+        <div class="kpi"><small>Soal dijawab</small><b>${fmtNum(ans)}<span> · ${ans ? pct(ok, ans) + '%' : '–'}</span></b></div><div class="kpi"><small>Kembali di hari lain</small><b>${vs.filter((v) => v.days > 1).length}<span>/${vs.length}</span></b></div></div>
+      <section class="card vz"><h2>Pengunjung per hari</h2><p class="small muted">Jumlah orang berbeda yang memakai mode coba setiap hari (WIB).</p>
+        ${legend(roles.map((rl) => [col[rl], ROLE_LABEL[rl]]))}<svg viewBox="0 0 ${W} ${H}" class="vzsvg" role="img" aria-label="Pengunjung mode coba per hari">${svg}</svg>
+        ${vzTable(['Tanggal', ...roles.map((rl) => ROLE_LABEL[rl])], dayList.filter((d) => roles.some((rl) => val(d, rl))).map((d) => [d, ...roles.map((rl) => val(d, rl))]))}</section>
+      <section class="card vz"><h2>Fitur yang paling banyak dipakai</h2><p class="small muted">Banyaknya pengunjung yang membuka atau memakai setiap fitur.</p>
+        ${feats.map((f) => `<div class="fbar"><span>${FEATURE[f.k]}</span><i><b style="width:${Math.round((f.v / fmax) * 100)}%"></b></i><small>${f.v} orang · ${fmtNum(f.n)}×</small></div>`).join('')}</section>
+      <section class="card"><h2>Siapa saja yang mencoba</h2><div class="tscroll"><table class="tbl"><thead><tr><th>Nama</th><th>Peran</th><th>Pertama</th><th>Terakhir</th><th>Hari aktif</th><th>Soal</th><th>Permainan</th><th>Asesmen</th></tr></thead><tbody>
+        ${vs.map((v) => `<tr><td><b>${esc(v.name || '(tanpa nama)')}</b>${v.child ? `<small class="muted"> · anak: ${esc(v.child)}</small>` : ''}</td><td>${ROLE_LABEL[v.role] || v.role}</td><td>${ftime(v.first)}</td><td>${ago(v.last)}</td><td>${v.days}</td><td>${v.answers ? `${v.answers} <small class="muted">(${pct(v.correct, v.answers)}%)</small>` : '–'}</td><td>${v.games || '–'}</td><td>${v.diag ? 'Kelas ' + esc(v.diag) : '–'}</td></tr>`).join('')}
+      </tbody></table></div><p class="small muted">Nama adalah yang diketik sendiri oleh penguji. Satu baris = satu perangkat.</p></section>`;
   }
 
   /* ---------- Permainan matematika ---------- */
@@ -1217,6 +1334,7 @@
       const before = kid ? S.progress(kid.id, 'g:' + x.id) : null, prevBest = before && before.att ? before.score : 0;
       if (kid) {
         const res = S.recordGame(kid.id, x.id, points, stars, ms);
+        tlog('game', { g: x.id, p: points, st: stars });
         if (cloudOn()) Cloud.queueProgress(kid.id, session.get().code, 'g:' + x.id, res);
       }
       if (stars >= 3) window.SFX.mastered(); else if (stars) window.SFX.levelUp();
@@ -1652,6 +1770,7 @@
     const [a, b, c] = parts;
     const seq = ++routeSeq;
     S.setMode(cloudOn());
+    if (session.get().demo) tlog('view', { p: a === 'guru' ? 'guru/' + (b || '') : a || 'beranda', ...(a === 'latihan' || a === 'main' || a === 'pelajaran' ? { s: b } : {}) });
     const needsData = a === 'belajar' || a === 'asesmen' || a === 'permainan' || a === 'main' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi';
     if (needsData && !(await ensure())) return;
     if (seq !== routeSeq) return;
@@ -1660,6 +1779,7 @@
       case '': case undefined: return viewHome();
       case 'kurikulum': return viewCurriculum();
       case 'siswa': return b ? viewStudentPick(b) : viewStudentEnter();
+      case 'mulai': return viewTryStart(b);
       case 'belajar': return viewStudentHome();
       case 'asesmen': return b === 'hasil' ? viewDiagResult('a') : b === 'akhir' ? (c === 'hasil' ? viewDiagResult('b') : viewDiag('b')) : viewDiag('a');
       case 'permainan': return viewGames();
@@ -1756,7 +1876,8 @@
       if (les) speak(i < 0 ? les.intro : `${les.parts[i].t}. ${les.parts[i].steps.join(' ')}`);
     }
     else if (act === 'pickkid') { session.set({ role: 'siswa', id: el.dataset.id, code: el.dataset.code, demo: session.get().demo || undefined }); go('#/belajar'); }
-    else if (act === 'trydemo') startDemo(el.dataset.r);
+    else if (act === 'trydemo') go('#/mulai/' + el.dataset.r);
+    else if (act === 'tdays') { ss.set('tdays', +el.dataset.d); return route(); }
     else if (act === 'askid') {
       const ses = session.get(), k = S.student(el.dataset.id), c = k && S.cls(k.classId);
       if (!k || !c) return;
@@ -1822,11 +1943,12 @@
     e.preventDefault();
     const f = e.target, fd = new FormData(f), kind = f.dataset.form;
     // kode coba 1234 membuka data contoh (mode server maupun lokal)
-    if ((kind === 'classcode' || kind === 'parentcode') && String(fd.get('code')).trim() === TRY_CODE) return startDemo(kind === 'classcode' ? 'siswa' : 'ortu');
+    if ((kind === 'classcode' || kind === 'parentcode') && String(fd.get('code')).trim() === TRY_CODE) return go('#/mulai/' + (kind === 'classcode' ? 'siswa' : 'ortu'));
+    if (kind === 'trystart') return startDemo(f.dataset.r, fd.get('name'), fd.get('child'));
     if (kind === 'fb') {
       const rating = +fd.get('rating'), comment = String(fd.get('comment') || '').trim(), { a, s: sid, by } = f.dataset;
       if (!rating) return toast('Pilih bintangnya dulu ya ⭐');
-      const finish = () => { S.addFeedback(a, sid, by, rating, comment); ss.set('fbedit', ''); toast('Terima kasih atas ulasannya! 🙏'); route(); };
+      const finish = () => { tlog('feedback', { r: rating }); S.addFeedback(a, sid, by, rating, comment); ss.set('fbedit', ''); toast('Terima kasih atas ulasannya! 🙏'); route(); };
       if (!cloudOn()) return finish();
       const k = S.student(sid), c = k && S.cls(k.classId), code = session.get().code || (c && c.code);
       const btn = f.querySelector('button'); if (btn) btn.disabled = true;

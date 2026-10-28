@@ -29,6 +29,7 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 - `supabase/schema.sql`: tabel dan fungsi RPC. Jalankan di SQL Editor Supabase saat membuat proyek baru.
 - `supabase/005_targeted_assignments.sql`: tugas untuk siswa tertentu (kolom `student_ids`; kosong = seluruh kelas). Jalankan setelah 004.
 - `supabase/006_research_feedback_bbo.sql`: NISN siswa, catatan orang tua membuka laporan, ulasan tugas (bintang + komentar), ringkasan tugas selesai, dan pengiriman laporan tugas ke BBO Digital (pg_net). Jalankan setelah 005.
+- `supabase/007_trial_usage.sql`: catatan penggunaan Mode Coba (nama yang diketik penguji, peran, halaman, soal, permainan, asesmen) dan ringkasannya untuk admin (tab 🏫 Sekolah → 🧪 Mode coba). Jalankan setelah 006.
 
 ### Menghubungkan ke BBO Digital
 

@@ -59,6 +59,8 @@
     classesOf(teacherId) { return db.classes.filter((c) => c.teacherId === teacherId); },
     cls(id) { return db.classes.find((c) => c.id === id); },
     classByCode(code) { return db.classes.find((c) => c.code === String(code).trim().toUpperCase()); },
+    renameTeacher(id, name) { const t = Store.teacher(id); if (t) { t.name = name.trim(); save(); } },
+    renameStudent(id, name) { const k = Store.student(id); if (k) { k.name = name.trim(); save(); } },
     renameClass(id, name) { const c = Store.cls(id); if (c) { c.name = name.trim(); save(); } },
 
     /* Siswa */

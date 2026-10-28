@@ -671,3 +671,8 @@ h2.allsk { margin: 18px 0 8px; }
 .gctrl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 420px; margin: 10px auto 0; }
 .gctrl button { padding: 14px 0; border: 0; border-radius: 14px; background: var(--tiffany); color: var(--on-tiffany); font-size: 1.3rem; font-weight: 900; cursor: pointer; box-shadow: 0 3px 0 var(--tiffany-dark); touch-action: manipulation; }
 .gctrl button:active { transform: translateY(2px); box-shadow: none; }
+
+/* ---------- Statistik mode coba ---------- */
+.fbar { display: grid; grid-template-columns: minmax(120px, 1.2fr) 1fr auto; gap: 8px; align-items: center; font-size: .82rem; font-weight: 700; margin: 6px 0; }
+.fbar i { height: 10px; background: var(--line); border-radius: 99px; overflow: hidden; } .fbar i b { display: block; height: 100%; background: #2a78d6; border-radius: 99px; }
+.fbar small { color: var(--muted); white-space: nowrap; }
