@@ -119,36 +119,81 @@
   }
 
   /* ---------- Beranda ---------- */
+  // Elemen Kurikulum Merdeka untuk kartu "Mata pelajaran" dan penyaring di halaman Kurikulum
+  const STRANDS = [
+    { id: 'bil', name: 'Bilangan & Operasi Hitung', icon: '➗', desc: 'Penjumlahan, pengurangan, perkalian, pembagian, pecahan, desimal, dan pola bilangan.', c: '#ff7a59', bg: '#fff1ec', re: /Bilangan|Aljabar|Pengayaan/ },
+    { id: 'geo', name: 'Geometri', icon: '🔺', desc: 'Bentuk, bangun datar dan ruang, sudut, simetri, dan koordinat.', c: '#4d96ff', bg: '#eef4ff', re: /Geometri/ },
+    { id: 'ukur', name: 'Pengukuran', icon: '📏', desc: 'Panjang, berat, waktu, uang, luas, keliling, dan volume.', c: '#1fbf9f', bg: '#e8fbf5', re: /Pengukuran|uang/ },
+    { id: 'data', name: 'Data & Peluang', icon: '📊', desc: 'Mengumpulkan, membaca, dan menafsirkan data, serta peluang.', c: '#9b6dff', bg: '#f4efff', re: /Data/ },
+  ];
+  const strandUnits = (st, g) => UNITS.filter((u) => (g ? u.grade === g : true) && st.re.test(u.km || ''));
   function viewHome() {
-    const ses = session.get();
-    const resume = ses.role === 'siswa' && S.student(ses.id) ? `<a class="resume" href="#/belajar">Lanjut belajar sebagai <b>${esc(S.student(ses.id).name)}</b> →</a>`
-      : ses.role === 'guru' && S.teacher(ses.id) ? `<a class="resume" href="#/guru">Buka dasbor <b>${esc(S.teacher(ses.id).name)}</b> →</a>` : '';
+    const ses = session.get(), nSk = Object.keys(SKILLS).length;
+    const resume = ses.role === 'siswa' && S.student(ses.id) ? `<a class="lp-resume" href="#/belajar">▶ Lanjut belajar sebagai <b>${esc(S.student(ses.id).name)}</b></a>`
+      : ses.role === 'guru' && S.teacher(ses.id) ? `<a class="lp-resume" href="#/guru">▶ Buka dasbor <b>${esc(S.teacher(ses.id).name)}</b></a>`
+      : ses.role === 'ortu' && (ses.ptoken || S.student(ses.id)) ? `<a class="lp-resume" href="${ses.ptoken ? '#/ortu/anak' : '#/ortu/laporan'}">▶ Buka laporan anak</a>` : '';
+    const kidAv = ['svg:boy-peci', 'svg:girl-hijab'];
+    const menu = `<details class="lp-menu"><summary aria-label="Menu">☰</summary><div class="lp-menulist">
+        <a href="#/siswa">🧒 Saya Siswa</a><a href="#/guru">👩‍🏫 Saya Guru</a><a href="#/ortu">👨‍👩‍👧 Saya Orang Tua</a>
+        <a href="#/kurikulum">📚 Kurikulum</a><a href="#/permainan">🎮 Permainan</a><a href="#/panduan/guru">❓ Panduan</a>
+        <a href="#/ajukan">✋ Ajukan akun</a><a href="#/ajukan/status">📨 Cek status pengajuan</a></div></details>`;
     app.innerHTML = shell(`
-      <section class="hero">
-        <h1>Belajar matematika SD kelas 1–6, <span>selangkah demi selangkah.</span></h1>
-        <p>Kelas 1 sampai ${GRADES[GRADES.length - 1].name.replace('Kelas ', '')}: ${UNITS.length} bab dan ${Object.keys(SKILLS).length} keterampilan dalam bahasa Indonesia. Soal menyesuaikan kemampuan anak, dengan penjelasan setiap kali jawaban belum tepat.</p>
-        ${resume}
+      <section class="lp-hero">
+        <div class="lp-copy">
+          <span class="lp-badge">⭐ Matematika SD Kelas 1–6</span>
+          <h1>Belajar matematika jadi <span>lebih menyenangkan.</span></h1>
+          <p>Metiq membantu anak Indonesia menguasai matematika selangkah demi selangkah: soal yang menyesuaikan kemampuan, penjelasan setiap kali jawaban belum tepat, dan laporan untuk guru dan orang tua.</p>
+          ${resume}
+          <div class="lp-cta"><a class="btn lp-big" href="#/siswa">Mulai belajar sekarang →</a></div>
+          <p class="lp-roles">Atau masuk sebagai <a href="#/guru">guru</a> · <a href="#/ortu">orang tua</a></p>
+          <p class="lp-free">🎁 <b>Gratis</b> untuk semua siswa SD.</p>
+        </div>
+        <div class="lp-art" aria-hidden="true">
+          <div class="lp-blob"></div><span class="lp-bubble">5 + 3 = 8</span><span class="lp-star s1">★</span><span class="lp-star s2">★</span><span class="lp-tri">△</span><span class="lp-plus">＋</span>
+          <div class="lp-kid k1">${avHTML(kidAv[0])}</div><div class="lp-kid k2">${avHTML(kidAv[1])}</div><div class="lp-book">📖</div>
+        </div>
       </section>
-      <section class="roles">
-        <a class="role r1" href="#/siswa"><span class="ri">🧒</span><b>Saya Siswa</b><small>Mulai latihan</small></a>
-        <a class="role r2" href="#/guru"><span class="ri">${avHTML('svg:ustadzah')}</span><b>Saya Guru</b><small>Kelola kelas & lihat kemajuan</small></a>
-        <a class="role r3" href="#/ortu"><span class="ri">👨‍👩‍👧</span><b>Saya Orang Tua</b><small>Lihat laporan anak</small></a>
+
+      <section class="lp-stats">
+        <div><b>${nSk}</b><small>keterampilan</small></div><div><b>${UNITS.length}</b><small>pelajaran + animasi</small></div>
+        <div><b>${G.GAMES.length}</b><small>permainan</small></div><div><b>Kelas 1–6</b><small>Kurikulum Merdeka</small></div>
       </section>
-      <a class="card mlink" href="#/permainan"><span class="micon">🎮</span><span class="grow"><b>Permainan matematika</b><small>${G.GAMES.length} permainan untuk kelas 1–6, termasuk menara balok angka. Kumpulkan bintang ⭐</small></span>→</a>
-      <a class="card mlink" href="#/panduan/guru"><span class="micon">📘</span><span class="grow"><b>Panduan pemakaian</b><small>Cara memakai Metiq untuk guru, orang tua, dan siswa</small></span>→</a>
-      <section class="card">
-        <h2>Isi kurikulum</h2>
-        <p class="muted">${UNITS.length} bab dan ${Object.keys(SKILLS).length} keterampilan untuk kelas 1–6. Cakupan keterampilan mengacu pada IXL, cara menjelaskan memakai metode Singapore Math (pasangan bilangan, membuat 10, model batang, model luas), dan setiap bab dipetakan ke Capaian Pembelajaran Kurikulum Merdeka Fase A–C dengan konteks Indonesia.</p>
-        <p class="small"><a href="#/kurikulum">Bagaimana kurikulum ini disusun, dan mengapa? →</a></p>
-        <div class="grade-sum">${GRADES.map((g) => `<a href="#/kurikulum" data-act="grade" data-g="${g.id}"><b>${g.name}</b><small>${unitsOf(g.id).length} bab · ${unitsOf(g.id).reduce((a, u) => a + u.skills.length, 0)} keterampilan</small></a>`).join('')}</div>
-        <a class="btn ghost" href="#/kurikulum">Lihat semua keterampilan</a>
+
+      <section class="lp-sec">
+        <div class="lp-head"><span class="lp-hicon">🧭</span><div><h2>Jelajahi materi per kelas</h2><p>Lihat bab dan keterampilan setiap kelas, dan coba contoh soalnya tanpa daftar.</p></div></div>
+        <div class="lp-grades">${GRADES.map((g, i) => `<a class="lp-grade" href="#/kurikulum" data-act="grade" data-g="${g.id}"><span class="lp-gav">${avHTML(kidAv[i % 2])}</span><span class="grow"><b>${g.name}</b><small>${unitsOf(g.id).length} bab · ${unitsOf(g.id).reduce((a, u) => a + u.skills.length, 0)} keterampilan</small></span>›</a>`).join('')}</div>
+        <p class="small muted">Siswa tidak perlu memilih kelas: kelasnya mengikuti kode kelas dari guru, dan <b>asesmen awal</b> menentukan dari mana ia sebaiknya mulai belajar.</p>
       </section>
-      <section class="card trycard"><h2>🧪 Coba Metiq (versi Beta)</h2>
-        <p class="small muted">Tanpa daftar. Memakai data contoh satu sekolah yang hanya tersimpan di perangkat ini, jadi aman untuk dicoba. Atau masukkan kode <b>1234</b> di halaman siswa atau orang tua.</p>
+
+      <section class="lp-sec">
+        <div class="lp-head"><span class="lp-hicon">📗</span><div><h2>Mata pelajaran</h2><p>Empat elemen matematika Kurikulum Merdeka.</p></div></div>
+        <div class="lp-strands">${STRANDS.map((st) => `<a class="lp-strand" href="#/kurikulum" data-act="strand" data-s="${st.id}" style="--c:${st.c};--bg:${st.bg}"><span class="lp-sicon">${st.icon}</span><b>${st.name} ›</b><small>${st.desc}</small><small class="lp-scount">${strandUnits(st).length} bab</small></a>`).join('')}</div>
+      </section>
+
+      <section class="lp-sec">
+        <div class="lp-head"><span class="lp-hicon">👥</span><div><h2>Untuk siapa?</h2><p>Satu aplikasi untuk siswa, guru, dan orang tua.</p></div></div>
+        <div class="lp-who">
+          <a class="lp-whocard" href="#/siswa"><span class="lp-wicon">🧒</span><b>Siswa</b><ul><li>Asesmen awal untuk menemukan level</li><li>Latihan adaptif dengan SmartScore</li><li>Pelajaran beranimasi dan permainan</li></ul><span class="lp-go">Masuk dengan kode kelas →</span></a>
+          <a class="lp-whocard" href="#/guru"><span class="lp-wicon">${avHTML('svg:ustadzah')}</span><b>Guru</b><ul><li>Tugas untuk kelas, kelompok, atau satu siswa</li><li>Kelompok belajar menurut level</li><li>Analitik, pola kesalahan, dan grafik</li></ul><span class="lp-go">Masuk atau ajukan akun →</span></a>
+          <a class="lp-whocard" href="#/ortu"><span class="lp-wicon">👨‍👩‍👧</span><b>Orang tua</b><ul><li>Laporan yang mudah dipahami</li><li>Kabar setiap ada tugas dari guru</li><li>Saran latihan di rumah</li></ul><span class="lp-go">Lihat laporan anak →</span></a>
+        </div>
+      </section>
+
+      <section class="lp-sec lp-try">
+        <div class="lp-head"><span class="lp-hicon">🧪</span><div><h2>Coba dulu tanpa daftar</h2><p>Memakai data contoh satu sekolah yang hanya tersimpan di perangkat ini. Atau masukkan kode <b>1234</b> di halaman siswa atau orang tua.</p></div></div>
         <div class="trybtns"><button class="btn" data-act="trydemo" data-r="siswa">🧒 Coba sebagai siswa</button><button class="btn ghost" data-act="trydemo" data-r="ortu">👨‍👩‍👧 Coba sebagai orang tua</button><button class="btn ghost" data-act="trydemo" data-r="guru">👩‍🏫 Coba sebagai guru</button></div>
-        <p class="small center trynote"><a href="#/ajukan">✋ Ajukan akun sungguhan (guru, orang tua, siswa, homeschool)</a> · <a href="#/ajukan/status">Cek status pengajuan</a></p></section>
-    `);
+        <p class="small center trynote"><a href="#/ajukan">✋ Ajukan akun sungguhan (guru, orang tua, siswa, homeschool)</a> · <a href="#/ajukan/status">Cek status</a></p>
+      </section>
+
+      <section class="lp-sec lp-cur">
+        <div class="lp-head"><span class="lp-hicon">📚</span><div><h2>Kurikulum</h2><p>${UNITS.length} bab dan ${nSk} keterampilan untuk kelas 1–6. Cakupan mengacu pada IXL, cara menjelaskan memakai metode Singapore Math (pasangan bilangan, membuat 10, model batang, model luas), dan setiap bab dipetakan ke Capaian Pembelajaran Kurikulum Merdeka Fase A–C.</p></div></div>
+        <p class="small"><a href="#/kurikulum">Lihat semua keterampilan →</a> · <a href="#/kurikulum">Bagaimana kurikulum ini disusun?</a> · <a href="#/panduan/guru">Panduan pemakaian</a></p>
+      </section>
+
+      <section class="lp-final"><span class="lp-mascot"><img src="icons/icon.svg?v=26" alt=""></span><div class="grow"><b>Ayo mulai perjalanan matematika anakmu hari ini!</b><small>Belajar kapan saja, di mana saja, dari HP.</small></div><a class="btn" href="#/siswa">Mulai belajar →</a></section>
+    `, { right: menu });
   }
+
 
   function viewCurriculum() {
     app.innerHTML = shell(`
@@ -157,7 +202,9 @@
       <p class="muted">Setiap bab mencantumkan rujukan IXL, Singapore Math, dan Kurikulum Merdeka yang setara.</p>
       <details class="card cdesign-wrap"><summary><b>🧭 Bagaimana kurikulum ini disusun, dan mengapa?</b></summary>${curriculumDesignHTML(false)}</details>
       ${gradeTabs()}
-      ${curUnits().map((u) => `<section class="card unit" style="--c:${u.color}"><h2><span class="uicon">${u.icon}</span>${u.id}. ${u.name}</h2><p class="muted small">IXL: ${u.ixl} · Singapore Math: ${u.sg} · Kurikulum Merdeka: ${u.km}</p><a class="lessonlink" href="#/pelajaran/${u.id}">📖 Buka pelajaran</a><ol>${u.skills.map((s) => `<li>${s.name}</li>`).join('')}</ol></section>`).join('')}
+      <div class="vzpills strandpick"><button class="${ss.get('strand', '') ? '' : 'on'}" data-act="strand" data-s="">Semua</button>${STRANDS.map((st) => `<button class="${ss.get('strand', '') === st.id ? 'on' : ''}" data-act="strand" data-s="${st.id}">${st.icon} ${st.name}</button>`).join('')}</div>
+      ${(() => { const st = STRANDS.find((x) => x.id === ss.get('strand', '')); const list = st ? strandUnits(st, getGrade()) : curUnits(); return list.length ? '' : `<section class="card center"><p class="muted">Belum ada bab ${st ? st.name : ''} di ${GRADES.find((g) => g.id === getGrade()).name}. Coba kelas lain.</p></section>`; })()}
+      ${(STRANDS.find((x) => x.id === ss.get('strand', '')) ? strandUnits(STRANDS.find((x) => x.id === ss.get('strand', '')), getGrade()) : curUnits()).map((u) => `<section class="card unit" style="--c:${u.color}"><h2><span class="uicon">${u.icon}</span>${u.id}. ${u.name}</h2><p class="muted small">IXL: ${u.ixl} · Singapore Math: ${u.sg} · Kurikulum Merdeka: ${u.km}</p><a class="lessonlink" href="#/pelajaran/${u.id}">📖 Buka pelajaran</a><ol>${u.skills.map((s) => `<li>${s.name}</li>`).join('')}</ol></section>`).join('')}
     `);
   }
 
@@ -2228,6 +2275,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (act === 'vizdb') { ss.set('vizdb', el.dataset.c); return route(); }
     if (act === 'openkid') { e.preventDefault(); const x = session.get(); x.classId = el.dataset.id; session.set(x); return go('#/guru/siswa/' + el.dataset.s); }
     if (act === 'openclass') { const s = session.get(); s.classId = el.dataset.id; session.set(s); return go('#/guru/ringkasan'); }
+    if (act === 'strand') { ss.set('strand', el.dataset.s); if (location.hash !== '#/kurikulum') { go('#/kurikulum'); return; } return route(); }
     if (act === 'dtab') {
       ss.set('dtab', el.dataset.t);
       document.querySelectorAll('.dtabs button').forEach((b) => b.classList.toggle('on', b === el));
