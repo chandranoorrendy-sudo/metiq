@@ -1380,11 +1380,11 @@
     return `https://wa.me/${d.startsWith('0') ? '62' + d.slice(1) : d}?text=${encodeURIComponent(text)}`;
   }
   function superHTML(sub) {
-    sub = ['pengajuan', 'sekolah', 'guru'].includes(sub) ? sub : 'pengajuan';
+    sub = ['pengajuan', 'sekolah', 'kelas', 'guru'].includes(sub) ? sub : 'pengajuan';
     const { ov, rq } = SUP, pend = rq.filter((r) => r.status === 'menunggu'), schools = ov.schools || [];
     const kpi = (l, v) => `<div class="kpi"><small>${l}</small><b>${v}</b></div>`;
     const sum = (k) => schools.reduce((t, s) => t + (s[k] || 0), 0);
-    const subs = [['pengajuan', `✋ Pengajuan${pend.length ? ` (${pend.length})` : ''}`], ['sekolah', '🏫 Sekolah & keluarga'], ['guru', '👩‍🏫 Guru']];
+    const subs = [['pengajuan', `✋ Pengajuan${pend.length ? ` (${pend.length})` : ''}`], ['sekolah', '🏫 Sekolah & keluarga'], ['kelas', '📚 Kelas'], ['guru', '👩‍🏫 Guru']];
     let body = '';
     if (sub === 'pengajuan') {
       const schoolOpts = (want) => `<option value="">➕ Sekolah baru (nama di bawah)</option>${schools.filter((s) => s.kind === 'sekolah').map((s) => `<option value="${s.id}" ${want && s.name.toLowerCase() === want.toLowerCase() ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}`;
@@ -1417,6 +1417,18 @@
         <section class="card vz"><h2>Siswa per sekolah</h2><p class="small muted">Panjang batang = jumlah siswa; angka = siswa yang aktif 7 hari terakhir.</p>
           ${schools.filter((s) => s.students).sort((a, b) => b.students - a.students).map((s) => `<div class="fbar"><span>${s.kind === 'homeschool' ? '🏡' : '🏫'} ${esc(s.name)}</span><i><b style="width:${Math.round((s.students / max) * 100)}%"></b></i><small>${s.active7} aktif / ${s.students}</small></div>`).join('') || '<p class="muted">Belum ada siswa.</p>'}</section>
         <section class="card"><h2>Tambah sekolah</h2><form data-form="newschool" class="form inline"><input name="name" required maxlength="100" placeholder="Nama sekolah"><select name="kind"><option value="sekolah">Sekolah</option><option value="homeschool">Homeschool</option></select><button class="btn">Tambah</button></form></section>`;
+    } else if (sub === 'kelas') {
+      // semua kelas di semua sekolah, dengan pilihan guru kelasnya
+      const sname = (id) => (schools.find((x) => x.id === id) || {}).name || 'Tanpa sekolah';
+      const teachers = (ov.teachers || []).slice().sort((a, b) => sname(a.schoolId).localeCompare(sname(b.schoolId)) || a.name.localeCompare(b.name));
+      const classes = SUP.ctx.classes.slice().sort((a, b) => (a.schoolName || '').localeCompare(b.schoolName || '') || a.name.localeCompare(b.name, 'id', { numeric: true }));
+      const tOpts = (sel) => teachers.map((t) => `<option value="${t.id}" ${t.id === sel ? 'selected' : ''}>${esc(t.name)} · ${esc(sname(t.schoolId))}</option>`).join('');
+      body = `<section class="card"><h2>Guru setiap kelas</h2>
+        <p class="small muted">Pilih guru untuk sebuah kelas. Guru itu langsung bisa membuka kelas, siswanya, dan tugasnya. Sekolah kelas mengikuti sekolah gurunya. Guru baru harus punya akun aktif dulu (lewat pengajuan atau ditambahkan di tab 👩‍🏫 Guru).</p>
+        <div class="tscroll"><table class="tbl"><thead><tr><th>Sekolah</th><th>Kelas</th><th>Kode</th><th>Siswa</th><th>Guru</th></tr></thead><tbody>
+        ${classes.map((c) => `<tr><td>${esc(c.schoolName || 'Tanpa sekolah')}</td><td><b>${esc(c.name)}</b></td><td><b class="code">${esc(c.code)}</b></td><td>${S.studentsOf(c.id).length}</td>
+          <td><select data-act="classteacher" data-c="${c.id}" data-was="${c.teacherId}" aria-label="Guru ${esc(c.name)}">${tOpts(c.teacherId)}</select></td></tr>`).join('')}
+        </tbody></table></div></section>`;
     } else {
       const opts = (sel) => `<option value="">— tanpa sekolah —</option>${schools.map((s) => `<option value="${s.id}" ${s.id === sel ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}`;
       body = `<section class="card"><h2>Guru di semua sekolah</h2><p class="small muted">Pindahkan guru ke sekolah lain atau jadikan admin sekolah (koordinator). Admin sekolah melihat semua kelas di sekolahnya.</p><div class="tscroll"><table class="tbl"><thead><tr><th>Nama</th><th>Email</th><th>Kelas</th><th>Sekolah</th><th>Admin sekolah</th></tr></thead><tbody>
@@ -1447,6 +1459,19 @@
     const n = prompt('Nama sekolah', name || ''); if (!n || !n.trim()) return;
     try { await Cloud.rpc('super_school_save', { p_token: session.get().token, p_id: id, p_name: n.trim(), p_kind: s.kind || 'sekolah', p_city: s.city || null }); toast('Nama disimpan ✔'); await ensure(true); route(); }
     catch (e) { toast(e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
+  }
+  async function superClassTeacher(el) {
+    const c = S.cls(el.dataset.c), t = (SUP && SUP.ov.teachers || []).find((x) => x.id === el.value); if (!c || !t) return;
+    const other = (SUP.ov.schools || []).find((x) => x.id === t.schoolId), moving = (t.schoolId || '') !== (c.schoolId || '');
+    if (!confirm(`Jadikan ${t.name} guru ${c.name}?${moving ? `\n\nKelas ini akan pindah ke sekolah ${other ? other.name : 'tanpa sekolah'}, mengikuti sekolah gurunya.` : ''}`)) { el.value = el.dataset.was; return; }
+    el.disabled = true;
+    try {
+      await Cloud.rpc('super_class_set_teacher', { p_token: session.get().token, p_class_id: c.id, p_teacher_id: t.id });
+      toast(`${esc(t.name)} sekarang guru ${esc(c.name)} ✔`); await ensure(true); route();
+    } catch (e) {
+      el.disabled = false; el.value = el.dataset.was;
+      toast(e.status === 404 ? 'Jalankan supabase/009_class_teacher.sql dulu di Supabase' : e.status ? esc(e.message) : 'Tidak bisa terhubung ke server');
+    }
   }
   async function superTeacherSet(el) {
     const t = (SUP && SUP.ov.teachers || []).find((x) => x.id === el.dataset.id); if (!t) return;
@@ -2172,6 +2197,7 @@
   document.addEventListener('change', (e) => {
     const el = e.target;
     if (el.dataset.act === 'teacherset') return superTeacherSet(el);
+    if (el.dataset.act === 'classteacher') return superClassTeacher(el);
     if (el.dataset.act === 'schoolsel') { ss.set('schoolSel', el.value); return route(); }
     if (el.dataset.act === 'switchclass') { const s = session.get(); s.classId = el.value; session.set(s); route(); }
     if (el.dataset.act === 'rfrom' || el.dataset.act === 'rto') { const r = ss.get('range', { preset: 'custom' }); r.preset = 'custom'; r[el.dataset.act === 'rfrom' ? 'from' : 'to'] = el.value; if (r.from && r.to && r.from > r.to) [r.from, r.to] = [r.to, r.from]; ss.set('range', r); route(); }

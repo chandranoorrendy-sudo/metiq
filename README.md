@@ -31,6 +31,7 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 - `supabase/006_research_feedback_bbo.sql`: NISN siswa, catatan orang tua membuka laporan, ulasan tugas (bintang + komentar), ringkasan tugas selesai, dan pengiriman laporan tugas ke BBO Digital (pg_net). Jalankan setelah 005.
 - `supabase/007_trial_usage.sql`: catatan penggunaan Mode Coba (nama yang diketik penguji, peran, halaman, soal, permainan, asesmen) dan ringkasannya untuk admin (tab 🏫 Sekolah → 🧪 Mode coba). Jalankan setelah 006.
 - `supabase/008_schools_superadmin.sql`: banyak sekolah (termasuk keluarga homeschool), pengajuan akun guru/homeschool/orang tua/siswa yang disetujui super admin, admin sekolah, dan dasbor super admin. Butuh 006 sudah dijalankan. Data lama masuk ke sekolah "Kuttab Imam Al-Ghazali".
+- `supabase/009_class_teacher.sql`: super admin menentukan guru sebuah kelas (tab 🌐 Super admin → 📚 Kelas). Jalankan setelah 008.
 
 ### Menghubungkan ke BBO Digital
 
