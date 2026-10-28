@@ -722,3 +722,8 @@ td.nowrap { white-space: nowrap; }
 .asgfoot { display: flex; align-items: center; gap: 8px; margin-top: 8px; padding: 8px 10px; border-radius: 12px; background: #f2fdf9; font-size: .88rem; } .asgfoot small { display: block; }
 details.realcard summary { cursor: pointer; list-style: none; } details.realcard summary::-webkit-details-marker { display: none; } details.realcard[open] summary { margin-bottom: 8px; }
 .dh-title { padding-right: 24px; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='10'%3E%3Cpath d='M2 2l6 6 6-6' fill='none' stroke='%2300806b' stroke-width='3' stroke-linecap='round'/%3E%3C/svg%3E"); background-position: right 2px center; }
+.form.inline select { flex: 0 0 auto; width: auto; }
+.newschool input { flex: 1 1 auto; } .newschool .btn { flex: none; }
+@media (max-width: 480px) { .form.inline.newschool { flex-wrap: wrap; } .newschool input { flex-basis: 100%; } .newschool select { flex: 1; } }
+.form.inline.newschool { flex-wrap: wrap; } .newschool input { flex: 1 1 260px; } .newschool select { flex: 1 0 auto; max-width: 200px; }
+.form.inline.newschool input { flex: 1 1 260px; } .form.inline.newschool select { flex: 1 0 auto; max-width: 200px; }

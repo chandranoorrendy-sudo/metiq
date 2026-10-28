@@ -1502,7 +1502,7 @@
         </tbody></table></div></section>
         <section class="card vz"><h2>Siswa per sekolah</h2><p class="small muted">Panjang batang = jumlah siswa; angka = siswa yang aktif 7 hari terakhir.</p>
           ${schools.filter((s) => s.students).sort((a, b) => b.students - a.students).map((s) => `<div class="fbar"><span>${s.kind === 'homeschool' ? '🏡' : '🏫'} ${esc(s.name)}</span><i><b style="width:${Math.round((s.students / max) * 100)}%"></b></i><small>${s.active7} aktif / ${s.students}</small></div>`).join('') || '<p class="muted">Belum ada siswa.</p>'}</section>
-        <section class="card"><h2>Tambah sekolah</h2><form data-form="newschool" class="form inline"><input name="name" required maxlength="100" placeholder="Nama sekolah"><select name="kind"><option value="sekolah">Sekolah</option><option value="homeschool">Homeschool</option></select><button class="btn">Tambah</button></form></section>`;
+        <section class="card"><h2>Tambah sekolah</h2><form data-form="newschool" class="form inline newschool"><input name="name" required maxlength="100" placeholder="Nama sekolah atau keluarga homeschool"><select name="kind"><option value="sekolah">Sekolah</option><option value="homeschool">Homeschool</option></select><button class="btn">Tambah</button></form></section>`;
     } else if (sub === 'ortu') {
       const ps = SUP.parents || [];
       body = `<section class="card"><h2>Akun orang tua</h2><p class="small muted">Menghapus akun orang tua hanya menghapus akun dan tautannya; data belajar anak tetap ada.</p>
