@@ -6,6 +6,9 @@
   const DAY = 864e5;
   // Bagian orang tua disembunyikan dari tampilan (kode dan data tetap ada). Ubah ke true untuk menampilkannya lagi.
   const PARENTS_ON = false;
+  // Tugas dari guru disembunyikan dulu di tampilan siswa: tahap ini guru belum banyak dilibatkan.
+  // Fitur guru (memberi tugas, melihat kemajuan) tetap utuh. Ubah ke true untuk menampilkannya lagi.
+  const TASKS_ON = false;
 
   /* ---------- Utilitas ---------- */
   const avHTML = (a) => window.METIQ_AVATARS.html(a);
@@ -87,7 +90,7 @@
   }
 
   const shell = (inner, opts = {}) => `
-    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=67" alt="">Metiq<span class="alpha">Beta</span></a>${opts.right || ''}</header>
+    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=68" alt="">Metiq<span class="alpha">Beta</span></a>${opts.right || ''}</header>
     <main class="wrap ${opts.cls || ''}">${session.get().demo ? `<div class="demobar">🧪 <span class="grow"><b>Mode coba</b>${tryInfo() && tryInfo().name ? ` · ${esc(tryInfo().name)}` : ''} · data contoh di perangkat ini</span><button class="link" data-act="realsignup" data-k="">Ajukan akun asli</button><button class="link" data-act="logout">Keluar</button></div>` : ''}${inner}</main>`;
 
   /* ---------- Analitik (dipakai guru dan orang tua) ---------- */
@@ -153,7 +156,7 @@
     if (ses.role === 'guru' && (cloudOn() ? ses.token : S.teacher(ses.id))) return go('#/guru/ringkasan');
     const kid = ses.role === 'siswa' && S.student(ses.id);
     app.innerHTML = `<div class="mq-land">
-      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=67" alt="">Metiq<span class="alpha">Beta</span></a><a class="mq-tlink" href="#/guru">Saya guru</a></header>
+      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=68" alt="">Metiq<span class="alpha">Beta</span></a><a class="mq-tlink" href="#/guru">Saya guru</a></header>
       <section class="mq-hero">
         <div class="mq-hero-art"><span class="mq-sym a">+</span><span class="mq-sym b">×</span><span class="mq-sym c">=</span><span class="mq-sym d">7</span>${MQ.svg('hello', { size: 230 })}</div>
         <h1>Belajar matematika jadi <span>seru!</span></h1>
@@ -218,8 +221,8 @@
   // Menu bawah: ikon + nama, selalu terlihat
   function studentNav(active) {
     const st = studentNow(); if (!st) return '';
-    const todo = todoCount(st);
-    const items = [['belajar', '#/belajar', 'Belajar', IC.home], ['tugas', '#/tugas', 'Tugas', IC.task], ['main', '#/permainan', 'Main', IC.game], ...(adabOn() ? [] : [['hadiah', '#/hadiah', 'Hadiah', IC.gift]]), ['aku', '#/aku', 'Aku', IC.me]];
+    const todo = TASKS_ON ? todoCount(st) : 0;
+    const items = [['belajar', '#/belajar', 'Belajar', IC.home], ...(TASKS_ON ? [['tugas', '#/tugas', 'Tugas', IC.task]] : []), ['main', '#/permainan', 'Main', IC.game], ...(adabOn() ? [] : [['hadiah', '#/hadiah', 'Hadiah', IC.gift]]), ['aku', '#/aku', 'Aku', IC.me]];
     return `<nav class="mq-nav" aria-label="Menu"><div class="mq-nav-in">${items.map(([k, h, l, ic]) => `<a href="${h}" class="${k === active ? 'on' : ''}">${ic}${l}${k === 'tugas' && todo ? `<span class="dot">${todo}</span>` : ''}</a>`).join('')}</div></nav>`;
   }
   // Dipakai halaman lama (permainan, hadiah) agar menu bawah ikut tampil untuk siswa
@@ -295,14 +298,14 @@
     if (!skipped && S.postPending(st.id)) return go('#/asesmen/akhir');
     syncTasks(st);
     const g = getGrade(), m = pathModel(st.id, g), goal = goalOf(st.id), mins = msToday(st.id) / 60000;
-    const todo = todoCount(st), unsent = cloudOn() ? Cloud.pendingCount(st.id) : 0, curId = m.flat[m.cur];
+    const todo = TASKS_ON ? todoCount(st) : 0, unsent = cloudOn() ? Cloud.pendingCount(st.id) : 0, curId = m.flat[m.cur];
     let n = 0;
     const node = (s, u, withBuddy) => {
       const x = XS[n++ % XS.length], sk = SKILLS[s.id], done = s.state === 'done' || s.state === 'gold';
       const badge = done ? `<span class="mq-badge">${s.state === 'gold' ? '★' : IC.ok}</span>` : s.state === 'locked' ? `<span class="mq-badge">${IC.lock}</span>` : '';
       return `<div class="mq-row"><div class="mq-n ${s.state} ${s.state === 'cur' ? 'cur' : ''}" style="--x:${x}px">
         ${s.state === 'cur' ? `<a class="mq-label" href="#/latihan/${s.id}">Mulai</a>` : ''}
-        <button class="mq-bub-node" style="--p:${s.state === 'locked' ? 0 : Math.min(100, s.sc)}" data-act="node" data-id="${s.id}" data-x="${x}" aria-label="${esc(sk.name)}"><i><span>${chLogo(u)}</span></i></button>${badge}${s.task ? '<span class="mq-badge task" title="Tugas dari guru">📌</span>' : ''}
+        <button class="mq-bub-node" style="--p:${s.state === 'locked' ? 0 : Math.min(100, s.sc)}" data-act="node" data-id="${s.id}" data-x="${x}" aria-label="${esc(sk.name)}"><i><span>${chLogo(u)}</span></i></button>${badge}${TASKS_ON && s.task ? '<span class="mq-badge task" title="Tugas dari guru">📌</span>' : ''}
         ${withBuddy ? `<div class="mq-buddy ${x > 0 ? 'l' : 'r'}">${MQ.svg('hello', { size: 104 })}</div>` : ''}</div></div><div class="mq-pop-slot" id="pop-${s.id}"></div>`;
     };
     const banner = (u, cls, extra) => `<div class="mq-unit ${cls}"><span class="em">${chLogo(u)}</span><span class="grow"><small>Bab ${u.id}</small><b>${u.name}</b></span>${extra || `<a class="les" href="#/pelajaran/${u.id}"><span class="em2">📖</span>Belajar</a>`}</div>`;
@@ -328,7 +331,7 @@
         <button class="mq-ring ${mins >= goal ? 'done' : ''}" style="--p:${Math.min(100, (mins / goal) * 100)}" data-act="tip" data-t="🎯 Target hari ini: ${Math.min(goal, Math.floor(mins))} dari ${goal} menit" aria-label="Target harian"><span>🎯</span></button>
       </div>
       ${unsent ? `<div class="mq-demo">📶 ${unsent} jawaban menunggu internet untuk dikirim ke guru.</div>` : ''}
-      ${todo ? `<a class="mq-task" href="#/tugas"><span class="em">📌</span><b>${todo} tugas dari gurumu</b><span>›</span></a>` : ''}
+      ${TASKS_ON && todo ? `<a class="mq-task" href="#/tugas"><span class="em">📌</span><b>${todo} tugas dari gurumu</b><span>›</span></a>` : ''}
       ${allDone ? `<div class="mq-all">${MQ.svg('cheer', { size: 120 })}<div>Semua bab Kelas ${g} sudah tuntas! 🎉</div><button class="mq-btn" style="margin-top:12px" data-act="gsheet">Pilih kelas lain</button></div>` : ''}
       ${blocks}
       ${gradeSheet}`, 'belajar');
@@ -556,7 +559,7 @@
     if (ok) {
       let note = '';
       if (P.score >= 100 && before < 100) { window.SFX.mastered(); note = '🏆 Tuntas! Luar biasa!'; }
-      else if (finished.length) { window.SFX.task(); note = `📌 Tugas selesai: ${esc(finished[0].note || 'Tugas dari guru')}`; }
+      else if (TASKS_ON && finished.length) { window.SFX.task(); note = `📌 Tugas selesai: ${esc(finished[0].note || 'Tugas dari guru')}`; }
       else if (P.score >= 80 && before < 80) { window.SFX.levelUp(); note = '⭐ Naik ke tingkat Mahir! Langkah berikutnya terbuka.'; }
       else window.SFX.correct();
       const praise = adabOn() && (IMAN._adab || {}).pujian ? IMAN._adab.pujian : ['Hebat!', 'Pintar!', 'Benar sekali!', 'Mantap!', 'Keren!'];
@@ -2593,7 +2596,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       case 'belajar': return viewStudentHome();
       case 'asesmen': return b === 'hasil' ? viewDiagResult('a') : b === 'akhir' ? (c === 'hasil' ? viewDiagResult('b') : viewDiag('b')) : viewDiag('a');
       case 'permainan': return viewGames();
-      case 'tugas': return viewTasks();
+      case 'tugas': return TASKS_ON ? viewTasks() : go('#/belajar');
       case 'ujian': return viewTest(b);
       case 'aku': return viewProfile();
       case 'main': return viewGame(b);
