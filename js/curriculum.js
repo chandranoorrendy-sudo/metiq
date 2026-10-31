@@ -393,7 +393,13 @@
     const isl = konteks === 'islami';
     NAMA.splice(0, NAMA.length, ...(isl ? NAMA_ISLAMI : ASLI.NAMA));
     BENDA.splice(0, BENDA.length, ...(isl ? BENDA_ISLAMI : ASLI.BENDA));
-    IMAN_UNITS.forEach((u) => { const i = UNITS.indexOf(u); if (isl && i < 0) UNITS.push(u); if (!isl && i >= 0) UNITS.splice(i, 1); });
+    IMAN_UNITS.forEach((u) => {
+      const i = UNITS.indexOf(u);
+      // Bab iman disisipkan setelah bab terakhir kelasnya, supaya tetap dekat dengan bab asalnya
+      // (zakat dekat bab Uang, bukan menumpuk di akhir kelas 6).
+      if (isl && i < 0) { let at = UNITS.length; UNITS.forEach((x, j) => { if (x.grade === u.grade) at = j + 1; }); UNITS.splice(at, 0, u); }
+      if (!isl && i >= 0) UNITS.splice(i, 1);
+    });
     return konteks;
   }
   register(UNITS);
@@ -429,6 +435,7 @@
 
   window.METIQ_CURRICULUM = {
     UNITS, SKILLS, TAGS, GRADES, unitsOf, classify, rp, register, setKonteks, konteks: () => konteks,
+    imanUnits: IMAN_UNITS,
     // perangkat pembuat soal untuk file kelas lain
     kit: { r, pick, shuffle, range, rp, numOpts, kata, V, inp, ch, compareQ, BENDA, NAMA, HARI, BULAN, two },
   };

@@ -30,6 +30,46 @@
       verifiedBy: '',
       verifiedAt: '',
     },
+    // Bab 2Z: Zakat dan sedekah (kelas 2)
+    '2Z': {
+      tema: 'Berbagi dengan hitungan yang jujur',
+      dalil: kosong(),
+      ajakan: 'Zakat fitrah 2,5 kg beras untuk setiap orang. Kita belajar menghitung dan membaginya dengan adil, lalu menimbangnya bersama keluarga.',
+      refleksi: 'Siapa saja yang menerima zakat di sekitar rumahmu? Bagaimana beras zakat dibagi agar tidak ada yang terlewat?',
+      adab: 'Saat membagikan sedekah, jangan menyebut-nyebut pemberian itu di depan orang lain.',
+      verifiedBy: '',
+      verifiedAt: '',
+    },
+    // Bab 4Q: Bilangan dalam Al-Qur'an (kelas 4)
+    '4Q': {
+      tema: 'Bilangan yang disebut dalam Al-Qur\'an',
+      dalil: kosong(),
+      ajakan: 'Al-Qur\'an menyebut 300 tahun ditambah 9, 950 tahun, dan 40 malam. Kita belajar membaca bilangan besar dengan teliti.',
+      refleksi: 'Bilangan mana yang paling mengejutkan bagimu? Coba cari surahnya di mushaf bersama gurumu.',
+      adab: 'Sebelum membuka mushaf, cuci tangan dan duduk dengan rapi.',
+      verifiedBy: '',
+      verifiedAt: '',
+    },
+    // Bab 5Z: Zakat mal dan persen (kelas 5)
+    '5Z': {
+      tema: 'Harta adalah amanah',
+      dalil: kosong(),
+      ajakan: 'Zakat mal 2,5% dikeluarkan setelah harta mencapai nisab dan dimiliki satu tahun. Kita belajar menghitung persen dengan cermat.',
+      refleksi: 'Jika kamu menyisihkan 2,5% dari uang tabunganmu, berapa yang bisa dibagikan?',
+      adab: 'Catat harta dengan jujur; jangan melebihkan atau mengurangi angka.',
+      verifiedBy: '',
+      verifiedAt: '',
+    },
+    // Bab 6W: Waris sebagai latihan pecahan (kelas 6)
+    '6W': {
+      tema: 'Pecahan dalam pembagian waris',
+      dalil: kosong(),
+      ajakan: 'Pembagian waris memakai pecahan 1/2, 1/4, 1/8, 1/3, 1/6, dan 2/3. Kita berlatih hitungannya, bukan menetapkan pembagian yang sebenarnya.',
+      refleksi: 'Mengapa semua bagian harus berjumlah tepat 1? Apa yang terjadi jika jumlahnya lebih dari 1?',
+      adab: 'Pembagian waris adalah urusan keluarga. Jangan membicarakannya di luar rumah tanpa izin orang tua.',
+      verifiedBy: '',
+      verifiedAt: '',
+    },
   };
 
   // Mode adab: pujian saat benar dan layar doa sebelum latihan.

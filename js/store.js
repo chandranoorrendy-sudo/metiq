@@ -104,6 +104,7 @@
     },
     resetDiag(sid, pf = 'a') {
       const p = db.progress[sid] = db.progress[sid] || {};
+      if (pf === 'a') delete p['a:seen'];
       p[pf + ':diag'] = { score: 0, att: Store.diagVersion(sid, pf) + 1, ok: 0, ms: 0, last: Date.now() };
       save();
       return { [pf + ':diag']: Object.assign({}, p[pf + ':diag']) };
@@ -114,6 +115,20 @@
       // hanya jawaban dari percobaan terakhir (ms menyimpan nomor percobaannya)
       const items = Object.entries(p).filter(([k, v]) => k.startsWith(pf + ':') && k !== pf + ':diag' && k !== pf + ':open' && v.ms === d.att).map(([k, v]) => ({ id: k.slice(2), ok: v.score >= 80, fast: v.score >= 100, guess: v.score === 1 }));
       return { level: Math.round(d.score / 10), age: d.ok, at: d.last, ms: d.ms, items, version: d.att };
+    },
+    /* Tanda "sudah pernah melewati asesmen awal". Anak yang menekan "Lewati dulu" juga diingat,
+     * supaya pertanyaan usia dan target harian tidak muncul lagi setiap membuka aplikasi.
+     * Kunci 'a:seen' pendek, aman untuk kolom skill di server. */
+    onboarded(sid) {
+      const p = db.progress[sid] || {};
+      return !!(p['a:seen'] && p['a:seen'].ok) || !!Store.diagOf(sid);
+    },
+    markOnboard(sid) {
+      const p = db.progress[sid] = db.progress[sid] || {}, cur = p['a:seen'];
+      if (cur && cur.ok) return { key: null, entry: null };
+      p['a:seen'] = { score: 100, att: (cur ? cur.att : 0) + 1, ok: 1, ms: 0, last: Date.now() };
+      save();
+      return { key: 'a:seen', entry: Object.assign({}, p['a:seen']) };
     },
     // Asesmen akhir dibuka (score 1) atau dibatalkan (score 0) oleh admin
     openPost(sid, open, at) {
@@ -132,6 +147,38 @@
       return Object.assign({}, cur);
     },
     gameStars(sid) { return Object.entries(db.progress[sid] || {}).filter(([k]) => k.startsWith('g:')).reduce((t, [, v]) => t + (v.ok || 0), 0); },
+    /* Bintang (pengganti XP). Disimpan per hari di kunci 'x:YYYYMMDD' (maks 10 huruf agar muat di server).
+     * ok = bintang hari itu, att = berapa kali bertambah (selalu naik, syarat sinkron server). */
+    dayKey(ts) { const d = new Date(ts || Date.now()); return 'x:' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); },
+    starsToday(sid) { const p = (db.progress[sid] || {})[Store.dayKey()]; return p ? p.ok : 0; },
+    // cap = batas bintang per hari (hanya untuk latihan). Mengembalikan { given, key, entry } agar bisa dikirim ke server.
+    addStars(sid, n, cap) {
+      const key = Store.dayKey(), p = db.progress[sid] = db.progress[sid] || {};
+      const cur = p[key] || { score: 0, att: 0, ok: 0, ms: 0, last: 0 };
+      const give = cap ? Math.max(0, Math.min(n, cap - cur.ok)) : n;
+      if (give <= 0) return { given: 0, key, entry: null };
+      cur.ok += give; cur.att++; cur.last = Date.now(); p[key] = cur; save();
+      return { given: give, key, entry: Object.assign({}, cur) };
+    },
+    dayOfKey(k) { const m = /^x:(\d{4})(\d{2})(\d{2})$/.exec(k); return m ? new Date(+m[1], +m[2] - 1, +m[3]).getTime() : null; },
+    // total bintang; from/to (ms) membatasi periode
+    starsOf(sid, from, to) { return Object.entries(db.progress[sid] || {}).reduce((t, [k, v]) => { const d = Store.dayOfKey(k); return d !== null && d >= (from || 0) && d <= (to || Infinity) ? t + (v.ok || 0) : t; }, 0); },
+    starDays(sid, from) { return Object.keys(db.progress[sid] || {}).filter((k) => { const d = Store.dayOfKey(k); return d !== null && d >= (from || 0) && (db.progress[sid][k].ok || 0) > 0; }).length; },
+    /* Ujian bab (peti harta karun): kunci 'u:<bab>'. score = nilai terbaik (%), ok = bintang terbaik, att = jumlah percobaan. */
+    testOf(sid, unitId) { const p = (db.progress[sid] || {})['u:' + unitId]; return p && p.att ? { best: p.score, stars: p.ok, att: p.att, last: p.last } : null; },
+    testsOpen(sid) { return Object.entries(db.progress[sid] || {}).filter(([k, v]) => k.startsWith('u:') && v.score >= 60).map(([k]) => k.slice(2)); },
+    recordTest(sid, unitId, r) {
+      const p = db.progress[sid] = db.progress[sid] || {}, key = 'u:' + unitId;
+      const cur = p[key] || { score: 0, att: 0, ok: 0, ms: 0, last: 0 };
+      if (r.counted) { cur.score = Math.max(cur.score, r.pct); cur.ok = Math.max(cur.ok, r.stars); }
+      cur.att++; cur.ms += Math.min(r.ms || 0, 3600000); cur.last = Date.now(); p[key] = cur; save();
+      return { key, entry: Object.assign({}, cur) };
+    },
+    // Catat jawaban (mis. ujian bab) tanpa mengubah SmartScore keterampilan
+    logAnswer(sid, skillId, ans) {
+      db.answers.push(Object.assign({ id: uid(), sid, skill: skillId, ts: Date.now() }, ans)); save();
+      return Object.assign({}, Store.progress(sid, skillId));
+    },
     record(sid, skillId, ans) {
       const p = db.progress[sid] = db.progress[sid] || {};
       const cur = p[skillId] || { score: 0, att: 0, ok: 0, ms: 0, last: 0 };

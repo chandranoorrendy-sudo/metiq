@@ -4,6 +4,8 @@
   const S = window.Store;
   const app = document.getElementById('app');
   const DAY = 864e5;
+  // Bagian orang tua disembunyikan dari tampilan (kode dan data tetap ada). Ubah ke true untuk menampilkannya lagi.
+  const PARENTS_ON = false;
 
   /* ---------- Utilitas ---------- */
   const avHTML = (a) => window.METIQ_AVATARS.html(a);
@@ -28,6 +30,7 @@
   const loadingHTML = '<div class="loading"><span class="spin"></span>Memuat…</div>';
   // Pengaturan kelas (lapisan iman opsional). Kosong = perilaku standar.
   const IMAN = window.METIQ_IMAN || {};
+  const MQ = window.METIQ_MASCOT;
   function curClass() {
     const ses = session.get();
     if (ses.role === 'siswa' || ses.role === 'ortu') { const k = S.student(ses.id); return k ? S.cls(k.classId) : null; }
@@ -68,17 +71,23 @@
   }
   const toast =(msg) => { const t = document.createElement('div'); t.className = 'toast'; t.innerHTML = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2200); };
 
+  // Bacakan soal memakai suara bawaan perangkat. Jika perangkat tidak punya suara bahasa Indonesia, peramban akan membaca
+  // dengan aksen Inggris, jadi dalam kasus itu tidak ada suara dan tombol speaker disembunyikan (kelas "has-tts" di <html>).
+  const TTS_ON = true;
+  const idVoice = () => { try { return TTS_ON && 'speechSynthesis' in window ? speechSynthesis.getVoices().find((x) => x.lang && /^id([-_]|$)/i.test(x.lang)) || null : null; } catch (e) { return null; } };
+  const syncTTS = () => document.documentElement.classList.toggle('has-tts', !!idVoice());
+  if ('speechSynthesis' in window) { syncTTS(); if (speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', syncTTS); else speechSynthesis.onvoiceschanged = syncTTS; }
   function speak(text) {
-    if (!('speechSynthesis' in window)) return;
+    const voice = idVoice(); if (!voice) return;
     const t = strip(text).replace(/−/g, ' kurang ').replace(/\+/g, ' tambah ').replace(/=/g, ' sama dengan ').replace(/\?/g, ' berapa? ').replace(/×/g, ' kali ');
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(t); u.lang = 'id-ID'; u.rate = 0.9;
-    const v = speechSynthesis.getVoices().find((x) => x.lang && x.lang.toLowerCase().startsWith('id')); if (v) u.voice = v;
+    u.voice = voice; u.lang = voice.lang;
     speechSynthesis.speak(u);
   }
 
   const shell = (inner, opts = {}) => `
-    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=26" alt="">Metiq<span class="alpha">Beta</span></a>${opts.right || ''}</header>
+    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=67" alt="">Metiq<span class="alpha">Beta</span></a>${opts.right || ''}</header>
     <main class="wrap ${opts.cls || ''}">${session.get().demo ? `<div class="demobar">🧪 <span class="grow"><b>Mode coba</b>${tryInfo() && tryInfo().name ? ` · ${esc(tryInfo().name)}` : ''} · data contoh di perangkat ini</span><button class="link" data-act="realsignup" data-k="">Ajukan akun asli</button><button class="link" data-act="logout">Keluar</button></div>` : ''}${inner}</main>`;
 
   /* ---------- Analitik (dipakai guru dan orang tua) ---------- */
@@ -139,69 +148,31 @@
   ];
   const strandUnits = (st, g) => UNITS.filter((u) => (g ? u.grade === g : true) && st.re.test(u.km || ''));
   function viewHome() {
-    const ses = session.get(), nSk = Object.keys(SKILLS).length;
-    const resume = ses.role === 'siswa' && S.student(ses.id) ? `<a class="lp-resume" href="#/belajar">▶ Lanjut belajar sebagai <b>${esc(S.student(ses.id).name)}</b></a>`
-      : ses.role === 'guru' && S.teacher(ses.id) ? `<a class="lp-resume" href="#/guru">▶ Buka dasbor <b>${esc(S.teacher(ses.id).name)}</b></a>`
-      : ses.role === 'ortu' && (ses.ptoken || S.student(ses.id)) ? `<a class="lp-resume" href="${ses.ptoken ? '#/ortu/anak' : '#/ortu/laporan'}">▶ Buka laporan anak</a>` : '';
-    const kidAv = ['svg:boy-peci', 'svg:girl-hijab'];
-    const menu = `<details class="lp-menu"><summary aria-label="Menu">☰</summary><div class="lp-menulist">
-        <a href="#/siswa">🧒 Saya Siswa</a><a href="#/guru">👩‍🏫 Saya Guru</a><a href="#/ortu">👨‍👩‍👧 Saya Orang Tua</a>
-        <a href="#/kurikulum">📚 Kurikulum</a><a href="#/permainan">🎮 Permainan</a><a href="#/panduan/guru">❓ Panduan</a>
-        <a href="#/ajukan">✋ Ajukan akun</a><a href="#/ajukan/status">📨 Cek status pengajuan</a></div></details>`;
-    app.innerHTML = shell(`
-      <section class="lp-hero">
-        <div class="lp-copy">
-          <span class="lp-badge">⭐ Matematika SD Kelas 1–6</span>
-          <h1>Belajar matematika jadi <span>lebih menyenangkan.</span></h1>
-          <p>Metiq membantu anak Indonesia menguasai matematika selangkah demi selangkah: soal yang menyesuaikan kemampuan, penjelasan setiap kali jawaban belum tepat, dan laporan untuk guru dan orang tua.</p>
-          ${resume}
-          <div class="lp-cta"><a class="btn lp-big" href="#/siswa">Mulai belajar sekarang →</a></div>
-          <p class="lp-roles">Atau masuk sebagai <a href="#/guru">guru</a> · <a href="#/ortu">orang tua</a></p>
-          <p class="lp-free">🎁 <b>Gratis</b> untuk semua siswa SD.</p>
-        </div>
-        <div class="lp-art"><img src="img/hero-kids.webp?v=55" width="720" height="664" alt="Dua anak belajar matematika bersama: 5 + 3 = 8" fetchpriority="high"></div>
+    const ses = session.get();
+    // Guru yang sudah masuk langsung ke dasbornya
+    if (ses.role === 'guru' && (cloudOn() ? ses.token : S.teacher(ses.id))) return go('#/guru/ringkasan');
+    const kid = ses.role === 'siswa' && S.student(ses.id);
+    app.innerHTML = `<div class="mq-land">
+      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=67" alt="">Metiq<span class="alpha">Beta</span></a><a class="mq-tlink" href="#/guru">Saya guru</a></header>
+      <section class="mq-hero">
+        <div class="mq-hero-art"><span class="mq-sym a">+</span><span class="mq-sym b">×</span><span class="mq-sym c">=</span><span class="mq-sym d">7</span>${MQ.svg('hello', { size: 230 })}</div>
+        <h1>Belajar matematika jadi <span>seru!</span></h1>
+        <p>Latihan singkat, naik level, dan kumpulkan hadiah bersama Meti.</p>
+        ${kid ? `<a class="mq-resume" href="#/belajar"><span class="av">${avHTML(kid.avatar)}</span><span class="grow">${esc(kid.name)}<small style="display:block;font-weight:700;color:#6a7f7a">Lanjutkan belajarmu</small></span>›</a>` : ''}
+        <div class="mq-cta">${kid
+    ? '<a class="mq-btn pulse" href="#/belajar">Lanjut belajar</a><a class="mq-btn ghost" href="#/siswa">Masuk dengan kode kelas</a>'
+    : '<a class="mq-btn pulse" href="#/siswa">Mulai belajar</a><a class="mq-btn ghost" href="#/mulai/siswa">Coba dulu tanpa kode</a>'}</div>
       </section>
-
-      <section class="lp-stats">
-        <div><b>${nSk}</b><small>keterampilan</small></div><div><b>${UNITS.length}</b><small>pelajaran + animasi</small></div>
-        <div><b>${G.GAMES.length}</b><small>permainan</small></div><div><b>Kelas 1–6</b><small>Kurikulum Merdeka</small></div>
+      <section class="mq-feat">
+        <div style="--bg:#e6fffa"><span class="em">🎯</span>Soal pas dengan levelmu</div>
+        <div style="--bg:#fff3c4"><span class="em">🎬</span>Pelajaran beranimasi</div>
+        <div style="--bg:#ffe3ec"><span class="em">🎁</span>Kumpulkan hadiah</div>
       </section>
-
-      <section class="lp-sec">
-        <div class="lp-head"><span class="lp-hicon">🧭</span><div><h2>Jelajahi materi per kelas</h2><p>Lihat bab dan keterampilan setiap kelas, dan coba contoh soalnya tanpa daftar.</p></div></div>
-        <div class="lp-grades">${GRADES.map((g, i) => `<a class="lp-grade" href="#/kurikulum" data-act="grade" data-g="${g.id}"><span class="lp-gav">${avHTML(kidAv[i % 2])}</span><span class="grow"><b>${g.name}</b><small>${unitsOf(g.id).length} bab · ${unitsOf(g.id).reduce((a, u) => a + u.skills.length, 0)} keterampilan</small></span>›</a>`).join('')}</div>
-        <p class="small muted">Siswa tidak perlu memilih kelas: kelasnya mengikuti kode kelas dari guru, dan <b>asesmen awal</b> menentukan dari mana ia sebaiknya mulai belajar.</p>
-      </section>
-
-      <section class="lp-sec">
-        <div class="lp-head"><span class="lp-hicon">📗</span><div><h2>Mata pelajaran</h2><p>Empat elemen matematika Kurikulum Merdeka.</p></div></div>
-        <div class="lp-strands">${STRANDS.map((st) => `<a class="lp-strand" href="#/kurikulum" data-act="strand" data-s="${st.id}" style="--c:${st.c};--bg:${st.bg}"><span class="lp-sicon">${st.icon}</span><b>${st.name} ›</b><small>${st.desc}</small><small class="lp-scount">${strandUnits(st).length} bab</small></a>`).join('')}</div>
-      </section>
-
-      <section class="lp-sec">
-        <div class="lp-head"><span class="lp-hicon">👥</span><div><h2>Untuk siapa?</h2><p>Satu aplikasi untuk siswa, guru, dan orang tua.</p></div></div>
-        <div class="lp-who">
-          <a class="lp-whocard" href="#/siswa"><span class="lp-wicon">🧒</span><b>Siswa</b><ul><li>Asesmen awal untuk menemukan level</li><li>Latihan adaptif dengan SmartScore</li><li>Pelajaran beranimasi dan permainan</li></ul><span class="lp-go">Masuk dengan kode kelas →</span></a>
-          <a class="lp-whocard" href="#/guru"><span class="lp-wicon">${avHTML('svg:ustadzah')}</span><b>Guru</b><ul><li>Tugas untuk kelas, kelompok, atau satu siswa</li><li>Kelompok belajar menurut level</li><li>Analitik, pola kesalahan, dan grafik</li></ul><span class="lp-go">Masuk atau ajukan akun →</span></a>
-          <a class="lp-whocard" href="#/ortu"><span class="lp-wicon">👨‍👩‍👧</span><b>Orang tua</b><ul><li>Laporan yang mudah dipahami</li><li>Kabar setiap ada tugas dari guru</li><li>Saran latihan di rumah</li></ul><span class="lp-go">Lihat laporan anak →</span></a>
-        </div>
-      </section>
-
-      <section class="lp-sec lp-try">
-        <div class="lp-head"><span class="lp-hicon">🧪</span><div><h2>Coba dulu tanpa daftar</h2><p>Memakai data contoh satu sekolah yang hanya tersimpan di perangkat ini. Atau masukkan kode <b>1234</b> di halaman siswa atau orang tua.</p></div></div>
-        <div class="trybtns"><button class="btn" data-act="trydemo" data-r="siswa">🧒 Coba sebagai siswa</button><button class="btn ghost" data-act="trydemo" data-r="ortu">👨‍👩‍👧 Coba sebagai orang tua</button><button class="btn ghost" data-act="trydemo" data-r="guru">👩‍🏫 Coba sebagai guru</button></div>
-        <p class="small center trynote"><a href="#/ajukan">✋ Ajukan akun sungguhan (guru, orang tua, siswa, homeschool)</a> · <a href="#/ajukan/status">Cek status</a></p>
-      </section>
-
-      <section class="lp-sec lp-cur">
-        <div class="lp-head"><span class="lp-hicon">📚</span><div><h2>Kurikulum</h2><p>${UNITS.length} bab dan ${nSk} keterampilan untuk kelas 1–6. Cakupan mengacu pada IXL, cara menjelaskan memakai metode Singapore Math (pasangan bilangan, membuat 10, model batang, model luas), dan setiap bab dipetakan ke Capaian Pembelajaran Kurikulum Merdeka Fase A–C.</p></div></div>
-        <p class="small"><a href="#/kurikulum">Lihat semua keterampilan →</a> · <a href="#/kurikulum">Bagaimana kurikulum ini disusun?</a> · <a href="#/panduan/guru">Panduan pemakaian</a></p>
-      </section>
-
-      <section class="lp-final"><span class="lp-mascot"><img src="icons/icon.svg?v=26" alt=""></span><div class="grow"><b>Ayo mulai perjalanan matematika anakmu hari ini!</b><small>Belajar kapan saja, di mana saja, dari HP.</small></div><a class="btn" href="#/siswa">Mulai belajar →</a></section>
-    `, { right: menu });
+      <p class="mq-gb-t">Untuk siswa SD kelas 1 sampai 6</p>
+      <div class="mq-gb">${GRADES.map((g) => `<span>${g.id}</span>`).join('')}</div>
+      <footer class="mq-lfoot"><a href="#/permainan">Permainan</a><a href="#/panduan/siswa">Bantuan</a><a href="#/ajukan">Ajukan akun</a><a href="#/ajukan/status">Cek status</a></footer>
+    </div>`;
   }
-
 
   function viewCurriculum() {
     app.innerHTML = shell(`
@@ -217,16 +188,61 @@
   }
 
   /* ---------- Siswa ---------- */
+  /* ---------- Siswa: masuk, peta belajar, tugas, profil (gaya aplikasi belajar, sedikit teks, banyak gambar) ---------- */
+  const IC = {
+    x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>',
+    back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
+    spk: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M15.5 8.5a5 5 0 010 7M18 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
+    ok: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+    lock: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="5" y="10" width="14" height="10" rx="2.5"/><path d="M8 10V8a4 4 0 018 0v2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg>',
+    home: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11l8-7 8 7v8a1 1 0 01-1 1h-4v-6H9v6H5a1 1 0 01-1-1z"/></svg>',
+    task: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4h6v3H9zM8.5 12h7M8.5 16h5"/></svg>',
+    game: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="11" rx="5.5"/><path d="M8 10.5v4M6 12.5h4"/><circle cx="15.5" cy="11.5" r=".8" fill="currentColor"/><circle cx="18" cy="14" r=".8" fill="currentColor"/></svg>',
+    gift: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M3 7h18v3H3zM12 7v13M12 7C9 3 6 5 8 7M12 7c3-4 6-2 4 0"/></svg>',
+    me: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/></svg>',
+    clam: '<svg viewBox="0 0 100 100"><path d="M10 56c0 24 18 34 40 34s40-10 40-34z" fill="#1db796"/><path d="M10 56C10 30 28 12 50 12s40 18 40 44c-10-8-26-12-40-12S20 48 10 56z" fill="#35e0bd"/><path d="M50 12v30M31 18l8 26M69 18l-8 26" stroke="#1db796" stroke-width="3.5" stroke-linecap="round" fill="none"/><circle cx="50" cy="62" r="14" fill="#fff"/><circle cx="45" cy="57" r="4.5" fill="#e9fffb"/></svg>',
+  };
+  const todayStart = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); };
+  const goalOf = (sid) => +ls.get('metiq_goal_' + sid, 10) || 10;
+  const msToday = (sid) => S.answersOf(sid).filter((a) => a.ts >= todayStart()).reduce((t, a) => t + Math.min(a.ms || 0, 180000), 0);
+  function streakOf(sid) {
+    const days = new Set(S.answersOf(sid).map((a) => { const d = new Date(a.ts); d.setHours(0, 0, 0, 0); return d.getTime(); }));
+    let cur = todayStart(), n = 0;
+    if (!days.has(cur)) cur -= DAY;
+    while (days.has(cur)) { n++; cur -= DAY; }
+    return n;
+  }
+  const studentNow = () => { const ses = session.get(); return ses.role === 'siswa' ? S.student(ses.id) : null; };
+  const todoCount = (st) => S.assignmentsFor(st.id).filter((a) => !S.isDone(a.id, st.id)).length;
+  function syncTasks(st) { S.assignmentsFor(st.id).forEach((a) => { if (!S.isDone(a.id, st.id) && asgComplete(a, st.id)) markDone(a.id, st.id, 'siswa'); }); }
+  // Menu bawah: ikon + nama, selalu terlihat
+  function studentNav(active) {
+    const st = studentNow(); if (!st) return '';
+    const todo = todoCount(st);
+    const items = [['belajar', '#/belajar', 'Belajar', IC.home], ['tugas', '#/tugas', 'Tugas', IC.task], ['main', '#/permainan', 'Main', IC.game], ...(adabOn() ? [] : [['hadiah', '#/hadiah', 'Hadiah', IC.gift]]), ['aku', '#/aku', 'Aku', IC.me]];
+    return `<nav class="mq-nav" aria-label="Menu"><div class="mq-nav-in">${items.map(([k, h, l, ic]) => `<a href="${h}" class="${k === active ? 'on' : ''}">${ic}${l}${k === 'tugas' && todo ? `<span class="dot">${todo}</span>` : ''}</a>`).join('')}</div></nav>`;
+  }
+  // Dipakai halaman lama (permainan, hadiah) agar menu bawah ikut tampil untuk siswa
+  function mqNavAfter(active) {
+    if (!studentNow()) return;
+    const m = app.querySelector('main.wrap'); if (m) m.classList.add('mq-has-nav');
+    app.insertAdjacentHTML('beforeend', studentNav(active));
+  }
+  const demoStrip = () => (session.get().demo ? '<div class="mq-demo"><span>🧪 Mode coba</span><span><button class="mq-link" style="padding:2px 6px" data-act="realsignup" data-k="">Ajukan akun asli</button><button class="mq-link" style="padding:2px 6px" data-act="logout">Keluar</button></span></div>' : '');
+  const mqPage = (inner, active) => `<div class="mq-page">${demoStrip()}${inner}</div>${studentNav(active)}`;
+
+  // Layar penuh dengan tombol kembali dan maskot (masuk kelas, pilih nama)
+  const mqBack = (href) => `<div class="mq-top"><a class="mq-ico" href="${href}" aria-label="Kembali">${IC.back}</a></div>`;
+
   function viewStudentEnter() {
-    app.innerHTML = shell(`
-      <a class="back" href="#/">← Kembali</a>
-      <section class="card narrow center">
-        <div class="bigemoji">🧒</div>
-        <h1>Halo! Masukkan kode kelas</h1>
-        <p class="muted">Minta kode kelas kepada Bu/Pak Guru.</p>
-        <form data-form="classcode"><input name="code" class="codein" maxlength="5" autocomplete="off" autocapitalize="characters" placeholder="ABCDE" required><button class="btn">Masuk</button></form>
-        <p class="small muted trynote">Ingin mencoba dulu? Masukkan kode <b>1234</b>.</p>
-      </section>`);
+    app.innerHTML = `<form data-form="classcode">${mqBack('#/')}
+      <main class="mq-screen"><div class="mq-ob-body">
+        <div class="mq-big-say"><div class="mq-bubble"><p>Masukkan <b class="hl">kode kelas</b> dari gurumu ya!</p></div>${MQ.svg('ask', { size: 160 })}</div>
+        <input class="mq-code" id="mqcode" name="code" maxlength="5" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" inputmode="text" placeholder="•••••" aria-label="Kode kelas" required>
+        <div class="mq-steps"><div><span class="n">1</span>Minta kode kelas ke Bu/Pak Guru</div><div><span class="n">2</span>Ketik kodenya, lalu pilih namamu</div></div>
+      </div></main>
+      <div class="mq-foot"><div class="mq-foot-in"><button class="mq-btn" id="mqgo" disabled>Masuk</button><a class="mq-link" style="text-align:center" href="#/mulai/siswa">Belum punya kode? Coba dulu</a></div></div></form>`;
+    setTimeout(() => { const i = document.getElementById('mqcode'); if (i) i.focus(); }, 300);
   }
   async function viewStudentPick(code) {
     let c, kids;
@@ -239,55 +255,117 @@
       if (!c) { toast('Kode kelas tidak ditemukan'); return go('#/siswa'); }
       kids = S.studentsOf(c.id);
     }
-    app.innerHTML = shell(`
-      <a class="back" href="#/siswa">← Ganti kelas</a>
-      <h1 class="center">${esc(c.name)}</h1><p class="center muted">Ketuk namamu</p>
-      <div class="pick">${kids.map((k) => `<button class="kid" data-act="pickkid" data-id="${k.id}" data-code="${c.code}"><span>${avHTML(k.avatar)}</span>${esc(k.name)}</button>`).join('') || '<p class="muted center">Belum ada siswa di kelas ini.</p>'}</div>`);
+    app.innerHTML = `${mqBack('#/siswa')}<main class="mq-screen"><div class="mq-ob-body" style="justify-content:flex-start">
+      <div class="mq-say" style="align-self:stretch">${MQ.svg('hello', { size: 110 })}<div class="mq-bubble"><p>Siapa kamu? <b class="hl">Ketuk fotomu!</b><span class="sub">${esc(c.name)}</span></p></div></div>
+      <div class="mq-kids">${kids.map((k) => `<button class="mq-kid" data-act="pickkid" data-id="${k.id}" data-code="${c.code}"><span class="av">${avHTML(k.avatar)}</span>${esc(k.name)}</button>`).join('') || '<p class="muted center">Belum ada siswa di kelas ini. Minta gurumu menambahkan namamu.</p>'}</div>
+    </div></main>`;
+  }
+
+  /* ----- Peta belajar ----- */
+  // Urutan keterampilan satu kelas. Langkah "sekarang" = keterampilan pertama yang belum mahir; setelahnya terkunci
+  // (kecuali sudah pernah dicoba atau ditugaskan guru). Kurikulum tetap menjadi dasar urutannya, tapi tidak diperlihatkan sebagai daftar.
+  function pathModel(sid, g) {
+    const prog = S.progressAll(sid), units = unitsOf(g);
+    const tasks = new Set(S.assignmentsFor(sid).filter((a) => !S.isDone(a.id, sid)).flatMap((a) => a.skills));
+    const flat = units.flatMap((u) => u.skills.map((s) => s.id));
+    let cur = flat.findIndex((id) => ((prog[id] || {}).score || 0) < 80);
+    if (cur < 0) cur = flat.length;
+    const idx = {}; flat.forEach((id, i) => { idx[id] = i; });
+    const st = (id) => {
+      const p = prog[id] || {}, sc = p.score || 0;
+      const state = sc >= 100 ? 'gold' : sc >= 80 ? 'done' : idx[id] === cur ? 'cur' : (p.att > 0 || tasks.has(id)) ? 'open' : 'locked';
+      return { id, sc, att: p.att || 0, state, task: tasks.has(id) };
+    };
+    return { units, flat, cur, st };
+  }
+  const XS = [0, 46, 70, 46, 0, -46, -70, -46];
+  function nodePop(id, x) {
+    const st = studentNow(), sk = SKILLS[id]; if (!st || !sk) return '';
+    const s = pathModel(st.id, sk.grade).st(id), ax = `calc(50% + ${x}px)`;
+    if (s.state === 'locked') return `<div class="mq-pop lock" style="--ax:${ax}"><b>🔒 Belum terbuka</b><small>Selesaikan langkah sebelumnya dulu ya</small><button class="mq-btn" data-act="tocur">Ke langkahku</button></div>`;
+    const lvl = s.att ? `${level(s.sc)[0]} · skor ${s.sc}` : 'Belum dicoba';
+    return `<div class="mq-pop" style="--ax:${ax}"><b>${esc(sk.name)}</b><small>${lvl}</small><a class="mq-btn" href="#/latihan/${id}">${s.sc >= 80 ? 'Latih lagi' : s.att ? 'Lanjutkan' : 'Mulai'}</a></div>`;
   }
   function viewStudentHome() {
     const ses = session.get(); const st = S.student(ses.id);
     if (ses.role !== 'siswa' || !st) return go('#/siswa');
-    if (sessionStorage.getItem('metiq_diag_skip') !== st.id) {
-      if (!S.diagOf(st.id)) return go('#/asesmen');
-      if (S.postPending(st.id)) return go('#/asesmen/akhir');
-    }
-    const c = S.cls(st.classId);
-    const prog = S.progressAll(st.id);
-    const asg = S.assignmentsFor(st.id);
-    asg.forEach((a) => { if (!S.isDone(a.id, st.id) && asgComplete(a, st.id)) markDone(a.id, st.id, 'siswa'); });
-    const g = getGrade(), wk = weekStats(st.id), pb = prizeBoard(st.id, g);
-    const todo = asg.filter((a) => !S.isDone(a.id, st.id));
-    const tab = ss.get('dtab', todo.length ? 'guru' : 'rek');
-    const recent = Object.entries(prog).filter(([k, p]) => SKILLS[k] && p.last && p.att).sort((a, b) => b[1].last - a[1].last).slice(0, 6);
-    const rec = recommend(st.id, g);
-    const open = sessionStorage.getItem('metiq_open') || '';
-    const unsent = cloudOn() ? Cloud.pendingCount(st.id) : 0;
-    const panel = (id, inner) => `<div class="dpanel" data-p="${id}" ${tab === id ? '' : 'hidden'}>${inner}</div>`;
-    const tabBtn = (id, label) => `<button role="tab" class="${tab === id ? 'on' : ''}" data-act="dtab" data-t="${id}">${label}</button>`;
-    app.innerHTML = shell(`
-      ${unsent ? `<p class="offline">📶 ${unsent} jawaban menunggu internet untuk dikirim ke guru.</p>` : ''}
-      <section class="hello"><a class="av avedit" href="#/avatar/saya" aria-label="Ganti avatar">${avHTML(st.avatar)}<i>✏️</i></a><div><h1>Halo, ${esc(st.name)}!</h1><p class="muted">${greet()} · ${esc(c ? c.name : '')} · ⭐ ${S.gameStars(st.id)}</p></div></section>
-      <section class="card dwork"><h2>🤔 Mau belajar apa?</h2>
-        <div class="dtabs" role="tablist">${tabBtn('guru', `📌 Dari guru${todo.length ? ` <b>${todo.length}</b>` : ''}`)}${tabBtn('baru', '🕘 Terakhir')}${tabBtn('rek', '✨ Saran')}</div>
-        ${panel('guru', asg.length ? asg.map((a) => `<div class="asg">${a.students && a.students.length ? '<span class="pill special">🎯 Khusus untukmu</span>' : ''}${S.isDone(a.id, st.id) ? '<span class="pill okp">✅ Selesai</span>' : ''}${a.note ? `<p><b>${esc(a.note)}</b>${a.due ? ` · <span class="muted">sampai ${esc(fdue(a.due))}</span>` : ''}</p>` : ''}<div class="sklist">${a.skills.filter((k) => SKILLS[k]).map((k) => skillLink(k, prog[k])).join('')}</div>${S.isDone(a.id, st.id) ? '' : submitBar(a, prog)}${feedbackHTML(a, st.id, 'siswa')}</div>`).join('') : '<p class="muted dempty">Belum ada tugas. Tugas dari Bu/Pak Guru akan muncul di sini.</p>')}
-        ${panel('baru', recent.length ? `<div class="sklist">${recent.map(([k, p]) => skillLink(k, p, `Kelas ${SKILLS[k].grade} · ${ago(p.last)}`)).join('')}</div>` : '<p class="muted dempty">Keterampilan yang terakhir kamu latih akan muncul di sini. Ayo mulai!</p>')}
-        ${panel('rek', rec.length ? `<p class="small muted">Pilihan untukmu di <b>Kelas ${g}</b>:</p><div class="sklist">${rec.map((r) => skillLink(r.id, prog[r.id], r.why)).join('')}</div>` : `<p class="muted dempty">Hebat! Semua keterampilan Kelas ${g} sudah kamu kuasai. 🏆</p>`)}
-      </section>
-      <div class="grid2">
-        <section class="card howdo"><h2>📈 Bagaimana kemajuanku?</h2><p class="small muted">Minggu ini (${fdate(wk.from)} – hari ini)</p>
-          <div class="wkstats"><div><b>${wk.n}</b><small>soal dijawab</small></div><div><b>${fmtTime(wk.ms)}</b><small>waktu belajar</small></div><div><b>${wk.skills}</b><small>keterampilan berkembang</small></div></div>
-          ${wk.n ? '' : '<p class="small">Minggu ini belum berlatih. Ayo mulai! 💪</p>'}
-          <a class="btn sm ghost" href="#/laporanku">Lihat laporanku →</a></section>
-        ${adabOn() ? '' : `<a class="card prizecard" href="#/hadiah"><span class="pz-ico">🎁</span><span class="grow"><b>Papan hadiah Kelas ${g}</b><small>${pb.open} dari ${pb.cells.length} hadiah terbuka</small><small>${pb.open < pb.cells.length ? `Hadiah berikutnya: ${nextWin(pb, true)}` : 'Semua hadiah sudah terbuka! 🎉'}</small></span><span class="pz-go">→</span></a>`}
-        <a class="card prizecard" href="#/permainan"><span class="pz-ico">🎮</span><span class="grow"><b>Permainan matematika</b><small>⭐ ${S.gameStars(st.id)} bintang terkumpul</small><small>${adabOn() ? 'Balon, Pasangan, dan Menara balok' : 'Kilat, Balon, Pasangan, dan Menara balok'} untuk Kelas ${g}</small></span><span class="pz-go">→</span></a>
+    // Asesmen awal hanya sekali. Sesudah itu, "Lanjutkan belajarmu" langsung masuk ke peta.
+    const skipped = sessionStorage.getItem('metiq_diag_skip') === st.id;
+    if (!skipped && !S.onboarded(st.id)) return go('#/asesmen');
+    if (!skipped && S.postPending(st.id)) return go('#/asesmen/akhir');
+    syncTasks(st);
+    const g = getGrade(), m = pathModel(st.id, g), goal = goalOf(st.id), mins = msToday(st.id) / 60000;
+    const todo = todoCount(st), unsent = cloudOn() ? Cloud.pendingCount(st.id) : 0, curId = m.flat[m.cur];
+    let n = 0;
+    const node = (s, u, withBuddy) => {
+      const x = XS[n++ % XS.length], sk = SKILLS[s.id], done = s.state === 'done' || s.state === 'gold';
+      const badge = done ? `<span class="mq-badge">${s.state === 'gold' ? '★' : IC.ok}</span>` : s.state === 'locked' ? `<span class="mq-badge">${IC.lock}</span>` : '';
+      return `<div class="mq-row"><div class="mq-n ${s.state} ${s.state === 'cur' ? 'cur' : ''}" style="--x:${x}px">
+        ${s.state === 'cur' ? `<a class="mq-label" href="#/latihan/${s.id}">Mulai</a>` : ''}
+        <button class="mq-bub-node" style="--p:${s.state === 'locked' ? 0 : Math.min(100, s.sc)}" data-act="node" data-id="${s.id}" data-x="${x}" aria-label="${esc(sk.name)}"><i><span>${chLogo(u)}</span></i></button>${badge}${s.task ? '<span class="mq-badge task" title="Tugas dari guru">📌</span>' : ''}
+        ${withBuddy ? `<div class="mq-buddy ${x > 0 ? 'l' : 'r'}">${MQ.svg('hello', { size: 104 })}</div>` : ''}</div></div><div class="mq-pop-slot" id="pop-${s.id}"></div>`;
+    };
+    const banner = (u, cls, extra) => `<div class="mq-unit ${cls}"><span class="em">${chLogo(u)}</span><span class="grow"><small>Bab ${u.id}</small><b>${u.name}</b></span>${extra || `<a class="les" href="#/pelajaran/${u.id}"><span class="em2">📖</span>Belajar</a>`}</div>`;
+    const chestRow = (u) => {
+      const state = chestStateOf(st.id, u), t = S.testOf(st.id, u.id);
+      return `<div class="mq-row"><div class="mq-n chest ${state}">${state === 'ready' ? `<a class="mq-label" href="#/ujian/${u.id}">Ujian!</a>` : ''}<button class="mq-chest ${state}" data-act="chest" data-u="${u.id}" aria-label="Peti ujian bab ${u.id}">${chestSVG(state)}</button>${state === 'open' && t ? `<span class="mq-cstars">${'★'.repeat(chestTier(t.stars))}</span>` : ''}</div></div><div class="mq-pop-slot" id="pop-ch-${u.id}"></div>`;
+    };
+    const blocks = m.units.map((u) => {
+      const ss = u.skills.map((s) => m.st(s.id)), all = ss.every((s) => s.state === 'done' || s.state === 'gold'), hasCur = ss.some((s) => s.state === 'cur'), hasOpen = ss.some((s) => s.state === 'open');
+      const reward = chestRow(u);
+      if (all) return `<details class="mq-ud"><summary>${banner(u, 'done', '<span class="chev">⌄</span>')}</summary><div class="mq-path">${ss.map((s) => node(s, u, false)).join('')}${reward}</div></details>`;
+      if (hasCur) return `<section class="mq-sec">${banner(u, '')}<div class="mq-path">${ss.map((s) => node(s, u, s.state === 'cur')).join('')}${reward}</div></section>`;
+      if (hasOpen) return `<details class="mq-ud"><summary>${banner(u, 'lock', '<span class="chev">⌄</span>')}</summary><div class="mq-path">${ss.map((s) => node(s, u, false)).join('')}</div></details>`;
+      return `<button class="mq-unit lock" data-act="tip" data-t="🔒 Selesaikan bab sebelumnya dulu ya"><span class="em">${chLogo(u)}</span><span class="grow"><small>Bab ${u.id}</small><b>${u.name}</b></span><span>${IC.lock.replace('<svg', '<svg width="24" height="24"')}</span></button>`;
+    }).join('');
+    const allDone = m.cur >= m.flat.length;
+    const gradeSheet = `<div class="mq-modal" id="gsheet" hidden data-act="gclose"><div class="mq-sheet"><h2>Pilih kelas</h2><div class="mq-grades">${GRADES.map((x) => { const sk = unitsOf(x.id).flatMap((u) => u.skills), pr = S.progressAll(st.id), dn = sk.filter((s) => ((pr[s.id] || {}).score || 0) >= 80).length; return `<button class="mq-g ${x.id === g ? 'on' : ''}" data-act="grade" data-g="${x.id}"><small>Kelas</small><b>${x.id}</b><span class="bar"><i style="width:${pct(dn, sk.length)}%"></i></span></button>`; }).join('')}</div><button class="mq-btn ghost" style="margin-top:16px" data-act="gclose">Tutup</button></div></div>`;
+    app.innerHTML = mqPage(`
+      <div class="mq-bar">
+        <button class="mq-chip grade" data-act="gsheet" aria-label="Pilih kelas">Kelas ${g} <small>▾</small></button>
+        <button class="mq-chip" data-act="tip" data-t="🔥 ${streakOf(st.id)} hari belajar berturut-turut" aria-label="Hari beruntun"><span class="em">🔥</span>${streakOf(st.id)}</button>
+        <button class="mq-chip star" data-act="tip" data-t="⭐ Total bintangmu: dari latihan, ujian bab, dan permainan" aria-label="Bintang"><span class="em">⭐</span>${S.starsOf(st.id)}</button>
+        <button class="mq-ring ${mins >= goal ? 'done' : ''}" style="--p:${Math.min(100, (mins / goal) * 100)}" data-act="tip" data-t="🎯 Target hari ini: ${Math.min(goal, Math.floor(mins))} dari ${goal} menit" aria-label="Target harian"><span>🎯</span></button>
       </div>
-      <h2 class="allsk">📚 Semua keterampilan</h2>
-      ${gradeTabs()}
-      <div class="units">${curUnits().map((u) => {
-        const us = unitScore(st.id, u);
-        return `<details class="unit card" style="--c:${u.color}" ${open === u.id ? 'open' : ''} data-unit="${u.id}"><summary><span class="uicon">${u.icon}</span><span class="utitle"><b>${u.id}. ${u.name}</b><small>${us.prof} dari ${us.total} keterampilan mahir</small></span><span class="ubar"><i style="width:${us.avg}%"></i></span></summary><a class="lessonlink" href="#/pelajaran/${u.id}">📖 Pelajaran: ${u.name}</a><div class="sklist">${u.skills.map((s) => skillLink(s.id, prog[s.id])).join('')}</div></details>`;
-      }).join('')}</div>
-    `, { right: `<span class="topr"><a class="help" href="#/panduan/siswa" aria-label="Panduan">❓</a>${ses.back ? '<button class="link" data-act="backparent">← Akun orang tua</button>' : '<button class="link" data-act="logout">Keluar</button>'}</span>` });
+      ${unsent ? `<div class="mq-demo">📶 ${unsent} jawaban menunggu internet untuk dikirim ke guru.</div>` : ''}
+      ${todo ? `<a class="mq-task" href="#/tugas"><span class="em">📌</span><b>${todo} tugas dari gurumu</b><span>›</span></a>` : ''}
+      ${allDone ? `<div class="mq-all">${MQ.svg('cheer', { size: 120 })}<div>Semua bab Kelas ${g} sudah tuntas! 🎉</div><button class="mq-btn" style="margin-top:12px" data-act="gsheet">Pilih kelas lain</button></div>` : ''}
+      ${blocks}
+      ${gradeSheet}`, 'belajar');
+    setTimeout(() => { const c = document.querySelector('.mq-n.cur'); if (c) c.scrollIntoView({ block: 'center' }); }, 80);
+    void curId;
+  }
+
+  /* ----- Tugas dari guru ----- */
+  const skillRow = (id, p) => { const sk = SKILLS[id], sc = p ? p.score : 0; return `<a class="mq-skrow" href="#/latihan/${id}"><span class="em">${unitIcon(sk)}</span><span class="grow">${esc(sk.name)}<small>${p && p.att ? level(sc)[0] : 'Belum dicoba'}</small></span>${chip(sc)}</a>`; };
+  function viewTasks() {
+    const ses = session.get(), st = S.student(ses.id);
+    if (ses.role !== 'siswa' || !st) return go('#/siswa');
+    syncTasks(st);
+    const prog = S.progressAll(st.id), asg = S.assignmentsFor(st.id), todo = asg.filter((a) => !S.isDone(a.id, st.id)), done = asg.filter((a) => S.isDone(a.id, st.id));
+    const card = (a) => `<section class="mq-card">${a.students && a.students.length ? '<span class="pill special">🎯 Khusus untukmu</span>' : ''}<h3>📌 ${esc(a.note || 'Tugas dari guru')}</h3>${a.due ? `<p class="small muted" style="margin:0 0 6px">Sampai ${esc(fdue(a.due))}</p>` : ''}${a.skills.filter((k) => SKILLS[k]).map((k) => skillRow(k, prog[k])).join('')}${S.isDone(a.id, st.id) ? '<p class="mq-unlock" style="animation:none;margin-top:10px">✅ Selesai</p>' : submitBar(a, prog)}${feedbackHTML(a, st.id, 'siswa')}</section>`;
+    app.innerHTML = mqPage(`<h1 class="mq-h">Tugas dari guru</h1>
+      ${todo.length ? todo.map(card).join('') : `<div class="mq-empty">${MQ.svg('happy', { size: 150 })}<div>${asg.length ? 'Semua tugas sudah selesai. Hebat!' : 'Belum ada tugas dari gurumu.'}</div><a class="mq-btn" style="max-width:280px" href="#/permainan">Main permainan</a></div>`}
+      ${done.length ? `<h2 class="mq-sub" style="margin-top:18px">Sudah selesai</h2>${done.map(card).join('')}` : ''}`, 'tugas');
+  }
+
+  /* ----- Profil ----- */
+  function viewProfile() {
+    const ses = session.get(), st = S.student(ses.id);
+    if (ses.role !== 'siswa' || !st) return go('#/siswa');
+    const c = S.cls(st.classId), wk = weekStats(st.id), goal = goalOf(st.id);
+    const gold = Object.entries(S.progressAll(st.id)).filter(([k, p]) => SKILLS[k] && p.score >= 100).length;
+    const tile = (l, v, col) => `<div class="mq-stat" style="--c:${col}"><small>${l}</small><b>${v}</b></div>`;
+    app.innerHTML = mqPage(`
+      <section class="mq-me"><a class="av" href="#/avatar/saya" aria-label="Ganti gambar profil">${avHTML(st.avatar)}<span class="edit">✏️</span></a><h1>${esc(st.name)}</h1><p>${esc(c ? c.name : '')}</p></section>
+      <div class="mq-tiles3">${tile('Beruntun', `🔥 ${streakOf(st.id)}`, '#ff8a00')}${tile('Bintang', `⭐ ${S.starsOf(st.id)}`, '#e0a800')}${tile('Tuntas', `🏆 ${gold}`, '#19b796')}</div>
+      <section class="mq-card"><h3>🏅 Lencana bab · Kelas ${getGrade()}</h3><div class="mq-badges">${unitsOf(getGrade()).map((u) => { const t = S.testOf(st.id, u.id), on = t && t.best >= 60; return `<button class="mq-bd ${on ? 'on' : ''}" data-act="tip" data-t="${on ? '🏅 Lencana Bab ' + u.id + ' didapat!' : '🔒 Lulus ujian bab ' + u.id + ' untuk mendapatkan lencana ini'}" aria-label="Lencana bab ${u.id}"><span>${chLogo(u)}</span></button>`; }).join('')}</div></section>
+      <section class="mq-card"><h3>🎯 Target belajar tiap hari</h3><div class="mq-goalchips">${[[5, 'Santai'], [10, 'Biasa'], [15, 'Serius'], [20, 'Hebat']].map(([m, l]) => `<button class="${m === goal ? 'on' : ''}" data-act="goal" data-m="${m}">${m} mnt<small>${l}</small></button>`).join('')}</div></section>
+      <section class="mq-card"><h3>📈 Minggu ini</h3><div class="mq-tiles3" style="margin:0">${tile('Soal', wk.n, '#1c9be8')}${tile('Waktu', fmtTime(wk.ms), '#19b796')}${tile('Maju', wk.skills, '#e0a800')}</div></section>
+      <div class="mq-list"><a href="#/laporanku"><span class="em">📄</span>Laporanku<span class="go">›</span></a>
+        <button data-act="soundtoggle"><span class="em">${window.SFX.enabled() ? '🔔' : '🔕'}</span><span class="t">${window.SFX.enabled() ? 'Suara menyala' : 'Suara mati'}</span></button>
+        <a href="#/panduan/siswa"><span class="em">❓</span>Bantuan<span class="go">›</span></a>
+        <button class="danger" data-act="logout"><span class="em">🚪</span>Keluar</button></div>`, 'aku');
   }
 
   /* ---------- Dasbor siswa: sapaan, rekomendasi, kemajuan minggu ini, papan hadiah ---------- */
@@ -372,6 +450,7 @@
         </aside></div>
       <div class="row-btn"><a class="btn" href="#/belajar">Ayo berlatih</a></div>`,
     { right: `<span class="topr"><a class="help" href="#/panduan/siswa" aria-label="Panduan">❓</a></span>` });
+    mqNavAfter('hadiah');
   }
   function viewMyReport() {
     const ses = session.get(); const st = S.student(ses.id);
@@ -384,52 +463,63 @@
     return `<a class="sk" href="#/latihan/${id}"><span class="sk-code">${s.code}</span><span class="sk-name">${s.name}${sub ? `<small>${sub}</small>` : ''}</span>${chip(sc)}</a>`;
   }
 
-  /* ---------- Latihan ---------- */
+  /* ---------- Latihan: satu soal per layar, pilih dulu lalu Periksa; benar, hampir benar, atau salah ---------- */
   let P = null;
-  function viewPractice(id) {
+  const ROUND = 10; // soal per putaran latihan
+  const mmss = (ms) => { const s = Math.round(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+  const lessonShell = (pct, quit, diag) => `<div class="mq-top"><button class="mq-ico" data-act="${quit}" aria-label="Keluar">${IC.x}</button>
+      <div class="mq-prog" id="mqprog" ${diag ? 'data-diag="1"' : ''}><i id="sbar" style="width:${pct}%"></i></div>
+      <button class="mq-ico psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button></div>
+    <div class="mq-combo" id="mqcombo"></div>
+    <main class="mq-screen" id="pq"></main><div class="mq-foot" id="fb"></div>`;
+  function viewPractice(id, again) {
     const ses = session.get(); const st = S.student(ses.id);
     if (ses.role !== 'siswa' || !st) return go('#/siswa');
     const sk = SKILLS[id]; if (!sk) return go('#/belajar');
     if (adabOn() && sessionStorage.getItem('metiq_doa') !== st.id) return viewDoa();
     sessionStorage.setItem('metiq_open', sk.unit);
     const p = S.progress(st.id, id);
-    P = { sid: st.id, sk, score: p.score, count: 0, start: Date.now(), q: null, input: '', locked: false };
-    const u = UNITS.find((x) => x.id === sk.unit);
-    app.innerHTML = `
-      <header class="ptop" style="--c:${u.color}"><a href="#/belajar" class="pback" aria-label="Kembali">←</a><div class="ptitle"><small>${sk.code} · ${u.name}</small><b>${sk.name}</b></div><button class="pback psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button><a href="#/pelajaran/${u.id}" class="pback plesson" aria-label="Pelajaran">📖</a></header>
-      <div class="pstats"><div><small>Soal dijawab</small><b id="pcount">0</b></div><div><small>Waktu</small><b id="ptime">00:00</b></div><div class="ss"><small>SmartScore</small><b id="pscore">${P.score}</b></div></div>
-      <div class="sbar"><i id="sbar" style="width:${P.score}%"></i></div>
-      <main class="wrap practice" id="pq"></main>`;
-    clearInterval(timer);
-    timer = setInterval(() => { const el = document.getElementById('ptime'); if (!el) return clearInterval(timer); const s = Math.floor((Date.now() - P.start) / 1000); el.textContent = `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(s % 60).padStart(2, '0')}`; }, 1000);
-    if (P.score >= 100) return renderMastered(true);
+    P = { sid: st.id, sk, score: p.score, score0: p.score, count: 0, correct: 0, combo: 0, start: Date.now(), msSum: 0, q: null, input: '', sel: -1, locked: false };
+    if (P.score >= 100 && !again) return renderMastered(true);
+    app.innerHTML = lessonShell(0, 'quit', false);
     nextQ();
   }
   // Mode adab: berdoa sekali per sesi sebelum latihan. Teks doa hanya dari iman.js yang sudah diperiksa.
   function viewDoa() {
     const d = (IMAN._adab || {}).doa || {}, ok = d.verifiedAt && (d.ar || d.id);
-    app.innerHTML = shell(`<a class="back" href="#/belajar">← Kembali</a>
-      <section class="card narrow center doa"><div class="bigemoji">🤲</div><h1>${esc(d.judul || '')}</h1>
-        <p>${esc(d.ajakan || '')}</p>
-        ${ok ? `${d.ar ? `<p class="doa-ar" dir="rtl" lang="ar">${esc(d.ar)}</p>` : ''}${d.id ? `<p class="doa-id">${esc(d.id)}</p>` : ''}${d.ref ? `<p class="small muted">${esc(d.ref)}</p>` : ''}` : ''}
-        <button class="btn" data-act="doaok">${esc(d.tombol || 'Mulai belajar')}</button></section>`);
+    app.innerHTML = `${mqBack('#/belajar')}<main class="mq-screen"><div class="mq-ob-body">
+      <div class="mq-big-say"><div class="mq-bubble"><p><b>${esc(d.judul || '')}</b><span class="sub">${esc(d.ajakan || '')}</span></p></div>${MQ.svg('hello', { size: 150 })}</div>
+      ${ok ? `${d.ar ? `<p class="doa-ar" dir="rtl" lang="ar">${esc(d.ar)}</p>` : ''}${d.id ? `<p class="doa-id">${esc(d.id)}</p>` : ''}${d.ref ? `<p class="small muted">${esc(d.ref)}</p>` : ''}` : ''}
+    </div></main><div class="mq-foot"><div class="mq-foot-in"><button class="mq-btn" data-act="doaok">${esc(d.tombol || 'Mulai belajar')}</button></div></div>`;
+  }
+  // Tombol Periksa aktif hanya setelah ada jawaban (pilihan atau angka)
+  function refreshCheck() {
+    const b = document.getElementById('mqcheck'); if (!b || !P || P.locked) return;
+    b.disabled = !(P.q.type === 'choice' ? P.sel >= 0 : P.input !== '');
+    const d = document.getElementById('indisp'); if (d) d.classList.toggle('has', P.input !== '');
   }
   function nextQ() {
+    if (P.test) { if (P.count >= TEST_N) return renderChest(); P.sk = SKILLS[P.test.queue[P.count]]; }
+    else if (!P.diag && (P.count >= ROUND || (P.score >= 100 && P.score0 < 100))) return renderRound();
     let q, guard = 0;
     do { q = P.sk.gen(); } while (P.q && strip(q.text + (q.vis || '')) === strip(P.q.text + (P.q.vis || '')) && guard++ < 5);
-    P.q = q; P.input = ''; P.locked = false; P.qStart = Date.now();
-    const box = document.getElementById('pq');
+    P.q = q; P.input = ''; P.sel = -1; P.locked = false; P.qStart = Date.now();
+    const choice = q.type === 'choice', box = document.getElementById('pq');
     box.innerHTML = `
-      <section class="qcard">
-        <div class="qhead"><button class="say" data-act="say" aria-label="Bacakan soal">🔊</button><p class="qtext">${q.text}</p></div>
-        ${q.vis ? `<div class="qvis">${q.vis}</div>` : ''}
-        <div class="qans">${q.type === 'choice'
-          ? `<div class="opts ${q.options.every((o) => strip(o).length <= 4) ? 'short' : ''}">${q.options.map((o, i) => `<button class="opt" data-act="choose" data-i="${i}">${o}</button>`).join('')}</div>`
-          : `<div class="inrow">${q.unit ? `<span class="unit-l">${q.unit}</span>` : ''}<div class="indisp" id="indisp">&nbsp;</div></div>
-             ${q.keys ? `<div class="keypad extra">${q.keys.map((k) => `<button data-act="key" data-k="${k}">${k}</button>`).join('')}</div>` : ''}<div class="keypad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button data-act="key" data-k="${n}">${n}</button>`).join('')}<button data-act="key" data-k="del" class="kdel">⌫</button><button data-act="key" data-k="0">0</button><button data-act="submit" class="ksub">Jawab</button></div>`}
-        </div>
-      </section>
-      <div id="fb"></div>`;
+      <h2 class="mq-title">${choice ? 'Pilih jawaban yang benar' : 'Tulis jawabannya'}</h2>
+      ${P.diag && D && D.n === 0 ? '<p class="mq-hint">Tidak apa-apa kalau belum tahu. Tebak saja ya!</p>' : ''}
+      <div class="mq-say"><div id="mqm">${MQ.svg('normal', { size: choice ? 92 : 76, enter: false })}</div><div class="mq-bubble"><button class="mq-spk" data-act="say" aria-label="Dengarkan soal">${IC.spk}</button><span>${q.text}</span></div></div>
+      ${q.vis ? `<div class="mq-vis">${q.vis}</div>` : ''}
+      ${choice
+    ? `<div class="mq-opts ${q.options.every((o) => strip(o).length <= 4) ? 'short' : ''}">${q.options.map((o, i) => `<button class="mq-opt" data-act="choose" data-i="${i}">${o}</button>`).join('')}</div>`
+    : `<div class="mq-ans">${q.unit ? `<span class="u">${q.unit}</span>` : ''}<div class="mq-disp" id="indisp">&nbsp;</div></div>`}`;
+    // Papan angka dan tombol Periksa menempel di bawah layar, supaya selalu terjangkau tanpa menggulir
+    const keys = choice ? '' : `${q.keys ? `<div class="mq-keys extra">${q.keys.map((k) => `<button class="mq-key" data-act="key" data-k="${k}">${k}</button>`).join('')}</div>` : ''}
+       <div class="mq-keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button class="mq-key" data-act="key" data-k="${n}">${n}</button>`).join('')}<button class="mq-key del" data-act="key" data-k="del" aria-label="Hapus">⌫</button><button class="mq-key" data-act="key" data-k="0">0</button><span></span></div>`;
+    const fb = document.getElementById('fb'); fb.className = 'mq-foot';
+    fb.innerHTML = `<div class="mq-foot-in">${keys}<button class="mq-btn" id="mqcheck" data-act="check" disabled>Periksa</button></div>`;
+    box.style.paddingBottom = fb.offsetHeight + 20 + 'px';
+    const d = document.getElementById('indisp'); if (d) d.style.scrollMarginBottom = fb.offsetHeight + 12 + 'px';
   }
   function submit(given) {
     if (P.locked) return;
@@ -440,46 +530,162 @@
     const ok = q.type === 'choice' ? given === q.answer : norm(given) === norm(q.answer);
     if (P.diag) return diagAnswer(ok);
     tlog('answer', { s: P.sk.id, ok, ms: Date.now() - P.qStart });
-    P.locked = true; P.count++;
+    P.locked = true; P.count++; P.msSum += Date.now() - P.qStart;
     const tag = ok ? null : classify(q, given);
+    // "Nyaris": salah tipis (selisih 1 atau angka tertukar). Tetap dicatat salah agar data guru jujur, tapi disambut lembut.
+    const near = !ok && (tag === 'meleset-satu' || tag === 'tertukar-digit');
     const asgDone = (a) => a.skills.filter((k) => SKILLS[k]).every((k) => S.progress(P.sid, k).score >= 80);
-    const myAsg = S.assignmentsFor(P.sid).filter((a) => a.skills.includes(P.sk.id) && !asgDone(a));
+    const myAsg = P.test ? [] : S.assignmentsFor(P.sid).filter((a) => a.skills.includes(P.sk.id) && !asgDone(a));
     const pzBefore = prizeBoard(P.sid, P.sk.grade).open;
-    const res = S.record(P.sid, P.sk.id, { ok, given: strip(given), answer: strip(q.answer), text: strip(q.log || q.text), tag, ms: Date.now() - P.qStart });
+    const info = { ok, given: strip(given), answer: strip(q.answer), text: strip(q.log || q.text), tag, ms: Date.now() - P.qStart };
+    const res = P.test ? S.logAnswer(P.sid, P.sk.id, info) : S.record(P.sid, P.sk.id, info);
     if (cloudOn()) Cloud.queue(P.sid, session.get().code, S.lastAnswer(), Object.assign({}, res));
-    const before = P.score; P.score = res.score;
-    document.getElementById('pcount').textContent = P.count;
-    const sc = document.getElementById('pscore'); sc.textContent = P.score; sc.className = ok ? 'up' : 'down';
-    document.getElementById('sbar').style.width = P.score + '%';
-    document.querySelectorAll('.opt').forEach((b) => { const v = q.options[+b.dataset.i]; if (v === q.answer) b.classList.add('right'); else if (v === given) b.classList.add('wrong'); b.disabled = true; });
-    const fb = document.getElementById('fb');
+    const before = P.test ? res.score : P.score; P.score = res.score;
+    P.combo = ok ? P.combo + 1 : 0; if (ok) P.correct++;
+    document.getElementById('sbar').style.width = Math.min(100, (P.count / ROUND) * 100) + '%';
+    document.getElementById('mqprog').classList.toggle('combo', P.combo >= 3);
+    document.getElementById('mqcombo').textContent = P.combo >= 3 ? `BERUNTUN ×${P.combo}` : '';
+    document.querySelectorAll('.mq-opt').forEach((b) => { const v = q.options[+b.dataset.i]; b.classList.remove('sel'); if (v === q.answer) b.classList.add('right'); else if (v === given) b.classList.add('wrong'); b.disabled = true; });
+    document.querySelectorAll('.mq-key').forEach((b) => { b.disabled = true; });
+    const m = document.getElementById('mqm'); m.innerHTML = MQ.svg(ok ? 'happy' : 'oops', { size: 92, enter: false }); m.firstChild.classList.add('mq-react');
     const finished = ok ? myAsg.filter(asgDone) : [];
-    if (!adabOn() && prizeBoard(P.sid, P.sk.grade).open > pzBefore) setTimeout(() => toast('🎁 Hadiah baru terbuka di papan hadiahmu!'), finished.length || (P.score >= 80 && before < 80) ? 1300 : 300);
+    if (!adabOn() && prizeBoard(P.sid, P.sk.grade).open > pzBefore) setTimeout(() => toast('🎁 Hadiah baru terbuka!'), 1200);
     finished.forEach((a) => markDone(a.id, P.sid, 'siswa'));
+    const fb = document.getElementById('fb'), pq = document.getElementById('pq');
+    const how = `<details class="mq-how" open><summary>💡 Lihat caranya</summary><div class="explain">${q.explain}<p>${LESSONS[P.sk.unit] ? `<button class="link" data-act="lopen" data-u="${P.sk.unit}">📖 Belum paham? Buka materi</button>` : ''}${window.METIQ_ANIM.has(P.sk.unit) ? ` · <button class="link small" data-act="anim" data-u="${P.sk.unit}">🎬 Tonton animasi</button>` : ''}</p><div class="anim-inline"></div></div></details>`;
     if (ok) {
-      if (P.score >= 100 && before < 100) window.SFX.mastered();
-      else if (finished.length) { window.SFX.task(); toast(`📌 Tugas selesai: ${esc(finished[0].note || 'Tugas dari guru')}! 🎉`); }
-      else if (P.score >= 80 && before < 80) { window.SFX.levelUp(); toast('⭐ Naik ke tingkat Mahir!'); }
+      let note = '';
+      if (P.score >= 100 && before < 100) { window.SFX.mastered(); note = '🏆 Tuntas! Luar biasa!'; }
+      else if (finished.length) { window.SFX.task(); note = `📌 Tugas selesai: ${esc(finished[0].note || 'Tugas dari guru')}`; }
+      else if (P.score >= 80 && before < 80) { window.SFX.levelUp(); note = '⭐ Naik ke tingkat Mahir! Langkah berikutnya terbuka.'; }
       else window.SFX.correct();
       const praise = adabOn() && (IMAN._adab || {}).pujian ? IMAN._adab.pujian : ['Hebat!', 'Pintar!', 'Benar sekali!', 'Mantap!', 'Keren!'];
-      fb.innerHTML = `<div class="fb ok">${praise[Math.floor(Math.random() * praise.length)]} 🎉</div>`;
-      if (P.score >= 100 && before < 100) return setTimeout(() => renderMastered(false), 900);
-      setTimeout(nextQ, 1000);
+      fb.className = 'mq-foot ok';
+      fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${IC.ok}</span>${praise[Math.floor(Math.random() * praise.length)]}</div>${note ? `<div class="mq-fbody"><p>${note}</p></div>` : ''}<button class="mq-btn" data-act="next">Lanjutkan</button></div>`;
+    } else if (near) {
+      window.SFX.wrong();
+      fb.className = 'mq-foot near';
+      fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">!</span>Nyaris!</div><div class="mq-fbody"><p>${tag === 'meleset-satu' ? 'Hampir benar, selisihnya cuma 1. Hitung sekali lagi dengan teliti ya.' : 'Hampir benar, angkanya tertukar tempat. Cek puluhan dan satuannya.'}</p><p>Jawabanmu: <b class="strike">${esc(strip(given))}</b></p><p>Jawaban yang benar:</p><div class="mq-corr">${q.answer}</div>${how}</div><button class="mq-btn warn" data-act="next">Lanjutkan</button></div>`;
     } else {
       window.SFX.wrong();
-      fb.innerHTML = `<div class="fb no"><h3>Belum tepat 🙂</h3>
-        <p>Jawabanmu: <b class="strike">${esc(strip(given))}</b> · Jawaban yang benar: <b>${q.answer}</b></p>
-        <div class="explain"><b>Cara mengerjakan:</b><p>${q.explain}</p><a class="small" href="#/pelajaran/${P.sk.unit}">📖 Baca pelajaran bab ini</a>${window.METIQ_ANIM.has(P.sk.unit) ? ` · <button class="link small" data-act="anim" data-u="${P.sk.unit}">🎬 Tonton animasi</button>` : ''}<div class="anim-inline"></div></div>
-        <button class="btn" data-act="next">Lanjut →</button></div>`;
-      fb.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      fb.className = 'mq-foot no';
+      fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${IC.x}</span>Belum tepat</div><div class="mq-fbody"><p>Jawabanmu: <b class="strike">${esc(strip(given))}</b></p><p>Jawaban yang benar:</p><div class="mq-corr">${q.answer}</div>${how}</div><button class="mq-btn bad" data-act="next">Lanjutkan</button></div>`;
     }
+    pq.style.paddingBottom = fb.offsetHeight + 24 + 'px';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-  function renderMastered(already) {
+  /* ---------- Bintang, ujian bab (peti harta karun), dan logo bab ---------- */
+  // Aturan bintang (dasar hadiah nyata, jadi dibuat sulit "dikebut"):
+  //  - latihan: 1 bintang (tepat 60%), 2 (80%), 3 (100%) per putaran; tidak ada bintang untuk keterampilan yang sudah tuntas,
+  //    jawaban rata-rata lebih cepat dari 1,5 detik (asal tebak), dan maksimal STAR_CAP bintang per hari
+  //  - ujian bab: 3 / 5 / 8 bintang (nilai 60 / 80 / 95), hanya selisih dari hasil terbaik sebelumnya
+  //  - permainan: hanya selisih dari bintang terbaik tiap permainan (maksimal 3 per permainan)
+  const TEST_N = 10, MIN_AVG_MS = 1500, STAR_CAP = 30;
+  const chestStars = (pctv) => (pctv >= 95 ? 8 : pctv >= 80 ? 5 : pctv >= 60 ? 3 : 0);
+  const chestTier = (stars) => (stars >= 8 ? 3 : stars >= 5 ? 2 : 1);
+  const shuf = (a) => a.map((x) => [Math.random(), x]).sort((p, q) => p[0] - q[0]).map((x) => x[1]);
+
+  // Logo tiap bab: lambang operasi untuk bab hitung (+ − × ÷ ½ % ...), gambar untuk bab lain
+  const CH_LOGO = [
+    [/penjumlahan dan pengurangan/i, '+−', '#19b796', 's'], [/penjumlahan/i, '+', '#ff7a45'], [/pengurangan/i, '−', '#3b9cff'],
+    [/perkalian dan pembagian/i, '×÷', '#9b6bff', 's'], [/perkalian|mengalikan/i, '×', '#9b6bff'], [/pembagian|membagi/i, '÷', '#ff5f9a'],
+    [/desimal/i, '0,5', '#00a6a6', 's'], [/pecahan/i, '½', '#ff9f1c'], [/persen/i, '%', '#ef476f'], [/rasio/i, '1:2', '#2ec4b6', 's'],
+    [/bilangan bulat/i, '−3', '#5c7cfa', 's'], [/pangkat dan akar/i, '√', '#7048e8'], [/pangkat sepuluh/i, '10ⁿ', '#7048e8', 's'],
+    [/aljabar|ekspresi/i, 'x', '#e8590c'], [/persamaan|kesamaan/i, '=', '#e8590c'], [/^bilangan/i, '123', '#19b796', 's'],
+  ];
+  function chLogo(u) {
+    const r = CH_LOGO.find((x) => x[0].test(u.name));
+    return r ? `<b class="mq-glyph ${r[3] || ''}" style="--gc:${r[2]}">${r[1]}</b>` : u.icon;
+  }
+  const unitIcon = (sk) => { const u = UNITS.find((x) => x.id === sk.unit); return u ? chLogo(u) : '⭐'; };
+
+  // Peti harta karun: terkunci (abu-abu), siap (emas, bergoyang), terbuka (tutup naik, bersinar)
+  function chestSVG(state, anim) {
+    const g = state === 'locked' ? { body: '#c9cfcd', dark: '#a3acaa', lid: '#dde2e0', gold: '#b4bcba' } : { body: '#c8741a', dark: '#8f5410', lid: '#e08a2c', gold: '#ffc800' };
+    const lid = `<path d="M12 52V42a28 28 0 0 1 28-28h20a28 28 0 0 1 28 28v10z" fill="${g.lid}" stroke="${g.dark}" stroke-width="3" stroke-linejoin="round"/><rect x="43" y="13" width="14" height="39" fill="${g.gold}"/><path d="M20 32a22 22 0 0 1 13-13" fill="none" stroke="#fff" stroke-opacity=".5" stroke-width="4" stroke-linecap="round"/>`;
+    const body = `<rect x="12" y="50" width="76" height="38" rx="7" fill="${g.body}" stroke="${g.dark}" stroke-width="3"/><rect x="43" y="50" width="14" height="38" fill="${g.gold}"/><path d="M12 63h76" stroke="${g.dark}" stroke-opacity=".25" stroke-width="2"/><rect x="41" y="46" width="18" height="20" rx="4" fill="${g.gold}" stroke="${g.dark}" stroke-width="2.5"/><circle cx="50" cy="54" r="3" fill="${g.dark}"/><rect x="48.8" y="54" width="2.4" height="7" rx="1" fill="${g.dark}"/>`;
+    const sp = (dx, dy, d) => `<path class="bs" style="--dx:${dx}px;--dy:${dy}px;animation-delay:${d}s" d="M50 38L53 46L61 49L53 52L50 60L47 52L39 49L47 46Z" fill="#ffc800"/>`;
+    if (state === 'open') {
+      const burst = `<g class="burst">${sp(-34, -46, 1.2)}${sp(30, -52, 1.3)}${sp(-12, -66, 1.25)}${sp(44, -22, 1.35)}${sp(-46, -18, 1.4)}</g>`;
+      return `<svg class="mq-chestsvg ${anim ? 'mq-chestanim' : ''}" viewBox="0 0 100 100"><ellipse class="glow" cx="50" cy="50" rx="36" ry="14" fill="#fff3a0"/>${body}${burst}${anim ? `<g class="lid">${lid}</g>` : `<g transform="rotate(-52 12 52)">${lid}</g>`}</svg>`;
+    }
+    return `<svg class="mq-chestsvg ${anim === 'rattle' ? 'mq-rattle' : ''}" viewBox="0 0 100 100">${body}<g>${lid}</g></svg>`;
+  }
+  const chestStateOf = (sid, u) => {
+    const done = u.skills.every((s) => S.progress(sid, s.id).score >= 80), t = S.testOf(sid, u.id);
+    return !done ? 'locked' : t && t.best >= 60 ? 'open' : 'ready';
+  };
+  function chestPop(u) {
+    const st = studentNow(); if (!st) return '';
+    const state = chestStateOf(st.id, u), t = S.testOf(st.id, u.id);
+    if (state === 'locked') return '<div class="mq-pop lock" style="--ax:50%"><b>🔒 Ujian bab terkunci</b><small>Selesaikan semua langkah di bab ini dulu</small><button class="mq-btn" data-act="tocur">Ke langkahku</button></div>';
+    if (state === 'open') return `<div class="mq-pop" style="--ax:50%"><b>Peti sudah terbuka!</b><small>Nilai terbaik ${t.best}% · ${t.stars} ⭐</small><a class="mq-btn" href="#/ujian/${u.id}">Coba lagi</a></div>`;
+    return `<div class="mq-pop" style="--ax:50%"><b>Ujian Bab ${u.id}: ${esc(u.name)}</b><small>${TEST_N} soal · nilai 60 untuk membuka peti</small><a class="mq-btn" href="#/ujian/${u.id}">Mulai ujian</a></div>`;
+  }
+
+  function viewTest(uid) {
+    const ses = session.get(), st = S.student(ses.id);
+    if (ses.role !== 'siswa' || !st) return go('#/siswa');
+    const u = UNITS.find((x) => x.id === uid); if (!u) return go('#/belajar');
+    if (chestStateOf(st.id, u) === 'locked') { toast('Selesaikan semua langkah di bab ini dulu ya'); return go('#/belajar'); }
+    let queue = []; while (queue.length < TEST_N) queue = queue.concat(shuf(u.skills.map((s) => s.id)));
+    queue = queue.slice(0, TEST_N);
+    P = { sid: st.id, sk: SKILLS[queue[0]], test: { unit: u.id, queue }, score: 100, score0: 100, count: 0, correct: 0, combo: 0, start: Date.now(), msSum: 0, q: null, input: '', sel: -1, locked: false };
+    app.innerHTML = lessonShell(0, 'quit', false);
+    nextQ();
+  }
+  // Hasil ujian bab: peti terbuka (nilai 60+) atau tetap terkunci
+  function renderChest() {
+    const u = UNITS.find((x) => x.id === P.test.unit), pctv = pct(P.correct, P.count), avg = P.msSum / Math.max(1, P.count);
+    const fast = avg < MIN_AVG_MS, pass = pctv >= 60 && !fast;
+    const prev = S.testOf(P.sid, u.id), wasOpen = !!(prev && prev.best >= 60), tier = pass ? chestStars(pctv) : 0;
+    const gain = Math.max(0, tier - (prev ? prev.stars : 0));
+    const rec = S.recordTest(P.sid, u.id, { pct: pctv, stars: tier, ms: P.msSum, counted: pass });
+    const sync = [rec]; if (gain) { const r = S.addStars(P.sid, gain); if (r.entry) sync.push(r); }
+    if (cloudOn()) sync.forEach((r) => Cloud.queueProgress(P.sid, session.get().code, r.key, r.entry));
+    if (pass) window.SFX.mastered(); else window.SFX.wrong();
+    const best = S.testOf(P.sid, u.id), tierNow = best ? chestTier(best.stars) : 1;
+    app.innerHTML = `<main class="mq-screen"><div class="mq-result">
+        <div class="mq-chestbox">${pass ? chestSVG('open', true) : chestSVG('ready', 'rattle')}</div>
+        ${pass ? `<div class="mq-starrow">${[1, 2, 3].map((i) => `<span class="mq-bigstar ${i <= tierNow ? 'on' : ''}" style="--d:${1.5 + i * 0.22}s">★</span>`).join('')}</div>` : ''}
+        <h1 class="mq-rtitle ${pass ? 't' : ''}">${pass ? 'Peti terbuka!' : fast ? 'Terlalu cepat!' : 'Hampir berhasil!'}</h1>
+        <p class="mq-rsub">Ujian Bab ${u.id} · ${esc(u.name)}</p>
+        <div class="mq-stats3"><div class="mq-stat" style="--c:#e0a800"><small>Nilai</small><b>${pctv}%</b></div><div class="mq-stat" style="--c:#19b796"><small>Bintang</small><b>${gain ? `+${gain}` : '–'}</b></div><div class="mq-stat" style="--c:#1c9be8"><small>Waktu</small><b>${mmss(Date.now() - P.start)}</b></div></div>
+        ${pass && !wasOpen ? `<div class="mq-unlock mq-medal"><span class="mq-medal-i">${chLogo(u)}</span> Lencana Bab ${u.id} kamu dapatkan!</div>` : ''}
+        ${pass && wasOpen && !gain ? '<div class="mq-unlock">Bintang peti ini sudah kamu dapat. Coba nilai lebih tinggi untuk bintang tambahan!</div>' : ''}
+        ${!pass ? `<div class="mq-unlock" style="background:#fff3c4;color:#8a5a00">${fast ? 'Baca soalnya pelan-pelan, lalu coba lagi.' : 'Butuh nilai 60 untuk membuka peti. Latih lagi lalu coba ujian lagi!'}</div>` : ''}
+      </div></main>
+      <div class="mq-foot"><div class="mq-foot-in">${pass ? '<a class="mq-btn pulse" href="#/belajar">Lanjutkan</a><button class="mq-btn ghost" data-act="testagain" data-u="' + u.id + '">Ulangi ujian</button>' : '<button class="mq-btn pulse" data-act="testagain" data-u="' + u.id + '">Coba lagi</button><a class="mq-btn ghost" href="#/belajar">Kembali ke peta</a>'}</div></div>`;
+  }
+
+  // Layar akhir satu putaran latihan: bintang, tiga kartu (skor, tepat, waktu), dan satu tombol utama yang menyesuaikan
+  function renderRound() {
     clearInterval(timer);
+    const sk = P.sk, mastered = P.score >= 100, acc = pct(P.correct, P.count), delta = P.score - P.score0, up = P.score >= 80 && P.score0 < 80;
+    const avg = P.msSum / Math.max(1, P.count);
+    let want = acc >= 100 ? 3 : acc >= 80 ? 2 : acc >= 60 ? 1 : 0, why = '';
+    if (P.score0 >= 100) { want = 0; why = 'Sudah tuntas, jadi latihan ini tanpa bintang.'; }
+    else if (avg < MIN_AVG_MS) { want = 0; why = 'Terlalu cepat! Baca soalnya pelan-pelan ya.'; }
+    const r = want ? S.addStars(P.sid, want, STAR_CAP) : { given: 0, key: null, entry: null };
+    if (want && !r.given) why = `Batas ${STAR_CAP} bintang hari ini sudah tercapai. Lanjut lagi besok ya!`;
+    if (r.entry && cloudOn()) Cloud.queueProgress(P.sid, session.get().code, r.key, r.entry);
+    const needMore = P.score < 80;
+    app.innerHTML = `<main class="mq-screen"><div class="mq-result">${MQ.svg(acc >= 60 || mastered ? 'cheer' : 'happy', { size: 150 })}
+        <div class="mq-starrow">${[1, 2, 3].map((i) => `<span class="mq-bigstar ${i <= r.given ? 'on' : ''}" style="--d:${0.5 + i * 0.25}s">★</span>`).join('')}</div>
+        <h1 class="mq-rtitle">${mastered ? 'Tuntas! Luar biasa!' : acc >= 70 ? 'Latihan selesai!' : 'Terus berlatih ya!'}</h1><p class="mq-rsub">${esc(sk.name)}${r.given ? ` · +${r.given} ⭐` : ''}</p>
+        <div class="mq-stats3"><div class="mq-stat" style="--c:#e0a800"><small>Skor</small><b>${P.score}${delta ? `<em>${delta > 0 ? '+' : ''}${delta}</em>` : ''}</b></div><div class="mq-stat" style="--c:#19b796"><small>Tepat</small><b>${acc}%</b></div><div class="mq-stat" style="--c:#1c9be8"><small>Waktu</small><b>${mmss(Date.now() - P.start)}</b></div></div>
+        ${why ? `<div class="mq-unlock" style="background:#fff3c4;color:#8a5a00">${why}</div>` : ''}
+        ${up ? '<div class="mq-unlock">🔓 Langkah berikutnya terbuka!</div>' : needMore && !why ? '<div class="mq-unlock" style="background:#fff3c4;color:#8a5a00">Capai skor 80 untuk naik ke Mahir ⭐</div>' : ''}
+      </div></main>
+      <div class="mq-foot"><div class="mq-foot-in">${needMore
+    ? '<button class="mq-btn pulse" data-act="again">Latihan lagi</button><a class="mq-btn ghost" href="#/belajar">Kembali ke peta</a>'
+    : '<a class="mq-btn pulse" href="#/belajar">Lanjutkan</a><button class="mq-btn ghost" data-act="again">Latihan lagi</button>'}</div></div>`;
+  }
+  function renderMastered() {
     const u = UNITS.find((x) => x.id === P.sk.unit);
-    const nextSk = u.skills[u.skills.findIndex((s) => s.id === P.sk.id) + 1];
-    document.getElementById('pq').innerHTML = `<section class="qcard center mastered"><div class="bigemoji">🏆</div><h1>${already ? 'Kamu sudah tuntas!' : 'Tuntas! Luar biasa!'}</h1><p>Kamu sudah menguasai <b>${P.sk.name}</b>.</p>
-      <div class="row-btn">${nextSk ? `<a class="btn" href="#/latihan/${nextSk.id}">Lanjut: ${nextSk.name}</a>` : ''}<a class="btn ghost" href="#/belajar">Pilih keterampilan lain</a>${already ? `<button class="btn ghost" data-act="again">Latihan lagi</button>` : ''}</div></section>`;
+    const nextSk = u && u.skills[u.skills.findIndex((s) => s.id === P.sk.id) + 1];
+    app.innerHTML = `<main class="mq-screen"><div class="mq-result">${MQ.svg('cheer', { size: 180 })}<h1 class="mq-rtitle">Kamu sudah tuntas!</h1><p class="mq-rsub">${esc(P.sk.name)}</p></div></main>
+      <div class="mq-foot"><div class="mq-foot-in">${nextSk ? `<a class="mq-btn pulse" href="#/latihan/${nextSk.id}">Lanjut: ${esc(nextSk.name)}</a><a class="mq-btn ghost" href="#/belajar">Kembali ke peta</a>` : '<a class="mq-btn pulse" href="#/belajar">Kembali ke peta</a>'}<button class="mq-link" data-act="again">Latihan lagi</button></div></div>`;
   }
 
   /* ---------- Guru ---------- */
@@ -544,7 +750,7 @@
   }
   // Urutan menurut seringnya dipakai; lima pertama selalu terlihat, sisanya di menu "Lainnya"
   const TABS = [['ringkasan', '🏠 Ringkasan'], ['tugas', '📌 Tugas'], ['siswa', '🧒 Siswa'], ['kelompok', '👥 Kelompok'], ['kelola', '⚙️ Kelola kelas'],
-    ['analitik', '📈 Analitik'], ['peta', '🗺️ Peta kemajuan'], ['keterampilan', '🧩 Keterampilan'], ['referensi', '📚 Referensi']];
+    ['analitik', '📈 Analitik'], ['peta', '🗺️ Peta kemajuan'], ['keterampilan', '🧩 Keterampilan'], ['peringkat', '🏆 Peringkat'], ['referensi', '📚 Referensi']];
   const TAB_MAIN = ['ringkasan', 'tugas', 'siswa', 'kelompok', 'kelola'];
   function teacherShell(ctx, tab, inner) {
     const admin = [...(ctx.t.isAdmin && !session.get().demo ? [['super', '🌐 Super admin']] : []), ...(ctx.t.isAdmin || ctx.t.isSchoolAdmin ? [['sekolah', '🏫 Sekolah']] : [])];
@@ -574,12 +780,54 @@
     }));
     return agg;
   }
+  /* ---------- Peringkat bintang (guru dan admin): dasar pemberian hadiah ---------- */
+  const rkFrom = (per) => {
+    const d = new Date(); d.setHours(0, 0, 0, 0);
+    if (per === 'pekan') return d.getTime() - ((d.getDay() + 6) % 7) * DAY;
+    if (per === 'bulan') { d.setDate(1); return d.getTime(); }
+    return 0;
+  };
+  function rankRows(ctx) {
+    const per = ss.get('rkp', 'pekan'), from = rkFrom(per), wide = (ctx.t.isAdmin || ctx.t.isSchoolAdmin) && ss.get('rks', 'kelas') === 'semua';
+    const kids = wide ? S.db.students.slice() : ctx.kids;
+    const rows = kids.map((k) => {
+      const ans = S.answersOf(k.id).filter((a) => a.ts >= from), ok = ans.filter((a) => a.ok).length, stars = S.starsOf(k.id, from);
+      return { k, cls: (S.cls(k.classId) || {}).name || '', stars, n: ans.length, acc: pct(ok, ans.length), ms: ans.reduce((t, a) => t + Math.min(a.ms || 0, 180000), 0), days: S.starDays(k.id, from), chests: S.testsOpen(k.id).length,
+        // bintang jauh lebih banyak daripada soal yang dijawab: periksa dulu sebelum memberi hadiah
+        sus: stars > ans.length + 95 };
+    }).sort((a, b) => b.stars - a.stars || b.n - a.n);
+    return { rows, per, wide };
+  }
+  function rankingHTML(ctx) {
+    const { rows, per, wide } = rankRows(ctx), admin = ctx.t.isAdmin || ctx.t.isSchoolAdmin;
+    const pill = (act, key, val, label) => `<button class="${ss.get(key, key === 'rkp' ? 'pekan' : 'kelas') === val ? 'on' : ''}" data-act="${act}" data-v="${val}">${label}</button>`;
+    return `<section class="card"><h2>🏆 Peringkat bintang</h2>
+      <p class="small muted">Bintang didapat dari latihan, ujian bab, dan permainan. Latihan yang sudah tuntas, jawaban asal cepat, dan lebih dari ${STAR_CAP} bintang per hari tidak dihitung.</p>
+      <div class="vzpills">${pill('rkp', 'rkp', 'pekan', 'Pekan ini')}${pill('rkp', 'rkp', 'bulan', 'Bulan ini')}${pill('rkp', 'rkp', 'semua', 'Semua')}</div>
+      ${admin ? `<div class="vzpills">${pill('rks', 'rks', 'kelas', 'Kelas ini')}${pill('rks', 'rks', 'semua', 'Semua kelas')}</div>` : ''}
+      <div class="tscroll"><table class="tbl"><thead><tr><th>#</th><th>Siswa</th><th>⭐ Bintang</th><th>Soal</th><th>Tepat</th><th>Waktu</th><th>Hari aktif</th><th>🏅 Bab</th></tr></thead><tbody>
+      ${rows.map((r, i) => `<tr><td>${stars3(i, r.stars)}</td><td><span class="av sm">${avHTML(r.k.avatar)}</span> <a href="#/guru/siswa/${r.k.id}">${esc(r.k.name)}</a>${wide ? `<small class="muted"> · ${esc(r.cls)}</small>` : ''}${r.sus ? ' <span class="pill" title="Bintang jauh lebih banyak daripada soal yang dijawab. Periksa dulu.">⚠️ periksa</span>' : ''}</td><td><b>${r.stars}</b></td><td>${r.n}</td><td>${r.n ? r.acc + '%' : '–'}</td><td>${fmtTime(r.ms)}</td><td>${r.days}</td><td>${r.chests}</td></tr>`).join('')}
+      </tbody></table></div>
+      <div class="row-btn left"><button class="btn sm" data-act="rkcsv">Unduh CSV</button></div></section>
+      <section class="card"><h2>Catatan untuk pemberian hadiah</h2><ul class="small">
+        <li><b>⚠️ periksa</b> muncul jika bintang jauh lebih banyak daripada soal yang dijawab. Lihat dulu riwayat siswa sebelum memutuskan.</li>
+        <li>Bintang dihitung dari data di perangkat siswa. Untuk hadiah besar seperti beasiswa, cocokkan juga dengan kolom Soal, Tepat, dan Waktu.</li>
+        <li>Membandingkan siswa yang berbeda kelas kurang adil. Sebaiknya tentukan pemenang per kelas, atau per jenjang.</li></ul></section>`;
+  }
+  const stars3 = (i, n) => (n > 0 && i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1);
+  function exportRanking(ctx) {
+    const { rows, per } = rankRows(ctx);
+    downloadCSV(`peringkat-bintang-${per}-${isoDay(Date.now())}.csv`, [['peringkat', 'nama', 'kelas', 'bintang', 'soal_dijawab', 'tepat_persen', 'menit_belajar', 'hari_aktif', 'bab_selesai', 'periksa'],
+      ...rows.map((r, i) => [i + 1, r.k.name, r.cls, r.stars, r.n, r.n ? r.acc : '', Math.round(r.ms / 60000), r.days, r.chests, r.sus ? 'ya' : ''])]);
+  }
+
   function viewTeacher(tab, arg) {
     const ctx = teacherCtx(); if (!ctx) return go('#/guru/masuk');
     const { kids } = ctx;
     if (tab === 'siswa' && arg) return viewTeacherStudent(ctx, arg);
     if (tab === 'kelola') return teacherShell(ctx, tab, manageHTML(ctx));
     if (tab === 'referensi') return teacherShell(ctx, tab, referenceHTML());
+    if (tab === 'peringkat') return teacherShell(ctx, tab, rankingHTML(ctx));
     if (tab === 'sekolah') { if (!ctx.t.isAdmin && !ctx.t.isSchoolAdmin) return go('#/guru/ringkasan'); teacherShell(ctx, tab, schoolHTML(ctx, arg)); if (arg === 'coba') loadTrialStats(); return; }
     if (tab === 'super') { if (!ctx.t.isAdmin || session.get().demo) return go('#/guru/ringkasan'); teacherShell(ctx, tab, `<div id="super-box">${loadingHTML}</div>`); loadSuper(ctx, arg); return; }
     if (tab === 'tugas') return teacherShell(ctx, tab, tasksHTML(ctx));
@@ -979,24 +1227,54 @@
   const isAdminNow = () => { const x = session.get(), t = x.role === 'guru' && S.teacher(x.id); return !!(t && (t.isAdmin || t.isSchoolAdmin)); };
   const DMODE = { a: { name: 'Asesmen awal', start: '#/asesmen', result: '#/asesmen/hasil' }, b: { name: 'Asesmen akhir', start: '#/asesmen/akhir', result: '#/asesmen/akhir/hasil' } };
   const ageGradeOf = (age) => Math.max(1, Math.min(6, age - 6));
+  // Asesmen awal dibuka seperti aplikasi belajar: sapaan Meti, usia, target harian, lalu soal satu per satu.
+  let OB = null;
+  const GOALS = [[5, 'Santai', '🌱'], [10, 'Biasa', '🚶'], [15, 'Serius', '🚀'], [20, 'Hebat', '🏆']];
   function viewDiag(pf = 'a') {
     const st = diagKid(); if (!st) return go('#/siswa');
-    if (pf === 'a' && S.diagOf(st.id)) return go(DMODE.a.result);
+    if (pf === 'a' && S.onboarded(st.id)) return go('#/belajar');
     if (pf === 'b' && !S.postPending(st.id)) return go(S.diagOf(st.id, 'b') ? DMODE.b.result : '#/belajar');
-    const pre = S.diagOf(st.id);
-    app.innerHTML = shell(`<section class="card narrow center diag-intro"><div class="bigemoji">${pf === 'a' ? '🧭' : '🏁'}</div><h1>${DMODE[pf].name}</h1>
-      ${pf === 'a' ? `<p>Halo, <b>${esc(st.name)}</b>! Sebelum mulai, jawab beberapa soal singkat supaya Metiq tahu dari mana kamu sebaiknya belajar. Ini bukan ujian dan tidak ada nilai, jadi santai saja. 😊</p>`
-        : `<p>Halo, <b>${esc(st.name)}</b>! Gurumu ingin melihat kemajuanmu sejak asesmen awal${pre ? ` (${fdate(pre.at)})` : ''}. Caranya sama seperti dulu: jawab semampumu, santai saja. 💪</p>`}
-      <h2>Berapa umurmu?</h2>
-      <div class="agepick">${[6, 7, 8, 9, 10, 11, 12].map((a) => `<button class="btn ghost" data-act="dage" data-pf="${pf}" data-a="${a}" aria-label="${a} tahun"><b>${a}${a === 12 ? '+' : ''}</b><small>tahun</small></button>`).join('')}</div>
-      <p class="small muted">Sekitar 8–15 soal · 5–10 menit</p>
-      <p class="small"><button class="link" data-act="dskip">Nanti saja</button></p></section>`,
-    { right: `<span class="topr"><a class="help" href="#/panduan/siswa" aria-label="Panduan">❓</a></span>` });
+    if (!OB || OB.pf !== pf || OB.sid !== st.id) OB = { pf, sid: st.id, step: 0, age: null, goal: goalOf(st.id), steps: pf === 'a' ? ['hello', 'count', 'age', 'goal', 'gain', 'ready'] : ['hello', 'age', 'ready'] };
+    obRender();
   }
+  function obRender() {
+    const st = S.student(OB.sid), key = OB.steps[OB.step], pct0 = Math.round(((OB.step + 1) / (OB.steps.length + 1)) * 100);
+    const bigSay = (pose, html, size) => `<div class="mq-big-say"><div class="mq-bubble"><p>${html}</p></div>${MQ.svg(pose, { size: size || 170 })}</div>`;
+    const rowSay = (pose, html) => `<div class="mq-say" style="align-self:stretch">${MQ.svg(pose, { size: 104, enter: false })}<div class="mq-bubble"><p>${html}</p></div></div>`;
+    const next = (label, on = true, cls = '') => `<button class="mq-btn ${cls}" id="obbtn" data-act="obnext" ${on ? '' : 'disabled'}>${label}</button>`;
+    let inner, foot;
+    if (key === 'hello') {
+      inner = bigSay('hello', OB.pf === 'a' ? `Hai, ${esc(st.name)}!<br>Aku <b class="hl">Meti</b>!` : `Hai lagi, ${esc(st.name)}!<br>Yuk lihat kemajuanmu!`, 190);
+      foot = next('Lanjutkan') + (OB.pf === 'a' ? '<button class="mq-link" data-act="dskip">Lewati dulu</button>' : '');
+    } else if (key === 'count') {
+      inner = bigSay('cheer', 'Hanya <b class="hl">beberapa soal</b> singkat sebelum kita mulai belajar!<span class="sub">Ini bukan ujian, santai saja.</span>', 180);
+      foot = next('Lanjutkan');
+    } else if (key === 'age') {
+      inner = `${rowSay('ask', 'Berapa <b class="hl">umurmu</b>?')}<div class="mq-ages">${[6, 7, 8, 9, 10, 11, 12].map((a) => `<button class="mq-age ${OB.age === a ? 'sel' : ''}" data-act="obage" data-a="${a}"><b>${a}${a === 12 ? '+' : ''}</b><small>tahun</small></button>`).join('')}</div>`;
+      foot = next('Lanjutkan', OB.age !== null);
+    } else if (key === 'goal') {
+      inner = `${rowSay('ask', 'Berapa menit kamu mau belajar <b class="hl">tiap hari</b>?')}<div class="mq-choices">${GOALS.map(([m, l, e]) => `<button class="mq-choice ${OB.goal === m ? 'sel' : ''}" data-act="obgoal" data-m="${m}"><span class="em">${e}</span><span class="grow">${m} menit / hari</span><span class="tag">${l}</span></button>`).join('')}</div>`;
+      foot = next('Lanjutkan');
+    } else if (key === 'gain') {
+      inner = `${rowSay('happy', 'Ini yang bisa kamu <b class="hl">raih</b>!')}<div class="mq-gain"><div><span class="em">🧮</span><span><b>Jago berhitung</b><small>Soal pas dengan levelmu</small></span></div><div><span class="em">🎬</span><span><b>Paham caranya</b><small>Pelajaran beranimasi</small></span></div><div><span class="em">🔥</span><span><b>Rajin tiap hari</b><small>Kumpulkan hadiah</small></span></div></div>`;
+      foot = next('Lanjutkan');
+    } else {
+      inner = bigSay('ask', OB.pf === 'a' ? 'Siap? <b class="hl">Ayo kita mulai!</b><span class="sub">Kalau belum tahu, tebak saja ya.</span>' : 'Siap? <b class="hl">Jawab semampumu ya!</b>', 180);
+      foot = next('Mulai', true, 'pulse');
+    }
+    app.innerHTML = `<div class="mq-top"><button class="mq-ico" data-act="obback" aria-label="Kembali">${IC.back}</button><div class="mq-prog"><i style="width:${pct0}%"></i></div><span class="mq-ico"></span></div>
+      <main class="mq-screen"><div class="mq-ob-body">${inner}</div></main><div class="mq-foot"><div class="mq-foot-in">${foot}</div></div>`;
+  }
+  function obNext() {
+    if (OB.step >= OB.steps.length - 1) return diagStart(OB.age || ageDefault(), OB.pf);
+    OB.step++; obRender();
+  }
+  const ageDefault = () => 8;
   function diagStart(age, pf) {
     const st = diagKid(); if (!st) return;
     // titik mulai sama untuk asesmen awal dan akhir: satu kelas di bawah kelas sesuai usia (6–7 tahun = kelas 1)
     D = { sid: st.id, pf: pf || 'a', age, bands: {}, n: 0, t0: Date.now(), order: [] };
+    OB = null;
     diagBand(Math.max(1, ageGradeOf(age) - 1));
   }
   function diagBand(g) {
@@ -1007,20 +1285,20 @@
   function diagNext() {
     const b = D.bands[D.grade], id = b.queue.shift();
     if (!id) return diagDecide(true);
-    app.innerHTML = `<header class="ptop diag-top"><span class="pback">${D.pf === 'a' ? '🧭' : '🏁'}</span><div class="ptitle"><small>${DMODE[D.pf].name} · bagian ${D.order.length}</small><b>Soal ${D.n + 1}</b></div><button class="pback psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button></header>
-      <div class="sbar"><i style="width:${Math.min(95, (D.n / 15) * 100)}%"></i></div>
-      <main class="wrap practice" id="pq"></main>`;
-    P = { sid: D.sid, sk: SKILLS[id], diag: true, score: 0, count: 0, start: Date.now(), q: null, input: '', locked: false };
+    const bar = document.getElementById('mqprog'), pct0 = Math.min(95, (D.n / 15) * 100);
+    if (!bar || bar.dataset.diag !== '1') app.innerHTML = lessonShell(pct0, 'dquit', true);
+    else document.getElementById('sbar').style.width = pct0 + '%';
+    P = { sid: D.sid, sk: SKILLS[id], diag: true, score: 0, count: 0, correct: 0, combo: 0, start: Date.now(), q: null, input: '', sel: -1, locked: false };
     nextQ();
-    const fb = document.getElementById('fb'); if (fb) fb.innerHTML = '<p class="center small muted">Kerjakan semampumu. Jika belum tahu, tebak saja lalu lanjut.</p>';
   }
   function diagAnswer(ok) {
     P.locked = true; window.SFX.step();
     const b = D.bands[D.grade], ms = Date.now() - P.qStart; (ok ? b.ok : b.bad).push(P.sk.id); D.n++;
     if (ok && ms <= FAST[D.grade]) b.fast.push(P.sk.id);
     if (!ok && ms < GUESS) b.guess.push(P.sk.id);
-    document.querySelectorAll('.opt, .keypad button').forEach((x) => { x.disabled = true; });
-    setTimeout(() => diagDecide(false), 350);
+    document.querySelectorAll('.mq-opt, .mq-key, #mqcheck').forEach((x) => { x.disabled = true; });
+    document.getElementById('sbar').style.width = Math.min(95, (D.n / 15) * 100) + '%';
+    setTimeout(() => diagDecide(false), 400);
   }
   // lulus = minimal 4 dari 5 (atau 3 benar pertama); belum = 3 salah; selain itu berhenti di kelas ini
   function diagDecide(empty) {
@@ -1052,20 +1330,20 @@
     const dg = S.diagOf(st.id, pf); if (!dg) return go(DMODE[pf].start);
     const pre = pf === 'b' ? S.diagOf(st.id) : null, gain = pre ? dg.level - pre.level : 0;
     const prog = S.progressAll(st.id), good = diagSkills(dg, true), gaps = diagSkills(dg, false).filter((x) => SKILLS[x.id].grade <= dg.level);
-    const slow = good.filter((x) => !x.fast), allFast = good.length >= 3 && !slow.length && !gaps.length;
-    const first = unitsOf(dg.level)[0];
-    app.innerHTML = shell(`<section class="card center diag-res"><div class="bigemoji">🎉</div><h1>${DMODE[pf].name} selesai!</h1>
-        <p>Terima kasih, <b>${esc(st.name)}</b>. Menurut asesmen ini, kamu siap belajar materi</p><div class="diag-level">Kelas ${dg.level}</div>
-        <p class="small muted">Usia ${dg.age} tahun · ${dg.items.length} soal · ${fmtTime(dg.ms)}</p>
-        ${pre ? `<p class="diag-gain">${gain > 0 ? `📈 Naik <b>${gain} kelas</b> sejak asesmen awal (Kelas ${pre.level})! Hebat!` : gain === 0 ? `Sama dengan asesmen awal (Kelas ${pre.level}). Terus berlatih, kamu pasti bisa naik!` : `Asesmen awal: Kelas ${pre.level}. Tidak apa-apa, ayo berlatih lagi bersama gurumu.`}</p>` : ''}
-        ${!pre && dg.level > ageGradeOf(dg.age) ? `<p class="small">⚡ Kamu menjawab cepat dan tepat, jadi Metiq memberimu soal yang lebih sulit. Levelmu di atas kelas untuk usiamu!</p>` : ''}
-        ${allFast && dg.level === 6 ? '<p class="small">🚀 Semua soal kunci dijawab cepat dan tepat. Coba juga bab-bab akhir Kelas 6 dan permainan tantangan.</p>' : ''}</section>
-      ${good.length ? `<section class="card"><h2>💪 Yang sudah kamu kuasai</h2><div class="diag-chips">${good.map((x) => `<span class="pill okp">${SKILLS[x.id].code} ${SKILLS[x.id].name}</span>`).join(' ')}</div></section>` : ''}
-      ${slow.length ? `<section class="card"><h2>🐢 Sudah benar, tapi perlu lebih lancar</h2><p class="small muted">Kamu sudah paham, tetapi masih butuh waktu lama. Latihan sebentar supaya makin cepat.</p><div class="sklist">${slow.map((x) => skillLink(x.id, prog[x.id], `Kelas ${SKILLS[x.id].grade}`)).join('')}</div></section>` : ''}
-      <section class="card"><h2>🎯 Yang perlu kamu pelajari</h2>${gaps.length ? `<p class="small muted">Mulailah dari sini. Daftar ini juga muncul di tab ✨ Saran.</p><div class="sklist">${gaps.map((x) => skillLink(x.id, prog[x.id], `Kelas ${SKILLS[x.id].grade}`)).join('')}</div>`
-        : `<p>Hebat! Semua soal kunci sudah benar. Lanjutkan ke bab pertama Kelas ${dg.level}.</p><div class="sklist">${first.skills.slice(0, 3).map((x) => skillLink(x.id, prog[x.id])).join('')}</div>`}</section>
-      <div class="row-btn"><a class="btn" href="#/belajar">Mulai belajar →</a></div>`,
-    { right: `<span class="topr"><a class="help" href="#/panduan/siswa" aria-label="Panduan">❓</a></span>` });
+    const slow = good.filter((x) => !x.fast);
+    const first = unitsOf(dg.level)[0], acc = pct(good.length, dg.items.length);
+    app.innerHTML = `<main class="mq-screen"><div class="mq-result">${MQ.svg('cheer', { size: 170 })}
+        <h1 class="mq-rtitle">${DMODE[pf].name} selesai!</h1><p class="mq-rsub">Kamu siap belajar di</p>
+        <div class="mq-stats3"><div class="mq-stat" style="--c:#e0a800"><small>Kelas</small><b>${dg.level}</b></div><div class="mq-stat" style="--c:#19b796"><small>Tepat</small><b>${acc}%</b></div><div class="mq-stat" style="--c:#1c9be8"><small>Waktu</small><b>${mmss(dg.ms)}</b></div></div>
+        ${pre ? `<div class="mq-unlock">${gain > 0 ? `📈 Naik ${gain} kelas sejak asesmen awal!` : gain === 0 ? `Sama dengan asesmen awal (Kelas ${pre.level}). Terus berlatih!` : `Asesmen awal: Kelas ${pre.level}. Tidak apa-apa, ayo berlatih lagi.`}</div>` : ''}
+        ${!pre && dg.level > ageGradeOf(dg.age) ? '<div class="mq-unlock">⚡ Kamu menjawab cepat dan tepat, jadi levelmu di atas kelas untuk usiamu!</div>' : ''}
+        <details class="mq-more"><summary>Lihat rinciannya ▾</summary>
+          ${good.length ? `<section class="card"><h2>💪 Yang sudah kamu kuasai</h2><div class="diag-chips">${good.map((x) => `<span class="pill okp">${SKILLS[x.id].code} ${SKILLS[x.id].name}</span>`).join(' ')}</div></section>` : ''}
+          ${slow.length ? `<section class="card"><h2>🐢 Benar, tapi perlu lebih lancar</h2><div class="sklist">${slow.map((x) => skillLink(x.id, prog[x.id], `Kelas ${SKILLS[x.id].grade}`)).join('')}</div></section>` : ''}
+          <section class="card"><h2>🎯 Yang perlu kamu pelajari</h2>${gaps.length ? `<div class="sklist">${gaps.map((x) => skillLink(x.id, prog[x.id], `Kelas ${SKILLS[x.id].grade}`)).join('')}</div>` : `<p>Hebat! Semua soal kunci sudah benar. Lanjutkan ke bab pertama Kelas ${dg.level}.</p><div class="sklist">${first.skills.slice(0, 3).map((x) => skillLink(x.id, prog[x.id])).join('')}</div>`}</section>
+        </details>
+      </div></main>
+      <div class="mq-foot"><div class="mq-foot-in"><a class="mq-btn pulse" href="#/belajar">Mulai belajar</a></div></div>`;
   }
   // Ringkasan asesmen awal (dan akhir bila ada) untuk laporan guru, orang tua, dan siswa
   function diagSummaryHTML(k, audience) {
@@ -1349,7 +1627,17 @@
   const TRY_CODE = '1234';
   // Formulir nama sebelum masuk mode coba (siswa, orang tua, guru)
   function viewTryStart(role) {
-    if (!['siswa', 'ortu', 'guru'].includes(role)) return go('#/');
+    if (!['siswa', 'ortu', 'guru'].includes(role) || (role === 'ortu' && !PARENTS_ON)) return go('#/');
+    if (role === 'siswa') {
+      const kids = deviceKids(), t0 = tryInfo() || {};
+      app.innerHTML = `<form data-form="trystart" data-r="siswa">${mqBack('#/')}<main class="mq-screen"><div class="mq-ob-body">
+        <div class="mq-big-say"><div class="mq-bubble"><p>Hai! Siapa <b class="hl">namamu</b>?</p></div>${MQ.svg('hello', { size: 160 })}</div>
+        ${kids.length ? `<div class="mq-choices">${kids.map((d) => `<button type="button" class="mq-choice" data-act="trykid" data-s="${d.sid}"><span class="em">▶</span><span class="grow">Lanjut sebagai ${esc(d.name)}</span></button>`).join('')}</div><p class="mq-hint">atau mulai dengan nama baru:</p>` : ''}
+        <input class="mq-code" style="letter-spacing:0;text-indent:0;text-transform:none;font-size:1.5rem" name="name" required maxlength="40" placeholder="Ketik namamu" autocomplete="off" value="${kids.length ? '' : esc(t0.role === 'siswa' ? t0.name || '' : '')}" aria-label="Namamu">
+        <p class="small muted" style="margin:6px 0 0">Mode coba memakai data contoh dan hanya tersimpan di HP ini. Namamu dan aktivitas mencoba dicatat untuk pengembangan Metiq.</p>
+      </div></main><div class="mq-foot"><div class="mq-foot-in"><button class="mq-btn pulse">Mulai</button></div></div></form>`;
+      return;
+    }
     const t = tryInfo() || {}, same = t.role === role, nm = same ? t.name || '' : '';
     const title = { siswa: '🧒 Coba sebagai siswa', ortu: '👨‍👩‍👧 Coba sebagai orang tua', guru: '👩‍🏫 Coba sebagai guru' }[role];
     app.innerHTML = shell(`<a class="back" href="#/">← Kembali</a>
@@ -1431,10 +1719,11 @@
   function viewRequestChooser() {
     app.innerHTML = shell(`<a class="back" href="#/">← Kembali</a><h1>✋ Ajukan akun Metiq</h1>
       <p class="muted">Akun sungguhan menyimpan data di server dan bisa dibuka dari HP mana pun. Setiap pengajuan diperiksa admin Metiq, biasanya dalam 1–2 hari.</p>
-      <div class="glist">${Object.entries(REQ).map(([k, r]) => `<a class="card gitem" href="#/ajukan/${k}"><span class="gicon g-pasangan">${r.icon}</span><span class="grow"><b>${r.title}</b><small>${r.desc}</small></span>→</a>`).join('')}</div>
+      <div class="glist">${Object.entries(REQ).filter(([k]) => PARENTS_ON || k !== 'ortu').map(([k, r]) => `<a class="card gitem" href="#/ajukan/${k}"><span class="gicon g-pasangan">${r.icon}</span><span class="grow"><b>${r.title}</b><small>${r.desc}</small></span>→</a>`).join('')}</div>
       <p class="center small"><a href="#/ajukan/status">Sudah mengajukan? Cek status →</a></p>`);
   }
   function viewRequestForm(kind) {
+    if (kind === 'ortu' && !PARENTS_ON) return go('#/ajukan');
     const r = REQ[kind]; if (!r) return go('#/ajukan');
     const t = tryInfo() || {}, nm = t.name || '';
     const acct = `<label>Email<input name="email" type="email" required autocomplete="email"></label>
@@ -1776,10 +2065,11 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const best = (id) => { const p = kid ? S.progress(kid.id, 'g:' + id) : null; return p && p.att ? p : null; };
     app.innerHTML = shell(`<a class="back" href="${kid ? '#/belajar' : '#/'}">← Kembali</a>
       <h1>🎮 Permainan matematika</h1>
-      <p class="muted">${kid ? `Kamu punya <b>⭐ ${S.gameStars(kid.id)} bintang</b>. Setiap ronde memberi sampai 3 bintang. Main lagi untuk mengumpulkan lebih banyak!` : 'Masuk sebagai siswa agar bintangmu tersimpan. Tanpa masuk, kamu tetap bisa mencoba.'}</p>
+      <p class="muted">${kid ? `Kamu punya <b>⭐ ${S.starsOf(kid.id)} bintang</b>. Bintang dihitung dari skor terbaikmu di tiap permainan (maksimal 3 per permainan).` : 'Masuk sebagai siswa agar bintangmu tersimpan. Tanpa masuk, kamu tetap bisa mencoba.'}</p>
       ${gradeTabs()}
       <div class="glist">${G.GAMES.filter((x) => x.grade === g && !(adabOn() && x.type === 'kilat')).map((x) => { const b = best(x.id); return `<a class="card gitem" href="#/main/${x.id}"><span class="gicon g-${x.type}">${x.icon}</span><span class="grow"><b>${x.name}</b><small>${x.desc}</small><small class="gtype">${G.TYPES[x.type]}</small></span><span class="gbest">${b ? `${starRow(G.starsFor(x, b.score))}<small>terbaik ${b.score} poin · ${b.att}× main</small>` : '<small>Belum dimainkan</small>'}</span></a>`; }).join('')}</div>`,
     { right: `<span class="topr"><a class="help" href="#/panduan/siswa" aria-label="Panduan">❓</a></span>` });
+    mqNavAfter('main');
   }
   function viewGame(id) {
     const x = G.byId(id); if (!x || (adabOn() && x.type === 'kilat')) return go('#/permainan');
@@ -1798,13 +2088,15 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       const before = kid ? S.progress(kid.id, 'g:' + x.id) : null, prevBest = before && before.att ? before.score : 0;
       if (kid) {
         const res = S.recordGame(kid.id, x.id, points, stars, ms);
+        const gainStars = Math.max(0, stars - (prevBest ? G.starsFor(x, prevBest) : 0));
+        if (gainStars) { const sr = S.addStars(kid.id, gainStars); if (cloudOn() && sr.entry) Cloud.queueProgress(kid.id, session.get().code, sr.key, sr.entry); }
         tlog('game', { g: x.id, p: points, st: stars });
         if (cloudOn()) Cloud.queueProgress(kid.id, session.get().code, 'g:' + x.id, res);
       }
       if (stars >= 3) window.SFX.mastered(); else if (stars) window.SFX.levelUp();
       area.innerHTML = `<section class="card center gend"><div class="gbig">${starRow(stars)}</div><h2>${stars >= 3 ? 'Luar biasa!' : stars === 2 ? 'Hebat!' : stars ? 'Bagus!' : 'Ayo coba lagi!'}</h2>
         <p>Kamu mendapat <b>${points} poin</b>${stars ? ` dan <b>${stars} bintang</b>` : ''}.${kid && points > prevBest && before && before.att ? ' 🎉 Rekor baru!' : ''}</p>
-        ${kid ? `<p class="small muted">Total bintangmu sekarang ⭐ ${S.gameStars(kid.id)}</p>` : ''}
+        ${kid ? `<p class="small muted">Total bintangmu sekarang ⭐ ${S.starsOf(kid.id)}</p>` : ''}
         ${stars < 3 ? `<p class="small muted">Butuh ${x.stars[stars]} poin untuk ${stars + 1} bintang.</p>` : ''}
         <div class="row-btn"><button class="btn" data-act="gstart">Main lagi</button><a class="btn ghost" href="#/permainan">Permainan lain</a></div></section>`;
     });
@@ -2097,11 +2389,12 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   function viewManual(tab) {
     const M = window.METIQ_MANUAL, ses = session.get();
     if (!M[tab] || tab === 'faq') tab = ses.role === 'siswa' ? 'siswa' : ses.role === 'ortu' ? 'ortu' : 'guru';
+    if (tab === 'ortu' && !PARENTS_ON) tab = 'siswa';
     const m = M[tab];
     const tabs = [['guru', `${avHTML('svg:ustadzah')} Guru`], ['ortu', '👨‍👩‍👧 Orang Tua'], ['siswa', '🧒 Siswa']];
     app.innerHTML = shell(`
       <button class="back link noprint" data-act="back">← Kembali</button>
-      <div class="gtabs noprint">${tabs.map(([k, l]) => `<a class="${k === tab ? 'on' : ''}" href="#/panduan/${k}">${l}</a>`).join('')}</div>
+      <div class="gtabs noprint">${tabs.filter(([k]) => PARENTS_ON || k !== 'ortu').map(([k, l]) => `<a class="${k === tab ? 'on' : ''}" href="#/panduan/${k}">${l}</a>`).join('')}</div>
       <div class="mprint">
         <section class="card mhead"><h1>📘 ${m.title}</h1><p>${m.intro}</p><p class="muted small">Metiq · ${esc(location.origin + location.pathname)}</p><button class="btn sm ghost noprint" data-act="printmanual">🖨️ Cetak / simpan PDF</button></section>
         <div class="ltoc noprint">${m.sections.map((x, i) => `<button data-act="mgo" data-i="${i}">${x.icon} ${x.t}</button>`).join('')}</div>
@@ -2203,38 +2496,64 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     return `<p class="qtext">${q.text}</p>${q.vis ? `<div class="qvis">${q.vis}</div>` : ''}${q.options ? `<div class="lopts">${q.options.map((o) => `<span>${o}</span>`).join('')}</div>` : ''}
       <details class="lsol"><summary>Lihat cara mengerjakan</summary><p class="lans">Jawaban: <b>${q.unit === 'Rp' ? 'Rp' : ''}${q.answer}</b></p><p>${q.explain}</p></details>`;
   }
-  function viewLesson(uid) {
+  // Isi pelajaran dipakai di halaman Pelajaran dan sebagai lembar di atas soal (inPractice), supaya soal tidak hilang saat anak membuka materi
+  function lessonInner(uid, inPractice) {
     const u = UNITS.find((x) => x.id === uid), les = LESSONS[uid];
-    if (!u || !les) return go('#/kurikulum');
     const kid = session.get().role === 'siswa';
     const practice = (id) => (kid ? `#/latihan/${id}` : `#/coba/${id}`);
     const prog = kid ? S.progressAll(session.get().id) : {};
-    app.innerHTML = shell(`
-      <button class="back link" data-act="back">← Kembali</button>
-      <section class="card lhead" style="--c:${u.color}"><span class="uicon">${u.icon}</span><div class="grow"><small class="muted">Pelajaran · Kelas ${u.grade} · Bab ${u.id}</small><h1>${u.name}</h1><p>${les.intro}</p></div><button class="say" data-act="lsay" data-i="-1" aria-label="Bacakan">🔊</button></section>
+    return `
+      ${inPractice ? '' : '<button class="back link" data-act="back">← Kembali</button>'}
+      <section class="card lhead" style="--c:${u.color}"><span class="uicon">${u.icon}</span><div class="grow"><small class="muted">Pelajaran · Kelas ${u.grade} · Bab ${u.id}</small><h1>${u.name}</h1><p>${les.intro}</p></div><button class="say" data-act="lsay" data-u="${uid}" data-i="-1" aria-label="Bacakan">🔊</button></section>
       ${hikmahHTML(uid)}
       ${window.METIQ_ANIM.has(uid) ? `<section class="card anim-card"><h2>🎬 Animasi: ${u.name}</h2><div id="anim-box"></div></section>` : ''}
       ${les.parts.length > 1 ? `<div class="ltoc">${les.parts.map((p, i) => `<button data-act="lgo" data-i="${i}">${i + 1}. ${p.t}</button>`).join('')}</div>` : ''}
       ${les.parts.map((p, i) => `<section class="card lpart" id="lp-${i}">
-        <div class="lph"><span class="lnum" style="background:${u.color}">${i + 1}</span><h2>${p.t}</h2><button class="say sm" data-act="lsay" data-i="${i}" aria-label="Bacakan">🔊</button></div>
+        <div class="lph"><span class="lnum" style="background:${u.color}">${i + 1}</span><h2>${p.t}</h2><button class="say sm" data-act="lsay" data-u="${uid}" data-i="${i}" aria-label="Bacakan">🔊</button></div>
         <ol class="lsteps">${p.steps.map((st) => `<li>${st}</li>`).join('')}</ol>
         ${p.sg ? `<div class="sgnote"><span class="sgtag">Cara Singapura</span> ${p.sg}</div>` : ''}
         <div class="lex"><h3>Ayo coba!</h3><div id="lex-${i}">${lessonExample(p.ex)}</div>
-          <div class="row-btn left"><button class="btn sm ghost" data-act="lexnew" data-i="${i}" data-sk="${p.ex}">🔄 Contoh lain</button><a class="btn sm" href="${practice(p.ex)}">Latihan: ${SKILLS[p.ex].name} →</a></div></div>
+          <div class="row-btn left"><button class="btn sm ghost" data-act="lexnew" data-i="${i}" data-sk="${p.ex}">🔄 Contoh lain</button>${inPractice ? '' : `<a class="btn sm" href="${practice(p.ex)}">Latihan: ${SKILLS[p.ex].name} →</a>`}</div></div>
       </section>`).join('')}
-      <section class="card"><h2>Latihan di bab ini</h2><div class="sklist">${u.skills.map((s) => (kid ? skillLink(s.id, prog[s.id]) : `<a class="sk" href="${practice(s.id)}"><span class="sk-code">${s.code}</span><span class="sk-name">${s.name}</span><span class="chip lv0">→</span></a>`)).join('')}</div></section>
-    `);
+      ${inPractice ? '' : `<section class="card"><h2>Latihan di bab ini</h2><div class="sklist">${u.skills.map((s) => (kid ? skillLink(s.id, prog[s.id]) : `<a class="sk" href="${practice(s.id)}"><span class="sk-code">${s.code}</span><span class="sk-name">${s.name}</span><span class="chip lv0">→</span></a>`)).join('')}</div></section>`}`;
+  }
+  function viewLesson(uid) {
+    const u = UNITS.find((x) => x.id === uid), les = LESSONS[uid];
+    if (!u || !les) return go('#/kurikulum');
+    app.innerHTML = shell(lessonInner(uid, false));
     window.METIQ_ANIM.mount(document.getElementById('anim-box'), uid);
   }
+  // Materi dibuka di atas soal tanpa pindah halaman: soal, jawaban, dan penjelasan tetap utuh di belakangnya
+  function openLessonOver(uid) {
+    if (!UNITS.find((x) => x.id === uid) || !LESSONS[uid]) return toast('Materi bab ini belum tersedia');
+    if (document.getElementById('mqover')) return;
+    const el = document.createElement('div'); el.id = 'mqover'; el.className = 'mq-over';
+    el.innerHTML = `<div class="mq-over-top"><button class="mq-btn sm" data-act="lclose">← Kembali ke soal</button></div>
+      <div class="mq-over-body">${lessonInner(uid, true)}</div>
+      <div class="mq-foot"><div class="mq-foot-in"><button class="mq-btn pulse" data-act="lclose">Kembali ke soal</button></div></div>`;
+    document.body.appendChild(el); document.body.classList.add('mq-noscroll');
+    // tombol kembali di HP menutup materi dulu, bukan keluar dari latihan
+    try { history.pushState({ mqover: 1 }, ''); } catch (e) { /* tidak wajib */ }
+    window.METIQ_ANIM.mount(document.getElementById('anim-box'), uid);
+  }
+  function closeLessonOver(fromPop) {
+    const el = document.getElementById('mqover');
+    if (el) { window.METIQ_ANIM.stop(); if ('speechSynthesis' in window) speechSynthesis.cancel(); el.remove(); document.body.classList.remove('mq-noscroll'); }
+    if (!fromPop && history.state && history.state.mqover) history.back();
+  }
+  window.addEventListener('popstate', () => { if (document.getElementById('mqover')) closeLessonOver(true); });
 
   function hikmahHTML(uid) {
     const h = IMAN[uid];
-    if (!h || !h.verifiedAt || curSettings().konteks !== 'islami') return '';
+    if (!h || curSettings().konteks !== 'islami') return '';
     const d = h.dalil || {};
+    // Teks ayat/hadits hanya tampil setelah diperiksa ustadz/ustadzah. Ajakan, refleksi, dan adab
+    // adalah tulisan sendiri, jadi tetap tampil walau dalil belum diperiksa.
+    const adaLah = !!(d.ar || d.id);
     return `<section class="card hikmah"><h2>🌙 Hikmah: ${esc(h.tema || '')}</h2>
-      ${d.ar || d.id ? `<blockquote>${d.ar ? `<p class="doa-ar" dir="rtl" lang="ar">${esc(d.ar)}</p>` : ''}${d.id ? `<p>${esc(d.id)}</p>` : ''}${d.ref ? `<cite>${esc(d.ref)}</cite>` : ''}</blockquote>` : ''}
+      ${adaLah ? `<blockquote>${d.ar ? `<p class="doa-ar" dir="rtl" lang="ar">${esc(d.ar)}</p>` : ''}${d.id ? `<p>${esc(d.id)}</p>` : ''}${d.ref ? `<cite>${esc(d.ref)}</cite>` : ''}</blockquote>` : ''}
       ${h.ajakan ? `<p>${esc(h.ajakan)}</p>` : ''}${h.refleksi ? `<p><b>Renungkan:</b> ${esc(h.refleksi)}</p>` : ''}${h.adab ? `<p><b>Adab:</b> ${esc(h.adab)}</p>` : ''}
-      <p class="small muted">Diperiksa oleh ${esc(h.verifiedBy || '-')} · ${esc(h.verifiedAt)}</p></section>`;
+      ${h.verifiedAt ? `<p class="small muted">Diperiksa oleh ${esc(h.verifiedBy || '-')} · ${esc(h.verifiedAt)}</p>` : `<p class="small muted">Dalil ayat dan hadits sedang diperiksa ustadz/ustadzah, jadi belum ditampilkan di sini.</p>`}</section>`;
   }
 
   /* Pratinjau soal untuk guru (tidak disimpan) */
@@ -2250,6 +2569,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   let routeSeq = 0;
   async function route() {
     clearInterval(timer);
+    { const ov = document.getElementById('mqover'); if (ov) { ov.remove(); document.body.classList.remove('mq-noscroll'); } }
     if (stopGame) { stopGame(); stopGame = null; }
     window.METIQ_ANIM.stop();
     if ('speechSynthesis' in window) speechSynthesis.cancel();
@@ -2258,11 +2578,12 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const seq = ++routeSeq;
     S.setMode(cloudOn());
     if (session.get().demo) tlog('view', { p: a === 'guru' ? 'guru/' + (b || '') : a || 'beranda', ...(a === 'latihan' || a === 'main' || a === 'pelajaran' ? { s: b } : {}) });
-    const needsData = a === 'belajar' || a === 'asesmen' || a === 'permainan' || a === 'main' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi';
+    const needsData = a === 'belajar' || a === 'asesmen' || a === 'permainan' || a === 'main' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi' || a === 'tugas' || a === 'aku' || a === 'ujian';
     if (needsData && !(await ensure())) return;
     if (seq !== routeSeq) return;
     window.METIQ_CURRICULUM.setKonteks(curSettings().konteks);
     window.scrollTo(0, 0);
+    document.body.classList.toggle('mq-body', ['', undefined, 'siswa', 'mulai', 'belajar', 'asesmen', 'latihan', 'tugas', 'aku', 'ujian'].includes(a));
     switch (a) {
       case '': case undefined: return viewHome();
       case 'kurikulum': return viewCurriculum();
@@ -2272,6 +2593,9 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       case 'belajar': return viewStudentHome();
       case 'asesmen': return b === 'hasil' ? viewDiagResult('a') : b === 'akhir' ? (c === 'hasil' ? viewDiagResult('b') : viewDiag('b')) : viewDiag('a');
       case 'permainan': return viewGames();
+      case 'tugas': return viewTasks();
+      case 'ujian': return viewTest(b);
+      case 'aku': return viewProfile();
       case 'main': return viewGame(b);
       case 'hadiah': return viewPrizes();
       case 'laporanku': return viewMyReport();
@@ -2282,7 +2606,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       case 'avatar': return viewAvatar(b);
       case 'notifikasi': return viewNotifications();
       case 'panduan': return viewManual(b);
-      case 'ortu': return b === 'laporan' ? viewParentReport(c) : b === 'anak' ? viewParentHome() : b === 'daftar' ? (cloudOn() ? go('#/ajukan/ortu') : viewParentRegister()) : viewParentEnter();
+      case 'ortu': if (!PARENTS_ON) return go('#/'); return b === 'laporan' ? viewParentReport(c) : b === 'anak' ? viewParentHome() : b === 'daftar' ? (cloudOn() ? go('#/ajukan/ortu') : viewParentRegister()) : viewParentEnter();
       default: return viewHome();
     }
   }
@@ -2295,7 +2619,35 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (!el) return;
     const act = el.dataset.act;
     if (act === 'gstart') return startGame();
-    if (act === 'dage') return diagStart(+el.dataset.a, el.dataset.pf);
+    if (act === 'obage') { OB.age = +el.dataset.a; document.querySelectorAll('.mq-age').forEach((b) => b.classList.toggle('sel', b === el)); document.getElementById('obbtn').disabled = false; window.SFX.step(); return; }
+    if (act === 'obgoal') { OB.goal = +el.dataset.m; ls.set('metiq_goal_' + OB.sid, OB.goal); document.querySelectorAll('.mq-choice').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); return; }
+    if (act === 'obnext') return obNext();
+    if (act === 'obback') { if (OB && OB.step > 0) { OB.step--; return obRender(); } OB = null; return go('#/siswa'); }
+    if (act === 'quit') return go('#/belajar');
+    if (act === 'dquit') { if (confirm('Berhenti dulu? Asesmen akan diulang dari awal.')) { D = null; P = null; go('#/'); } return; }
+    if (act === 'gsheet') { const m = document.getElementById('gsheet'); if (m) m.hidden = false; return; }
+    if (act === 'gclose') { if (e.target === el) { const m = document.getElementById('gsheet'); if (m) m.hidden = true; } return; }
+    if (act === 'tip') return toast(el.dataset.t);
+    if (act === 'lopen') return openLessonOver(el.dataset.u);
+    if (act === 'lclose') return closeLessonOver();
+    if (act === 'chest') {
+      const u = UNITS.find((x) => x.id === el.dataset.u), slot = document.getElementById('pop-ch-' + el.dataset.u); if (!u || !slot) return;
+      const had = slot.firstChild; document.querySelectorAll('.mq-pop-slot').forEach((x) => { x.innerHTML = ''; });
+      if (!had) { slot.innerHTML = chestPop(u); slot.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+      return;
+    }
+    if (act === 'testagain') return viewTest(el.dataset.u);
+    if (act === 'rkp' || act === 'rks') { ss.set(act, el.dataset.v); return route(); }
+    if (act === 'rkcsv') { const ctx = teacherCtx(); if (ctx) exportRanking(ctx); return; }
+    if (act === 'tocur') { document.querySelectorAll('.mq-pop-slot').forEach((x) => { x.innerHTML = ''; }); const c = document.querySelector('.mq-n.cur'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    if (act === 'node') {
+      const slot = document.getElementById('pop-' + el.dataset.id); if (!slot) return;
+      const had = slot.firstChild; document.querySelectorAll('.mq-pop-slot').forEach((x) => { x.innerHTML = ''; });
+      if (!had) { slot.innerHTML = nodePop(el.dataset.id, +el.dataset.x); slot.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); }
+      return;
+    }
+    if (act === 'goal') { ls.set('metiq_goal_' + session.get().id, +el.dataset.m); return route(); }
+    if (act === 'soundtoggle') { const on = window.SFX.toggle(); el.querySelector('.em').textContent = on ? 'ðŸ””' : 'ðŸ”•'; el.querySelector('.t').textContent = on ? 'Suara menyala' : 'Suara mati'; return; }
     // Mengulang asesmen awal atau membuka asesmen akhir: khusus admin (peneliti) agar data pretest terjaga
     const adminDo = (msg, work) => { if (!isAdminNow()) return toast('Khusus admin'); el.disabled = true; return work().then(() => { toast(msg); route(); }).catch((e) => { el.disabled = false; toast(e.status ? e.message : 'Tidak bisa terhubung ke server'); }); };
     if (act === 'diagreset') {
@@ -2313,7 +2665,12 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       if (!c || !kids.length || !confirm(`Buka asesmen akhir untuk ${kids.length} siswa di ${c.name}? Mereka akan diminta mengerjakannya saat masuk berikutnya.`)) return;
       return adminDo(`Asesmen akhir dibuka untuk ${kids.length} siswa ✔`, () => postOpen(kids, true));
     }
-    if (act === 'dskip') { sessionStorage.setItem('metiq_diag_skip', session.get().id); return go('#/belajar'); }
+    if (act === 'dskip') {
+      const sid = session.get().id, r = S.markOnboard(sid);
+      sessionStorage.setItem('metiq_diag_skip', sid);
+      if (r.entry && cloudOn()) Cloud.queueProgress(sid, session.get().code, r.key, r.entry);
+      return go('#/belajar');
+    }
     if (act === 'anim') { const box = el.closest('.explain').querySelector('.anim-inline'); el.remove(); return window.METIQ_ANIM.mount(box, el.dataset.u); }
     if (act === 'fbedit') { ss.set('fbedit', el.dataset.k); return route(); }
     if (act === 'export') return exportResearch(el.dataset.t);
@@ -2348,11 +2705,12 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (act === 'key') {
       if (!P || P.locked) return;
       if (el.dataset.k === 'del') P.input = P.input.slice(0, -1); else if (P.input.length < 12) P.input += el.dataset.k;
-      document.getElementById('indisp').innerHTML = P.input || '&nbsp;';
-    } else if (act === 'submit') submit(P.input);
-    else if (act === 'choose') submit(P.q.options[+el.dataset.i]);
+      document.getElementById('indisp').innerHTML = P.input || '&nbsp;'; refreshCheck();
+      document.getElementById('indisp').scrollIntoView({ block: 'nearest' });
+    } else if (act === 'check') { if (P && !P.locked) submit(P.q.type === 'choice' ? P.q.options[P.sel] : P.input); }
+    else if (act === 'choose') { if (!P || P.locked) return; P.sel = +el.dataset.i; document.querySelectorAll('.mq-opt').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); refreshCheck(); }
     else if (act === 'next') nextQ();
-    else if (act === 'again') { P.score = 0; nextQ(); }
+    else if (act === 'again') viewPractice(P.sk.id, true);
     else if (act === 'say') speak(P.q.speak || P.q.text);
     else if (act === 'pickav') saveAvatar(el.dataset.t, el.dataset.a);
     else if (act === 'mgo') { const sec = document.getElementById('ms-' + el.dataset.i); if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
@@ -2363,7 +2721,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     else if (act === 'lgo') { const sec = document.getElementById('lp-' + el.dataset.i); if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     else if (act === 'back') { if (history.length > 1) history.back(); else go('#/'); }
     else if (act === 'lsay') {
-      const les = LESSONS[location.hash.split('/')[2]], i = +el.dataset.i;
+      const les = LESSONS[el.dataset.u || location.hash.split('/')[2]], i = +el.dataset.i;
       if (les) speak(i < 0 ? les.intro : `${les.parts[i].t}. ${les.parts[i].steps.join(' ')}`);
     }
     else if (act === 'pickkid') { session.set({ role: 'siswa', id: el.dataset.id, code: el.dataset.code, demo: session.get().demo || undefined }); go('#/belajar'); }
@@ -2439,10 +2797,24 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   document.addEventListener('toggle', (e) => { if (e.target.matches && e.target.matches('details.unit[data-unit]') && e.target.open) sessionStorage.setItem('metiq_open', e.target.dataset.unit); }, true);
   document.addEventListener('keydown', (e) => {
     if (!P || !document.getElementById('pq') || e.target.tagName === 'INPUT') return;
+    if (document.getElementById('mqover')) return;
+    if (e.key === 'Enter') {
+      const nx = document.querySelector('#fb [data-act="next"]'); if (nx) return nx.click();
+      const ck = document.getElementById('mqcheck'); if (ck && !ck.disabled) return ck.click();
+      return;
+    }
     if (P.q && P.q.type === 'input' && !P.locked) {
-      const extra = { ',': ',', '.': ',', '-': '−', '/': '/' }; if (/^[0-9]$/.test(e.key) && P.input.length < 12) P.input += e.key; else if (extra[e.key] && (P.q.keys || []).includes(extra[e.key])) P.input += extra[e.key]; else if (e.key === 'Backspace') P.input = P.input.slice(0, -1); else if (e.key === 'Enter') return submit(P.input); else return;
-      document.getElementById('indisp').innerHTML = P.input || '&nbsp;';
-    } else if (e.key === 'Enter' && document.querySelector('[data-act="next"]')) nextQ();
+      const extra = { ',': ',', '.': ',', '-': 'âˆ’', '/': '/' };
+      if (/^[0-9]$/.test(e.key) && P.input.length < 12) P.input += e.key; else if (extra[e.key] && (P.q.keys || []).includes(extra[e.key])) P.input += extra[e.key]; else if (e.key === 'Backspace') P.input = P.input.slice(0, -1); else return;
+      document.getElementById('indisp').innerHTML = P.input || '&nbsp;'; refreshCheck();
+    }
+  });
+  // Kode kelas: huruf besar otomatis, tombol Masuk aktif setelah 4 huruf, dan langsung masuk saat 5 huruf
+  document.addEventListener('input', (e) => {
+    const el = e.target; if (!el || el.id !== 'mqcode') return;
+    el.value = el.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); el.classList.remove('bad');
+    const b = document.getElementById('mqgo'); if (b) b.disabled = el.value.length < 4;
+    if (el.value.length === 5 && el.form && el.form.requestSubmit) el.form.requestSubmit();
   });
   document.addEventListener('submit', (e) => {
     e.preventDefault();

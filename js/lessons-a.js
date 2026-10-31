@@ -166,6 +166,10 @@
     ['Urutan waktu shalat', ['Urutannya: Subuh, Zuhur, Asar, Magrib, Isya.', 'Sesudah = satu langkah ke kanan, sebelum = satu langkah ke kiri.'], '2Q2'],
     ['Sisa hari dan sisa uang', ['Keseluruhan dikurangi yang sudah = sisanya.', 'Hari puasa: jumlah hari Ramadan − hari yang sudah dijalani.', 'Sedekah: uang awal − uang yang disedekahkan.'], '2Q3', 'Model batang: satu batang keseluruhan dibagi menjadi bagian "sudah" dan "sisa".'],
     ['Berbagi sama rata', ['Bagikan satu per satu sampai habis.', 'Periksa dengan perkalian: banyak anak × bagian tiap anak = semuanya.'], '2Q5'],
+    ['Jumlah rakaat sehari', ['Jumlah rakaat: Subuh 2, Zuhur 4, Asar 4, Magrib 3, Isya 4.', 'Jumlahkan kelimanya: 2 + 4 + 4 + 3 + 4 = 17 rakaat.'], '2Q6'],
+    ['Rakaat musafir', ['Musafir boleh mengqashar shalat empat rakaat menjadi dua.', 'Jika mengqashar dua shalat, jumlahnya 2 + 2 = 4 rakaat.', 'Magrib tidak diqashar, tetap tiga rakaat.'], '2Q7'],
+    ['Kebaikan dilipatgandakan', ['Satu kebaikan dibalas sepuluh kali lipat (QS Al-An\'am 6:160).', 'Kalikan banyak kebaikan dengan 10.', 'Contoh: 7 kebaikan × 10 = 70.'], '2Q8'],
+    ['Tujuh tangkai seratus biji', ['Satu biji tumbuh menjadi 7 tangkai (QS Al-Baqarah 2:261).', 'Setiap tangkai berisi 100 biji.', '7 × 100 = 700 biji.'], '2Q9'],
   ]);
 
   /* ---------- Kelas 3 ---------- */
