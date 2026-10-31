@@ -37,6 +37,7 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 - `supabase/011_delete_school.sql`: super admin menghapus sekolah (beserta guru, kelas, siswa), guru, dan akun orang tua, dengan konfirmasi nama. Super admin tidak ikut terhapus. Jalankan setelah 010.
 - `supabase/012_approve_with_class.sql`: saat menyetujui pengajuan guru, super admin bisa langsung memberinya kelas yang sudah ada (tanpa kelas baru). Jalankan setelah 011.
 - `supabase/013_class_settings.sql`: pengaturan per kelas (`classes.settings`: konteks umum/islami, mode adab) yang ikut terkirim di data kelas, dan fungsi `class_set_settings` untuk guru kelas, admin sekolah, atau super admin. Jalankan setelah 012.
+- `supabase/014_bintang_server.sql`: bintang dihitung di server dari jawaban yang tersimpan (nomor putaran, batas 30 bintang per hari, hanya selisih di atas rekor untuk ujian bab dan permainan). Jalankan setelah 013, lalu nyalakan `starsServer` di `js/config.js`.
 
 ### Menghubungkan ke BBO Digital
 

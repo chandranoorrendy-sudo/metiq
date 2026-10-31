@@ -150,6 +150,7 @@
     /* Bintang (pengganti XP). Disimpan per hari di kunci 'x:YYYYMMDD' (maks 10 huruf agar muat di server).
      * ok = bintang hari itu, att = berapa kali bertambah (selalu naik, syarat sinkron server). */
     dayKey(ts) { const d = new Date(ts || Date.now()); return 'x:' + d.getFullYear() + String(d.getMonth() + 1).padStart(2, '0') + String(d.getDate()).padStart(2, '0'); },
+    todayKey() { return Store.dayKey().slice(2); },
     starsToday(sid) { const p = (db.progress[sid] || {})[Store.dayKey()]; return p ? p.ok : 0; },
     // cap = batas bintang per hari (hanya untuk latihan). Mengembalikan { given, key, entry } agar bisa dikirim ke server.
     addStars(sid, n, cap) {
@@ -161,6 +162,28 @@
       return { given: give, key, entry: Object.assign({}, cur) };
     },
     dayOfKey(k) { const m = /^x:(\d{4})(\d{2})(\d{2})$/.exec(k); return m ? new Date(+m[1], +m[2] - 1, +m[3]).getTime() : null; },
+    // Terapkan angka resmi dari server (bintang harian, ujian bab, rekor permainan) ke data di perangkat.
+    applySync(sid, prog) {
+      if (!prog || typeof prog !== 'object') return false;
+      const p = db.progress[sid] = db.progress[sid] || {};
+      let touched = false;
+      Object.keys(prog).forEach((k) => {
+        const v = prog[k];
+        if (!v || typeof v !== 'object' || !/^(x:|u:|g:)/.test(k)) return;
+        const cur = p[k] || {};
+        p[k] = {
+          score: Math.max(0, Math.min(100, +v.score || 0)),
+          att: +v.att || 0,
+          ok: +v.ok || 0,
+          ms: +v.ms || 0,
+          last: +v.last || Date.now(),
+        };
+        if (cur.masteredAt) p[k].masteredAt = cur.masteredAt;
+        touched = true;
+      });
+      if (touched) save();
+      return touched;
+    },
     // total bintang; from/to (ms) membatasi periode
     starsOf(sid, from, to) { return Object.entries(db.progress[sid] || {}).reduce((t, [k, v]) => { const d = Store.dayOfKey(k); return d !== null && d >= (from || 0) && d <= (to || Infinity) ? t + (v.ok || 0) : t; }, 0); },
     starDays(sid, from) { return Object.keys(db.progress[sid] || {}).filter((k) => { const d = Store.dayOfKey(k); return d !== null && d >= (from || 0) && (db.progress[sid][k].ok || 0) > 0; }).length; },

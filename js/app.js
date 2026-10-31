@@ -9,6 +9,8 @@
   // Tugas dari guru disembunyikan dulu di tampilan siswa: tahap ini guru belum banyak dilibatkan.
   // Fitur guru (memberi tugas, melihat kemajuan) tetap utuh. Ubah ke true untuk menampilkannya lagi.
   const TASKS_ON = false;
+  // Bintang dihitung di server (lihat supabase/014_bintang_server.sql). Menyala lewat js/config.js.
+  const STARS_SRV = !!(window.METIQ_CONFIG || {}).starsServer;
 
   /* ---------- Utilitas ---------- */
   const avHTML = (a) => window.METIQ_AVATARS.html(a);
@@ -90,7 +92,7 @@
   }
 
   const shell = (inner, opts = {}) => `
-    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=68" alt="">Metiq<span class="alpha">Beta</span></a>${opts.right || ''}</header>
+    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=69" alt="">Metiq<span class="alpha">Beta</span></a>${opts.right || ''}</header>
     <main class="wrap ${opts.cls || ''}">${session.get().demo ? `<div class="demobar">🧪 <span class="grow"><b>Mode coba</b>${tryInfo() && tryInfo().name ? ` · ${esc(tryInfo().name)}` : ''} · data contoh di perangkat ini</span><button class="link" data-act="realsignup" data-k="">Ajukan akun asli</button><button class="link" data-act="logout">Keluar</button></div>` : ''}${inner}</main>`;
 
   /* ---------- Analitik (dipakai guru dan orang tua) ---------- */
@@ -156,7 +158,7 @@
     if (ses.role === 'guru' && (cloudOn() ? ses.token : S.teacher(ses.id))) return go('#/guru/ringkasan');
     const kid = ses.role === 'siswa' && S.student(ses.id);
     app.innerHTML = `<div class="mq-land">
-      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=68" alt="">Metiq<span class="alpha">Beta</span></a><a class="mq-tlink" href="#/guru">Saya guru</a></header>
+      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=69" alt="">Metiq<span class="alpha">Beta</span></a><a class="mq-tlink" href="#/guru">Saya guru</a></header>
       <section class="mq-hero">
         <div class="mq-hero-art"><span class="mq-sym a">+</span><span class="mq-sym b">×</span><span class="mq-sym c">=</span><span class="mq-sym d">7</span>${MQ.svg('hello', { size: 230 })}</div>
         <h1>Belajar matematika jadi <span>seru!</span></h1>
@@ -482,7 +484,7 @@
     if (adabOn() && sessionStorage.getItem('metiq_doa') !== st.id) return viewDoa();
     sessionStorage.setItem('metiq_open', sk.unit);
     const p = S.progress(st.id, id);
-    P = { sid: st.id, sk, score: p.score, score0: p.score, count: 0, correct: 0, combo: 0, start: Date.now(), msSum: 0, q: null, input: '', sel: -1, locked: false };
+    P = { sid: st.id, sk, rid: 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), score: p.score, score0: p.score, count: 0, correct: 0, combo: 0, start: Date.now(), msSum: 0, q: null, input: '', sel: -1, locked: false };
     if (P.score >= 100 && !again) return renderMastered(true);
     app.innerHTML = lessonShell(0, 'quit', false);
     nextQ();
@@ -540,7 +542,7 @@
     const asgDone = (a) => a.skills.filter((k) => SKILLS[k]).every((k) => S.progress(P.sid, k).score >= 80);
     const myAsg = P.test ? [] : S.assignmentsFor(P.sid).filter((a) => a.skills.includes(P.sk.id) && !asgDone(a));
     const pzBefore = prizeBoard(P.sid, P.sk.grade).open;
-    const info = { ok, given: strip(given), answer: strip(q.answer), text: strip(q.log || q.text), tag, ms: Date.now() - P.qStart };
+    const info = { ok, given: strip(given), answer: strip(q.answer), text: strip(q.log || q.text), tag, ms: Date.now() - P.qStart, rid: P.rid || null, kind: P.test ? 'test' : 'practice', unit: P.test ? P.test.unit : null };
     const res = P.test ? S.logAnswer(P.sid, P.sk.id, info) : S.record(P.sid, P.sk.id, info);
     if (cloudOn()) Cloud.queue(P.sid, session.get().code, S.lastAnswer(), Object.assign({}, res));
     const before = P.test ? res.score : P.score; P.score = res.score;
@@ -633,7 +635,7 @@
     if (chestStateOf(st.id, u) === 'locked') { toast('Selesaikan semua langkah di bab ini dulu ya'); return go('#/belajar'); }
     let queue = []; while (queue.length < TEST_N) queue = queue.concat(shuf(u.skills.map((s) => s.id)));
     queue = queue.slice(0, TEST_N);
-    P = { sid: st.id, sk: SKILLS[queue[0]], test: { unit: u.id, queue }, score: 100, score0: 100, count: 0, correct: 0, combo: 0, start: Date.now(), msSum: 0, q: null, input: '', sel: -1, locked: false };
+    P = { sid: st.id, sk: SKILLS[queue[0]], rid: 't' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), test: { unit: u.id, queue }, score: 100, score0: 100, count: 0, correct: 0, combo: 0, start: Date.now(), msSum: 0, q: null, input: '', sel: -1, locked: false };
     app.innerHTML = lessonShell(0, 'quit', false);
     nextQ();
   }
@@ -646,6 +648,7 @@
     const rec = S.recordTest(P.sid, u.id, { pct: pctv, stars: tier, ms: P.msSum, counted: pass });
     const sync = [rec]; if (gain) { const r = S.addStars(P.sid, gain); if (r.entry) sync.push(r); }
     if (cloudOn()) sync.forEach((r) => Cloud.queueProgress(P.sid, session.get().code, r.key, r.entry));
+    if (STARS_SRV && cloudOn()) Cloud.queueClaim(P.sid, session.get().code, { id: P.rid, kind: 'test', unit: u.id, d: S.todayKey() });
     if (pass) window.SFX.mastered(); else window.SFX.wrong();
     const best = S.testOf(P.sid, u.id), tierNow = best ? chestTier(best.stars) : 1;
     app.innerHTML = `<main class="mq-screen"><div class="mq-result">
@@ -672,6 +675,7 @@
     const r = want ? S.addStars(P.sid, want, STAR_CAP) : { given: 0, key: null, entry: null };
     if (want && !r.given) why = `Batas ${STAR_CAP} bintang hari ini sudah tercapai. Lanjut lagi besok ya!`;
     if (r.entry && cloudOn()) Cloud.queueProgress(P.sid, session.get().code, r.key, r.entry);
+    if (STARS_SRV && cloudOn()) Cloud.queueClaim(P.sid, session.get().code, { id: P.rid, kind: 'practice', s0: P.score0, d: S.todayKey(), n: P.count });
     const needMore = P.score < 80;
     app.innerHTML = `<main class="mq-screen"><div class="mq-result">${MQ.svg(acc >= 60 || mastered ? 'cheer' : 'happy', { size: 150 })}
         <div class="mq-starrow">${[1, 2, 3].map((i) => `<span class="mq-bigstar ${i <= r.given ? 'on' : ''}" style="--d:${0.5 + i * 0.25}s">★</span>`).join('')}</div>
@@ -2095,6 +2099,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         if (gainStars) { const sr = S.addStars(kid.id, gainStars); if (cloudOn() && sr.entry) Cloud.queueProgress(kid.id, session.get().code, sr.key, sr.entry); }
         tlog('game', { g: x.id, p: points, st: stars });
         if (cloudOn()) Cloud.queueProgress(kid.id, session.get().code, 'g:' + x.id, res);
+        if (STARS_SRV && cloudOn()) Cloud.queueClaim(kid.id, session.get().code, { id: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), kind: 'game', game: x.id, points, stars, d: S.todayKey() });
       }
       if (stars >= 3) window.SFX.mastered(); else if (stars) window.SFX.levelUp();
       area.innerHTML = `<section class="card center gend"><div class="gbig">${starRow(stars)}</div><h2>${stars >= 3 ? 'Luar biasa!' : stars === 2 ? 'Hebat!' : stars ? 'Bagus!' : 'Ayo coba lagi!'}</h2>
