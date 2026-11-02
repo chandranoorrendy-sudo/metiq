@@ -4,7 +4,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, fact, nCr, FR } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, fact, nCr, FR, CX } = C.kit;
   const G = 11;
   const cx = (a, b) => (b === 0 ? N(a) : `${a ? N(a) + ' ' + (b < 0 ? '−' : '+') + ' ' : b < 0 ? '−' : ''}${Math.abs(b) === 1 ? '' : Math.abs(b)}i`);
 
@@ -96,7 +96,8 @@
       tip: 'Berapa cara memilih ketua, sekretaris, dan bendahara dari 10 siswa? Urutan penting → permutasi.',
       skills: [
         { id: 'A2H1', name: 'Faktorial', gen() { const n = r(3, 8), k = r(1, Math.min(3, n - 1)); return num(`${n}! : ${n - k}! = ?`, fact(n) / fact(n - k), 'n! = n × (n − 1) × ... × 1. Pembagian faktorial dapat dicoret.', [
-          ['Coret bagian yang sama', `${n}!/${n - k}! = ${Array.from({ length: k }, (_, i) => n - i).join(' × ')}`], ['Hitung', `<b>${fact(n) / fact(n - k)}</b>`]]); } },
+          ['Tulis ' + n + '! sampai muncul ' + (n - k) + '!', `${FR(`${Array.from({ length: k }, (_, i) => n - i).join(' × ')} × ${n - k}!`, `${n - k}!`)}`],
+          [`Coret ${n - k}! di atas dan di bawah`, `${FR(`${Array.from({ length: k }, (_, i) => n - i).join(' × ')} × ${CX(`${n - k}!`)}`, CX(`${n - k}!`))} = ${Array.from({ length: k }, (_, i) => n - i).join(' × ')}`], ['Hitung', `<b>${fact(n) / fact(n - k)}</b>`]]); } },
         { id: 'A2H2', name: 'Permutasi', gen() { const n = r(5, 10), k = r(2, 3); return num(`Dari ${n} siswa akan dipilih ${k === 2 ? 'ketua dan wakil' : 'ketua, sekretaris, dan bendahara'}. Ada berapa cara?`, fact(n) / fact(n - k), 'Urutan (jabatan) penting → permutasi P(n, k) = n!/(n − k)!.', [
           ['Kenali permutasi', `n = ${n}, k = ${k}`], ['Hitung', `${Array.from({ length: k }, (_, i) => n - i).join(' × ')} = <b>${fact(n) / fact(n - k)}</b>`]]); } },
         { id: 'A2H3', name: 'Kombinasi', gen() { const n = r(5, 12), k = r(2, 4); return num(`Dari ${n} pemain akan dipilih ${k} orang untuk tim (tanpa jabatan). Ada berapa cara?`, nCr(n, k), 'Urutan tidak penting → kombinasi C(n, k) = n!/(k!(n − k)!).', [

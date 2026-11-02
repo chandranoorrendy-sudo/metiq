@@ -19,6 +19,8 @@
   // Notasi bertingkat: limit (x → a di bawah lim), pecahan dua baris, integral dengan batas atas dan bawah
   const LIM = (v, a) => `<span class="mlim"><span>lim</span><small>${v} → ${a}</small></span>`;
   const FR = (num, den) => `<span class="mfr"><b>${num}</b><b>${den}</b></span>`;
+  // Faktor yang dicoret di pembilang dan penyebut (garis merah), dipakai di langkah penjelasan
+  const CX = (t) => `<s class="mcx">${t}</s>`;
   const INT = (a, b) => (a === undefined ? '<span class="mint">∫</span>' : `<span class="mint">∫<span class="mlims"><sup>${b}</sup><sub>${a}</sub></span></span>`);
   // Versi teks satu baris untuk catatan guru dan suara
   const plain = (h) => String(h)
@@ -56,5 +58,5 @@
   const L = (window.METIQ_LESSONS = window.METIQ_LESSONS || {});
   const lesson = (id, intro, parts) => { L[id] = { intro, parts: parts.map(([t, steps, ex]) => ({ t, steps, ex })) }; };
 
-  Object.assign(C.kit, { LIM, FR, INT, plain, N, P, nz, sgn, F, FH, sup, poly, lin, tahap, KEYS, num, pil, opt, fact, nCr, lesson });
+  Object.assign(C.kit, { LIM, FR, CX, INT, plain, N, P, nz, sgn, F, FH, sup, poly, lin, tahap, KEYS, num, pil, opt, fact, nCr, lesson });
 })();

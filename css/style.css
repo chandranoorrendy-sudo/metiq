@@ -827,7 +827,8 @@ details.realcard summary { cursor: pointer; list-style: none; } details.realcard
 .kunci p { margin: 4px 0 0; }
 .tahap { margin: 0; padding-left: 22px; display: grid; gap: 8px; }
 .tahap li b { display: block; }
-.tahap li div { margin-top: 2px; overflow-x: auto; }
+.tahap li div { margin-top: 2px; overflow-x: auto; overflow-y: hidden; padding: 2px 0; }
+.tahap li div > b { display: inline; } /* hasil akhir tetap satu baris dengan perhitungannya */
 .mfr { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.15; margin: 0 2px; }
 .mfr b { font-weight: inherit; padding: 0 3px; }
 .mfr b:first-child { border-bottom: 2px solid currentColor; }
@@ -853,6 +854,8 @@ details.realcard summary { cursor: pointer; list-style: none; } details.realcard
 .mlims { display: inline-flex; flex-direction: column; justify-content: space-between; font-size: .52em; line-height: 1.15; margin-left: 1px; align-self: stretch; }
 .mlims sup, .mlims sub { vertical-align: baseline; font-size: 1em; line-height: 1.15; }
 .mfr { white-space: nowrap; }
+.mcx { text-decoration: line-through; text-decoration-color: var(--no); text-decoration-thickness: 3px; color: var(--muted); }
+ol.tahap small { color: var(--muted); font-weight: 700; font-size: .85em; display: block; margin-top: 4px; }
 
 /* ---------- Dasbor guru: tab utama, pil sub-halaman, daftar "Yang perlu dilakukan", tambah siswa ---------- */
 .tabs.tmain { flex-wrap: wrap; }

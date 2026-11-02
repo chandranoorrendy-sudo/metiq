@@ -4,7 +4,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, LIM, FR } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, LIM, FR, CX } = C.kit;
   const G = 12;
   const mat = (m) => `<span class="mmat">${m.map((row) => `<span>${row.map(N).join('</span><span>')}</span>`).join('<br>')}</span>`;
   const vec = (a, b, c) => `(${[a, b, c].filter((x) => x !== undefined).map(N).join(', ')})`;
@@ -98,7 +98,8 @@
         { id: 'PKH1', name: 'Limit dengan substitusi', gen() { const cs = [nz(-3, 3), r(-5, 5), r(-9, 9)], a = r(-4, 4), v = cs.reduce((s, c) => s * a + c, 0); return num(`${LIM('x', N(a))} (${poly(cs)}) = ?`, v, 'Untuk polinomial, limit di x = a sama dengan f(a).', [
           ['Substitusi x = ' + N(a), `${P(cs[0])} × ${P(a)}² + ${P(cs[1])} × ${P(a)} + ${P(cs[2])}`], ['Hitung', `<b>${N(v)}</b>`]]); } },
         { id: 'PKH2', name: 'Limit bentuk 0/0 dengan faktorisasi', gen() { const a = nz(-6, 6), b = nz(-6, 6); if (a === b) return C.SKILLS.PKH2.gen(); return num(`${LIM('x', N(a))} ${FR(poly([1, -(a + b), a * b]), lin(1, -a))} = ?`, a - b, 'Jika substitusi menghasilkan 0/0, faktorkan lalu coret faktor yang sama.', [
-          ['Faktorkan pembilang', `(${lin(1, -a)})(${lin(1, -b)})`], ['Coret (' + lin(1, -a) + ')', lin(1, -b)], ['Substitusi', `${N(a)} − ${P(b)} = <b>${N(a - b)}</b>`]]); } },
+          ['Faktorkan pembilang', `${LIM('x', N(a))} ${FR(`(${lin(1, -a)})(${lin(1, -b)})`, `(${lin(1, -a)})`)}`],
+          [`Coret (${lin(1, -a)}) di atas dan di bawah`, `${FR(`${CX(`(${lin(1, -a)})`)}(${lin(1, -b)})`, CX(`(${lin(1, -a)})`))} = ${lin(1, -b)}<br><small>Boleh dicoret karena x mendekati ${N(a)} tetapi tidak sama dengan ${N(a)}, jadi (${lin(1, -a)}) ≠ 0.</small>`], [`Substitusi x = ${N(a)}`, `${N(a)} − ${P(b)} = <b>${N(a - b)}</b>`]]); } },
         { id: 'PKH3', name: 'Limit di tak hingga', gen() { const p = nz(-9, 9), q = nz(1, 7); return num(`${LIM('x', '∞')} ${FR(poly([p, r(-9, 9), r(-9, 9)]), poly([q, r(-9, 9), nz(-9, 9)]))} = ? (pecahan paling sederhana jika perlu)`, F(p, q), 'Bagi pembilang dan penyebut dengan pangkat tertinggi x; suku lain mendekati 0.', [
           ['Pangkat tertinggi sama', 'Hasilnya rasio koefisien x².'], ['Jawab', `${p}/${q} = <b>${F(p, q)}</b>`]]); } },
       ],

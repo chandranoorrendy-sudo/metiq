@@ -4,7 +4,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, LIM, FR, INT } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, LIM, FR, CX, INT } = C.kit;
   const G = 13;
   const ev = (cs, x) => cs.reduce((s, c) => s * x + c, 0);
   const der = (cs) => { const n = cs.length - 1; return cs.slice(0, -1).map((c, i) => c * (n - i)); };
@@ -23,7 +23,9 @@
         { id: 'KA1', name: 'Limit dari tabel', gen() { const L = r(-9, 9), a = r(-3, 5), d = [0.1, 0.01, 0.001]; const vals = (s) => d.map((h, i) => Math.round((L + s * (3 - i) * 0.1 * (i === 2 ? 0.1 : 1)) * 1000) / 1000); const left = vals(-1), right = vals(1); return num(`Tabel nilai f(x) di sekitar x = ${N(a)}:<br>${tbl(['x', ...d.map((h) => N(a - h)), ...d.slice().reverse().map((h) => N(a + h))], [['f(x)', ...left, ...right.slice().reverse()]])}Berapa lim(x → ${N(a)}) f(x)?`, L, 'Lihat nilai f(x) ketika x makin dekat ke a dari kiri dan kanan.', [
           ['Dari kiri', `f(x) mendekati ${N(L)}`], ['Dari kanan', `f(x) mendekati ${N(L)}`], ['Kedua sisi sama', `limitnya <b>${N(L)}</b>`]]); } },
         { id: 'KA2', name: 'Limit bentuk 0/0', gen() { const a = nz(-5, 5), b = nz(-5, 5), k = nz(1, 3); if (a === b) return C.SKILLS.KA2.gen(); return num(`${LIM('x', N(a))} ${FR(poly([k, -k * (a + b), k * a * b]), lin(1, -a))} = ?`, k * (a - b), 'Substitusi menghasilkan 0/0: faktorkan, coret faktor (x − a), lalu substitusi.', [
-          ['Faktorkan', `${k === 1 ? '' : k}(${lin(1, -a)})(${lin(1, -b)})`], ['Coret', `${k === 1 ? '' : k + '('}${lin(1, -b)}${k === 1 ? '' : ')'}`], ['Substitusi', `${k === 1 ? '' : k + ' × '}(${N(a)} − ${P(b)}) = <b>${N(k * (a - b))}</b>`]]); } },
+          ['Faktorkan pembilang', `${LIM('x', N(a))} ${FR(`${k === 1 ? '' : k}(${lin(1, -a)})(${lin(1, -b)})`, `(${lin(1, -a)})`)}`],
+          [`Coret (${lin(1, -a)}) di atas dan di bawah`, `${FR(`${k === 1 ? '' : k}${CX(`(${lin(1, -a)})`)}(${lin(1, -b)})`, CX(`(${lin(1, -a)})`))} = ${k === 1 ? '' : k}(${lin(1, -b)})<br><small>Boleh dicoret karena x mendekati ${N(a)} tetapi tidak sama dengan ${N(a)}, jadi (${lin(1, -a)}) ≠ 0.</small>`],
+          [`Substitusi x = ${N(a)}`, `${k === 1 ? '' : k + ' × '}(${N(a)} − ${P(b)}) = <b>${N(k * (a - b))}</b>`]]); } },
         { id: 'KA3', name: 'Limit trigonometri', gen() { const a = nz(1, 9), b = nz(1, 9); return num(`${LIM('x', 0)} ${FR(`sin ${a}x`, `${b}x`)} = ? (pecahan paling sederhana jika perlu)`, F(a, b), 'lim(x → 0) sin(ax)/(bx) = a/b, karena lim sin u / u = 1.', [
           ['Tulis ulang', `(${a}/${b}) × sin(${a}x)/(${a}x)`], ['Gunakan lim sin u/u = 1', `${a}/${b} × 1 = <b>${F(a, b)}</b>`]]); } },
         { id: 'KA4', name: 'Limit di tak hingga', gen() { const deg = pick(['sama', 'atas', 'bawah']), p = nz(-6, 6), q = nz(1, 6); const ans = deg === 'sama' ? F(p, q) : deg === 'bawah' ? '0' : null; if (deg === 'atas') return pil(`${LIM('x', '∞')} ${FR(poly([p, 0, 0, 1]), poly([q, 0, 1]))} = ?`, ['∞', '−∞', '0', F(p, q)], p > 0 ? '∞' : '−∞', 'Jika derajat pembilang lebih besar, limitnya tak hingga (tandanya mengikuti koefisien utama).', [
