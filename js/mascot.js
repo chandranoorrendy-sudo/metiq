@@ -1,8 +1,11 @@
-/* Metiq — Meti, maskot gurita turquoise.
+/* Metiq — Meti, maskot gurita turquoise, dan teman-temannya.
  * Delapan lengan = alat hitung bawaan. Satu fungsi menggambar semua pose sebagai SVG,
  * jadi mengganti maskot cukup mengubah file ini.
  *   METIQ_MASCOT.svg('hello', { size: 160, float: true })
+ *   METIQ_MASCOT.svg('cheer', { size: 120, who: 'tito' })   // teman Meti, didaftarkan di js/mascot-friends.js
+ *   METIQ_MASCOT.face(44, 'happy', 'lumo')
  * Pose: normal, hello, ask, cheer, happy, think, sad, oops
+ * Fungsi bersama (mata, mulut, bintang, tentakel, pose) dibuka lewat METIQ_MASCOT.KIT agar semua karakter satu gaya.
  */
 (function () {
   const BODY = '#35e0bd', LIGHT = '#8cf5e0', SHADE = '#1db796', INK = '#04382e', CHEEK = '#ff9eb5';
@@ -38,6 +41,22 @@
     return `<path d="M86 109Q100 125 114 109" fill="none" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>`;
   }
 
+  // Wajah dan efek pose yang sama untuk semua karakter: pipi, mata, alis sedih, mulut, air mata, keringat, tanda tanya, konfeti.
+  // shade = warna bingkai tanda tanya (warna bayangan karakter)
+  function features(pose, shade) {
+    const p = POSES[pose] || POSES.normal;
+    const look = p.look || [0, 0];
+    return `
+      <ellipse cx="54" cy="108" rx="10" ry="6.5" fill="${CHEEK}" opacity=".7"/><ellipse cx="146" cy="108" rx="10" ry="6.5" fill="${CHEEK}" opacity=".7"/>
+      ${eye(74, 84, p.eyes, look)}${eye(126, 84, p.eyes, look)}
+      ${p.eyes === 'sad' ? `<path d="M52 72L88 62M148 72L112 62" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>` : ''}
+      ${mouth(p.mouth)}
+      ${p.tear ? '<path d="M64 108C58 118 60 126 66 126C72 126 74 118 64 108Z" fill="#7fd3ff"/>' : ''}
+      ${p.sweat ? '<path d="M158 40C152 50 154 58 160 58C166 58 168 50 158 40Z" fill="#7fd3ff"/>' : ''}
+      ${p.mark ? `<circle cx="172" cy="30" r="15" fill="#fff" stroke="${shade}" stroke-width="4"/><text x="172" y="38" text-anchor="middle" font-size="22" font-weight="900" fill="${INK}" font-family="Nunito,sans-serif">?</text>` : ''}
+      ${p.confetti ? `${star(24, 34, 9, '#ffc800')}${star(178, 28, 8, '#ff7aa8')}${star(14, 98, 6, '#6ecbff')}${star(188, 96, 7, '#ffc800')}<circle cx="46" cy="14" r="4" fill="#ff7aa8"/><circle cx="154" cy="12" r="4" fill="#6ecbff"/>` : ''}`;
+  }
+
   // Delapan lengan: empat di belakang (lebih gelap), empat di depan. Lengan luar berubah menurut pose.
   function arms(kind) {
     const back = [
@@ -69,35 +88,38 @@
   }
 
   function head(pose) {
-    const p = POSES[pose] || POSES.normal;
-    const look = p.look || [0, 0];
     return `
       <path class="mq-tuft" d="M100 26C94 8 114 2 112 16" fill="none" stroke="${SHADE}" stroke-width="7" stroke-linecap="round"/>
       <path d="M34 120C24 62 62 22 100 22S176 62 166 120C162 138 38 138 34 120Z" fill="${BODY}"/>
       <path d="M52 52C62 36 80 30 92 30" fill="none" stroke="${LIGHT}" stroke-width="9" stroke-linecap="round"/>
       <circle cx="140" cy="46" r="5" fill="${LIGHT}"/><circle cx="152" cy="62" r="3.2" fill="${LIGHT}"/><circle cx="48" cy="72" r="3.6" fill="${LIGHT}"/>
-      <ellipse cx="100" cy="92" rx="66" ry="40" fill="${LIGHT}" opacity=".5"/>
-      <ellipse cx="54" cy="108" rx="10" ry="6.5" fill="${CHEEK}" opacity=".7"/><ellipse cx="146" cy="108" rx="10" ry="6.5" fill="${CHEEK}" opacity=".7"/>
-      ${eye(74, 84, p.eyes, look)}${eye(126, 84, p.eyes, look)}
-      ${p.eyes === 'sad' ? `<path d="M52 72L88 62M148 72L112 62" stroke="${INK}" stroke-width="5" stroke-linecap="round"/>` : ''}
-      ${mouth(p.mouth)}
-      ${p.tear ? '<path d="M64 108C58 118 60 126 66 126C72 126 74 118 64 108Z" fill="#7fd3ff"/>' : ''}
-      ${p.sweat ? '<path d="M158 40C152 50 154 58 160 58C166 58 168 50 158 40Z" fill="#7fd3ff"/>' : ''}
-      ${p.mark ? `<circle cx="172" cy="30" r="15" fill="#fff" stroke="${SHADE}" stroke-width="4"/><text x="172" y="38" text-anchor="middle" font-size="22" font-weight="900" fill="${INK}" font-family="Nunito,sans-serif">?</text>` : ''}
-      ${p.confetti ? `${star(24, 34, 9, '#ffc800')}${star(178, 28, 8, '#ff7aa8')}${star(14, 98, 6, '#6ecbff')}${star(188, 96, 7, '#ffc800')}<circle cx="46" cy="14" r="4" fill="#ff7aa8"/><circle cx="154" cy="12" r="4" fill="#6ecbff"/>` : ''}`;
+      <ellipse cx="100" cy="92" rx="66" ry="40" fill="${LIGHT}" opacity=".5"/>${features(pose, SHADE)}`;
   }
 
-  // Gelembung kecil yang naik saat Meti muncul (animasi di css/duo.css)
+  // Gelembung kecil yang naik saat Meti muncul (animasi di css/duo.css); teman darat memakai kilau bintang
   const BUBBLES = '<g class="mq-bubbles"><circle class="b1" cx="30" cy="150" r="6"/><circle class="b2" cx="172" cy="140" r="5"/><circle class="b3" cx="96" cy="176" r="4"/><circle class="b4" cx="150" cy="172" r="3"/></g>';
+  const SPARKLES = `<g class="mq-sparkles">${star(26, 150, 7, '#ffc800')}${star(176, 138, 6, '#ff7aa8')}${star(100, 184, 5, '#6ecbff')}${star(156, 176, 4, '#ffc800')}</g>`;
+
+  // Karakter: Meti bawaan; teman lain didaftarkan lewat METIQ_MASCOT.register({ id, name, label, colors, body(pose), limbs(kind), face(pose), effects })
+  const META = { id: 'meti', name: 'Meti', label: 'Meti si gurita', faceBox: '14 8 172 140' };
+  const FRIENDS = {};
+  const pick = (who) => (who && FRIENDS[who]) || null;
+
   // enter: false = tanpa animasi muncul (dipakai saat maskot diganti pose di tengah soal)
   function svg(pose = 'normal', o = {}) {
-    const p = POSES[pose] || POSES.normal, size = o.size || 140, enter = o.enter !== false;
-    return `<svg class="mq-mascot mq-p-${pose}${enter ? ' mq-enter' : ''}${o.float ? ' mq-float' : ''}${o.cls ? ' ' + o.cls : ''}" viewBox="0 0 200 200" width="${size}" height="${size}" role="img" aria-label="Meti si gurita">${enter ? BUBBLES : ''}${arms(p.arms)}${head(pose)}</svg>`;
+    const p = POSES[pose] || POSES.normal, size = o.size || 140, enter = o.enter !== false, f = pick(o.who);
+    const cls = `mq-mascot mq-p-${pose}${f ? ' mq-who-' + f.id : ''}${enter ? ' mq-enter' : ''}${o.float ? ' mq-float' : ''}${o.cls ? ' ' + o.cls : ''}`;
+    if (f) return `<svg class="${cls}" viewBox="0 0 200 200" width="${size}" height="${size}" role="img" aria-label="${f.label}">${enter ? (f.effects === 'bubbles' ? BUBBLES : SPARKLES) : ''}${f.limbs(p.arms, 'back')}${f.body(pose)}${f.limbs(p.arms, 'front')}</svg>`;
+    return `<svg class="${cls}" viewBox="0 0 200 200" width="${size}" height="${size}" role="img" aria-label="Meti si gurita">${enter ? BUBBLES : ''}${arms(p.arms)}${head(pose)}</svg>`;
   }
   // Hanya kepala (untuk ikon kecil dan avatar)
-  function face(size = 48, pose = 'normal') {
+  function face(size = 48, pose = 'normal', who) {
+    const f = pick(who);
+    if (f) { const [, , w, h] = f.faceBox.split(' ').map(Number); return `<svg class="mq-mascot mq-face mq-who-${f.id}" viewBox="${f.faceBox}" width="${size}" height="${Math.round(size * h / w)}" role="img" aria-label="${f.name}">${f.face(pose)}</svg>`; }
     return `<svg class="mq-mascot mq-face" viewBox="14 8 172 140" width="${size}" height="${Math.round(size * 140 / 172)}" role="img" aria-label="Meti">${head(pose)}</svg>`;
   }
+  function register(def) { FRIENDS[def.id] = def; if (!window.METIQ_MASCOT.friends.includes(def.id)) window.METIQ_MASCOT.friends.push(def.id); }
 
-  window.METIQ_MASCOT = { name: 'Meti', svg, face, poses: Object.keys(POSES) };
+  const KIT = { INK, CHEEK, POSES, tent, star, eye, mouth, features, BUBBLES, SPARKLES };
+  window.METIQ_MASCOT = { name: 'Meti', svg, face, poses: Object.keys(POSES), friends: [], register, who: (id) => (id ? FRIENDS[id] || null : META), KIT };
 })();

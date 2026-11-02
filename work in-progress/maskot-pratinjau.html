@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pratinjau Maskot Metiq</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../css/duo.css">
+<style>
+  :root { --ink: #16302b; --muted: #5c7570; --line: #dcefe9; --bg: #f1fbf8; --card: #fff; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ink: #e8f5f1; --muted: #9fb8b2; --line: #2a3e3a; --bg: #10201d; --card: #172a26; } }
+  :root[data-theme="dark"] { --ink: #e8f5f1; --muted: #9fb8b2; --line: #2a3e3a; --bg: #10201d; --card: #172a26; }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 20px 16px 40px; font-family: 'Nunito', system-ui, sans-serif; background: var(--bg); color: var(--ink); }
+  h1 { margin: 0 0 4px; font-size: 1.6rem; } h2 { margin: 26px 0 8px; font-size: 1.15rem; }
+  p.lead { margin: 0 0 12px; color: var(--muted); font-weight: 700; }
+  .bar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .bar button { border: 2px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 6px 14px; font: inherit; font-weight: 800; cursor: pointer; }
+  .bar button.on { background: #35e0bd; border-color: #35e0bd; color: #04382e; }
+  .row { display: grid; grid-template-columns: 110px repeat(8, minmax(84px, 1fr)); gap: 6px; align-items: center; margin-bottom: 6px; }
+  .row .who { font-weight: 900; } .row .who small { display: block; color: var(--muted); font-weight: 700; font-size: .75rem; }
+  .cell { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 6px 4px 4px; text-align: center; }
+  .cell small { display: block; color: var(--muted); font-size: .72rem; font-weight: 800; }
+  .cell .mq-mascot { margin: 0 auto; }
+  .head { font-size: .75rem; color: var(--muted); font-weight: 800; text-align: center; }
+  .panels { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .panel { border-radius: 18px; padding: 12px; }
+  .panel.light { background: #f1fbf8; color: #16302b; } .panel.dark { background: #10201d; color: #e8f5f1; }
+  .panel .line { display: flex; align-items: flex-end; gap: 10px; flex-wrap: wrap; margin: 6px 0; }
+  .sizes { display: flex; align-items: flex-end; gap: 14px; flex-wrap: wrap; }
+  .phone { width: 360px; max-width: 100%; border: 3px solid var(--line); border-radius: 26px; padding: 14px; background: var(--card); }
+  .say { display: flex; align-items: center; gap: 10px; margin: 8px 0; } .say b { background: var(--bg); border-radius: 14px; padding: 8px 12px; font-size: .9rem; }
+  .scroll { overflow-x: auto; }
+  @media (max-width: 760px) { .panels { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<h1>Meti dan teman-teman</h1>
+<p class="lead">Pratinjau sebelum dipasang: 8 pose, wajah kecil (40–48 px), ukuran 76/110/170 px, dan lebar layar 360 px.</p>
+<div class="bar"><button data-t="" class="on">Ikuti sistem</button><button data-t="light">Terang</button><button data-t="dark">Gelap</button><button id="replay">▶ Putar ulang animasi</button></div>
+
+<h2>Delapan pose</h2>
+<div class="scroll"><div id="poses"></div></div>
+
+<h2>Latar terang dan gelap</h2>
+<div class="panels"><div class="panel light" id="light"></div><div class="panel dark" id="dark"></div></div>
+
+<h2>Wajah kecil (face) 40 dan 48 px</h2>
+<div class="sizes" id="faces"></div>
+
+<h2>Ukuran 76, 110, dan 170 px</h2>
+<div class="sizes" id="sizes"></div>
+
+<h2>Di layar 360 px</h2>
+<div class="phone" id="phone"></div>
+
+<script src="../js/mascot.js"></script>
+<script src="../js/mascot-friends.js"></script>
+<script>
+  const M = window.METIQ_MASCOT;
+  const WHO = [['', 'Meti', 'gurita · latihan soal'], ['tito', 'Tito', 'semut · berhitung, ukur, uang'], ['nahla', 'Nahla', 'lebah · geometri, pola, pecahan'], ['lumo', 'Lumo', 'lumba-lumba · waktu, koordinat, data']];
+  const opt = (w, o) => (w ? Object.assign({ who: w }, o) : o);
+  function render() {
+    document.getElementById('poses').innerHTML = `<div class="row"><span></span>${M.poses.map((p) => `<div class="head">${p}</div>`).join('')}</div>`
+      + WHO.map(([w, n, d]) => `<div class="row"><div class="who">${n}<small>${d}</small></div>${M.poses.map((p) => `<div class="cell">${M.svg(p, opt(w, { size: 84 }))}</div>`).join('')}</div>`).join('');
+    ['light', 'dark'].forEach((id) => { document.getElementById(id).innerHTML = WHO.map(([w]) => `<div class="line">${['hello', 'cheer', 'think', 'sad'].map((p) => M.svg(p, opt(w, { size: 76 }))).join('')}</div>`).join(''); });
+    document.getElementById('faces').innerHTML = WHO.map(([w, n]) => `<div class="cell"><small>${n}</small>${[40, 48].map((s) => M.face(s, 'happy', w || undefined)).join(' ')} ${M.face(44, 'think', w || undefined)} ${M.face(44, 'sad', w || undefined)}</div>`).join('');
+    document.getElementById('sizes').innerHTML = WHO.slice(1).map(([w, n]) => `<div class="cell"><small>${n}</small>${[76, 110, 170].map((s) => M.svg('hello', { who: w, size: s, float: true })).join('')}</div>`).join('');
+    document.getElementById('phone').innerHTML = `<div style="text-align:center">${M.svg('hello', { who: 'tito', size: 170, float: true })}</div>`
+      + `<div class="say">${M.svg('ask', { who: 'nahla', size: 76 })}<b>Berapa sisi segi enam?</b></div>`
+      + `<div class="say">${M.svg('cheer', { who: 'lumo', size: 76 })}<b>Hebat! Jam 3 tepat!</b></div>`
+      + `<div class="say">${M.svg('oops', { who: 'tito', size: 76 })}<b>Hitung lagi koinnya, ya.</b></div>`;
+  }
+  render();
+  document.querySelectorAll('[data-t]').forEach((b) => b.addEventListener('click', () => { document.documentElement.dataset.theme = b.dataset.t; if (!b.dataset.t) delete document.documentElement.dataset.theme; document.querySelectorAll('[data-t]').forEach((x) => x.classList.toggle('on', x === b)); }));
+  document.getElementById('replay').addEventListener('click', render);
+</script>
+</body>
+</html>

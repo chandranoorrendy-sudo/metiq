@@ -1,6 +1,6 @@
 /* Metiq — avatar siswa dan guru.
  * Avatar disimpan sebagai teks: emoji biasa, atau "svg:<nama>" untuk ilustrasi buatan sendiri
- * (Ustadz, Ustadzah, anak berhijab, anak berpeci) agar tampil sama di semua HP.
+ * (Ustadz, Ustadzah, anak berhijab, anak berpeci, dan wajah maskot Meti, Tito, Nahla, Lumo) agar tampil sama di semua HP.
  */
 (function () {
   const face = (cx, cy, rx, ry, skin) => `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" fill="${skin}"/>`;
@@ -23,17 +23,22 @@
   const CATALOG = [
     ['Anak', ['svg:girl-hijab', 'svg:boy-peci', '👧', '👦', '🧒', '👩‍🎓', '👨‍🎓', '🧕']],
     ['Guru', ['svg:ustadzah', 'svg:ustadz', '👩‍🏫', '👨‍🏫']],
-    ['Hewan', ['🦁', '🐯', '🐼', '🐨', '🐸', '🐵', '🦊', '🐰', '🐻', '🐧', '🦄', '🐙', '🐳', '🦋', '🐞', '🐢', '🐱', '🐶', '🐮', '🐔', '🦉', '🐠']],
+    ['Hewan', ['svg:meti', 'svg:tito', 'svg:nahla', 'svg:lumo', '🦁', '🐯', '🐼', '🐨', '🐸', '🐵', '🦊', '🐰', '🐻', '🐧', '🦄', '🐙', '🐳', '🦋', '🐞', '🐢', '🐱', '🐶', '🐮', '🐔', '🦉', '🐠']],
     ['Tumbuhan', ['🌻', '🌵', '🌳', '🌴', '🍀', '🌷', '🌸', '🍁', '🌿', '🍄', '🌹', '🌾']],
     ['Bentuk', ['🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⭐', '🔷', '🔶', '💠', '❤️', '🟥']],
     ['Ikon', ['⚽', '🏀', '🚀', '🎨', '🎵', '📚', '✏️', '🌙', '☀️', '🌈', '🚲', '🎈', '🧩', '🏆']],
   ];
-  const NAMES = { 'svg:girl-hijab': 'Anak berhijab', 'svg:boy-peci': 'Anak berpeci', 'svg:ustadzah': 'Ustadzah', 'svg:ustadz': 'Ustadz' };
+  const NAMES = { 'svg:girl-hijab': 'Anak berhijab', 'svg:boy-peci': 'Anak berpeci', 'svg:ustadzah': 'Ustadzah', 'svg:ustadz': 'Ustadz', 'svg:meti': 'Meti si gurita', 'svg:tito': 'Tito si semut', 'svg:nahla': 'Nahla si lebah', 'svg:lumo': 'Lumo si lumba-lumba' };
+  // Wajah maskot Metiq sebagai avatar (digambar oleh js/mascot.js saat ditampilkan)
+  const MASCOT_BG = { meti: '#e6fffa', tito: '#ffe8e9', nahla: '#fff4d6', lumo: '#e3ebff' };
+  const mascotAvatar = (k) => { const M = window.METIQ_MASCOT; if (!M || !(k in MASCOT_BG)) return null; const f = M.face(62, 'happy', k === 'meti' ? undefined : k).replace('<svg ', '<svg x="1" y="7" ').replace(/ role="img" aria-label="[^"]*"/, ' aria-hidden="true"'); return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="${MASCOT_BG[k]}"/>${f}</svg>`; };
 
   // HTML avatar: ilustrasi SVG atau emoji
   function html(a) {
     const k = String(a || '').startsWith('svg:') ? String(a).slice(4) : null;
     if (k && SVG[k]) return `<span class="avsvg" role="img" aria-label="${NAMES['svg:' + k] || 'avatar'}">${SVG[k]}</span>`;
+    const mv = k && mascotAvatar(k);
+    if (mv) return `<span class="avsvg" role="img" aria-label="${NAMES['svg:' + k]}">${mv}</span>`;
     return String(a || '🙂').replace(/[<>&"]/g, '');
   }
 

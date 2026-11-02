@@ -644,3 +644,21 @@ body.mq-body .toast { white-space: nowrap; top: calc(66px + env(safe-area-inset-
 .mc-seg { min-width: 6px; padding: 0; border: 0; cursor: pointer; }
 .mc-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: .82rem; font-weight: 800; color: #4d625d; }
 .mc-legend span { display: inline-flex; align-items: center; gap: 6px; } .mc-legend i { width: 12px; height: 12px; border-radius: 3px; } .mc-legend b { color: var(--mq-ink); }
+
+/* ---------- Teman Meti: Tito, Nahla, Lumo (js/mascot-friends.js) ---------- */
+.mq-sparkles path { transform-box: fill-box; transform-origin: center; opacity: 0; animation: mq-twinkle 1.4s ease-out .5s both; }
+.mq-sparkles path:nth-child(2) { animation-delay: .7s; } .mq-sparkles path:nth-child(3) { animation-delay: .9s; } .mq-sparkles path:nth-child(4) { animation-delay: 1.1s; }
+@keyframes mq-twinkle { 0% { opacity: 0; transform: scale(.2) rotate(-40deg); } 35% { opacity: 1; transform: scale(1.15); } 100% { opacity: 0; transform: translateY(-40px) scale(.6) rotate(40deg); } }
+.mq-who-nahla .mq-wings { transform-origin: 100px 60px; animation: mq-flutter .35s ease-in-out infinite alternate; }
+@keyframes mq-flutter { to { transform: scaleY(.82); } }
+.mq-who-lumo .mq-sonar { animation: mq-sonar 1.8s ease-in-out infinite; }
+@keyframes mq-sonar { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+.mq-who-tito .mq-tuft, .mq-who-nahla .mq-tuft { transform-origin: 100px 44px; }
+.mq-who-lumo .mq-tuft { transform-origin: 104px 34px; animation-duration: 3.2s; }
+.mq-who-tito .mq-wave { transform-origin: 122px 136px; } .mq-who-tito .mq-cheerL { transform-origin: 78px 136px; } .mq-who-tito .mq-cheerR { transform-origin: 122px 136px; }
+.mq-who-nahla .mq-wave, .mq-who-nahla .mq-cheerR { transform-origin: 166px 120px; } .mq-who-nahla .mq-cheerL { transform-origin: 34px 118px; }
+.mq-who-lumo .mq-wave, .mq-who-lumo .mq-cheerR { transform-origin: 160px 122px; } .mq-who-lumo .mq-cheerL { transform-origin: 40px 120px; }
+.mq-enter.mq-who-tito .mq-arms, .mq-enter.mq-who-nahla .mq-arms, .mq-enter.mq-who-lumo .mq-arms { animation: none; }
+.lbuddy { margin: 0 0 12px; } .lbuddy .mq-mascot { flex: none; }
+.mq-gsay.gbuddy { justify-content: center; margin: 0 0 6px; } .mq-gsay.gbuddy .mq-mascot { flex: none; }
+.avsvg .mq-face .mq-eye { animation: none; }

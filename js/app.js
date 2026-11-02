@@ -41,6 +41,17 @@
   // Pengaturan kelas (lapisan iman opsional). Kosong = perilaku standar.
   const IMAN = window.METIQ_IMAN || {};
   const MQ = window.METIQ_MASCOT;
+  // Teman Meti untuk bab sesuai topiknya: Lumo (waktu, koordinat, data), Nahla (geometri, pola, pecahan), Tito (berhitung, ukur, uang)
+  function unitBuddy(u) {
+    if (!u) return null;
+    if (u.buddy !== undefined) return u.buddy;
+    const t = `${u.name} ${u.km || ''}`;
+    if (/waktu|jam|kalender|koordinat|data|diagram|grafik|statistik|peluang/i.test(t)) return 'lumo';
+    if (/geometri|bangun|bentuk|pola|pecahan|sudut|simetri/i.test(t)) return 'nahla';
+    if (/uang|ukur|panjang|berat|volume|luas|keliling|bilangan|hitung|bilang/i.test(t)) return 'tito';
+    return null;
+  }
+  const buddyName = (who) => (MQ.who(who) || MQ.who()).name;
   function curClass() {
     const ses = session.get();
     if (ses.role === 'siswa' || ses.role === 'ortu') { const k = S.student(ses.id); return k ? S.cls(k.classId) : null; }
@@ -181,7 +192,7 @@
         <div style="--bg:#fff3c4"><span class="em">🎬</span>Pelajaran beranimasi</div>
         <div style="--bg:#ffe3ec"><span class="em">🎁</span>Kumpulkan hadiah</div>
       </section>
-      <p class="mq-gb-t">Untuk SD, SMP, dan SMA: kelas 1 sampai Kalkulus</p>
+      <p class="mq-gb-t">Untuk TK, SD, SMP, dan SMA: TK A sampai Kalkulus</p>
       <div class="mq-gb">${GRADES.map((g) => `<span title="${g.name}">${g.short || g.id}</span>`).join('')}</div>
       <footer class="mq-lfoot"><a href="#/permainan">Permainan</a><a href="#/panduan/siswa">Bantuan</a><a href="#/ajukan">Ajukan akun</a><a href="#/ajukan/status">Cek status</a></footer>
     </div>`;
@@ -190,7 +201,7 @@
   function viewCurriculum() {
     app.innerHTML = shell(`
       <a class="back" href="#/">← Kembali</a>
-      <h1>Kurikulum Matematika SD, SMP, dan SMA</h1>
+      <h1>Kurikulum Matematika TK sampai SMA</h1>
       <p class="muted">Setiap bab mencantumkan rujukan IXL, Singapore Math, dan Kurikulum Merdeka yang setara.</p>
       <details class="card cdesign-wrap"><summary><b>🧭 Bagaimana kurikulum ini disusun, dan mengapa?</b></summary>${curriculumDesignHTML(false)}</details>
       ${gradeTabs()}
@@ -514,6 +525,8 @@
   // Papan hadiah: 36 kotak per kelas; tiap kotak punya tantangan, dan hadiahnya terbuka saat tantangan tercapai.
   // Dihitung dari SmartScore yang tersimpan permanen (jumlah soal, waktu, keterampilan mahir/tuntas).
   const PRIZES = {
+    '-2': '🧸🪀🪁🎈🎀🎁🧩🪆🎨🛶🪇🥁🎺🪗🛝🛼🚂🚁⛵🚲🐣🐥🐞🦋🐝🐌🐢🐠🐳🦄🌈⭐🌙🌞🍭🍬',
+    '-1': '🍓🍒🍑🍍🥝🍉🍇🍊🍋🍐🥥🥕🌽🥦🍄🌰🥜🍯🧁🍪🍩🍦🍧🍰🥞🧇🥨🍿🥛🧃🍫🍮🎂🍡🍥🥮',
     1: '🐶🐱🐭🐹🐰🦊🐻🐼🐨🐯🦁🐮🐷🐸🐵🐔🐧🐦🐤🦆🦉🐴🦄🐝🐛🦋🐌🐞🐢🐍🦖🐙🦀🐠🐬🐳',
     2: '🍎🍐🍊🍋🍌🍉🍇🍓🍈🍒🍑🥭🍍🥥🥝🍅🥑🥦🥕🌽🥔🍠🥐🍞🧀🥚🍳🥞🍕🍔🍟🌭🍿🍩🍪🎂',
     3: '🚗🚕🚙🚌🚎🚓🚑🚒🚐🚚🚛🚜🛵🚲🛴🚂🚆🚇🚊🚝🚄🚁🛸🚀⛵🚤🚠🚡🛺🚃🌍🌙⭐🪐🌟🚘',
@@ -2338,7 +2351,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     app.innerHTML = `<div class="mq-top"><a class="mq-ico" href="#/permainan" aria-label="Keluar">${IC.x}</a><span class="mq-gtitle">${x.name}</span>
         <button class="mq-ico psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button></div>
       <main class="mq-screen mq-gplay" id="garea" style="--c:${c};--bg:${bg}">
-        <div class="mq-gintro"><div class="mq-gart">${G.art(x.type, 210)}</div>
+        <div class="mq-gintro">${G.buddy(x) ? `<div class="mq-gsay gbuddy">${MQ.svg('hello', { size: 84, who: G.buddy(x) })}<div class="mq-bubble"><p>Main bersama <b>${buddyName(G.buddy(x))}</b>, yuk!</p></div></div>` : ''}<div class="mq-gart">${G.art(x.type, 210)}</div>
           <div class="mq-ghow">${G.HOW[x.type](x).map(([e, t]) => `<div><span class="e">${e}</span>${t}</div>`).join('')}</div>
           ${G.EX[x.type] ? `<div class="mq-gex"><small>Contoh</small>${G.EX[x.type](x)}</div>` : ''}
           <div class="mq-goal">${x.stars.map((p, i) => `<div><span>${gStar(true).repeat(i + 1)}</span><b>${p}</b></div>`).join('')}</div>
@@ -2363,7 +2376,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         if (STARS_SRV && cloudOn()) Cloud.queueClaim(kid.id, session.get().code, { id: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), kind: 'game', game: x.id, points, stars, d: S.todayKey() });
       }
       if (stars >= 3) window.SFX.mastered(); else if (stars) window.SFX.levelUp();
-      area.innerHTML = `<div class="mq-gend">${MQ.svg(stars ? 'cheer' : 'think', { size: 150 })}
+      area.innerHTML = `<div class="mq-gend">${MQ.svg(stars ? 'cheer' : 'think', { size: 150, who: G.buddy(x) || undefined })}
         <div class="mq-gstars">${[0, 1, 2].map((i) => gStar(i < stars)).join('')}</div>
         <h2>${stars >= 3 ? 'Luar biasa!' : stars === 2 ? 'Hebat!' : stars ? 'Bagus!' : 'Ayo coba lagi!'}</h2>
         <div class="mq-gpts"><b>${points}</b><small>poin</small>${kid && points > prevBest && before && before.att ? '<span class="rec">🎉 Rekor baru!</span>' : ''}</div>
@@ -2775,6 +2788,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     return `
       ${inPractice ? '' : '<button class="back link" data-act="back">← Kembali</button>'}
       <section class="card lhead" style="--c:${u.color}"><span class="uicon">${u.icon}</span><div class="grow"><small class="muted">Pelajaran · ${gname(u.grade)} · Bab ${u.id}</small><h1>${u.name}</h1><p>${les.intro}</p></div><button class="say" data-act="lsay" data-u="${uid}" data-i="-1" aria-label="Bacakan">🔊</button></section>
+      ${(() => { const b = unitBuddy(u); return b ? `<div class="mq-say lbuddy">${MQ.svg('hello', { size: 76, who: b, enter: !inPractice })}<div class="mq-bubble"><p>Ayo belajar bersama <b>${buddyName(b)}</b>!</p></div></div>` : ''; })()}
       ${hikmahHTML(uid)}
       ${window.METIQ_ANIM.has(uid) ? `<section class="card anim-card"><h2>🎬 Animasi: ${u.name}</h2><div id="anim-box"></div></section>` : ''}
       ${les.parts.length > 1 ? `<div class="ltoc">${les.parts.map((p, i) => `<button data-act="lgo" data-i="${i}">${i + 1}. ${p.t}</button>`).join('')}</div>` : ''}

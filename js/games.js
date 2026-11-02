@@ -247,6 +247,20 @@
     { id: '13c', grade: 13, type: 'pasangan', icon: '🃏', name: 'Pasangan Integral', desc: 'Cocokkan integral dengan hasilnya.',
       pairs() { return shuffle([['∫ 2x dx', 'x² + C'], ['∫ 3x² dx', 'x³ + C'], ['∫ cos x dx', 'sin x + C'], ['∫ sin x dx', '−cos x + C'], ['∫ eˣ dx', 'eˣ + C'], ['∫ 1/x dx', 'ln|x| + C'], ['∫ 4x³ dx', 'x⁴ + C'], ['∫ 5 dx', '5x + C']]).slice(0, 6); } },
   );
+  /* ---------- TK A dan TK B ---------- */
+  const DOT = (n) => `<span class="gdots">${'●'.repeat(n)}</span>`;
+  GAMES.push(
+    { id: 'tka', grade: -2, type: 'pasangan', icon: '🃏', name: 'Pasangan Titik Kecil', desc: 'Cocokkan kumpulan titik dengan angkanya (1 sampai 6).',
+      pairs() { return shuffle([1, 2, 3, 4, 5, 6]).map((n) => [DOT(n), String(n)]); } },
+    { id: 'tkb', grade: -2, type: 'balon', icon: '🎈', name: 'Balon Bentuk', desc: 'Pecahkan balon yang bentuknya sesuai perintah.', stars: [6, 11, 16],
+      rule() { const S = { LINGKARAN: ['⚪', '🔵', '🟢', '🔴', '🟡'], PERSEGI: ['⬜', '🟦', '🟩', '🟥', '🟨'], SEGITIGA: ['🔺', '🔻'] }; const want = pick(Object.keys(S)); return { label: `Pecahkan <b>${want}</b>`, make(ok) { return pick(ok ? S[want] : Object.keys(S).filter((k) => k !== want).flatMap((k) => S[k])); } }; } },
+    { id: 'tkc', grade: -1, type: 'kilat', icon: '⚡', name: 'Kilat Tambah Kurang 10', desc: 'Penjumlahan dan pengurangan sampai 10.', stars: [7, 13, 19],
+      next() { if (Math.random() < 0.5) { const a = R(0, 9), b = R(1, 10 - a); return q(`${a} + ${b}`, a + b, () => a + b + pick([-2, -1, 1, 2])); } const a = R(2, 10), b = R(1, a); return q(`${a} − ${b}`, a - b, () => Math.abs(a - b + pick([-2, -1, 1, 2]))); } },
+    { id: 'tkd', grade: -1, type: 'pasangan', icon: '🃏', name: 'Pasangan Belasan', desc: 'Cocokkan 10 + satuan dengan bilangan belasan.',
+      pairs() { return shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 6).map((n) => [`10 + ${n}`, String(10 + n)]); } },
+    { id: 'tke', grade: -1, type: 'balon', icon: '🎈', name: 'Balon Lebih Besar', desc: 'Pecahkan bilangan yang lebih besar (atau lebih kecil) dari sasaran.', stars: [7, 13, 19],
+      rule() { const t = R(5, 15), big = Math.random() < 0.5; return { label: `Pecahkan bilangan yang lebih <b>${big ? 'BESAR' : 'KECIL'}</b> dari <b>${t}</b>`, make(ok) { let v; do v = R(0, 20); while (v === t || ((v > t) === big) !== ok); return String(v); } }; } },
+  );
   GAMES.forEach((g) => { if (g.type === 'pasangan') g.stars = [10, 14, 17]; });
   const TYPES = { kilat: 'Cepat tepat · 60 detik', balon: 'Pecahkan balon · 60 detik', pasangan: 'Kartu memori', susun: 'Balok jatuh · jumlah sasaran', kembar: 'Balok jatuh · gabung kembar', garis: 'Geser di garis · 10 soal', juring: 'Ketuk bagian · 10 soal', jam: 'Putar jarum · 10 soal', uang: 'Bayar pas · 10 soal' };
   // Cara main dalam gambar: ikon + dua-tiga kata
@@ -703,5 +717,8 @@
     return () => { alive = false; timers.forEach(clearTimeout); clearInterval(tick); };
   }
 
-  window.METIQ_GAMES = { GAMES, TYPES, HOW, EX, LOOK, art, starsFor, start, byId: (id) => GAMES.find((g) => g.id === id) };
+  // Teman Meti yang menemani setiap jenis permainan (bisa diganti per permainan dengan properti buddy)
+  const BUDDY = { kilat: 'tito', garis: 'tito', susun: 'tito', kembar: 'tito', uang: 'tito', ukur: 'tito', nilai: 'tito', juring: 'nahla', bangun: 'nahla', pola: 'nahla', pasangan: 'nahla', jam: 'lumo', peta: 'lumo', grafik: 'lumo', balon: 'lumo' };
+  const buddy = (x) => (x && (x.buddy || BUDDY[x.type])) || null;
+  window.METIQ_GAMES = { GAMES, TYPES, HOW, EX, LOOK, BUDDY, buddy, art, starsFor, start, byId: (id) => GAMES.find((g) => g.id === id) };
 })();
