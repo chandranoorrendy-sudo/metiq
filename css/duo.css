@@ -662,3 +662,10 @@ body.mq-body .toast { white-space: nowrap; top: calc(66px + env(safe-area-inset-
 .lbuddy { margin: 0 0 12px; } .lbuddy .mq-mascot { flex: none; }
 .mq-gsay.gbuddy { justify-content: center; margin: 0 0 6px; } .mq-gsay.gbuddy .mq-mascot { flex: none; }
 .avsvg .mq-face .mq-eye { animation: none; }
+
+/* Cerita TK beraudio: tombol dengar selalu tampil karena memakai rekaman, bukan suara perangkat */
+html .mq-bubble .mq-spk.aud { display: inline-flex !important; background: #ff9f43; color: #fff; }
+.tkpair { display: grid; gap: 10px; justify-items: center; font-size: 2rem; line-height: 1.3; text-align: center; }
+.tkpair div { letter-spacing: .1em; }
+.tktwo { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; font-size: 1.7rem; }
+.tktwo b { font-size: 1.6rem; color: #04382e; }

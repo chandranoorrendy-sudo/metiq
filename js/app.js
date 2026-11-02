@@ -105,7 +105,16 @@
     const u = new SpeechSynthesisUtterance(t); u.lang = 'id-ID'; u.rate = 0.9;
     u.voice = voice; u.lang = voice.lang;
     speechSynthesis.speak(u);
+  }  // Audio rekaman (cerita TK): diputar berurutan dan tidak bergantung pada suara bawaan perangkat
+  let clipEl = null, clipQ = [], clipT = null;
+  function stopClips() { clipQ = []; clearTimeout(clipT); if (clipEl) { clipEl.onended = null; clipEl.pause(); clipEl = null; } }
+  function playClips(list, delay) {
+    stopClips(); if ('speechSynthesis' in window) speechSynthesis.cancel();
+    clipQ = (list || []).filter(Boolean);
+    const next = () => { const src = clipQ.shift(); if (!src) { clipEl = null; return; } const a = new Audio(src); clipEl = a; a.onended = next; a.onerror = next; const p = a.play(); if (p && p.catch) p.catch(() => { if (clipEl === a) clipEl = null; }); };
+    if (delay) clipT = setTimeout(next, delay); else next();
   }
+
 
   // Tombol emas di strip mode coba: siswa langsung mulai sungguhan (tanpa persetujuan), guru mengajukan akun guru
   const realBtn = () => { const r = session.get().role; return r === 'siswa' ? '<button class="mq-real" data-act="realstart" aria-label="Mulai belajar sungguhan"><span class="sp">✨</span>Mulai sungguhan</button>' : r === 'guru' ? '<button class="mq-real" data-act="realsignup" data-k="guru" aria-label="Ajukan akun guru"><span class="sp">✨</span>Ajukan akun guru</button>' : ''; };
@@ -716,7 +725,7 @@
     box.innerHTML = `
       <h2 class="mq-title">${choice ? 'Pilih jawaban yang benar' : 'Tulis jawabannya'}</h2>
       ${P.diag && D && D.n === 0 ? '<p class="mq-hint">Tidak apa-apa kalau belum tahu. Tebak saja ya!</p>' : ''}
-      <div class="mq-say"><div id="mqm">${MQ.svg('normal', { size: choice ? 92 : 76, enter: false })}</div><div class="mq-bubble"><button class="mq-spk" data-act="say" aria-label="Dengarkan soal">${IC.spk}</button><span>${q.text}</span></div></div>
+      <div class="mq-say"><div id="mqm">${MQ.svg('normal', { size: choice ? 92 : 76, enter: false })}</div><div class="mq-bubble"><button class="mq-spk${q.audio ? ' aud' : ''}" data-act="say" aria-label="Dengarkan soal">${IC.spk}</button><span>${q.text}</span></div></div>
       ${q.vis ? `<div class="mq-vis">${q.vis}</div>` : ''}
       ${choice
     ? `<div class="mq-opts ${q.options.every((o) => strip(o).length <= 4) ? 'short' : ''}">${q.options.map((o, i) => `<button class="mq-opt" data-act="choose" data-i="${i}">${o}</button>`).join('')}</div>`
@@ -728,6 +737,8 @@
     fb.innerHTML = `<div class="mq-foot-in">${keys}<button class="mq-btn" id="mqcheck" data-act="check" disabled>Periksa</button></div>`;
     box.style.paddingBottom = fb.offsetHeight + 20 + 'px';
     const d = document.getElementById('indisp'); if (d) d.style.scrollMarginBottom = fb.offsetHeight + 12 + 'px';
+    // Cerita TK dibacakan otomatis saat soal muncul
+    if (q.audio) playClips(q.audio, 350); else stopClips();
   }
   function submit(given) {
     if (P.locked) return;
@@ -781,6 +792,8 @@
     }
     pq.style.paddingBottom = fb.offsetHeight + 24 + 'px';
     window.scrollTo({ top: 0, behavior: 'smooth' });
+    // Cerita TK: pujian saat benar, penjelasan dibacakan saat belum tepat
+    if (q.audio) playClips(ok ? [q.audioOk] : q.audioExplain, ok ? 450 : 700);
   }
   /* ---------- Bintang, ujian bab (peti harta karun), dan logo bab ---------- */
   // Aturan bintang (dasar hadiah nyata, jadi dibuat sulit "dikebut"):
@@ -2858,6 +2871,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     closeCoret(true);
     window.METIQ_ANIM.stop();
     if ('speechSynthesis' in window) speechSynthesis.cancel();
+    stopClips();
     const parts = location.hash.replace(/^#\/?/, '').split('/');
     const [a, b, c] = parts;
     const seq = ++routeSeq;
@@ -3000,10 +3014,10 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       document.getElementById('indisp').innerHTML = P.input || '&nbsp;'; refreshCheck();
       document.getElementById('indisp').scrollIntoView({ block: 'nearest' });
     } else if (act === 'check') { if (P && !P.locked) submit(P.q.type === 'choice' ? P.q.options[P.sel] : P.input); }
-    else if (act === 'choose') { if (!P || P.locked) return; P.sel = +el.dataset.i; document.querySelectorAll('.mq-opt').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); refreshCheck(); }
+    else if (act === 'choose') { if (!P || P.locked) return; P.sel = +el.dataset.i; if (P.q.optAudio) playClips([P.q.optAudio[P.sel]]); document.querySelectorAll('.mq-opt').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); refreshCheck(); }
     else if (act === 'next') nextQ();
     else if (act === 'again') viewPractice(P.sk.id, true);
-    else if (act === 'say') speak(P.q.speak || P.q.text);
+    else if (act === 'say') { if (P.q.audio) playClips(P.q.audio); else speak(P.q.speak || P.q.text); }
     else if (act === 'pickav') saveAvatar(el.dataset.t, el.dataset.a);
     else if (act === 'mgo') { const sec = document.getElementById('ms-' + el.dataset.i); if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     else if (act === 'printmanual') { document.body.classList.add('pm'); window.print(); setTimeout(() => document.body.classList.remove('pm'), 500); }
