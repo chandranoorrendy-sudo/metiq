@@ -528,3 +528,15 @@ body.mq-noscroll { overflow: hidden; }
 .wu-tray .coin { width: 44px; height: 44px; font-size: .8rem; } .wu-tray .c1000 { width: 46px; height: 46px; }
 .wu-tray .note { min-height: 44px; }
 .wu-tray .note { width: 64px; height: 36px; border-radius: 6px; } .wu-tray .note b { font-size: .78rem; } .wu-tray .note small { font-size: .4rem; letter-spacing: 1px; }
+
+/* Tombol "Ajukan akun asli" di strip mode coba: emas, 3D, berkilau */
+.mq-demo { padding: 8px 12px; }
+.mq-real { position: relative; overflow: hidden; display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 6px 14px; border: 0; border-radius: 999px; background: linear-gradient(180deg, #ffd23f, #ffb020); color: #5a3d00; font: inherit; font-weight: 900; font-size: .86rem; white-space: nowrap; box-shadow: 0 3px 0 #d98e00; cursor: pointer; animation: mq-realbob 2.6s ease-in-out infinite; }
+.mq-real::after { content: ''; position: absolute; top: 0; bottom: 0; left: -40%; width: 30%; background: linear-gradient(100deg, transparent, rgba(255, 255, 255, .75), transparent); transform: skewX(-20deg); animation: mq-shine 3.2s ease-in-out infinite; }
+.mq-real .sp { font-size: 1rem; }
+.mq-real:active { transform: translateY(3px); box-shadow: 0 0 0 #d98e00; }
+.mq-real:focus-visible { outline: 3px solid var(--mq-blue); outline-offset: 2px; }
+@keyframes mq-shine { 0%, 55% { left: -40%; } 100% { left: 130%; } }
+@keyframes mq-realbob { 0%, 100% { transform: none; } 50% { transform: translateY(-2px); } }
+.demobar .mq-real { margin-left: auto; }
+@media (prefers-reduced-motion: reduce) { .mq-real, .mq-real::after { animation: none; } }

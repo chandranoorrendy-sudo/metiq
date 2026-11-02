@@ -93,7 +93,7 @@
 
   const shell = (inner, opts = {}) => `
     <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=69" alt="">Metiq<span class="alpha">Beta</span></a>${opts.right || ''}</header>
-    <main class="wrap ${opts.cls || ''}">${session.get().demo ? `<div class="demobar">🧪 <span class="grow"><b>Mode coba</b>${tryInfo() && tryInfo().name ? ` · ${esc(tryInfo().name)}` : ''} · data contoh di perangkat ini</span><button class="link" data-act="realsignup" data-k="">Ajukan akun asli</button><button class="link" data-act="logout">Keluar</button></div>` : ''}${inner}</main>`;
+    <main class="wrap ${opts.cls || ''}">${session.get().demo ? `<div class="demobar">🧪 <span class="grow"><b>Mode coba</b>${tryInfo() && tryInfo().name ? ` · ${esc(tryInfo().name)}` : ''} · data contoh di perangkat ini</span><button class="mq-real" data-act="realsignup" data-k="" aria-label="Ajukan akun asli, gratis"><span class="sp">✨</span>Ajukan akun asli</button><button class="link" data-act="logout">Keluar</button></div>` : ''}${inner}</main>`;
 
   /* ---------- Analitik (dipakai guru dan orang tua) ---------- */
   function stats(sid, days) {
@@ -234,7 +234,7 @@
     const m = app.querySelector('main.wrap'); if (m) m.classList.add('mq-has-nav');
     app.insertAdjacentHTML('beforeend', studentNav(active));
   }
-  const demoStrip = () => (session.get().demo ? '<div class="mq-demo"><span>🧪 Mode coba</span><span><button class="mq-link" style="padding:2px 6px" data-act="realsignup" data-k="">Ajukan akun asli</button><button class="mq-link" style="padding:2px 6px" data-act="logout">Keluar</button></span></div>' : '');
+  const demoStrip = () => (session.get().demo ? '<div class="mq-demo"><span>🧪 Mode coba</span><span><button class="mq-real" data-act="realsignup" data-k="" aria-label="Ajukan akun asli, gratis"><span class="sp">✨</span>Ajukan akun asli</button><button class="mq-link" style="padding:2px 6px" data-act="logout">Keluar</button></span></div>' : '');
   const mqPage = (inner, active) => `<div class="mq-page">${demoStrip()}${inner}</div>${studentNav(active)}`;
 
   // Layar penuh dengan tombol kembali dan maskot (masuk kelas, pilih nama)
