@@ -851,3 +851,37 @@ details.realcard summary { cursor: pointer; list-style: none; } details.realcard
 .mlims { display: inline-flex; flex-direction: column; justify-content: space-between; font-size: .52em; line-height: 1.15; margin-left: 1px; align-self: stretch; }
 .mlims sup, .mlims sub { vertical-align: baseline; font-size: 1em; line-height: 1.15; }
 .mfr { white-space: nowrap; }
+
+/* ---------- Dasbor guru: tab utama, pil sub-halaman, daftar "Yang perlu dilakukan", tambah siswa ---------- */
+.tabs.tmain { flex-wrap: wrap; }
+.tabs .tsep { width: 2px; align-self: stretch; margin: 2px 4px; background: var(--line); border-radius: 2px; }
+.tabs a.adm { font-size: .9em; }
+.tcount { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: 4px; padding: 0 5px; border-radius: 999px; background: #ff5a5f; color: #fff; font-size: .75rem; font-weight: 900; }
+.tsub { display: flex; gap: 6px; margin: -2px 0 12px; overflow-x: auto; }
+.tsub a { flex: none; padding: 5px 12px; border: 1.5px solid var(--line); border-radius: 999px; background: #fff; color: var(--ink); font-weight: 800; font-size: .85rem; text-decoration: none; }
+.tsub a.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.dh-gear { display: grid; justify-items: center; align-content: center; flex: none; min-width: 52px; padding: 4px 6px; border: 2px solid var(--line); border-radius: 14px; background: #fff; font-size: 1.2rem; text-decoration: none; color: var(--ink); }
+.dh-gear small { font-size: .65rem; font-weight: 900; } .dh-gear.on { border-color: var(--tiffany-dark); background: #e6fffa; }
+.todos h2 { margin-bottom: 6px; }
+.todo { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); }
+.todo:first-of-type { border-top: 0; }
+.todo .tic { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; background: #f1fbf8; font-size: 1.3rem; }
+.todo.warn .tic { background: #fff1ec; } .todo.good .tic { background: #e5f8ef; }
+.todo b { display: block; } .todo small { display: block; color: var(--muted); }
+.todo .btn { flex: none; }
+.addkids > summary, .insights > summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.addkids > summary::-webkit-details-marker, .insights > summary::-webkit-details-marker { display: none; }
+.addkids > summary b, .insights > summary b { font-size: 1.1rem; } .addkids > summary small, .insights > summary small { color: var(--muted); }
+.addkids > summary::after, .insights > summary::after { content: '▾'; margin-left: auto; color: var(--muted); } .addkids[open] > summary::after, .insights[open] > summary::after { content: '▴'; }
+.addways { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 12px; }
+.way { position: relative; padding: 14px 12px 12px; border: 2px solid var(--line); border-radius: 16px; background: #fbfffe; }
+.way .wn { position: absolute; top: -12px; left: 12px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--tiffany); color: var(--on-tiffany); font-weight: 900; }
+.way h3 { margin: 4px 0 4px; font-size: 1rem; } .way p { margin: 0 0 10px; font-size: .88rem; color: var(--muted); }
+.way .form.inline input { min-width: 0; }
+.rhead { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; } .rhead h2 { margin: 0; }
+.roster .st0, .roster .st1, .roster .st2 { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: .78rem; font-weight: 800; white-space: nowrap; }
+.roster .st0 { background: #f1f4f3; color: #5c7570; } .roster .st1 { background: #fff1ec; color: #b4472b; } .roster .st2 { background: #e5f8ef; color: #127a52; }
+@media (max-width: 760px) { .addways { grid-template-columns: 1fr; gap: 16px; } .todo { flex-wrap: wrap; } .todo .btn { margin-left: 50px; } }
+.dhead select.dh-title { width: 100%; min-width: 0; text-overflow: ellipsis; }
+.todo .grow { flex: 1 1 190px; min-width: 0; }
+@media (max-width: 760px) { .todo .btn { margin-left: 50px; } .dh-row { gap: 8px; } .dh-gear { min-width: 44px; padding: 3px 4px; } }

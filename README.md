@@ -42,6 +42,8 @@ Lalu buka http://localhost:5173. Klik **"Isi data contoh"** di beranda untuk men
 - `supabase/009_class_teacher.sql`: super admin menentukan guru sebuah kelas (tab 🌐 Super admin → 📚 Kelas). Jalankan setelah 008.
 - `supabase/010_delete_class.sql`: menghapus kelas beserta siswanya (guru kelas, admin sekolah, atau super admin; nama kelas diketik ulang sebagai konfirmasi). Jalankan setelah 009.
 - `supabase/011_delete_school.sql`: super admin menghapus sekolah (beserta guru, kelas, siswa), guru, dan akun orang tua, dengan konfirmasi nama. Super admin tidak ikut terhapus. Jalankan setelah 010.
+- `supabase/019_guru_tambah_kode.sql`: guru menambahkan siswa tanpa kelas ke kelasnya dengan kode belajar anak (`teacher_add_by_code`, hanya siswa yang belum punya kelas; guru tidak bisa melihat daftar siswa tanpa kelas), dan angka siswa tanpa kelas untuk admin (`admin_ungrouped_count`). Jalankan setelah 018.
+- Dasbor guru: empat tab utama (🏠 Hari ini, 🧒 Siswa, 📌 Tugas, 📈 Laporan) dengan pil sub-halaman, tanpa menu tersembunyi; pengaturan kelas di tombol ⚙️ Kelas. "Hari ini" berisi daftar yang perlu dilakukan (satu tombol per baris), tab Siswa berisi tiga cara menambah siswa (kode belajar, nama, kode kelas) dan daftar siswa dengan keadaannya. Admin melihat tab 🧺 Tanpa kelas dengan angkanya.
 - `supabase/012_approve_with_class.sql`: saat menyetujui pengajuan guru, super admin bisa langsung memberinya kelas yang sudah ada (tanpa kelas baru). Jalankan setelah 011.
 - `supabase/013_class_settings.sql` dan `014_bintang_server.sql`: pengaturan kelas (lapisan iman) dan bintang dihitung di server.
 - `supabase/015_siswa_tanpa_kelas.sql`: anak bisa mulai belajar tanpa kelas dengan kode belajar pribadi; super admin bisa menyetujui siswa tanpa kelas; tab admin 🧺 Tanpa kelas.
