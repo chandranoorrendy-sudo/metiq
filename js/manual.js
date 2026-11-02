@@ -56,7 +56,9 @@
           'Tab <b>Referensi</b> menjelaskan sumber kurikulum, metode Singapore Math, peta setiap bab, dan daftar pola kesalahan.',
         ] },
         { icon: '🌐', t: 'Super admin dan admin sekolah', steps: [
-          '<b>Super admin</b> (pengelola Metiq) melihat semua sekolah dan keluarga homeschool di tab <b>🌐 Super admin</b>, dan menyetujui pengajuan akun.',
+          '<b>Guru mendaftar gratis</b> (Saya Guru → Daftar gratis) dan langsung aktif dengan kelas pertamanya. Tidak perlu persetujuan.',
+          '<b>Admin sekolah</b> memasukkan guru ke sekolahnya di <b>🏫 Sekolah → 🧑‍🏫 Kelola guru</b> dengan email guru. Kelas dan siswa guru itu ikut tampil di dasbor sekolah. Fitur ini, dasbor sekolah, dan asesmen awal–akhir termasuk <b>paket Sekolah</b> (Rp15.000 per siswa per tahun, lihat halaman Harga).',
+          '<b>Super admin</b> (pengelola Metiq) melihat semua sekolah dan keluarga homeschool di tab <b>🌐 Super admin</b>, mengaktifkan paket Sekolah setelah pembayaran (🏫 Sekolah → 💳 Paket sekolah), membaca permintaan penawaran di <b>📨 Penawaran</b>, dan menyetujui pengajuan orang tua atau siswa.',
           'Di <b>✋ Pengajuan</b>: periksa data pemohon, pilih sekolahnya (atau buat sekolah baru) untuk guru, pilih kelas untuk siswa, lalu ketuk <b>Setujui</b> atau <b>Tolak</b>. Kode kelas dan kode orang tua muncul di riwayat, dan bisa dikirim lewat WhatsApp.',
           'Di <b>📚 Kelas</b>, super admin memilih guru untuk setiap kelas (misalnya kelas Awal 2B diajar Ustadz A). Guru itu harus sudah punya akun aktif.',
           'Siswa yang mulai belajar sendiri muncul di tab <b>🧺 Tanpa kelas</b> (angkanya tampil di tab). Masukkan ke kelas yang sesuai dari sana.',
@@ -202,7 +204,8 @@
       ],
     },
     faq: [
-      ['Bagaimana mendapatkan akun Metiq?', 'Ketuk Ajukan akun sungguhan di beranda, pilih guru, keluarga homeschooling, orang tua, atau siswa, lalu isi formulir. Simpan kode pengajuan untuk mengecek status. Akun aktif setelah disetujui admin Metiq.'],
+      ['Bagaimana mendapatkan akun Metiq?', 'Guru dan keluarga homeschooling: ketuk Saya Guru → Daftar gratis, akun langsung aktif. Sekolah dengan banyak kelas: buka halaman Harga dan isi formulir penawaran paket Sekolah.'],
+      ['Apa beda paket Guru (gratis) dan Sekolah?', 'Guru mendapat semua latihan dan alat kelas secara gratis: kelas, tugas, dan laporan termasuk Semua kemajuan. Paket Sekolah (Rp15.000 per siswa per tahun) menambah dasbor dan laporan sekolah, admin sekolah yang mengelola guru, asesmen awal–akhir, serta pelatihan.'],
       ['Bagaimana mencoba Metiq tanpa mendaftar?', 'Di beranda, ketuk Coba sebagai siswa, orang tua, atau guru (atau masukkan kode 1234 di halaman siswa atau orang tua), lalu tulis nama. Mode coba memakai data contoh satu sekolah di perangkat itu. Beberapa anak (kakak-adik) bisa mencoba di HP yang sama dengan namanya masing-masing, lalu orang tua di HP itu bisa melihat hasil semua anaknya di halaman Anak saya. Ketuk Keluar untuk kembali.'],
       ['Bagaimana memakai Metiq dengan murid sungguhan?', 'Guru mendaftar gratis (Saya Guru → Daftar guru baru), menambahkan murid di tab Siswa (dengan kode belajar atau nama), lalu membagikan kode kelas ke murid dan kode orang tua ke wali murid. Data kelas sungguhan tersimpan di server dan terhubung di HP mana pun.'],
       ['Lupa kode kelas atau kode orang tua?', 'Tanyakan kepada guru. Guru bisa melihat semua kode di tab Siswa.'],
