@@ -419,9 +419,9 @@ body.mq-noscroll { overflow: hidden; }
 .mq-gintro { display: flex; flex-direction: column; align-items: center; gap: 16px; padding-top: 6px; }
 .mq-gart { display: grid; place-items: center; width: 230px; max-width: 70vw; aspect-ratio: 1; border-radius: 50%; background: var(--bg); border: 4px solid color-mix(in srgb, var(--c) 25%, #fff); }
 .mq-gart svg { width: 84%; height: auto; animation: mq-bob 3.2s ease-in-out infinite; }
-.mq-how { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
-.mq-how div { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border: 2px solid var(--mq-line); border-radius: 18px; font-weight: 800; font-size: .88rem; line-height: 1.2; text-align: center; color: #4d625d; }
-.mq-how .e { font-size: 1.8rem; line-height: 1; font-weight: 900; color: var(--c); }
+.mq-ghow { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: 100%; }
+.mq-ghow div { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 6px; border: 2px solid var(--mq-line); border-radius: 18px; font-weight: 800; font-size: .88rem; line-height: 1.2; text-align: center; color: #4d625d; }
+.mq-ghow .e { font-size: 1.8rem; line-height: 1; font-weight: 900; color: var(--c); }
 .mq-goal { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
 .mq-goal div { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 8px 12px; border-radius: 16px; background: #fffaf0; }
 .mq-goal span { display: flex; }
@@ -505,7 +505,7 @@ body.mq-noscroll { overflow: hidden; }
 .jm-btns button { min-height: 48px; padding: 0 4px; border: 2px solid #cdeefc; border-bottom-width: 5px; border-radius: 14px; background: #fff; font: inherit; font-weight: 900; font-size: 1rem; color: #0369a1; cursor: pointer; }
 .jm-btns button:active { transform: translateY(3px); border-bottom-width: 2px; }
 
-/* Warung Santri */
+/* Ayo Belanja */
 .wu-shop { display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%; padding: 12px; border: 2px solid #c8ecd3; border-radius: 20px; background: #f3fcf5; text-align: center; }
 .wu-shop small { font-weight: 800; color: #4d625d; }
 .wu-tags { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; }
@@ -540,3 +540,9 @@ body.mq-noscroll { overflow: hidden; }
 @keyframes mq-realbob { 0%, 100% { transform: none; } 50% { transform: translateY(-2px); } }
 .demobar .mq-real { margin-left: auto; }
 @media (prefers-reduced-motion: reduce) { .mq-real, .mq-real::after { animation: none; } }
+
+/* Pesan singkat (mis. "🎁 Hadiah baru terbuka!") di layar siswa: muncul di atas, di bawah bar progres,
+ * supaya tidak menutupi tombol Periksa/Lanjutkan di bawah; tembus klik agar tidak menghalangi apa pun. */
+.toast { pointer-events: none; }
+body.mq-body .toast { white-space: nowrap; top: calc(66px + env(safe-area-inset-top)); bottom: auto; padding: 12px 20px; border-radius: 999px; background: #fff; color: var(--mq-ink); border: 2px solid #ffe08a; box-shadow: 0 6px 18px rgba(4, 56, 46, .16); font-weight: 900; animation: mq-toast .35s cubic-bezier(.3, 1.4, .5, 1); }
+@keyframes mq-toast { from { transform: translate(-50%, -16px); opacity: 0; } }

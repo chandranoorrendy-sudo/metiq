@@ -6,6 +6,8 @@
   const DAY = 864e5;
   // Bagian orang tua disembunyikan dari tampilan (kode dan data tetap ada). Ubah ke true untuk menampilkannya lagi.
   const PARENTS_ON = false;
+  // Laporan orang tua lewat kode (kode orang tua satu anak, atau kode keluarga untuk semua kakak-adik) tetap terbuka walau akun orang tua dimatikan
+  const PARENT_CODE_ON = true;
   // Tugas dari guru disembunyikan dulu di tampilan siswa: tahap ini guru belum banyak dilibatkan.
   // Fitur guru (memberi tugas, melihat kemajuan) tetap utuh. Ubah ke true untuk menampilkannya lagi.
   const TASKS_ON = false;
@@ -1945,12 +1947,24 @@
       const list = await Cloud.rpc('admin_ungrouped', { p_token: session.get().token });
       if (!document.getElementById('ung-box')) return;
       const opts = ctx.classes.slice().sort((a, b) => (a.schoolName || '').localeCompare(b.schoolName || '') || a.name.localeCompare(b.name)).map((c) => `<option value="${c.id}">${c.schoolName ? esc(c.schoolName) + ' · ' : ''}${esc(c.name)}</option>`).join('');
-      const row = (k) => `<section class="card reqcard"><div class="lrow"><span class="av">${avHTML(k.avatar || '🦁')}</span><span class="grow"><b>${esc(k.name)}</b><small>Mulai ${ftime(k.createdAt)}</small></span></div>
-        <div class="kpis"><div class="kpi"><small>Kode belajar (untuk siswa)</small><b class="code">${esc(k.code || '–')}</b></div><div class="kpi"><small>Kode orang tua</small><b class="code">${esc(k.parentCode || '–')}</b></div></div>
+      const row = (k) => `<section class="card reqcard"><div class="lrow"><label class="famchk" title="Pilih untuk kode keluarga"><input type="checkbox" data-fam="${k.id}" aria-label="Pilih ${esc(k.name)} untuk kode keluarga"></label><span class="av">${avHTML(k.avatar || '🦁')}</span><span class="grow"><b>${esc(k.name)}</b><small>Mulai ${ftime(k.createdAt)}</small></span></div>
+        <div class="kpis"><div class="kpi"><small>Kode belajar (untuk siswa)</small><b class="code">${esc(k.code || '–')}</b></div><div class="kpi"><small>Kode orang tua</small><b class="code">${esc(k.parentCode || '–')}</b></div>${k.familyCode ? `<div class="kpi"><small>Kode keluarga</small><b class="code">${esc(k.familyCode)}</b><button class="link small" data-act="famdel" data-id="${k.id}">Lepas</button></div>` : ''}</div>
         <form data-form="assignkid" data-id="${k.id}" class="form inline"><select name="classId" required aria-label="Kelas untuk ${esc(k.name)}"><option value="">— pilih kelas —</option>${opts}</select><button class="btn">Masukkan ke kelas</button></form></section>`;
-      box.innerHTML = `<section class="card"><h2>🧺 Siswa tanpa kelas <small class="muted">(${list.length})</small></h2><p class="small muted">Anak yang mulai belajar sendiri atau disetujui tanpa kelas. Siswa masuk dengan kode belajar (menu "Saya sudah punya kode"); orang tua melihat laporan dengan kode orang tua.</p></section>`
+      box.innerHTML = `<section class="card"><h2>🧺 Siswa tanpa kelas <small class="muted">(${list.length})</small></h2><p class="small muted">Anak yang mulai belajar sendiri atau disetujui tanpa kelas. Siswa masuk dengan kode belajar (menu "Saya sudah punya kode"); orang tua melihat laporan di <b>#/ortu</b> dengan kode orang tua atau kode keluarga.</p>
+        <p class="small"><b>👨‍👩‍👧 Kakak-adik?</b> Centang anak-anaknya, lalu buat satu kode keluarga untuk orang tua.</p><button class="btn sm" data-act="famset">Buat kode keluarga untuk yang dicentang</button></section>`
         + (list.length ? list.map(row).join('') : emptyCard('Belum ada', 'Semua siswa sudah punya kelas.'));
     } catch (e) { box.innerHTML = emptyCard('Tidak bisa memuat', e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
+  }
+  async function famSet() {
+    const ids = [...document.querySelectorAll('[data-fam]:checked')].map((x) => x.dataset.fam);
+    if (ids.length < 2) return toast('Centang minimal 2 anak dari satu keluarga');
+    try { const r = await Cloud.rpc('admin_family_set', { p_token: session.get().token, p_student_ids: ids }); toast(`Kode keluarga ${esc(r.familyCode)} untuk ${r.count} anak ✔`); route(); }
+    catch (e) { toast(e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
+  }
+  async function famDel(id) {
+    if (!confirm('Lepas anak ini dari kode keluarga?')) return;
+    try { await Cloud.rpc('admin_family_remove', { p_token: session.get().token, p_student_id: id }); toast('Dilepas dari keluarga ✔'); route(); }
+    catch (e) { toast(e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
   }
   async function assignKid(f, fd) {
     const b = f.querySelector('button'); if (b) b.disabled = true;
@@ -2162,7 +2176,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         <button class="mq-ico psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button></div>
       <main class="mq-screen mq-gplay" id="garea" style="--c:${c};--bg:${bg}">
         <div class="mq-gintro"><div class="mq-gart">${G.art(x.type, 210)}</div>
-          <div class="mq-how">${G.HOW[x.type](x).map(([e, t]) => `<div><span class="e">${e}</span>${t}</div>`).join('')}</div>
+          <div class="mq-ghow">${G.HOW[x.type](x).map(([e, t]) => `<div><span class="e">${e}</span>${t}</div>`).join('')}</div>
           <div class="mq-goal">${x.stars.map((p, i) => `<div><span>${gStar(true).repeat(i + 1)}</span><b>${p}</b></div>`).join('')}</div>
           ${kid ? '' : '<p class="mq-note">Masuk sebagai siswa agar bintangmu tersimpan.</p>'}
           <details class="mq-gmore"><summary>Cara main lengkap</summary><p>${x.desc}</p></details></div></main>
@@ -2427,17 +2441,17 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   /* ---------- Orang tua ---------- */
   function viewParentEnter() {
     const ses = session.get();
-    if (cloudOn() && ses.role === 'ortu' && ses.ptoken) return go('#/ortu/anak');
+    if (cloudOn() && ses.role === 'ortu' && (ses.ptoken || (ses.pcode && ses.kids))) return go('#/ortu/anak');
     app.innerHTML = shell(`
       <a class="back" href="#/">← Kembali</a>
-      ${cloudOn() ? `<section class="card narrow"><div class="bigemoji center">👨‍👩‍👧</div><h1 class="center">Masuk akun orang tua</h1>
+      ${cloudOn() && PARENTS_ON ? `<section class="card narrow"><div class="bigemoji center">👨‍👩‍👧</div><h1 class="center">Masuk akun orang tua</h1>
         <p class="muted center small">Satu akun untuk semua anak: lihat laporan dan ikut belajar bersama anak.</p>
         <form data-form="plogin" class="form">
           <label>Email<input name="email" type="email" required autocomplete="email"></label>
           <label>Kata sandi<input name="pass" type="password" required autocomplete="current-password"></label>
           <button class="btn">Masuk</button>
         </form><p class="center"><a href="#/ajukan/ortu">Belum punya akun? Ajukan akun orang tua</a> · <a href="#/ajukan/status">Cek status</a></p></section>` : ''}
-      <section class="card narrow center">${cloudOn() ? '<h2>Atau lihat laporan dengan kode</h2>' : '<div class="bigemoji">👨‍👩‍👧</div><h1>Laporan untuk orang tua</h1>'}<p class="muted">Masukkan kode orang tua (6 huruf/angka) dari guru.</p>
+      <section class="card narrow center">${cloudOn() && PARENTS_ON ? '<h2>Atau lihat laporan dengan kode</h2>' : '<div class="bigemoji">👨‍👩‍👧</div><h1>Laporan untuk orang tua</h1>'}<p class="muted">Masukkan <b>kode keluarga</b> (semua anak sekaligus) atau kode orang tua satu anak. Kode berisi 6 huruf/angka dari admin atau guru.</p>
         <form data-form="parentcode"><input name="code" class="codein" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC123" required><button class="btn ghost">Lihat laporan</button></form>
         <p class="small muted trynote">Ingin mencoba dulu? Masukkan kode <b>1234</b> untuk melihat laporan anak contoh.</p></section>`);
   }
@@ -2453,18 +2467,18 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         </form><p class="muted small center">Setelah masuk, tambahkan anak dengan kode orang tua dari guru.</p></section>`);
   }
   function viewParentHome() {
-    const ses = session.get(), demoKids = ses.role === 'ortu' && ses.demo && ses.kids;
-    if (!(ses.role === 'ortu' && (ses.ptoken || demoKids))) return go('#/ortu');
-    const p = demoKids ? { name: (tryInfo() || {}).name } : S.db.parent || {};
-    const kids = demoKids ? ses.kids.map((id) => S.student(id)).filter(Boolean) : S.db.students;
+    const ses = session.get(), demoKids = ses.role === 'ortu' && ses.demo && ses.kids, codeKids = ses.role === 'ortu' && !ses.demo && ses.pcode && ses.kids;
+    if (!(ses.role === 'ortu' && (ses.ptoken || demoKids || codeKids))) return go('#/ortu');
+    const p = demoKids ? { name: (tryInfo() || {}).name } : codeKids ? { name: 'Ayah/Bunda' } : S.db.parent || {};
+    const kids = demoKids || codeKids ? ses.kids.map((id) => S.student(id)).filter(Boolean) : S.db.students;
     app.innerHTML = shell(`
-      <section class="dhead"><div><small class="muted">Akun orang tua</small><h1>Halo, ${esc(p.name || '')}</h1></div></section>
+      <section class="dhead"><div><small class="muted">${codeKids ? `Kode keluarga ${esc(ses.pcode)} · ${kids.length} anak` : 'Akun orang tua'}</small><h1>Halo, ${esc(p.name || '')}</h1></div></section>
       ${kids.map((k) => { const s7 = stats(k.id, 7), all = stats(k.id); const c = S.cls(k.classId) || {};
         return `<section class="card kidcard"><div class="report-head"><span class="av lg">${avHTML(k.avatar)}</span><div class="grow"><h2>${esc(k.name)}</h2><p class="muted small">${esc(c.name || '')}${c.teacherName ? ' · ' + esc(c.teacherName) : ''}</p></div></div>
           <div class="kpis"><div class="kpi"><small>Soal 7 hari</small><b>${s7.answered}</b></div><div class="kpi"><small>Ketepatan</small><b>${all.acc}%</b></div><div class="kpi"><small>Mahir</small><b>${all.proficient}</b></div><div class="kpi"><small>Terakhir</small><b class="sm">${ago(all.last)}</b></div></div>
-          <div class="row-btn"><a class="btn" href="#/ortu/laporan/${k.id}">Lihat laporan</a><button class="btn ghost" data-act="askid" data-id="${k.id}">Belajar sebagai ${esc(k.name)}</button></div>
-          ${demoKids ? '' : `<p class="center small"><button class="link muted" data-act="punlink" data-id="${k.id}">Lepas dari akun</button></p>`}</section>`; }).join('') || '<section class="card center"><div class="bigemoji">🧒</div><p class="muted">Belum ada anak yang terhubung.</p></section>'}
-      ${demoKids ? `<section class="card"><h2>Tambah anak</h2><p class="muted small">Di mode coba, anak lain ditambahkan dengan mencoba sebagai siswa di perangkat ini (Keluar → Coba sebagai siswa → nama anak), lalu masuk lagi sebagai orang tua.</p></section>${realParentCard(kids[0] || {})}`
+          <div class="row-btn"><a class="btn" href="#/ortu/laporan/${k.id}">Lihat laporan</a>${codeKids ? '' : `<button class="btn ghost" data-act="askid" data-id="${k.id}">Belajar sebagai ${esc(k.name)}</button>`}</div>
+          ${demoKids || codeKids ? '' : `<p class="center small"><button class="link muted" data-act="punlink" data-id="${k.id}">Lepas dari akun</button></p>`}</section>`; }).join('') || '<section class="card center"><div class="bigemoji">🧒</div><p class="muted">Belum ada anak yang terhubung.</p></section>'}
+      ${codeKids ? '' : demoKids ? `<section class="card"><h2>Tambah anak</h2><p class="muted small">Di mode coba, anak lain ditambahkan dengan mencoba sebagai siswa di perangkat ini (Keluar → Coba sebagai siswa → nama anak), lalu masuk lagi sebagai orang tua.</p></section>${realParentCard(kids[0] || {})}`
         : `<section class="card"><h2>Tambah anak</h2><p class="muted small">Masukkan kode orang tua anak (dari guru).</p>
         <form data-form="plink" class="form inline"><input name="code" class="codein sm" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC123" required><button class="btn">Tambah</button></form></section>`}
     `, { right: topRight() });
@@ -2700,7 +2714,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       case 'avatar': return viewAvatar(b);
       case 'notifikasi': return viewNotifications();
       case 'panduan': return viewManual(b);
-      case 'ortu': if (!PARENTS_ON) return go('#/'); return b === 'laporan' ? viewParentReport(c) : b === 'anak' ? viewParentHome() : b === 'daftar' ? (cloudOn() ? go('#/ajukan/ortu') : viewParentRegister()) : viewParentEnter();
+      case 'ortu': if (!PARENTS_ON && !(PARENT_CODE_ON && b !== 'daftar')) return go('#/'); return b === 'laporan' ? viewParentReport(c) : b === 'anak' ? viewParentHome() : b === 'daftar' ? (cloudOn() ? go('#/ajukan/ortu') : viewParentRegister()) : viewParentEnter();
       default: return viewHome();
     }
   }
@@ -2833,6 +2847,8 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     else if (act === 'superdel') superDelete(el.dataset.what, el.dataset.id);
     else if (act === 'schoolview') { ss.set('schoolSel', el.dataset.id); go('#/guru/sekolah'); }
     else if (act === 'tdays') { ss.set('tdays', +el.dataset.d); return route(); }
+    else if (act === 'famset') famSet();
+    else if (act === 'famdel') famDel(el.dataset.id);
     else if (act === 'askid') {
       const ses = session.get(), k = S.student(el.dataset.id), c = k && S.cls(k.classId);
       if (!k || !c) return;
@@ -2980,9 +2996,10 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         const code = String(fd.get('code')).trim().toUpperCase();
         const b = await Cloud.rpc('parent_bundle', { p_code: code });
         if (!b || !b.students.length) { done(); return toast('Kode tidak ditemukan. Periksa lagi ya.'); }
-        session.set({ role: 'ortu', id: b.students[0].id, pcode: code });
+        const many = b.students.length > 1;
+        session.set({ role: 'ortu', id: b.students[0].id, pcode: code, ...(many ? { kids: b.students.map((k) => k.id) } : {}) });
         S.loadBundle(b); loaded = { key: 'o' + code, at: Date.now() };
-        return go('#/ortu/laporan');
+        return go(many ? '#/ortu/anak' : '#/ortu/laporan');
       }
       if (kind === 'plogin' || kind === 'pregister') {
         const r = kind === 'pregister'

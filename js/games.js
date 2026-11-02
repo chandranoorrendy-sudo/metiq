@@ -1,6 +1,6 @@
 /* Metiq — permainan matematika: Kilat (cepat tepat), Balon (pecahkan yang sesuai aturan), Pasangan (kartu memori),
  * Menara (balok jatuh), Garis Bilangan (geser penunjuk), Juring Pecahan (ketuk bagian), Jam Ajaib (putar jarum jam),
- * dan Warung Santri (bayar pas dan kembalian). Permainan 10 soal "pilih dulu lalu Periksa" memakai playRound().
+ * dan Ayo Belanja (bayar pas dan kembalian). Permainan 10 soal "pilih dulu lalu Periksa" memakai playRound().
  * Beberapa permainan untuk setiap kelas. Setiap ronde memberi 1–3 bintang sesuai poin.
  */
 (function () {
@@ -140,7 +140,7 @@
     5() { const [a, b] = pick(DEC); return shade(a, b, kIn(b, 4, 20), f(a / b)); },
     6() { const [a, b] = pick(DEC); return shade(a, b, kIn(b, 4, 20), f((100 * a) / b) + '%'); },
   };
-  /* ---------- Warung Santri: ketuk uang untuk membayar harga pas (kelas 3: kembalian) ---------- */
+  /* ---------- Ayo Belanja: ketuk uang untuk membayar harga pas (kelas 3: kembalian) ---------- */
   // Nama pembeli dan barang mengikuti konteks kelas (C.setKonteks mengganti NAMA di tempat).
   const CUR = () => window.METIQ_CURRICULUM;
   const rp = (n) => CUR().rp(n);
@@ -186,7 +186,7 @@
   }
   for (let gr = 1; gr <= 4; gr++) GAMES.push({ id: gr + 'h', grade: gr, type: 'jam', icon: '🕒', name: 'Jam Ajaib', isNew: true, stars: [6, 8, 10], next: JAM[gr],
     desc: gr === 1 ? 'Putar jarum panjang sampai jam menunjukkan waktu di soal. Jam tepat dan setengah.' : gr === 4 ? 'Putar jarum jam untuk waktu 24 jam dan saat kegiatan selesai.' : `Putar jarum panjang sampai jam menunjukkan waktu di soal, per ${gr === 2 ? '5 menit' : 'menit'}.` });
-  for (let gr = 1; gr <= 3; gr++) GAMES.push({ id: gr + 'i', grade: gr, type: 'uang', icon: '🪙', name: 'Warung Santri', isNew: true, stars: [6, 8, 10], next: UANG[gr],
+  for (let gr = 1; gr <= 3; gr++) GAMES.push({ id: gr + 'i', grade: gr, type: 'uang', icon: '🪙', name: 'Ayo Belanja', isNew: true, stars: [6, 8, 10], next: UANG[gr],
     desc: gr === 3 ? 'Ketuk uang untuk membayar dengan pas, atau untuk memberi kembalian yang tepat.' : 'Ketuk koin dan uang kertas sampai jumlahnya sama dengan harga barang.' });
   GAMES.forEach((g) => { if (g.type === 'pasangan') g.stars = [10, 14, 17]; });
   const TYPES = { kilat: 'Cepat tepat · 60 detik', balon: 'Pecahkan balon · 60 detik', pasangan: 'Kartu memori', susun: 'Balok jatuh · jumlah sasaran', kembar: 'Balok jatuh · gabung kembar', garis: 'Geser di garis · 10 soal', juring: 'Ketuk bagian · 10 soal', jam: 'Putar jarum · 10 soal', uang: 'Bayar pas · 10 soal' };
