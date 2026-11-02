@@ -71,6 +71,7 @@ body.mq-body { background: #fff; }
 
 .mq-say { display: flex; align-items: flex-end; gap: 4px; margin: 6px 0 14px; }
 .mq-say .mq-mascot { flex: none; }
+.mq-say .mq-bubble { min-width: 0; max-width: 100%; } /* soal lebar (tabel, rumus) tidak boleh melebarkan layar */
 .mq-bubble { position: relative; flex: 1; border: 2px solid var(--mq-line); border-radius: 20px; padding: 14px 16px; margin-bottom: 26px; font-size: 1.12rem; font-weight: 800; line-height: 1.35; background: #fff; }
 .mq-bubble::before, .mq-bubble::after { content: ''; position: absolute; left: -11px; bottom: 18px; border: 9px solid transparent; border-right-color: var(--mq-line); border-left: 0; }
 .mq-bubble::after { left: -8px; border-right-color: #fff; }

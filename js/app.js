@@ -3526,7 +3526,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     else if (act === 'choose') { if (!P || P.locked) return; P.sel = +el.dataset.i; if (P.q.optAudio) playClips([P.q.optAudio[P.sel]]); document.querySelectorAll('.mq-opt').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); refreshCheck(); }
     else if (act === 'next') nextQ();
     else if (act === 'again') viewPractice(P.sk.id, true);
-    else if (act === 'say') { if (P.q.audio) playClips(P.q.audio); else speak(P.q.speak || P.q.text); }
+    else if (act === 'say') { if (P.q.audio) playClips(P.q.audio); else speak(P.q.speak || P.q.text.replace(/<table class="mtbl mv">[\s\S]*?<\/table>/g, '')); }  // tabel tegak (versi HP) tidak ikut dibacakan
     else if (act === 'pickav') saveAvatar(el.dataset.t, el.dataset.a);
     else if (act === 'mgo') { const sec = document.getElementById('ms-' + el.dataset.i); if (sec) sec.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     else if (act === 'printmanual') { document.body.classList.add('pm'); window.print(); setTimeout(() => document.body.classList.remove('pm'), 500); }

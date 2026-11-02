@@ -833,7 +833,9 @@ details.realcard summary { cursor: pointer; list-style: none; } details.realcard
 .mfr b:first-child { border-bottom: 2px solid currentColor; }
 .mmat { display: inline-block; vertical-align: middle; border-left: 2px solid currentColor; border-right: 2px solid currentColor; border-radius: 6px; padding: 2px 8px; line-height: 1.5; text-align: center; }
 .mmat span { display: inline-block; min-width: 2.2em; }
-.mtbl { border-collapse: collapse; margin: 8px auto; font-size: .95rem; }
+.mtbl { border-collapse: collapse; margin: 8px auto; font-size: .95rem; display: block; width: max-content; max-width: 100%; overflow-x: auto; }
+.mtbl.mv { display: none; }
+@media (max-width: 520px) { .mtbl { font-size: .9rem; } .mtbl th, .mtbl td { padding: 3px 8px; } .mtbl.mh { display: none; } .mtbl.mv { display: block; } }
 .mtbl th, .mtbl td { border: 1px solid var(--line); padding: 4px 9px; text-align: center; }
 .mtbl th { background: #f1fbf8; }
 

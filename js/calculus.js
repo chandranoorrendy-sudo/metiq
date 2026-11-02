@@ -8,7 +8,12 @@
   const G = 13;
   const ev = (cs, x) => cs.reduce((s, c) => s * x + c, 0);
   const der = (cs) => { const n = cs.length - 1; return cs.slice(0, -1).map((c, i) => c * (n - i)); };
-  const tbl = (head, rows) => `<table class="mtbl"><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr>${rows.map((row) => `<tr>${row.map((v) => `<td>${N(v)}</td>`).join('')}</tr>`).join('')}</table>`;
+  // Tabel nilai mendatar; di layar HP tabel lebar ditampilkan tegak (kolom menjadi baris) agar tidak perlu digeser
+  const tbl = (head, rows) => {
+    const flat = `<table class="mtbl${head.length > 5 ? ' mh' : ''}"><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr>${rows.map((row) => `<tr>${row.map((v) => `<td>${N(v)}</td>`).join('')}</tr>`).join('')}</table>`;
+    if (head.length <= 5) return flat;
+    return flat + `<table class="mtbl mv"><tr><th>${head[0]}</th>${rows.map((row) => `<th>${row[0]}</th>`).join('')}</tr>${head.slice(1).map((h, i) => `<tr><td>${h}</td>${rows.map((row) => `<td>${N(row[i + 1])}</td>`).join('')}</tr>`).join('')}</table>`;
+  };
 
   const UNITS = [
     {
