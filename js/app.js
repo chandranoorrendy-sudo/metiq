@@ -165,8 +165,9 @@
         <p>Latihan singkat, naik level, dan kumpulkan hadiah bersama Meti.</p>
         ${kid ? `<a class="mq-resume" href="#/belajar"><span class="av">${avHTML(kid.avatar)}</span><span class="grow">${esc(kid.name)}<small style="display:block;font-weight:700;color:#6a7f7a">Lanjutkan belajarmu</small></span>›</a>` : ''}
         <div class="mq-cta">${kid
-    ? '<a class="mq-btn pulse" href="#/belajar">Lanjut belajar</a><a class="mq-btn ghost" href="#/siswa">Masuk dengan kode kelas</a>'
-    : '<a class="mq-btn pulse" href="#/siswa">Mulai belajar</a><a class="mq-btn ghost" href="#/mulai/siswa">Coba dulu tanpa kode</a>'}</div>
+    ? '<a class="mq-btn pulse" href="#/belajar">Lanjut belajar</a><a class="mq-btn ghost" href="#/kode">Kode belajar</a>'
+    : '<a class="mq-btn pulse" href="#/siswa-baru">Mulai belajar</a><a class="mq-btn ghost" href="#/kode">Saya sudah punya kode</a>'}</div>
+        ${kid ? '' : '<p class="mq-land-alt"><a class="mq-link" href="#/mulai/siswa">Coba dulu dengan data contoh</a></p>'}
       </section>
       <section class="mq-feat">
         <div style="--bg:#e6fffa"><span class="em">🎯</span>Soal pas dengan levelmu</div>
@@ -249,6 +250,31 @@
       <div class="mq-foot"><div class="mq-foot-in"><button class="mq-btn" id="mqgo" disabled>Masuk</button><a class="mq-link" style="text-align:center" href="#/mulai/siswa">Belum punya kode? Coba dulu</a></div></div></form>`;
     setTimeout(() => { const i = document.getElementById('mqcode'); if (i) i.focus(); }, 300);
   }
+
+  // Mulai belajar tanpa kelas: cukup nama, lalu anak mendapat kode belajar pribadi.
+  function viewStudentStart() {
+    app.innerHTML = `<form data-form="newkid">${mqBack('#/')}
+      <main class="mq-screen"><div class="mq-ob-body">
+        <div class="mq-big-say"><div class="mq-bubble"><p>Hai! Siapa <b class="hl">namamu</b>?</p></div>${MQ.svg('hello', { size: 170 })}</div>
+        <input class="mq-name" name="name" maxlength="40" placeholder="Ketik namamu" aria-label="Namamu" autocomplete="off" required>
+        <p class="mq-note">Belum perlu kode kelas. Kamu bisa langsung belajar, dan gurumu bisa memasukkannya nanti.</p>
+      </div></main>
+      <div class="mq-foot"><div class="mq-foot-in"><button class="mq-btn pulse">Mulai belajar</button><a class="mq-link" style="text-align:center" href="#/kode">Sudah pernah belajar? Masuk dengan kode</a></div></div></form>`;
+    setTimeout(() => { const i = document.querySelector('input[name=name]'); if (i) i.focus(); }, 280);
+  }
+
+  // Masuk lagi memakai kode belajar (misalnya dari HP lain).
+  function viewStudentCode() {
+    app.innerHTML = `<form data-form="kidcode">${mqBack('#/')}
+      <main class="mq-screen"><div class="mq-ob-body">
+        <div class="mq-big-say"><div class="mq-bubble"><p>Masukkan <b class="hl">kode belajarmu</b>.</p></div>${MQ.svg('ask', { size: 160 })}</div>
+        <input class="mq-code" name="code" maxlength="6" placeholder="••••••" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="Kode belajar" required>
+        <div class="mq-steps"><div><span class="n">1</span>Kode ini ada di halaman <b>Aku</b></div><div><span class="n">2</span>Punya kode kelas? <a class="mq-inline" href="#/siswa">Masuk lewat kode kelas</a></div></div>
+      </div></main>
+      <div class="mq-foot"><div class="mq-foot-in"><button class="mq-btn pulse">Masuk</button><a class="mq-link" style="text-align:center" href="#/siswa-baru">Belum punya kode? Mulai belajar</a></div></div></form>`;
+    setTimeout(() => { const i = document.querySelector('input[name=code]'); if (i) i.focus(); }, 280);
+  }
+
   async function viewStudentPick(code) {
     let c, kids;
     if (cloudOn()) {
@@ -362,8 +388,9 @@
     const gold = Object.entries(S.progressAll(st.id)).filter(([k, p]) => SKILLS[k] && p.score >= 100).length;
     const tile = (l, v, col) => `<div class="mq-stat" style="--c:${col}"><small>${l}</small><b>${v}</b></div>`;
     app.innerHTML = mqPage(`
-      <section class="mq-me"><a class="av" href="#/avatar/saya" aria-label="Ganti gambar profil">${avHTML(st.avatar)}<span class="edit">✏️</span></a><h1>${esc(st.name)}</h1><p>${esc(c ? c.name : '')}</p></section>
+      <section class="mq-me"><a class="av" href="#/avatar/saya" aria-label="Ganti gambar profil">${avHTML(st.avatar)}<span class="edit">✏️</span></a><h1>${esc(st.name)}</h1><p>${c ? esc(c.name) : 'Belajar sendiri'}</p></section>
       <div class="mq-tiles3">${tile('Beruntun', `🔥 ${streakOf(st.id)}`, '#ff8a00')}${tile('Bintang', `⭐ ${S.starsOf(st.id)}`, '#e0a800')}${tile('Tuntas', `🏆 ${gold}`, '#19b796')}</div>
+      ${!st.classId && ses.code ? `<section class="mq-card"><h3>🔑 Kode belajarmu</h3><p class="mq-bigcode">${esc(ses.code)}</p><p class="mq-hint">Simpan kode ini. Di HP lain, buka Metiq lalu pilih <b>Saya sudah punya kode</b>.</p></section>` : ''}
       <section class="mq-card"><h3>🏅 Lencana bab · Kelas ${getGrade()}</h3><div class="mq-badges">${unitsOf(getGrade()).map((u) => { const t = S.testOf(st.id, u.id), on = t && t.best >= 60; return `<button class="mq-bd ${on ? 'on' : ''}" data-act="tip" data-t="${on ? '🏅 Lencana Bab ' + u.id + ' didapat!' : '🔒 Lulus ujian bab ' + u.id + ' untuk mendapatkan lencana ini'}" aria-label="Lencana bab ${u.id}"><span>${chLogo(u)}</span></button>`; }).join('')}</div></section>
       <section class="mq-card"><h3>🎯 Target belajar tiap hari</h3><div class="mq-goalchips">${[[5, 'Santai'], [10, 'Biasa'], [15, 'Serius'], [20, 'Hebat']].map(([m, l]) => `<button class="${m === goal ? 'on' : ''}" data-act="goal" data-m="${m}">${m} mnt<small>${l}</small></button>`).join('')}</div></section>
       <section class="mq-card"><h3>📈 Minggu ini</h3><div class="mq-tiles3" style="margin:0">${tile('Soal', wk.n, '#1c9be8')}${tile('Waktu', fmtTime(wk.ms), '#19b796')}${tile('Maju', wk.skills, '#e0a800')}</div></section>
@@ -761,7 +788,8 @@
   const TAB_MAIN = ['ringkasan', 'tugas', 'siswa', 'kelompok', 'kelola'];
   function teacherShell(ctx, tab, inner) {
     const admin = [...(ctx.t.isAdmin && !session.get().demo ? [['super', '🌐 Super admin']] : []), ...(ctx.t.isAdmin || ctx.t.isSchoolAdmin ? [['sekolah', '🏫 Sekolah']] : [])];
-    const main = [...admin, ...TABS.filter(([k]) => TAB_MAIN.includes(k))], more = TABS.filter(([k]) => !TAB_MAIN.includes(k)), inMore = more.find(([k]) => k === tab);
+    const extra = ctx.t.isAdmin && cloudOn() && !session.get().demo ? [['tanpa', '🧺 Tanpa kelas']] : [];
+    const main = [...admin, ...TABS.filter(([k]) => TAB_MAIN.includes(k))], more = [...TABS.filter(([k]) => !TAB_MAIN.includes(k)), ...extra], inMore = more.find(([k]) => k === tab);
     app.innerHTML = shell(`
       <section class="dhead">
         <div class="dh-row"><a class="av avedit" href="#/avatar/guru" aria-label="Ganti avatar">${avHTML(ctx.t.avatar || 'svg:ustadzah')}<i>✏️</i></a>
@@ -834,6 +862,7 @@
     if (tab === 'siswa' && arg) return viewTeacherStudent(ctx, arg);
     if (tab === 'kelola') return teacherShell(ctx, tab, manageHTML(ctx));
     if (tab === 'referensi') return teacherShell(ctx, tab, referenceHTML());
+    if (tab === 'tanpa') { if (!ctx.t.isAdmin || !cloudOn() || session.get().demo) return go('#/guru/ringkasan'); teacherShell(ctx, tab, `<div id="ung-box">${loadingHTML}</div>`); loadUngrouped(ctx); return; }
     if (tab === 'peringkat') return teacherShell(ctx, tab, rankingHTML(ctx));
     if (tab === 'sekolah') { if (!ctx.t.isAdmin && !ctx.t.isSchoolAdmin) return go('#/guru/ringkasan'); teacherShell(ctx, tab, schoolHTML(ctx, arg)); if (arg === 'coba') loadTrialStats(); return; }
     if (tab === 'super') { if (!ctx.t.isAdmin || session.get().demo) return go('#/guru/ringkasan'); teacherShell(ctx, tab, `<div id="super-box">${loadingHTML}</div>`); loadSuper(ctx, arg); return; }
@@ -2591,11 +2620,13 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (seq !== routeSeq) return;
     window.METIQ_CURRICULUM.setKonteks(curSettings().konteks);
     window.scrollTo(0, 0);
-    document.body.classList.toggle('mq-body', ['', undefined, 'siswa', 'mulai', 'belajar', 'asesmen', 'latihan', 'tugas', 'aku', 'ujian'].includes(a));
+    document.body.classList.toggle('mq-body', ['', undefined, 'siswa', 'siswa-baru', 'kode', 'mulai', 'belajar', 'asesmen', 'latihan', 'tugas', 'aku', 'ujian'].includes(a));
     switch (a) {
       case '': case undefined: return viewHome();
       case 'kurikulum': return viewCurriculum();
       case 'siswa': return b ? viewStudentPick(b) : viewStudentEnter();
+      case 'siswa-baru': return viewStudentStart();
+      case 'kode': return viewStudentCode();
       case 'mulai': return viewTryStart(b);
       case 'ajukan': return b === 'status' ? viewRequestStatus(c) : b ? viewRequestForm(b) : viewRequestChooser();
       case 'belajar': return viewStudentHome();
@@ -2852,6 +2883,8 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       S.setNisn(sid, n); toast('NISN disimpan ✔'); return route();
     }
     if (cloudOn()) return cloudSubmit(f, fd, kind);
+    if (kind === 'newkid') return startDemo('siswa', fd.get('name'));
+    if (kind === 'kidcode') return toast('Kode belajar butuh internet. Coba lagi saat online ya.');
     if (kind === 'classcode') { const c = S.classByCode(fd.get('code')); if (!c) return toast('Kode kelas tidak ditemukan'); go('#/siswa/' + c.code); }
     if (kind === 'parentcode') { const k = S.studentByParentCode(fd.get('code')); if (!k) return toast('Kode tidak ditemukan. Periksa lagi ya.'); session.set({ role: 'ortu', id: k.id }); go('#/ortu/laporan'); }
     if (kind === 'register') { const t = S.createTeacher(fd.get('name'), fd.get('pin')); const c = S.createClass(t.id, fd.get('cls')); session.set({ role: 'guru', id: t.id, classId: c.id }); go('#/guru/kelola'); }
@@ -2871,6 +2904,20 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const done = () => { if (btn) btn.disabled = false; };
     const fail = (err) => { done(); toast(err.status ? err.message : 'Tidak bisa terhubung ke server'); };
     try {
+      if (kind === 'newkid') {
+        const r = await Cloud.rpc('student_start', { p_name: String(fd.get('name') || '').trim() });
+        session.set({ role: 'siswa', id: r.id, code: r.code });
+        loaded = { key: '', at: 0 };
+        return go('#/asesmen');
+      }
+      if (kind === 'kidcode') {
+        const code = String(fd.get('code') || '').trim().toUpperCase();
+        if (!code) return done();
+        const r = await Cloud.rpc('student_login', { p_code: code });
+        session.set({ role: 'siswa', id: r.id, code: r.code || code });
+        loaded = { key: '', at: 0 };
+        return go('#/belajar');
+      }
       if (kind === 'classcode') return go('#/siswa/' + String(fd.get('code')).trim().toUpperCase());
       if (kind === 'parentcode') {
         const code = String(fd.get('code')).trim().toUpperCase();

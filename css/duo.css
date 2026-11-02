@@ -155,6 +155,12 @@ body.mq-body { background: #fff; }
 .mq-code.bad { border-color: var(--mq-bad); animation: mq-shake .35s; }
 .mq-steps { display: grid; gap: 10px; width: 100%; text-align: left; margin-top: 6px; }
 .mq-steps div { display: flex; gap: 12px; align-items: center; font-weight: 700; color: #4d625d; } .mq-steps .n { flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--mq-bg); color: var(--mq-dd); font-weight: 900; }
+.mq-inline { color: var(--mq-dd); font-weight: 800; }
+.mq-name { width: 100%; text-align: center; font: inherit; font-size: 1.4rem; font-weight: 900; padding: 16px 12px; border: 3px solid #bfeee2; border-bottom-width: 6px; border-radius: 18px; background: #f4fffc; color: var(--mq-ink); }
+.mq-name:focus { outline: none; border-color: var(--mq); background: #fff; }
+.mq-note { margin: 10px 0 0; text-align: center; font-weight: 700; color: #6a7f7a; font-size: .95rem; }
+.mq-land-alt { margin: 12px 0 0; }
+.mq-land-alt .mq-link { font-size: .95rem; color: #5b716b; }
 .mq-kids { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 14px; width: 100%; }
 .mq-kid { display: grid; justify-items: center; gap: 8px; padding: 16px 8px 14px; border: 2px solid #e5e5e5; border-bottom-width: 5px; border-radius: 20px; background: #fff; font: inherit; font-weight: 900; font-size: 1.05rem; color: var(--mq-ink); cursor: pointer; }
 .mq-kid:active { transform: translateY(2px); } .mq-kid .av { width: 76px; height: 76px; font-size: 3rem; box-shadow: none; background: var(--mq-bg); }
@@ -250,6 +256,7 @@ details.mq-ud[open] > summary .chev { transform: rotate(180deg); } .mq-unit .che
 .mq-h { font-size: 1.45rem; font-weight: 900; margin: 18px 14px 4px; } .mq-sub { margin: 0 14px 12px; color: #6a7f7a; font-weight: 700; }
 .mq-card { margin: 12px; padding: 14px; border: 2px solid var(--mq-line); border-radius: 20px; background: #fff; }
 .mq-card h3 { margin: 0 0 8px; font-size: 1.05rem; }
+.mq-bigcode { margin: 4px 0 6px; text-align: center; font-size: 2.1rem; font-weight: 900; letter-spacing: .22em; color: var(--mq-dd); }
 .mq-skrow { display: flex; align-items: center; gap: 12px; padding: 10px 6px; border-radius: 14px; text-decoration: none; color: var(--mq-ink); font-weight: 800; } .mq-skrow + .mq-skrow { border-top: 2px solid #f0f4f3; } .mq-skrow:active { background: #f4fffc; }
 .mq-skrow .em { flex: none; display: grid; place-items: center; width: 46px; height: 46px; border-radius: 50%; background: var(--mq-bg); font-size: 1.5rem; } .mq-skrow small { display: block; color: #6a7f7a; font-weight: 700; }
 .mq-skrow .go { flex: none; color: var(--mq-d); font-size: 1.4rem; }
