@@ -4,7 +4,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, LIM, FR, INT } = C.kit;
   const G = 13;
   const ev = (cs, x) => cs.reduce((s, c) => s * x + c, 0);
   const der = (cs) => { const n = cs.length - 1; return cs.slice(0, -1).map((c, i) => c * (n - i)); };
@@ -17,13 +17,13 @@
       skills: [
         { id: 'KA1', name: 'Limit dari tabel', gen() { const L = r(-9, 9), a = r(-3, 5), d = [0.1, 0.01, 0.001]; const vals = (s) => d.map((h, i) => Math.round((L + s * (3 - i) * 0.1 * (i === 2 ? 0.1 : 1)) * 1000) / 1000); const left = vals(-1), right = vals(1); return num(`Tabel nilai f(x) di sekitar x = ${N(a)}:<br>${tbl(['x', ...d.map((h) => N(a - h)), ...d.slice().reverse().map((h) => N(a + h))], [['f(x)', ...left, ...right.slice().reverse()]])}Berapa lim(x → ${N(a)}) f(x)?`, L, 'Lihat nilai f(x) ketika x makin dekat ke a dari kiri dan kanan.', [
           ['Dari kiri', `f(x) mendekati ${N(L)}`], ['Dari kanan', `f(x) mendekati ${N(L)}`], ['Kedua sisi sama', `limitnya <b>${N(L)}</b>`]]); } },
-        { id: 'KA2', name: 'Limit bentuk 0/0', gen() { const a = nz(-5, 5), b = nz(-5, 5), k = nz(1, 3); if (a === b) return C.SKILLS.KA2.gen(); return num(`lim(x → ${N(a)}) (${poly([k, -k * (a + b), k * a * b])}) / (${lin(1, -a)}) = ?`, k * (a - b), 'Substitusi menghasilkan 0/0: faktorkan, coret faktor (x − a), lalu substitusi.', [
+        { id: 'KA2', name: 'Limit bentuk 0/0', gen() { const a = nz(-5, 5), b = nz(-5, 5), k = nz(1, 3); if (a === b) return C.SKILLS.KA2.gen(); return num(`${LIM('x', N(a))} ${FR(poly([k, -k * (a + b), k * a * b]), lin(1, -a))} = ?`, k * (a - b), 'Substitusi menghasilkan 0/0: faktorkan, coret faktor (x − a), lalu substitusi.', [
           ['Faktorkan', `${k === 1 ? '' : k}(${lin(1, -a)})(${lin(1, -b)})`], ['Coret', `${k === 1 ? '' : k + '('}${lin(1, -b)}${k === 1 ? '' : ')'}`], ['Substitusi', `${k === 1 ? '' : k + ' × '}(${N(a)} − ${P(b)}) = <b>${N(k * (a - b))}</b>`]]); } },
-        { id: 'KA3', name: 'Limit trigonometri', gen() { const a = nz(1, 9), b = nz(1, 9); return num(`lim(x → 0) sin(${a}x) / (${b}x) = ? (pecahan paling sederhana jika perlu)`, F(a, b), 'lim(x → 0) sin(ax)/(bx) = a/b, karena lim sin u / u = 1.', [
+        { id: 'KA3', name: 'Limit trigonometri', gen() { const a = nz(1, 9), b = nz(1, 9); return num(`${LIM('x', 0)} ${FR(`sin ${a}x`, `${b}x`)} = ? (pecahan paling sederhana jika perlu)`, F(a, b), 'lim(x → 0) sin(ax)/(bx) = a/b, karena lim sin u / u = 1.', [
           ['Tulis ulang', `(${a}/${b}) × sin(${a}x)/(${a}x)`], ['Gunakan lim sin u/u = 1', `${a}/${b} × 1 = <b>${F(a, b)}</b>`]]); } },
-        { id: 'KA4', name: 'Limit di tak hingga', gen() { const deg = pick(['sama', 'atas', 'bawah']), p = nz(-6, 6), q = nz(1, 6); const ans = deg === 'sama' ? F(p, q) : deg === 'bawah' ? '0' : null; if (deg === 'atas') return pil(`lim(x → ∞) (${poly([p, 0, 0, 1])}) / (${poly([q, 0, 1])}) = ?`, ['∞', '−∞', '0', F(p, q)], p > 0 ? '∞' : '−∞', 'Jika derajat pembilang lebih besar, limitnya tak hingga (tandanya mengikuti koefisien utama).', [
+        { id: 'KA4', name: 'Limit di tak hingga', gen() { const deg = pick(['sama', 'atas', 'bawah']), p = nz(-6, 6), q = nz(1, 6); const ans = deg === 'sama' ? F(p, q) : deg === 'bawah' ? '0' : null; if (deg === 'atas') return pil(`${LIM('x', '∞')} ${FR(poly([p, 0, 0, 1]), poly([q, 0, 1]))} = ?`, ['∞', '−∞', '0', F(p, q)], p > 0 ? '∞' : '−∞', 'Jika derajat pembilang lebih besar, limitnya tak hingga (tandanya mengikuti koefisien utama).', [
           ['Bandingkan derajat', 'pembilang 3 > penyebut 2'], ['Tanda', `koefisien ${p > 0 ? 'positif → ∞' : 'negatif → −∞'}`]]);
-          return num(`lim(x → ∞) (${deg === 'sama' ? poly([p, 3, 0]) : lin(p, 3)}) / (${poly([q, 0, 1])}) = ? (pecahan paling sederhana jika perlu)`, ans, 'Bandingkan derajat pembilang dan penyebut.', [
+          return num(`${LIM('x', '∞')} ${FR(deg === 'sama' ? poly([p, 3, 0]) : lin(p, 3), poly([q, 0, 1]))} = ? (pecahan paling sederhana jika perlu)`, ans, 'Bandingkan derajat pembilang dan penyebut.', [
           ['Bandingkan derajat', deg === 'sama' ? 'sama (2) → rasio koefisien utama' : 'pembilang lebih kecil → 0'], ['Jawab', `<b>${ans}</b>`]]); } },
       ],
     },
@@ -43,7 +43,7 @@
       skills: [
         { id: 'KC1', name: 'Laju perubahan rata-rata', gen() { const cs = [nz(-3, 3), r(-5, 5), r(-5, 5)], a = r(-3, 2), b = a + r(1, 4), v = (ev(cs, b) - ev(cs, a)) / (b - a); return num(`f(x) = ${poly(cs)}. Berapa laju perubahan rata-rata f dari x = ${N(a)} sampai x = ${N(b)}?`, v, 'Laju perubahan rata-rata = (f(b) − f(a)) / (b − a), yaitu gradien garis potong.', [
           ['f(' + N(a) + ') dan f(' + N(b) + ')', `${N(ev(cs, a))} dan ${N(ev(cs, b))}`], ['Bagi', `(${N(ev(cs, b))} − ${P(ev(cs, a))}) / ${b - a} = <b>${N(v)}</b>`]]); } },
-        { id: 'KC2', name: 'Turunan dengan definisi limit', gen() { const a = nz(-3, 3), b = r(-6, 6), x = r(-4, 4), v = 2 * a * x + b; return num(`f(x) = ${poly([a, b, 0])}. Dengan f'(x) = lim(h → 0) [f(x + h) − f(x)]/h, berapa f'(${N(x)})?`, v, "f'(x) = lim(h → 0) [f(x + h) − f(x)] / h.", [
+        { id: 'KC2', name: 'Turunan dengan definisi limit', gen() { const a = nz(-3, 3), b = r(-6, 6), x = r(-4, 4), v = 2 * a * x + b; return num(`f(x) = ${poly([a, b, 0])}. Dengan f'(x) = ${LIM('h', 0)} ${FR('f(x + h) − f(x)', 'h')}, berapa f'(${N(x)})?`, v, "f'(x) = lim(h → 0) [f(x + h) − f(x)] / h.", [
           ['Selisih', `f(x + h) − f(x) = ${N(2 * a)}xh + ${P(a)}h² + ${P(b)}h`], ['Bagi h lalu h → 0', `f'(x) = ${lin(2 * a, b)}`], ['Substitusi', `f'(${N(x)}) = <b>${N(v)}</b>`]]); } },
         { id: 'KC3', name: 'Gradien garis singgung', gen() { const cs = [nz(-2, 2), r(-4, 4), r(-4, 4), r(-5, 5)], x = r(-2, 2), v = ev(der(cs), x); return num(`Berapa gradien garis singgung kurva y = ${poly(cs)} di x = ${N(x)}?`, v, "Gradien garis singgung di x = a adalah f'(a).", [
           ['Turunkan', `y' = ${poly(der(cs))}`], ['Substitusi', `y'(${N(x)}) = <b>${N(v)}</b>`]]); } },
@@ -57,7 +57,7 @@
           ['Turunkan', `f'(x) = ${N(a * n)}x${sup(n - 1)}`], ['Substitusi', `${N(a * n)} × ${P(x)}${sup(n - 1)} = <b>${N(v)}</b>`]]); } },
         { id: 'KD2', name: 'Aturan perkalian', gen() { const a = nz(-4, 4), b = r(-5, 5), c = nz(-4, 4), d = r(-5, 5), x = r(-3, 3); const u = a * x + b, w = c * x * x + d, v = a * w + u * 2 * c * x; return num(`f(x) = (${lin(a, b)})(${poly([c, 0, d])}). Berapa f'(${N(x)})?`, v, "(uv)' = u'v + uv'.", [
           ['u, v dan turunannya', `u = ${lin(a, b)}, u' = ${N(a)}; v = ${poly([c, 0, d])}, v' = ${lin(2 * c, 0)}`], ['Nilai di x = ' + N(x), `u = ${N(u)}, u' = ${N(a)}, v = ${N(w)}, v' = ${N(2 * c * x)}`], ["u'v + uv'", `${N(a)} × ${P(w)} + ${P(u)} × ${P(2 * c * x)} = <b>${N(v)}</b>`]]); } },
-        { id: 'KD3', name: 'Aturan pembagian', gen() { const a = nz(-4, 4), b = r(-5, 5), c = nz(1, 3), d = r(-5, 5), x = r(-3, 3), den = c * x + d; if (!den || a * d === b * c) return C.SKILLS.KD3.gen(); const num1 = a * den - (a * x + b) * c; return num(`f(x) = (${lin(a, b)}) / (${lin(c, d)}). Berapa f'(${N(x)})? (pecahan paling sederhana jika perlu)`, F(num1, den * den), "(u/v)' = (u'v − uv') / v².", [
+        { id: 'KD3', name: 'Aturan pembagian', gen() { const a = nz(-4, 4), b = r(-5, 5), c = nz(1, 3), d = r(-5, 5), x = r(-3, 3), den = c * x + d; if (!den || a * d === b * c) return C.SKILLS.KD3.gen(); const num1 = a * den - (a * x + b) * c; return num(`f(x) = ${FR(lin(a, b), lin(c, d))}. Berapa f'(${N(x)})? (pecahan paling sederhana jika perlu)`, F(num1, den * den), "(u/v)' = (u'v − uv') / v².", [
           ['Nilai di x = ' + N(x), `u = ${N(a * x + b)}, u' = ${N(a)}, v = ${N(den)}, v' = ${N(c)}`], ['Substitusi', `(${N(a)} × ${P(den)} − ${P(a * x + b)} × ${c}) / ${P(den)}² = ${N(num1)}/${den * den}`], ['Sederhanakan', `<b>${F(num1, den * den)}</b>`]]); } },
         { id: 'KD4', name: 'Aturan rantai', gen() { const a = nz(-3, 3), b = r(-4, 4), n = r(2, 4), x = r(-2, 2), inner = a * x + b, v = n * inner ** (n - 1) * a; return num(`f(x) = (${lin(a, b)})${sup(n)}. Berapa f'(${N(x)})?`, v, "Aturan rantai: [g(h(x))]' = g'(h(x)) × h'(x).", [
           ['Turunan luar', `${n}(${lin(a, b)})${sup(n - 1)}`], ['Kalikan turunan dalam', `× ${N(a)}`], ['Substitusi', `${n} × ${P(inner)}${sup(n - 1)} × ${P(a)} = <b>${N(v)}</b>`]]); } },
@@ -99,7 +99,7 @@
           ["f'(x)", poly(der(cs))], ["f''(x)", poly(der(der(cs)))], ['Substitusi', `<b>${N(v)}</b>`]]); } },
         { id: 'KG2', name: 'Titik belok', gen() { const a = nz(-2, 2), h = nz(-4, 4), cs = [a, -3 * a * h, r(-5, 5), r(-5, 5)]; return num(`Di x berapa f(x) = ${poly(cs)} punya titik belok?`, h, "Titik belok terjadi saat f''(x) = 0 dan tanda f'' berubah.", [
           ["f''(x)", lin(6 * a, -6 * a * h)], ["f''(x) = 0", `x = <b>${N(h)}</b>`]]); } },
-        { id: 'KG3', name: "Aturan L'Hôpital", gen() { const a = nz(1, 6), b = nz(1, 6), kind = pick(['exp', 'sin']); return num(kind === 'exp' ? `lim(x → 0) (e${sup(a + 'x')} − 1) / (${b}x) = ? (pecahan paling sederhana jika perlu)` : `lim(x → 0) (${b}x) / sin(${a}x) = ? (pecahan paling sederhana jika perlu)`, kind === 'exp' ? F(a, b) : F(b, a), "Untuk bentuk 0/0, lim f/g = lim f'/g'.", [
+        { id: 'KG3', name: "Aturan L'Hôpital", gen() { const a = nz(1, 6), b = nz(1, 6), kind = pick(['exp', 'sin']); return num(kind === 'exp' ? `${LIM('x', 0)} ${FR(`e${sup(a + 'x')} − 1`, `${b}x`)} = ? (pecahan paling sederhana jika perlu)` : `${LIM('x', 0)} ${FR(`${b}x`, `sin ${a}x`)} = ? (pecahan paling sederhana jika perlu)`, kind === 'exp' ? F(a, b) : F(b, a), "Untuk bentuk 0/0, lim f/g = lim f'/g'.", [
           ['Periksa bentuk', '0/0'], ['Turunkan pembilang dan penyebut', kind === 'exp' ? `${a}e${sup(a + 'x')} / ${b}` : `${b} / (${a} cos ${a}x)`], ['Substitusi x = 0', `<b>${kind === 'exp' ? F(a, b) : F(b, a)}</b>`]]); } },
       ],
     },
@@ -107,7 +107,7 @@
       id: 'KH', grade: G, name: 'Integral tak tentu', icon: '∫', color: '#9b6dff', ixl: 'Q, S', sg: 'Kalkulus · Integral', km: 'Aljabar',
       tip: 'Integral adalah kebalikan turunan: jika turunan F adalah f, maka ∫f dx = F + C.',
       skills: [
-        { id: 'KH1', name: 'Antiturunan polinomial', gen() { const a = nz(1, 4), n = r(1, 4), b = nz(-6, 6), c1 = a * (n + 1); const tail = `${b < 0 ? '−' : '+'} ${Math.abs(b) === 1 ? '' : Math.abs(b)}x + C`; const up = (k) => poly([k, ...Array(n + 1).fill(0)]); const ans = `${up(a)} ${tail}`; return pil(`∫ (${poly([c1, ...Array(n).fill(0)])} ${b < 0 ? '−' : '+'} ${Math.abs(b)}) dx = ?`, opt(ans, [`${poly([a, ...Array(n).fill(0)])} ${tail}`, `${up(c1)} ${tail}`, `${poly([c1 * n, ...Array(n - 1).fill(0)])} + C`, `${up(a)} + C`]), ans, '∫ xⁿ dx = xⁿ⁺¹/(n + 1) + C. Jangan lupa + C.', [
+        { id: 'KH1', name: 'Antiturunan polinomial', gen() { const a = nz(1, 4), n = r(1, 4), b = nz(-6, 6), c1 = a * (n + 1); const tail = `${b < 0 ? '−' : '+'} ${Math.abs(b) === 1 ? '' : Math.abs(b)}x + C`; const up = (k) => poly([k, ...Array(n + 1).fill(0)]); const ans = `${up(a)} ${tail}`; return pil(`${INT()} (${poly([c1, ...Array(n).fill(0)])} ${b < 0 ? '−' : '+'} ${Math.abs(b)}) dx = ?`, opt(ans, [`${poly([a, ...Array(n).fill(0)])} ${tail}`, `${up(c1)} ${tail}`, `${poly([c1 * n, ...Array(n - 1).fill(0)])} + C`, `${up(a)} + C`]), ans, '∫ xⁿ dx = xⁿ⁺¹/(n + 1) + C. Jangan lupa + C.', [
           ['Naikkan pangkat, bagi dengan pangkat baru', `${c1}x${sup(n)} → ${c1}/${n + 1} x${sup(n + 1)} = ${up(a)}`], ['Integral konstanta', `${N(b)} → ${N(b)}x`], ['Hasil', `<b>${ans}</b>`]]); } },
         { id: 'KH2', name: 'Masalah nilai awal', gen() { const a = nz(-3, 3), b = r(-5, 5), x0 = r(-2, 2), y0 = r(-9, 9), c = y0 - (a * x0 * x0 + b * x0); return num(`F'(x) = ${lin(2 * a, b)} dan F(${N(x0)}) = ${N(y0)}. Berapa konstanta C pada F(x) = ${poly([a, b, 0])} + C?`, c, 'Integralkan, lalu substitusikan syarat awal untuk mencari C.', [
           ['Antiturunan', `F(x) = ${poly([a, b, 0])} + C`], ['Substitusi', `${N(y0)} = ${N(a * x0 * x0 + b * x0)} + C`], ['C', `<b>${N(c)}</b>`]]); } },
@@ -117,11 +117,11 @@
       id: 'KI', grade: G, name: 'Integral tentu', icon: '▭', color: '#e17055', ixl: 'R, T', sg: 'Kalkulus · Integral', km: 'Aljabar',
       tip: 'Integral tentu menghitung luas di bawah kurva, seperti menjumlah banyak persegi panjang tipis.',
       skills: [
-        { id: 'KI1', name: 'Menghitung integral tentu', gen() { const a = nz(-2, 2) * 3, b = nz(-3, 3) * 2, c = r(-4, 4), lo = r(-2, 1), hi = lo + r(1, 3); const Fx = (x) => (a / 3) * x ** 3 + (b / 2) * x * x + c * x, v = Fx(hi) - Fx(lo); return num(`∫ dari ${N(lo)} sampai ${N(hi)} (${poly([a, b, c])}) dx = ?`, v, 'Teorema Dasar Kalkulus: ∫ₐᵇ f(x) dx = F(b) − F(a).', [
+        { id: 'KI1', name: 'Menghitung integral tentu', gen() { const a = nz(-2, 2) * 3, b = nz(-3, 3) * 2, c = r(-4, 4), lo = r(-2, 1), hi = lo + r(1, 3); const Fx = (x) => (a / 3) * x ** 3 + (b / 2) * x * x + c * x, v = Fx(hi) - Fx(lo); return num(`${INT(N(lo), N(hi))} (${poly([a, b, c])}) dx = ?`, v, 'Teorema Dasar Kalkulus: ∫ₐᵇ f(x) dx = F(b) − F(a).', [
           ['Antiturunan', `F(x) = ${poly([a / 3, b / 2, c, 0])}`], ['F(' + N(hi) + ') − F(' + N(lo) + ')', `${N(Fx(hi))} − ${P(Fx(lo))} = <b>${N(v)}</b>`]]); } },
         { id: 'KI2', name: 'Luas daerah di bawah kurva', gen() { const k = r(1, 4), hi = r(1, 3) * 3; return num(`Berapa luas daerah antara y = ${k === 1 ? '' : k}x² dan sumbu x dari x = 0 sampai x = ${hi}?`, (k * hi ** 3) / 3, 'Luas = ∫ f(x) dx bila f(x) ≥ 0 pada selangnya.', [
           ['Integral', `∫₀^${hi} ${k === 1 ? '' : k}x² dx = ${k === 1 ? '' : k + '/'}${k === 1 ? '1/3' : '3'} x³`], ['Hitung', `${k} × ${hi ** 3} / 3 = <b>${N((k * hi ** 3) / 3)}</b>`]]); } },
-        { id: 'KI3', name: 'Teorema Dasar Kalkulus bagian 1', gen() { const a = nz(-4, 4), b = r(-6, 6), x = r(-3, 3); return num(`G(x) = ∫ dari 0 sampai x (${lin(a, b, 't')}) dt. Berapa G'(${N(x)})?`, a * x + b, "d/dx ∫ₐˣ f(t) dt = f(x).", [
+        { id: 'KI3', name: 'Teorema Dasar Kalkulus bagian 1', gen() { const a = nz(-4, 4), b = r(-6, 6), x = r(-3, 3); return num(`G(x) = ${INT(0, 'x')} (${lin(a, b, 't')}) dt. Berapa G'(${N(x)})?`, a * x + b, "d/dx ∫ₐˣ f(t) dt = f(x).", [
           ['Gunakan TDK 1', `G'(x) = ${lin(a, b)}`], ['Substitusi', `<b>${N(a * x + b)}</b>`]]); } },
       ],
     },
@@ -129,7 +129,7 @@
       id: 'KJ', grade: G, name: 'Teknik dan aplikasi integral', icon: '🌀', color: '#16a085', ixl: 'U–W', sg: 'Kalkulus · Integral', km: 'Aljabar',
       tip: 'Volume vas bunga bisa dihitung dengan memutar kurva tepinya mengelilingi sumbu.',
       skills: [
-        { id: 'KJ1', name: 'Integral substitusi', gen() { const n = r(1, 3), a = nz(1, 3), b = r(0, 3), lo = 0, hi = 1; const U = (x) => (a * x + b) ** (n + 1) / (a * (n + 1)), v = U(hi) - U(lo); if (Math.abs(v * 12 - Math.round(v * 12)) > 1e-9) return C.SKILLS.KJ1.gen(); return num(`∫ dari 0 sampai 1 (${lin(a, b)})${sup(n)} dx = ? (pecahan paling sederhana jika perlu)`, F(Math.round(v * 12 * (n + 1) * a), 12 * (n + 1) * a), 'Substitusi u = ax + b, du = a dx.', [
+        { id: 'KJ1', name: 'Integral substitusi', gen() { const n = r(2, 3), a = nz(1, 3), b = r(0, 3), lo = 0, hi = 1; const U = (x) => (a * x + b) ** (n + 1) / (a * (n + 1)), v = U(hi) - U(lo); if (Math.abs(v * 12 - Math.round(v * 12)) > 1e-9) return C.SKILLS.KJ1.gen(); return num(`${INT(0, 1)} ${a === 1 && !b ? 'x' : `(${lin(a, b)})`}${sup(n)} dx = ? (pecahan paling sederhana jika perlu)`, F(Math.round(v * 12 * (n + 1) * a), 12 * (n + 1) * a), 'Substitusi u = ax + b, du = a dx.', [
           ['Substitusi', `u = ${lin(a, b)}, dx = du/${a}`], ['Antiturunan', `(${lin(a, b)})${sup(n + 1)} / ${a * (n + 1)}`], ['Batas', `[${(a + b) ** (n + 1)} − ${b ** (n + 1)}] / ${a * (n + 1)} = <b>${F(Math.round(v * 12 * (n + 1) * a), 12 * (n + 1) * a)}</b>`]]); } },
         { id: 'KJ2', name: 'Volume benda putar', gen() { const k = r(1, 3), hi = r(1, 3); const v = (k * k * hi ** 3) / 3; return num(`Daerah di bawah y = ${k === 1 ? '' : k}x dari x = 0 sampai ${hi} diputar mengelilingi sumbu x. Volumenya mπ. Berapa m? (pecahan paling sederhana jika perlu)`, F(k * k * hi ** 3, 3), 'Metode cakram: V = π ∫ [f(x)]² dx.', [
           ['Kuadratkan f', `(${k === 1 ? '' : k}x)² = ${k * k === 1 ? '' : k * k}x²`], ['Integral', `π ∫₀^${hi} ${k * k === 1 ? '' : k * k}x² dx = π × ${k * k} × ${hi ** 3}/3`], ['m', `<b>${F(k * k * hi ** 3, 3)}</b>`]]); } },

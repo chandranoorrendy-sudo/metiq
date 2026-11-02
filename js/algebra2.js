@@ -4,7 +4,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, fact, nCr } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, fact, nCr, FR } = C.kit;
   const G = 11;
   const cx = (a, b) => (b === 0 ? N(a) : `${a ? N(a) + ' ' + (b < 0 ? '−' : '+') + ' ' : b < 0 ? '−' : ''}${Math.abs(b) === 1 ? '' : Math.abs(b)}i`);
 
@@ -41,7 +41,7 @@
           ['Hitung g(' + N(x) + ')', `${N(c)} × ${P(x)} + ${P(d)} = ${N(gx)}`], ['Hitung f(' + N(gx) + ')', `${N(a)} × ${P(gx)} + ${P(b)} = <b>${N(ans)}</b>`]]); } },
         { id: 'A2C2', name: 'Nilai fungsi invers', gen() { const a = nz(-5, 5), b = r(-9, 9), x = r(-6, 6), y = a * x + b; return num(`f(x) = ${lin(a, b)}. Berapa f${sup('−1')}(${N(y)})?`, x, 'f⁻¹(y) adalah nilai x yang memenuhi f(x) = y.', [
           ['Tulis persamaan', `${lin(a, b)} = ${N(y)}`], ['Selesaikan x', `x = (${N(y)} − ${P(b)}) : ${P(a)} = <b>${N(x)}</b>`]]); } },
-        { id: 'A2C3', name: 'Domain fungsi rasional', gen() { const a = nz(-9, 9), k = nz(-5, 5), b = r(-9, 9); return num(`f(x) = (${lin(k, b)}) / (${lin(1, -a)}). Untuk x berapa f tidak terdefinisi?`, a, 'Pecahan tidak terdefinisi jika penyebutnya nol.', [
+        { id: 'A2C3', name: 'Domain fungsi rasional', gen() { const a = nz(-9, 9), k = nz(-5, 5), b = r(-9, 9); return num(`f(x) = ${FR(lin(k, b), lin(1, -a))}. Untuk x berapa f tidak terdefinisi?`, a, 'Pecahan tidak terdefinisi jika penyebutnya nol.', [
           ['Penyebut = 0', `${lin(1, -a)} = 0`], ['Selesaikan', `x = <b>${N(a)}</b>`]]); } },
       ],
     },

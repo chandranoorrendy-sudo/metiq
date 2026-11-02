@@ -4,7 +4,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, LIM, FR } = C.kit;
   const G = 12;
   const mat = (m) => `<span class="mmat">${m.map((row) => `<span>${row.map(N).join('</span><span>')}</span>`).join('<br>')}</span>`;
   const vec = (a, b, c) => `(${[a, b, c].filter((x) => x !== undefined).map(N).join(', ')})`;
@@ -26,9 +26,9 @@
       id: 'PKB', grade: G, name: 'Fungsi rasional dan asimtot', icon: '〰️', color: '#ff7a59', ixl: 'G', sg: 'Fase F · Aljabar dan Fungsi', km: 'Aljabar',
       tip: 'Asimtot adalah garis yang didekati grafik tetapi tidak pernah dicapai.',
       skills: [
-        { id: 'PKB1', name: 'Asimtot tegak', gen() { const a = nz(-8, 8), k = nz(-5, 5), b = r(-9, 9); if (k * a + b === 0) return C.SKILLS.PKB1.gen(); return num(`f(x) = (${lin(k, b)}) / (${lin(1, -a)}). Asimtot tegaknya x = ?`, a, 'Asimtot tegak terjadi di nilai x yang membuat penyebut nol (dan pembilang tidak nol).', [
+        { id: 'PKB1', name: 'Asimtot tegak', gen() { const a = nz(-8, 8), k = nz(-5, 5), b = r(-9, 9); if (k * a + b === 0) return C.SKILLS.PKB1.gen(); return num(`f(x) = ${FR(lin(k, b), lin(1, -a))}. Asimtot tegaknya x = ?`, a, 'Asimtot tegak terjadi di nilai x yang membuat penyebut nol (dan pembilang tidak nol).', [
           ['Penyebut = 0', `${lin(1, -a)} = 0 → x = ${N(a)}`], ['Periksa pembilang', `${N(k)} × ${P(a)} + ${P(b)} = ${N(k * a + b)} ≠ 0`], ['Jawab', `x = <b>${N(a)}</b>`]]); } },
-        { id: 'PKB2', name: 'Asimtot datar', gen() { const p = nz(-9, 9), q = nz(1, 6), same = Math.random() < 0.7; const ans = same ? F(p, q) : '0'; return num(`f(x) = (${same ? poly([p, r(-5, 5), r(-5, 5)]) : lin(p, r(-5, 5))}) / (${poly([q, r(-5, 5), nz(-5, 5)])}). Asimtot datarnya y = ? (pecahan paling sederhana jika perlu)`, ans, 'Bandingkan derajat: derajat sama → y = rasio koefisien utama; derajat pembilang lebih kecil → y = 0.', [
+        { id: 'PKB2', name: 'Asimtot datar', gen() { const p = nz(-9, 9), q = nz(1, 6), same = Math.random() < 0.7; const ans = same ? F(p, q) : '0'; return num(`f(x) = ${FR(same ? poly([p, r(-5, 5), r(-5, 5)]) : lin(p, r(-5, 5)), poly([q, r(-5, 5), nz(-5, 5)]))}. Asimtot datarnya y = ? (pecahan paling sederhana jika perlu)`, ans, 'Bandingkan derajat: derajat sama → y = rasio koefisien utama; derajat pembilang lebih kecil → y = 0.', [
           ['Bandingkan derajat', same ? 'Derajat pembilang = derajat penyebut = 2.' : 'Derajat pembilang (1) < derajat penyebut (2).'], ['Jawab', same ? `y = ${p}/${q} = <b>${ans}</b>` : 'y = <b>0</b>']]); } },
       ],
     },
@@ -95,11 +95,11 @@
       id: 'PKH', grade: G, name: 'Pengantar limit', icon: '→', color: '#9b6dff', ixl: 'HH–JJ', sg: 'Matematika Tingkat Lanjut · Kalkulus', km: 'Aljabar',
       tip: 'Limit menanyakan: nilai f(x) mendekati berapa ketika x makin dekat ke a?',
       skills: [
-        { id: 'PKH1', name: 'Limit dengan substitusi', gen() { const cs = [nz(-3, 3), r(-5, 5), r(-9, 9)], a = r(-4, 4), v = cs.reduce((s, c) => s * a + c, 0); return num(`lim(x → ${N(a)}) (${poly(cs)}) = ?`, v, 'Untuk polinomial, limit di x = a sama dengan f(a).', [
+        { id: 'PKH1', name: 'Limit dengan substitusi', gen() { const cs = [nz(-3, 3), r(-5, 5), r(-9, 9)], a = r(-4, 4), v = cs.reduce((s, c) => s * a + c, 0); return num(`${LIM('x', N(a))} (${poly(cs)}) = ?`, v, 'Untuk polinomial, limit di x = a sama dengan f(a).', [
           ['Substitusi x = ' + N(a), `${P(cs[0])} × ${P(a)}² + ${P(cs[1])} × ${P(a)} + ${P(cs[2])}`], ['Hitung', `<b>${N(v)}</b>`]]); } },
-        { id: 'PKH2', name: 'Limit bentuk 0/0 dengan faktorisasi', gen() { const a = nz(-6, 6), b = nz(-6, 6); if (a === b) return C.SKILLS.PKH2.gen(); return num(`lim(x → ${N(a)}) (${poly([1, -(a + b), a * b])}) / (${lin(1, -a)}) = ?`, a - b, 'Jika substitusi menghasilkan 0/0, faktorkan lalu coret faktor yang sama.', [
+        { id: 'PKH2', name: 'Limit bentuk 0/0 dengan faktorisasi', gen() { const a = nz(-6, 6), b = nz(-6, 6); if (a === b) return C.SKILLS.PKH2.gen(); return num(`${LIM('x', N(a))} ${FR(poly([1, -(a + b), a * b]), lin(1, -a))} = ?`, a - b, 'Jika substitusi menghasilkan 0/0, faktorkan lalu coret faktor yang sama.', [
           ['Faktorkan pembilang', `(${lin(1, -a)})(${lin(1, -b)})`], ['Coret (' + lin(1, -a) + ')', lin(1, -b)], ['Substitusi', `${N(a)} − ${P(b)} = <b>${N(a - b)}</b>`]]); } },
-        { id: 'PKH3', name: 'Limit di tak hingga', gen() { const p = nz(-9, 9), q = nz(1, 7); return num(`lim(x → ∞) (${poly([p, r(-9, 9), r(-9, 9)])}) / (${poly([q, r(-9, 9), nz(-9, 9)])}) = ? (pecahan paling sederhana jika perlu)`, F(p, q), 'Bagi pembilang dan penyebut dengan pangkat tertinggi x; suku lain mendekati 0.', [
+        { id: 'PKH3', name: 'Limit di tak hingga', gen() { const p = nz(-9, 9), q = nz(1, 7); return num(`${LIM('x', '∞')} ${FR(poly([p, r(-9, 9), r(-9, 9)]), poly([q, r(-9, 9), nz(-9, 9)]))} = ? (pecahan paling sederhana jika perlu)`, F(p, q), 'Bagi pembilang dan penyebut dengan pangkat tertinggi x; suku lain mendekati 0.', [
           ['Pangkat tertinggi sama', 'Hasilnya rasio koefisien x².'], ['Jawab', `${p}/${q} = <b>${F(p, q)}</b>`]]); } },
       ],
     },

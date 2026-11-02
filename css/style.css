@@ -842,3 +842,12 @@ details.realcard summary { cursor: pointer; list-style: none; } details.realcard
 .tkrow, .tkcol { display: flex; justify-content: center; gap: 18px; font-size: 3.4rem; line-height: 1; }
 .tkcol { flex-direction: column; align-items: center; gap: 8px; }
 .tkem { font-size: 2.4rem; line-height: 1; }
+
+/* ---------- Notasi matematika bertingkat: limit, integral dengan batas ---------- */
+.mlim { display: inline-flex; flex-direction: column; align-items: center; vertical-align: middle; line-height: 1.05; margin: 0 4px 0 0; }
+.mlim > span { font-weight: inherit; }
+.mlim small { font-size: .62em; white-space: nowrap; margin-top: 1px; }
+.mint { display: inline-flex; align-items: center; vertical-align: middle; font-size: 1.45em; line-height: 1; margin-right: 2px; }
+.mlims { display: inline-flex; flex-direction: column; justify-content: space-between; font-size: .52em; line-height: 1.15; margin-left: 1px; align-self: stretch; }
+.mlims sup, .mlims sub { vertical-align: baseline; font-size: 1em; line-height: 1.15; }
+.mfr { white-space: nowrap; }
