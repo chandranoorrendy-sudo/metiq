@@ -684,3 +684,60 @@ html .mq-bubble .mq-spk.aud { display: inline-flex !important; background: #ff9f
 .mq-coretcta { display: block; margin: 8px auto 4px; padding: 7px 16px; border: 2px dashed #f1d98a; border-radius: 999px; background: #fffdf3; color: #8a6a00; font: inherit; font-weight: 900; font-size: .92rem; cursor: pointer; }
 .mq-coretcta:active { transform: scale(.97); }
 .mq-coret .qcopy { padding: 4px 12px; border-bottom: 2px dashed #f6e7ad; font-weight: 900; font-size: 1.05rem; color: #04382e; white-space: nowrap; overflow-x: auto; }
+
+/* ---------- Sehari Bekerja (misi profesi): memakai gaya Permainan ---------- */
+.jbands { display: flex; gap: 6px; margin: 10px 14px 8px; overflow-x: auto; }
+.jbands button, .jfilters button { flex: none; padding: 7px 13px; border: 2px solid #d9efe9; border-bottom-width: 4px; border-radius: 999px; background: #fff; font: inherit; font-weight: 900; font-size: .9rem; color: #04382e; cursor: pointer; }
+.jbands button.on, .jfilters button.on { background: #35e0bd; border-color: #1db796; }
+.jfilters { display: grid; gap: 6px; margin: 0 14px 14px; }
+.jfilters > div { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 2px; }
+.jfilters button { padding: 4px 11px; font-size: .8rem; border-bottom-width: 2px; }
+.jtile small { color: #5c7570; font-weight: 700; font-size: .78rem; text-align: center; line-height: 1.25; }
+.jpeople { font-size: 2.4rem; letter-spacing: -.1em; line-height: 1; } .jpeople.big { font-size: 3.4rem; }
+.jtile .jdone { background: #1db796; }
+.jpick { display: grid; gap: 10px; padding: 16px 14px; }
+.jpick .mq-btn { display: grid; text-align: left; } .jpick small { font-weight: 700; opacity: .75; }
+.jhero { margin: 12px 14px; padding: 16px; border: 2px solid color-mix(in srgb, var(--c) 35%, #fff); border-bottom-width: 6px; border-radius: 22px; background: color-mix(in srgb, var(--c) 8%, #fff); text-align: center; }
+.jhero .jart { font-size: 2.6rem; margin: 4px 0; } .jhero h2 { margin: 10px 0 2px; font-size: 1rem; } .jhero p { margin: 0; color: #36504a; font-weight: 700; }
+.jsub { margin: 18px 14px 8px; font-size: 1.1rem; }
+.jmissions { display: grid; gap: 8px; margin: 0 14px; }
+.jmis { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 2px solid #e3efec; border-bottom-width: 5px; border-radius: 18px; background: #fff; color: inherit; text-decoration: none; }
+.jmis.mine { border-color: var(--c); }
+.jmis .lv { flex: none; min-width: 58px; padding: 3px 8px; border-radius: 999px; background: color-mix(in srgb, var(--c) 18%, #fff); font-weight: 900; font-size: .78rem; text-align: center; }
+.jmis small { display: block; color: #5c7570; font-weight: 700; font-size: .78rem; } .jmis .go { font-size: 1.4rem; color: #9db3ae; } .jmis .st svg { width: 16px; height: 16px; }
+.jlead { margin: 12px 14px; font-weight: 700; }
+.jwhere { display: inline-block; margin: 0 0 12px; padding: 7px 14px; border: 2px dashed #b7e6da; border-radius: 999px; background: #f2fffb; color: #00806b; font-weight: 900; text-decoration: none; }
+.jscene { text-align: center; } .jscene .jart.big { font-size: 4rem; line-height: 1.1; margin-top: 6px; }
+.jscene h1 { margin: 4px 0 12px; font-size: 1.35rem; } .jlv { color: #5c7570; font-weight: 800; }
+.jscene .mq-say { text-align: left; }
+.jnote { margin: 12px 4px 0; padding: 8px 12px; border-radius: 14px; background: #fff7e0; font-size: .86rem; font-weight: 700; color: #6b5200; text-align: left; }
+.mq-opt.jbig { font-size: 2rem; }
+.jhow { margin: 4px 0 8px; text-align: center; color: #5c7570; font-weight: 800; font-size: .88rem; }
+.jslots, .jbins { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+.jslot { position: relative; display: grid; place-items: center; min-width: 76px; min-height: 76px; border: 2px dashed #b7e6da; border-radius: 16px; background: #f7fffd; }
+.jslot small { position: absolute; top: 3px; left: 7px; font-weight: 900; color: #9db3ae; }
+.jbin { flex: 1 1 140px; min-height: 110px; padding: 8px; border: 2px dashed #b7e6da; border-radius: 18px; background: #f7fffd; text-align: center; cursor: pointer; }
+.jbin > div { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px; margin-top: 6px; }
+.jpool { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; min-height: 64px; margin-top: 14px; padding: 10px; border-radius: 18px; background: #f1f6f5; }
+.jpool small { align-self: center; color: #5c7570; font-weight: 700; }
+.jitem { display: grid; place-items: center; min-width: 58px; min-height: 58px; padding: 4px; border: 2px solid #d9efe9; border-bottom-width: 4px; border-radius: 14px; background: #fff; font-size: 2rem; cursor: grab; touch-action: none; }
+.jitem.pick { border-color: #ff9f43; background: #fff3e0; }
+.jghost { position: fixed; z-index: 90; pointer-events: none; opacity: .9; transform: scale(1.08); box-shadow: 0 10px 24px rgba(4, 56, 46, .25); }
+.jblk { display: block; width: var(--s); height: var(--s); border-radius: 6px; background: var(--c); box-shadow: inset 0 -5px 0 rgba(0, 0, 0, .15); }
+.jtower { display: grid; justify-items: center; gap: 2px; }
+.jrow { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; font-size: 2.2rem; }
+.jbrick { display: block; width: 100%; text-align: center; font-size: 1.5rem; letter-spacing: -.05em; }
+.jhouse { width: 190px; max-width: 70%; display: block; margin: 0 auto; }
+.jbars { display: flex; align-items: flex-end; justify-content: center; gap: 10px; height: 170px; padding: 8px; }
+.jbar { display: grid; justify-items: center; align-content: end; height: 100%; }
+.jbar i { display: grid; place-items: start center; width: 34px; border-radius: 8px 8px 0 0; background: #4d96ff; }
+.jbar b { margin-top: -20px; font-size: .8rem; } .jbar small { margin-top: 4px; font-weight: 800; font-size: .78rem; }
+.jgrid { width: 230px; max-width: 80%; display: block; margin: 0 auto; }
+.jlist { text-align: center; font-size: 1.7rem; line-height: 1.5; word-spacing: .1em; }
+.jresult { text-align: center; } .jresult h1 { margin: 4px 0; } .jwrap { font-weight: 800; color: #36504a; }
+.jcard { margin: 14px 0; padding: 12px 14px; border: 2px solid #e3efec; border-radius: 18px; background: #fff; text-align: left; }
+.jcard h2 { margin: 0 0 8px; font-size: 1rem; } .jcard ol { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.jcard li small { display: block; color: #5c7570; font-weight: 700; } .jcard li p { margin: 2px 0 0; font-size: .9rem; color: #36504a; }
+.jtopics { display: flex; flex-wrap: wrap; gap: 6px; }
+.jtopic { padding: 6px 12px; border-radius: 999px; background: #e6fffa; color: #00806b; font-weight: 900; font-size: .88rem; text-decoration: none; }
+.jfoot { display: grid; gap: 8px; } .jfoot .mq-btn { text-align: center; text-decoration: none; }

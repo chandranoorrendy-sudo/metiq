@@ -157,6 +157,14 @@
       p[key] = cur; save();
       return Object.assign({}, cur);
     },
+    // Misi Sehari Bekerja: kunci 'm:<key>', ok = bintang terbaik (1–3), att = berapa kali diselesaikan
+    recordMission(sid, key, stars, ms) {
+      const p = db.progress[sid] = db.progress[sid] || {}, k = 'm:' + key;
+      const cur = p[k] || { score: 0, att: 0, ok: 0, ms: 0, last: 0 };
+      cur.score = Math.max(cur.score, Math.round((stars / 3) * 100)); cur.att++; cur.ok = Math.max(cur.ok, stars); cur.ms += Math.min(ms, 1800000); cur.last = Date.now();
+      p[k] = cur; save();
+      return Object.assign({}, cur);
+    },
     gameStars(sid) { return Object.entries(db.progress[sid] || {}).filter(([k]) => k.startsWith('g:')).reduce((t, [, v]) => t + (v.ok || 0), 0); },
     /* Bintang (pengganti XP). Disimpan per hari di kunci 'x:YYYYMMDD' (maks 10 huruf agar muat di server).
      * ok = bintang hari itu, att = berapa kali bertambah (selalu naik, syarat sinkron server). */

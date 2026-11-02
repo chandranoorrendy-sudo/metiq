@@ -203,7 +203,7 @@
       </section>
       <p class="mq-gb-t">Untuk TK, SD, SMP, dan SMA: TK A sampai Kalkulus</p>
       <div class="mq-gb">${GRADES.map((g) => `<span title="${g.name}">${g.short || g.id}</span>`).join('')}</div>
-      <footer class="mq-lfoot"><a href="#/permainan">Permainan</a><a href="#/panduan/siswa">Bantuan</a><a href="#/ajukan">Ajukan akun</a><a href="#/ajukan/status">Cek status</a></footer>
+      <footer class="mq-lfoot"><a href="#/permainan">Permainan</a><a href="#/profesi">Profesi</a><a href="#/panduan/siswa">Bantuan</a><a href="#/ajukan">Ajukan akun</a><a href="#/ajukan/status">Cek status</a></footer>
     </div>`;
   }
 
@@ -223,6 +223,7 @@
   /* ---------- Siswa ---------- */
   /* ---------- Siswa: masuk, peta belajar, tugas, profil (gaya aplikasi belajar, sedikit teks, banyak gambar) ---------- */
   const IC = {
+    job: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7.5" width="18" height="12.5" rx="3"/><path d="M9 7.5V5.8A1.8 1.8 0 0 1 10.8 4h2.4A1.8 1.8 0 0 1 15 5.8v1.7M3 13h18M12 12v2"/></svg>',
     gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>',
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
@@ -253,7 +254,7 @@
   function studentNav(active) {
     const st = studentNow(); if (!st) return '';
     const todo = TASKS_ON ? todoCount(st) : 0;
-    const items = [['belajar', '#/belajar', 'Belajar', IC.home], ...(TASKS_ON ? [['tugas', '#/tugas', 'Tugas', IC.task]] : []), ['main', '#/permainan', 'Main', IC.game], ...(adabOn() ? [] : [['hadiah', '#/hadiah', 'Hadiah', IC.gift]]), ['aku', '#/aku', 'Aku', IC.me]];
+    const items = [['belajar', '#/belajar', 'Belajar', IC.home], ...(TASKS_ON ? [['tugas', '#/tugas', 'Tugas', IC.task]] : []), ['main', '#/permainan', 'Main', IC.game], ['profesi', '#/profesi', 'Profesi', IC.job], ...(adabOn() ? [] : [['hadiah', '#/hadiah', 'Hadiah', IC.gift]]), ['aku', '#/aku', 'Aku', IC.me]];
     return `<nav class="mq-nav" aria-label="Menu"><div class="mq-nav-in">${items.map(([k, h, l, ic]) => `<a href="${h}" class="${k === active ? 'on' : ''}">${ic}${l}${k === 'tugas' && todo ? `<span class="dot">${todo}</span>` : ''}</a>`).join('')}</div></nav>`;
   }
   // Dipakai halaman lama (permainan, hadiah) agar menu bawah ikut tampil untuk siswa
@@ -2852,6 +2853,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       ${inPractice ? '' : '<button class="back link" data-act="back">← Kembali</button>'}
       <section class="card lhead" style="--c:${u.color}"><span class="uicon">${u.icon}</span><div class="grow"><small class="muted">Pelajaran · ${gname(u.grade)} · Bab ${u.id}</small><h1>${u.name}</h1><p>${les.intro}</p></div><button class="say" data-act="lsay" data-u="${uid}" data-i="-1" aria-label="Bacakan">🔊</button></section>
       ${(() => { const b = unitBuddy(u); return b ? `<div class="mq-say lbuddy">${MQ.svg('hello', { size: 76, who: b, enter: !inPractice })}<div class="mq-bubble"><p>Ayo belajar bersama <b>${buddyName(b)}</b>!</p></div></div>` : ''; })()}
+      ${(window.METIQ_JOBS || { MISSIONS: [] }).MISSIONS.some((m) => m.units.includes(uid)) ? `<a class="jwhere" href="#/profesi/topik/${uid}">🧑‍🔧 Dipakai di pekerjaan apa?</a>` : ''}
       ${hikmahHTML(uid)}
       ${window.METIQ_ANIM.has(uid) ? `<section class="card anim-card"><h2>🎬 Animasi: ${u.name}</h2><div id="anim-box"></div></section>` : ''}
       ${les.parts.length > 1 ? `<div class="ltoc">${les.parts.map((p, i) => `<button data-act="lgo" data-i="${i}">${i + 1}. ${p.t}</button>`).join('')}</div>` : ''}
@@ -2912,6 +2914,244 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       <button class="btn" data-act="reload">Soal lain</button>`);
   }
 
+  /* ---------- Sehari Bekerja (A Day in This Job): misi matematika dari profesi nyata. Pola layar mengikuti Permainan ---------- */
+  const J = window.METIQ_JOBS || { BANDS: [], PROFESSIONS: [], MISSIONS: [], INTERESTS: {}, TOPICS: {}, byId: () => null, prof: () => null };
+  const bandOfGrade = (g) => (J.BANDS.find((b) => b.grades.includes(g)) || J.BANDS[1] || {}).id;
+  const bandIdx = (id) => J.BANDS.findIndex((b) => b.id === id);
+  // Jenjang: pilihan siswa sendiri, lalu kelas yang sedang dipelajari; tamu memilih saat pertama masuk
+  function jobBand() {
+    const sel = ls.get('metiq_jband', '');
+    if (sel && bandIdx(sel) >= 0) return sel;
+    return gameKid() ? bandOfGrade(getGrade()) : '';
+  }
+  const missionDone = (kid, m) => !!kid && (S.progress(kid.id, 'm:' + m.key).att || 0) > 0;
+  const missionStars = (kid, m) => (kid ? S.progress(kid.id, 'm:' + m.key).ok || 0 : 0);
+  const unitLink = (uid) => { const u = UNITS.find((x) => x.id === uid); return u ? `<a class="jtopic" href="${LESSONS[uid] ? '#/pelajaran/' + uid : '#/kurikulum'}">${u.icon} ${esc(u.name)}</a>` : ''; };
+  const bandPills = (band) => `<div class="jbands" role="tablist" aria-label="Jenjang">${J.BANDS.map((b) => `<button class="${b.id === band ? 'on' : ''}" data-act="jband" data-b="${b.id}" role="tab" aria-selected="${b.id === band}">${b.name}</button>`).join('')}</div>`;
+
+  function viewJobs() {
+    const kid = gameKid(), band = jobBand();
+    if (!band) {
+      app.innerHTML = mqPage(`<div class="mq-ghead"><a class="mq-ico" href="#/" aria-label="Kembali">${IC.back}</a><div class="mq-gsay">${MQ.svg('ask', { size: 74 })}<div class="mq-bubble"><p>Kamu di jenjang apa?</p></div></div></div>
+        <div class="jpick">${J.BANDS.map((b) => `<button class="mq-btn ghost" data-act="jband" data-b="${b.id}"><b>${b.name}</b><small>${b.style}</small></button>`).join('')}</div>`, 'profesi');
+      return;
+    }
+    const f = ls.get('metiq_jfilter', {}), inBand = J.MISSIONS.filter((m) => m.level === band);
+    const profs = J.PROFESSIONS.filter((p) => (!f.i || p.interest === f.i) && inBand.some((m) => m.profession === p.id && (!f.t || m.topics.includes(f.t))));
+    const chip = (k, v, label) => `<button class="${(f[k] || '') === v ? 'on' : ''}" data-act="jfilter" data-k="${k}" data-v="${v}">${label}</button>`;
+    const tile = (p) => {
+      const m = inBand.find((x) => x.profession === p.id), done = m && missionDone(kid, m), st = m ? missionStars(kid, m) : 0;
+      return `<a class="mq-gt jtile" href="#/profesi/${p.id}" style="--c:${p.color};--bg:#fff" aria-label="${esc(p.name)}${done ? ', selesai' : ''}">${done ? '<span class="new jdone">✓</span>' : ''}<span class="art"><span class="jpeople">${p.people}</span></span><b>${esc(p.name)}</b><small>${m ? esc(m.title) : ''}</small>${done ? `<span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span>` : ''}</a>`;
+    };
+    app.innerHTML = mqPage(`
+      <div class="mq-ghead">${kid ? '' : `<a class="mq-ico" href="#/" aria-label="Kembali">${IC.back}</a>`}
+        <div class="mq-gsay">${MQ.svg('happy', { size: 74 })}<div class="mq-bubble"><p>Sehari jadi apa hari ini?</p></div></div></div>
+      ${bandPills(band)}
+      <div class="jfilters"><div>${chip('i', '', 'Semua minat')}${Object.entries(J.INTERESTS).map(([k, v]) => chip('i', k, v)).join('')}</div>
+        <div>${chip('t', '', 'Semua topik')}${Object.entries(J.TOPICS).map(([k, v]) => chip('t', k, v)).join('')}</div></div>
+      ${profs.length ? `<div class="mq-ggrid">${profs.map(tile).join('')}</div>` : `<p class="mq-note">Belum ada misi untuk pilihan ini. Coba minat atau topik lain.</p>`}
+      <p class="mq-note">${kid ? `Misi selesai: <b>${J.MISSIONS.filter((m) => missionDone(kid, m)).length}</b> dari ${J.MISSIONS.length}` : 'Masuk sebagai siswa agar misimu tersimpan.'}</p>`, 'profesi');
+  }
+
+  function viewProfession(pid) {
+    const p = J.prof(pid); if (!p) return go('#/profesi');
+    const kid = gameKid(), band = jobBand();
+    const list = J.MISSIONS.filter((m) => m.profession === pid).sort((a, b) => bandIdx(a.level) - bandIdx(b.level));
+    app.innerHTML = mqPage(`
+      <div class="mq-ghead"><a class="mq-ico" href="#/profesi" aria-label="Kembali">${IC.back}</a><span class="mq-gtitle">${esc(p.name)}</span></div>
+      <section class="jhero" style="--c:${p.color}"><div class="jpeople big">${p.people}</div><div class="jart">${p.art}</div>
+        <h2>Apa yang dikerjakan?</h2><p>${esc(p.what)}</p><h2>Matematika yang dipakai</h2><p>${esc(p.math)}</p></section>
+      <h2 class="jsub">Misi</h2>
+      <div class="jmissions">${list.map((m) => { const done = missionDone(kid, m), st = missionStars(kid, m); return `<a class="jmis ${m.level === band ? 'mine' : ''}" href="#/misi/${m.id}" style="--c:${p.color}"><span class="lv">${(J.BANDS.find((b) => b.id === m.level) || {}).name}</span><span class="grow"><b>${esc(m.title)}</b><small>${m.topics.map((t) => J.TOPICS[t]).join(' · ')}${m.audio ? ' · 🎧 dibacakan' : ''}</small></span>${done ? `<span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span>` : '<span class="go">›</span>'}</a>`; }).join('')}</div>`, 'profesi');
+  }
+
+  // Tempat misi dipakai: dari halaman pelajaran ("Dipakai di pekerjaan apa?")
+  function viewJobTopic(uid) {
+    const u = UNITS.find((x) => x.id === uid), list = J.MISSIONS.filter((m) => m.units.includes(uid));
+    if (!u || !list.length) return go('#/profesi');
+    app.innerHTML = mqPage(`
+      <div class="mq-ghead"><button class="mq-ico" data-act="back" aria-label="Kembali">${IC.back}</button><span class="mq-gtitle">Dipakai di pekerjaan apa?</span></div>
+      <p class="jlead">${u.icon} <b>${esc(u.name)}</b> dipakai dalam pekerjaan ini:</p>
+      <div class="jmissions">${list.map((m) => { const p = J.prof(m.profession); return `<a class="jmis" href="#/misi/${m.id}" style="--c:${p.color}"><span class="jpeople">${p.people}</span><span class="grow"><b>${esc(p.name)}</b><small>${esc(m.title)} · ${(J.BANDS.find((b) => b.id === m.level) || {}).name}</small></span><span class="go">›</span></a>`; }).join('')}</div>`, 'profesi');
+  }
+
+  /* Pemutar misi: satu soal per layar; salah → petunjuk dan coba lagi (setelah 3 kali, jawaban ditunjukkan) */
+  let JM = null;
+  const jAudio = (part) => (JM && JM.m.audio ? [`audio/kerja/${JM.m.key}-${part}.mp3`] : null);
+  const jPlay = (part, delay) => { const a = jAudio(part); if (a) playClips(a, delay); };
+  const jnum = (s) => {
+    s = String(s).trim().replace(/[−–]/g, '-').replace(/\./g, '').replace(',', '.');
+    if (/^-?\d+(\.\d+)?\/\d+(\.\d+)?$/.test(s)) { const [a, b] = s.split('/').map(Number); return b ? a / b : NaN; }
+    return s === '' || s === '-' ? NaN : Number(s);
+  };
+  const jFmt = (v) => (Math.round(v * 1e4) / 1e4).toLocaleString('id-ID', { maximumFractionDigits: 4 });
+  function viewMission(id) {
+    const m = J.byId(id); if (!m) return go('#/profesi');
+    const p = J.prof(m.profession);
+    JM = { m, p, i: -1, tries: 0, first: 0, input: '', sel: -1, place: {}, pick: null, t0: Date.now(), log: [] };
+    app.innerHTML = `<div class="mq-top"><a class="mq-ico" href="#/profesi/${p.id}" aria-label="Keluar">${IC.x}</a><div class="mq-prog"><i id="sbar" style="width:0%"></i></div>
+        ${m.audio ? `<button class="mq-ico" data-act="jsay" aria-label="Dengarkan">🔊</button>` : `<button class="mq-ico psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button>`}</div>
+      <main class="mq-screen" id="pq"></main><div class="mq-foot" id="fb"></div>`;
+    jScene();
+  }
+  function jScene() {
+    const { m, p } = JM, box = document.getElementById('pq'), fb = document.getElementById('fb');
+    box.innerHTML = `<div class="jscene" style="--c:${p.color}"><div class="jart big">${m.art}</div><small class="jlv">${esc(p.name)} · ${(J.BANDS.find((b) => b.id === m.level) || {}).name}</small><h1>${esc(m.title)}</h1>
+      <div class="mq-say"><div>${MQ.svg('hello', { size: 76 })}</div><div class="mq-bubble"><span>${esc(m.scenario)}</span></div></div>
+      ${m.simplified ? `<p class="jnote">ℹ️ ${esc(m.simplified)}</p>` : ''}</div>`;
+    fb.className = 'mq-foot'; fb.innerHTML = `<div class="mq-foot-in"><button class="mq-btn pulse" data-act="jnext">Mulai misi</button></div>`;
+    jPlay('s', 350);
+  }
+  function jStep() {
+    const { m } = JM, st = m.steps[JM.i], box = document.getElementById('pq'), fb = document.getElementById('fb');
+    JM.tries = 0; JM.input = ''; JM.sel = -1; JM.place = {}; JM.pick = null;
+    document.getElementById('sbar').style.width = (JM.i / m.steps.length) * 100 + '%';
+    box.innerHTML = `<h2 class="mq-title">Langkah ${JM.i + 1} dari ${m.steps.length}</h2>
+      <div class="mq-say"><div id="mqm">${MQ.svg('normal', { size: 76, enter: false })}</div><div class="mq-bubble">${m.audio ? '<button class="mq-spk aud" data-act="jsay" aria-label="Dengarkan soal">' + IC.spk + '</button>' : ''}<span>${esc(st.question)}</span></div></div>
+      ${st.vis ? `<div class="mq-vis">${st.vis}</div>` : ''}<div id="jbody"></div>`;
+    jBody();
+    jPlay('q' + (JM.i + 1), 300);
+  }
+  // Isi langkah sesuai jenisnya; dipanggil ulang setiap kali jawaban berubah
+  function jBody() {
+    const st = JM.m.steps[JM.i], body = document.getElementById('jbody'), fb = document.getElementById('fb');
+    let ready = false, keys = '';
+    if (st.type === 'choice') {
+      body.innerHTML = `<div class="mq-opts ${st.options.every((o) => strip(o).length <= 4) ? 'short' : ''}">${st.options.map((o, i) => `<button class="mq-opt ${i === JM.sel ? 'sel' : ''} ${strip(o).length <= 3 ? 'jbig' : ''}" data-act="jopt" data-i="${i}">${o}</button>`).join('')}</div>`;
+      ready = JM.sel >= 0;
+    } else if (st.type === 'number') {
+      body.innerHTML = `<div class="mq-ans">${st.unit ? `<span class="u">${esc(st.unit)}</span>` : ''}<div class="mq-disp" id="indisp">${esc(JM.input) || '&nbsp;'}</div></div>`;
+      keys = `<div class="mq-keys extra">${['−', ',', '/'].map((k) => `<button class="mq-key" data-act="jkey" data-k="${k}">${k}</button>`).join('')}</div>
+        <div class="mq-keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button class="mq-key" data-act="jkey" data-k="${n}">${n}</button>`).join('')}<button class="mq-key del" data-act="jkey" data-k="del" aria-label="Hapus">⌫</button><button class="mq-key" data-act="jkey" data-k="0">0</button></div>`;
+      ready = JM.input !== '';
+    } else if (st.type === 'drag') {
+      const placed = new Set(Object.values(JM.place).flat());
+      const item = (it) => `<button class="jitem ${JM.pick === it.id ? 'pick' : ''}" data-act="jitem" data-id="${it.id}" aria-label="Benda">${it.html}</button>`;
+      const pool = st.items.filter((it) => !placed.has(it.id));
+      if (st.mode === 'order') {
+        const seq = JM.place.seq || [];
+        body.innerHTML = `<p class="jhow">Ketuk atau seret ke kotak bernomor, sesuai urutan.</p><div class="jslots">${st.items.map((_, k) => { const id = seq[k], it = st.items.find((x) => x.id === id); return `<div class="jslot" data-slot="${k}"><small>${k + 1}</small>${it ? item(it) : ''}</div>`; }).join('')}</div>
+          <div class="jpool">${pool.map(item).join('') || '<small>Semua sudah ditaruh. Ketuk benda di kotak untuk mengembalikannya.</small>'}</div>`;
+        ready = seq.length === st.items.length;
+      } else {
+        body.innerHTML = `<p class="jhow">Ketuk benda lalu ketuk kotaknya, atau seret ke kotak.</p><div class="jbins">${st.bins.map((b) => `<div class="jbin" data-bin="${b.id}" data-act="jbin"><b>${b.label}</b><div>${(JM.place[b.id] || []).map((id) => item(st.items.find((x) => x.id === id))).join('')}</div></div>`).join('')}</div>
+          <div class="jpool">${pool.map(item).join('') || '<small>Semua sudah dikelompokkan.</small>'}</div>`;
+        ready = pool.length === 0;
+      }
+    }
+    fb.className = 'mq-foot';
+    fb.innerHTML = `<div class="mq-foot-in">${keys}<button class="mq-btn" id="mqcheck" data-act="jcheck" ${ready ? '' : 'disabled'}>Periksa</button></div>`;
+    document.getElementById('pq').style.paddingBottom = fb.offsetHeight + 20 + 'px';
+  }
+  function jCorrect(st) {
+    if (st.type === 'choice') return st.options[JM.sel] === st.answer;
+    if (st.type === 'number') { const v = jnum(JM.input); return !isNaN(v) && Math.abs(v - st.answer) <= (st.tol ?? 1e-6); }
+    if (st.mode === 'order') return (JM.place.seq || []).join() === st.answer.join();
+    return st.items.every((it) => (JM.place[it.bin] || []).includes(it.id));
+  }
+  const jAnswerText = (st) => (st.type === 'number' ? `${jFmt(st.answer)}${st.unit ? ' ' + st.unit : ''}` : st.type === 'choice' ? st.answer : st.mode === 'order' ? st.answer.map((id) => st.items.find((x) => x.id === id).html).join(' ') : st.bins.map((b) => `${b.label}: ${st.items.filter((x) => x.bin === b.id).map((x) => x.html).join(' ')}`).join(' · '));
+  function jCheck() {
+    const st = JM.m.steps[JM.i], ok = jCorrect(st), fb = document.getElementById('fb'), m = document.getElementById('mqm');
+    if (m) { m.innerHTML = MQ.svg(ok ? 'happy' : 'oops', { size: 76, enter: false }); m.firstChild.classList.add('mq-react'); }
+    if (ok) {
+      if (!JM.tries) JM.first++;
+      JM.log.push({ q: st.question, a: jAnswerText(st), ex: st.explanation, first: !JM.tries });
+      window.SFX.correct();
+      fb.className = 'mq-foot ok';
+      fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${IC.ok}</span>${['Benar!', 'Tepat sekali!', 'Hebat!'][JM.i % 3]}</div><div class="mq-fbody"><p>${esc(st.explanation)}</p></div><button class="mq-btn" data-act="jnext">Lanjut</button></div>`;
+      jPlay('e' + (JM.i + 1), 300);
+    } else {
+      JM.tries++;
+      window.SFX.wrong();
+      if (JM.tries >= 3) {
+        JM.log.push({ q: st.question, a: jAnswerText(st), ex: st.explanation, first: false });
+        fb.className = 'mq-foot no';
+        fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${IC.x}</span>Ayo lihat caranya</div><div class="mq-fbody"><p>Jawabannya: <b>${jAnswerText(st)}</b></p><p>${esc(st.explanation)}</p></div><button class="mq-btn" data-act="jnext">Lanjut</button></div>`;
+        jPlay('e' + (JM.i + 1), 300);
+      } else {
+        fb.className = 'mq-foot near';
+        fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">!</span>Belum tepat</div><div class="mq-fbody"><p>💡 ${esc(st.hint)}</p></div><button class="mq-btn" data-act="jretry">Coba lagi</button></div>`;
+        jPlay('h' + (JM.i + 1), 300);
+      }
+    }
+    document.getElementById('pq').style.paddingBottom = fb.offsetHeight + 20 + 'px';
+  }
+  function jFinish() {
+    const { m, p } = JM, kid = gameKid(), n = m.steps.length, stars = JM.first === n ? 3 : JM.first >= n / 2 ? 2 : 1;
+    document.getElementById('sbar').style.width = '100%';
+    if (kid) {
+      const before = missionStars(kid, m), res = S.recordMission(kid.id, m.key, stars, Date.now() - JM.t0);
+      if (cloudOn()) Cloud.queueProgress(kid.id, session.get().code, 'm:' + m.key, res);
+      const gain = Math.max(0, stars - before);
+      if (gain) { const sr = S.addStars(kid.id, gain); if (cloudOn() && sr.entry) Cloud.queueProgress(kid.id, session.get().code, sr.key, sr.entry); }
+    }
+    tlog('mission', { m: m.key, st: stars });
+    if (stars >= 3) window.SFX.mastered(); else window.SFX.levelUp();
+    const higher = J.MISSIONS.filter((x) => x.profession === m.profession && bandIdx(x.level) > bandIdx(m.level));
+    const others = J.MISSIONS.filter((x) => x.level === m.level && x.profession !== m.profession && !missionDone(kid, x));
+    const nextM = others[0] || J.MISSIONS.find((x) => x.level === m.level && x.id !== m.id);
+    document.getElementById('pq').innerHTML = `<div class="jresult" style="--c:${p.color}">${MQ.svg(stars >= 2 ? 'cheer' : 'happy', { size: 130 })}
+        <div class="mq-gstars">${[0, 1, 2].map((i) => gStar(i < stars)).join('')}</div><h1>Misi selesai!</h1><p class="jwrap">${esc(m.wrapUp)}</p>
+        <section class="jcard"><h2>✅ Jawaban dan penjelasan</h2><ol>${JM.log.map((x) => `<li><small>${esc(x.q)}</small><b>${x.a}</b> ${x.first ? '⭐' : ''}<p>${esc(x.ex)}</p></li>`).join('')}</ol></section>
+        <section class="jcard"><h2>🧮 Matematika yang kamu pakai</h2><div class="jtopics">${m.units.map(unitLink).join('')}</div></section>
+        <section class="jcard"><h2>🚀 Apa selanjutnya?</h2><p>Di jenjang yang lebih tinggi, ${esc(p.name.toLowerCase())} memakai: <b>${m.nextMath.map(esc).join(', ')}</b>.</p>
+          ${higher.length ? `<div class="jmissions">${higher.map((x) => `<a class="jmis" href="#/misi/${x.id}" style="--c:${p.color}"><span class="lv">${(J.BANDS.find((b) => b.id === x.level) || {}).name}</span><span class="grow"><b>${esc(x.title)}</b></span><span class="go">›</span></a>`).join('')}</div>` : ''}</section></div>`;
+    const fb = document.getElementById('fb'); fb.className = 'mq-foot';
+    fb.innerHTML = `<div class="mq-foot-in jfoot">${nextM ? `<a class="mq-btn" href="#/misi/${nextM.id}">Misi lain: ${esc(J.prof(nextM.profession).name)}</a>` : ''}<a class="mq-btn ghost" href="#/profesi/${p.id}">Kembali ke ${esc(p.name)}</a></div>`;
+    document.getElementById('pq').style.paddingBottom = fb.offsetHeight + 20 + 'px';
+    jPlay('w', 500);
+  }
+  function jAct(act, el) {
+    if (!JM) return;
+    if ((act === 'jitem' || act === 'jbin') && Date.now() - jDragJustEnded < 400) return;
+    const st = JM.i >= 0 ? JM.m.steps[JM.i] : null;
+    if (act === 'jnext') { stopClips(); JM.i++; return JM.i < JM.m.steps.length ? jStep() : jFinish(); }
+    if (act === 'jretry') { const m = document.getElementById('mqm'); if (m) m.innerHTML = MQ.svg('normal', { size: 76, enter: false }); if (st.type === 'number') JM.input = ''; return jBody(); }
+    if (act === 'jsay') return jPlay(JM.i < 0 ? 's' : 'q' + (JM.i + 1));
+    if (act === 'jopt') { JM.sel = +el.dataset.i; window.SFX.step(); return jBody(); }
+    if (act === 'jkey') {
+      const k = el.dataset.k;
+      if (k === 'del') JM.input = JM.input.slice(0, -1);
+      else if (k === '−') JM.input = JM.input.startsWith('−') ? JM.input.slice(1) : '−' + JM.input;
+      else if (JM.input.length < 12) JM.input += k;
+      return jBody();
+    }
+    if (act === 'jcheck') return jCheck();
+    if (act === 'jitem' && st && st.type === 'drag') {
+      const id = el.dataset.id, inPool = !Object.values(JM.place).flat().includes(id);
+      if (!inPool) { Object.keys(JM.place).forEach((k) => { JM.place[k] = JM.place[k].filter((x) => x !== id); }); JM.pick = null; return jBody(); }
+      if (st.mode === 'order') { JM.place.seq = [...(JM.place.seq || []), id]; return jBody(); }
+      JM.pick = JM.pick === id ? null : id; return jBody();
+    }
+    if (act === 'jbin' && st && JM.pick) { JM.place[el.dataset.bin] = [...(JM.place[el.dataset.bin] || []), JM.pick]; JM.pick = null; return jBody(); }
+  }
+  // Seret-dan-taruh dengan jari atau mouse (benda di kolam ke kotak bernomor atau kotak kelompok)
+  let jDrag = null;
+  document.addEventListener('pointerdown', (e) => {
+    const it = e.target.closest('.jpool .jitem'); if (!it || !JM) return;
+    const r = it.getBoundingClientRect(), g = it.cloneNode(true); g.classList.add('jghost'); g.style.left = r.left + 'px'; g.style.top = r.top + 'px'; g.style.width = r.width + 'px';
+    jDrag = { id: it.dataset.id, g, dx: e.clientX - r.left, dy: e.clientY - r.top, x0: e.clientX, y0: e.clientY, moved: false };
+  });
+  document.addEventListener('pointermove', (e) => {
+    if (!jDrag) return;
+    if (!jDrag.moved && Math.hypot(e.clientX - jDrag.x0, e.clientY - jDrag.y0) < 8) return;
+    if (!jDrag.moved) { jDrag.moved = true; document.body.appendChild(jDrag.g); }
+    jDrag.g.style.left = e.clientX - jDrag.dx + 'px'; jDrag.g.style.top = e.clientY - jDrag.dy + 'px'; e.preventDefault();
+  }, { passive: false });
+  document.addEventListener('pointerup', (e) => {
+    if (!jDrag) return;
+    const d = jDrag; jDrag = null;
+    if (!d.moved) return;
+    d.g.remove();
+    const st = JM && JM.m.steps[JM.i]; if (!st) return;
+    const at = document.elementFromPoint(e.clientX, e.clientY), slot = at && at.closest('.jslot'), bin = at && at.closest('.jbin');
+    if (st.mode === 'order' && slot) { const seq = (JM.place.seq || []).filter((x) => x !== d.id), k = Math.min(+slot.dataset.slot, seq.length); seq.splice(k, 0, d.id); JM.place.seq = seq; jBody(); }
+    else if (st.mode === 'sort' && bin) { JM.place[bin.dataset.bin] = [...(JM.place[bin.dataset.bin] || []), d.id]; JM.pick = null; jBody(); }
+    // klik yang menyusul setelah seret tidak boleh ikut memilih benda
+    jDragJustEnded = Date.now();
+  });
+  let jDragJustEnded = 0;
+
   /* ---------- Rute ---------- */
   let routeSeq = 0;
   async function route() {
@@ -2927,7 +3167,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const seq = ++routeSeq;
     S.setMode(cloudOn());
     if (session.get().demo) tlog('view', { p: a === 'guru' ? 'guru/' + (b || '') : a || 'beranda', ...(a === 'latihan' || a === 'main' || a === 'pelajaran' ? { s: b } : {}) });
-    const needsData = a === 'belajar' || a === 'asesmen' || a === 'permainan' || a === 'main' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi' || a === 'tugas' || a === 'aku' || a === 'ujian';
+    const needsData = a === 'belajar' || a === 'asesmen' || a === 'permainan' || a === 'main' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi' || a === 'tugas' || a === 'aku' || a === 'ujian' || a === 'profesi' || a === 'misi';
     if (needsData && !(await ensure())) return;
     if (seq !== routeSeq) return;
     window.METIQ_CURRICULUM.setKonteks(curSettings().konteks);
@@ -2944,6 +3184,8 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       case 'belajar': return viewStudentHome();
       case 'asesmen': return b === 'hasil' ? viewDiagResult('a') : b === 'akhir' ? (c === 'hasil' ? viewDiagResult('b') : viewDiag('b')) : viewDiag('a');
       case 'permainan': return viewGames();
+      case 'profesi': return b === 'topik' ? viewJobTopic(c) : b ? viewProfession(b) : viewJobs();
+      case 'misi': return viewMission(b);
       case 'tugas': return TASKS_ON ? viewTasks() : go('#/belajar');
       case 'ujian': return viewTest(b);
       case 'aku': return viewProfile();
@@ -2970,6 +3212,9 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (!el && row && !e.target.closest('a')) return go(row.dataset.href);
     if (!el) return;
     const act = el.dataset.act;
+    if (['jnext', 'jretry', 'jsay', 'jopt', 'jkey', 'jcheck', 'jitem', 'jbin'].includes(act)) return jAct(act, el);
+    if (act === 'jband') { ls.set('metiq_jband', el.dataset.b); return route(); }
+    if (act === 'jfilter') { const f = ls.get('metiq_jfilter', {}); f[el.dataset.k] = el.dataset.v; ls.set('metiq_jfilter', f); return route(); }
     if (act === 'gstart') return startGame();
     if (act === 'coret') return openCoret();
     if (act === 'album') return openAlbum(+el.dataset.i);
