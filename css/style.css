@@ -858,8 +858,8 @@ details.realcard summary { cursor: pointer; list-style: none; } details.realcard
 .tabs a.adm { font-size: .9em; }
 .tcount { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: 4px; padding: 0 5px; border-radius: 999px; background: #ff5a5f; color: #fff; font-size: .75rem; font-weight: 900; }
 .tsub { display: flex; gap: 6px; margin: -2px 0 12px; overflow-x: auto; }
-.tsub a { flex: none; padding: 5px 12px; border: 1.5px solid var(--line); border-radius: 999px; background: #fff; color: var(--ink); font-weight: 800; font-size: .85rem; text-decoration: none; }
-.tsub a.on { background: var(--ink); border-color: var(--ink); color: #fff; }
+.tsub a, .tsub button { flex: none; font-family: inherit; cursor: pointer; padding: 5px 12px; border: 1.5px solid var(--line); border-radius: 999px; background: #fff; color: var(--ink); font-weight: 800; font-size: .85rem; text-decoration: none; }
+.tsub a.on, .tsub button.on { background: var(--ink); border-color: var(--ink); color: #fff; }
 .dh-gear { display: grid; justify-items: center; align-content: center; flex: none; min-width: 52px; padding: 4px 6px; border: 2px solid var(--line); border-radius: 14px; background: #fff; font-size: 1.2rem; text-decoration: none; color: var(--ink); }
 .dh-gear small { font-size: .65rem; font-weight: 900; } .dh-gear.on { border-color: var(--tiffany-dark); background: #e6fffa; }
 .todos h2 { margin-bottom: 6px; }
@@ -916,3 +916,13 @@ details.faq { border-top: 1px solid var(--line); padding: 10px 0; } details.faq 
 .allprog .apunit th, .allprog .apunit td { background: #f2fbf8; font-weight: 900; }
 .allprog .apsk { font-weight: 600; padding-left: 18px; }
 .apc, .apu { text-align: center; } .apc.g { color: var(--ok); font-weight: 800; } .apc.o { color: #c77700; font-weight: 800; }
+
+/* Siswa tanpa kelas: keadaan aktivitas */
+.pill.ung-aktif { background: var(--ok-bg); color: var(--ok); } .pill.ung-jeda { background: #fff6e0; color: #a86b00; }
+.pill.ung-diam { background: var(--no-bg); color: var(--no); } .pill.ung-belum { background: #eef1f0; color: var(--muted); }
+.kpis.ungact, .kpis.ungsum { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 6px; margin: 8px 0; }
+.kpis.ungact .kpi, .kpis.ungsum .kpi { padding: 8px 10px; background: #f6fbfa; box-shadow: none; }
+.kpis.ungact .kpi small, .kpis.ungsum .kpi small { font-size: .74rem; line-height: 1.2; }
+.kpis.ungact .kpi b, .kpis.ungsum .kpi b { font-size: 1.1rem; }
+.tsub.ungf { flex-wrap: wrap; margin-top: 10px; }
+b.big { font-size: 1.3rem; display: block; }

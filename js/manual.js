@@ -61,7 +61,7 @@
           '<b>Super admin</b> (pengelola Metiq) melihat semua sekolah dan keluarga homeschool di tab <b>🌐 Super admin</b>, mengaktifkan paket Sekolah setelah pembayaran (🏫 Sekolah → 💳 Paket sekolah), membaca permintaan penawaran di <b>📨 Penawaran</b>, dan menyetujui pengajuan orang tua atau siswa.',
           'Di <b>✋ Pengajuan</b>: periksa data pemohon, pilih sekolahnya (atau buat sekolah baru) untuk guru, pilih kelas untuk siswa, lalu ketuk <b>Setujui</b> atau <b>Tolak</b>. Kode kelas dan kode orang tua muncul di riwayat, dan bisa dikirim lewat WhatsApp.',
           'Di <b>📚 Kelas</b>, super admin memilih guru untuk setiap kelas (misalnya kelas Awal 2B diajar Ustadz A). Guru itu harus sudah punya akun aktif.',
-          'Siswa yang mulai belajar sendiri muncul di tab <b>🧺 Tanpa kelas</b> (angkanya tampil di tab). Masukkan ke kelas yang sesuai dari sana.',
+          'Siswa yang mulai belajar sendiri muncul di tab <b>🧺 Tanpa kelas</b> (angkanya tampil di tab), lengkap dengan aktivitasnya: terakhir aktif, soal minggu ini, ketepatan, dan bab yang sedang dikerjakan. Saring dengan pil <b>Aktif</b>, <b>Jeda</b>, <b>Tidak aktif</b>, atau <b>Belum mulai</b>, ketuk <b>Lihat laporan</b> untuk kemajuan per bab dan jawaban terakhir, lalu masukkan anak ke kelas yang sesuai.',
           'Nama kelas diganti di <b>⚙️ Kelas → Ganti nama</b>. Kelas dihapus lewat tombol <b>🗑️ Hapus</b> di ⚙️ Kelas atau di 📚 Kelas; ketik nama kelasnya untuk konfirmasi. Siswa dan semua datanya ikut terhapus.',
           '<b>Admin sekolah</b> (koordinator) melihat semua kelas di sekolahnya di tab <b>🏫 Sekolah</b>. Super admin bisa menjadikan guru sebagai admin sekolah di <b>👩‍🏫 Guru</b>.',
         ] },

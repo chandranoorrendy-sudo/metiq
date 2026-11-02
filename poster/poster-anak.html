@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Metiq untuk Anak</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="../js/mascot.js"></script>
+<script src="../js/mascot-friends.js"></script>
+<style>
+  :root { --tiffany: #66ffdb; --on-tiffany: #04382e; --brand: #00806b; --ink: #16302b; --muted: #5c7570; --a: #ff7a59; --a-bg: #fff1ec; --b: #4d96ff; --b-bg: #eef4ff; --g: #1fbf9f; --g-bg: #e8fbf5; --p: #9b6dff; --p-bg: #f3eeff; --y: #f5a524; --y-bg: #fff6e0; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { width: 1080px; height: 1920px; font-family: 'Nunito', system-ui, sans-serif; color: var(--ink); overflow: hidden;
+    background: radial-gradient(circle at 12% 8%, #fff6c9 0 120px, transparent 121px), radial-gradient(circle at 92% 30%, #ffe1d6 0 90px, transparent 91px), radial-gradient(circle at 6% 62%, #e2ecff 0 80px, transparent 81px), linear-gradient(180deg, #c9fff1 0%, #eafff9 45%, #fffdf3 100%); }
+  .poster { position: relative; height: 100%; padding: 44px 56px 40px; display: flex; flex-direction: column; }
+  b { font-weight: 900; }
+  .top { display: flex; align-items: center; gap: 14px; }
+  .top img { width: 64px; height: 64px; } .top b { font-size: 40px; }
+  .top .tag { margin-left: auto; background: #fff; color: var(--a); border: 3px solid var(--a); font-weight: 900; font-size: 22px; padding: 6px 18px; border-radius: 999px; }
+  h1 { text-align: center; font-size: 82px; line-height: 1; margin: 26px 0 8px; font-weight: 900; letter-spacing: -1px; }
+  h1 span { color: var(--brand); display: block; }
+  .sub { text-align: center; font-size: 28px; font-weight: 800; color: var(--muted); margin: 0; }
+  .gang { position: relative; height: 380px; margin-top: 4px; }
+  .gang .m { position: absolute; bottom: 0; }
+  .gang .meti { left: 50%; transform: translateX(-50%); bottom: 10px; }
+  .gang .tito { left: 40px; } .gang .nahla { right: 40px; bottom: 120px; } .gang .lumo { right: 150px; }
+  .gang .bub { position: absolute; background: #fff; border: 4px solid var(--ink); border-radius: 22px; padding: 8px 18px; font-weight: 900; font-size: 28px; }
+  .gang .bub::after { content: ''; position: absolute; bottom: -14px; left: 30px; border: 10px solid transparent; border-top-color: var(--ink); }
+  .gang .b1 { left: 600px; top: 10px; } .gang .b2 { left: 20px; top: 40px; transform: rotate(-5deg); background: var(--y-bg); }
+  .card { background: #fff; border-radius: 32px; padding: 24px 28px; box-shadow: 0 12px 34px rgba(16, 48, 43, .1); }
+  .card h2 { margin: 0 0 14px; font-size: 36px; font-weight: 900; text-align: center; }
+  .steps { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .step { border-radius: 24px; padding: 16px 14px 18px; text-align: center; background: var(--cbg); border: 3px solid var(--c); position: relative; }
+  .step .n { position: absolute; top: -18px; left: 50%; transform: translateX(-50%); width: 44px; height: 44px; border-radius: 50%; background: var(--c); color: #fff; font-size: 26px; font-weight: 900; display: grid; place-items: center; border: 4px solid #fff; }
+  .step i { display: block; font-style: normal; font-size: 64px; margin: 14px 0 6px; }
+  .step .code { font-size: 26px; margin-top: 12px; padding: 4px 14px; }
+  .step > b { display: block; font-size: 26px; line-height: 1.2; }
+  .step > p { font-size: 20px; font-weight: 700; color: var(--muted); margin: 8px 0 0; line-height: 1.35; }
+  .step > p b { color: var(--ink); }
+  .st1 { --c: var(--g); --cbg: var(--g-bg); } .st2 { --c: var(--b); --cbg: var(--b-bg); } .st3 { --c: var(--a); --cbg: var(--a-bg); }
+  .pill { display: inline-block; background: var(--tiffany); color: var(--on-tiffany); padding: 0 10px; border-radius: 10px; border-bottom: 3px solid #2fd9b4; font-weight: 900; }
+  .code { display: inline-block; letter-spacing: 4px; background: var(--ink); color: var(--tiffany); padding: 2px 10px; border-radius: 10px; font-weight: 900; font-size: 22px; margin-top: 6px; }
+  .fun { margin-top: 22px; }
+  .tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .tile { border-radius: 24px; padding: 20px 16px; background: var(--cbg); display: grid; grid-template-columns: 64px 1fr; gap: 10px; align-items: center; }
+  .tile i { font-style: normal; font-size: 50px; text-align: center; }
+  .tile b { display: block; font-size: 24px; line-height: 1.1; }
+  .tile span { display: block; font-size: 17.5px; font-weight: 700; color: var(--muted); margin-top: 3px; line-height: 1.25; }
+  .t1 { --cbg: var(--y-bg); } .t2 { --cbg: var(--p-bg); } .t3 { --cbg: var(--a-bg); } .t4 { --cbg: var(--b-bg); } .t5 { --cbg: var(--g-bg); } .t6 { --cbg: #ffeef6; }
+  .stars { text-align: center; font-size: 28px; font-weight: 900; margin: 30px 0 0; }
+  .stars span { background: #fff; border-radius: 999px; padding: 8px 22px; box-shadow: 0 6px 18px rgba(16, 48, 43, .08); }
+  .foot { margin-top: auto; display: grid; grid-template-columns: 170px 1fr; gap: 24px; align-items: center; background: var(--ink); color: #fff; border-radius: 30px; padding: 20px 26px; }
+  .qr { background: #fff; border-radius: 18px; padding: 10px; width: 170px; height: 170px; }
+  .qr svg { width: 100%; height: 100%; display: block; }
+  .foot .url { font-size: 38px; font-weight: 900; color: var(--tiffany); }
+  .foot p { margin: 4px 0 0; font-size: 21px; line-height: 1.4; font-weight: 700; opacity: .92; }
+  .foot .ask { margin-top: 10px; display: inline-block; background: #fff4d6; color: #8a5a00; padding: 6px 16px; border-radius: 999px; font-size: 19px; font-weight: 900; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="top"><img src="../icons/icon.svg" alt=""><b>Metiq</b><span class="tag">🧒 Untuk Teman-teman</span></div>
+
+  <h1>Ayo jago matematika <span>bareng Meti!</span></h1>
+  <p class="sub">Dari TK sampai SMA. Main, belajar, kumpulkan bintang ⭐</p>
+
+  <div class="gang">
+    <div class="m tito" data-m="happy" data-who="tito" data-s="200"></div>
+    <div class="m meti" data-m="cheer" data-s="300"></div>
+    <div class="m lumo" data-m="happy" data-who="lumo" data-s="180"></div>
+    <div class="m nahla" data-m="cheer" data-who="nahla" data-s="160"></div>
+    <span class="bub b1">3 + 4 = 7 ✓</span>
+    <span class="bub b2">Hore! ⭐⭐⭐</span>
+  </div>
+
+  <section class="card">
+    <h2>Cara mulai, cuma 3 langkah</h2>
+    <div class="steps">
+      <div class="step st1"><span class="n">1</span><i>📱</i><b>Buka Metiq</b><p>Pindai QR di bawah atau ketik<br><b style="white-space:nowrap;font-size:18.5px">metiq-math.vercel.app</b></p></div>
+      <div class="step st2"><span class="n">2</span><i>✏️</i><b>Ketuk <span class="pill">Mulai belajar</span></b><p>Ketik namamu, lalu kerjakan tes singkat supaya soalnya pas untukmu</p></div>
+      <div class="step st3"><span class="n">3</span><i>🔑</i><b>Simpan kode belajarmu</b><p>Ada di halaman <b>Aku</b>. Berikan ke gurumu supaya kamu masuk kelasnya</p><span class="code">ABC123</span></div>
+    </div>
+  </section>
+
+  <section class="card fun">
+    <h2>Ada apa saja di dalamnya?</h2>
+    <div class="tiles">
+      <div class="tile t1"><i>⭐</i><span><b>Latihan seru</b><span>Soalnya pas dengan levelmu</span></span></div>
+      <div class="tile t2"><i>🎮</i><span><b>Permainan</b><span>Balon, Kilat, Jam Ajaib, Ayo Belanja</span></span></div>
+      <div class="tile t3"><i>🧑‍🍳</i><span><b>Sehari Bekerja</b><span>Jadi koki, petani, arsitek, pembuat gim</span></span></div>
+      <div class="tile t4"><i>🎧</i><span><b>Cerita bersuara</b><span>Untuk adik TK, cukup mendengarkan</span></span></div>
+      <div class="tile t5"><i>📝</i><span><b>Kertas coret</b><span>Corat-coret langsung di layar</span></span></div>
+      <div class="tile t6"><i>🏆</i><span><b>Hadiah</b><span>Kumpulkan bintang dan keping puzzle</span></span></div>
+    </div>
+  </section>
+
+  <p class="stars"><span>Salah itu biasa. Meti selalu menjelaskan caranya 🐙</span></p>
+
+  <div class="foot">
+    <div class="qr" id="qr"></div>
+    <div>
+      <div class="url">metiq-math.vercel.app</div>
+      <p>Gratis, tanpa iklan, tanpa memasang aplikasi. Bisa dari HP atau komputer.</p>
+      <span class="ask">👨‍👩‍👧 Minta izin ayah, ibu, atau gurumu dulu ya!</span>
+    </div>
+  </div>
+</div>
+<script>
+  const q = qrcode(0, 'M'); q.addData('https://metiq-math.vercel.app'); q.make();
+  document.getElementById('qr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+  document.querySelectorAll('[data-m]').forEach((el) => { el.innerHTML = METIQ_MASCOT.svg(el.dataset.m, { size: +el.dataset.s, who: el.dataset.who, enter: false }); });
+</script>
+</body>
+</html>

@@ -1,0 +1,85 @@
+Kirim dua gambar: poster-guru-gratis.png (untuk guru/sekolah) dan poster-anak.png (untuk diteruskan ke murid dan orang tua).
+
+==================================================
+1. Teman, Kepala TK
+==================================================
+Halo [nama] 😊
+
+Terima kasih masukannya waktu itu soal anak TK yang belum bisa baca. Sekarang Metiq sudah punya materi TK A dan TK B, dan cerita serta soalnya dibacakan dengan suara, jadi anak cukup mendengarkan dan menunjuk jawaban.
+
+Guru TK bisa langsung pakai, gratis:
+👩‍🏫 Daftar 2 menit, langsung aktif tanpa menunggu persetujuan
+🧒 Masukkan murid dengan ketik nama, lalu beri tugas dan lihat kemajuan tiap anak
+👨‍👩‍👧 Orang tua dapat laporan lewat kode orang tua
+
+Poster kedua bisa dibagikan ke orang tua murid. Kalau sempat dicoba bersama guru-guru, saya senang sekali dengar masukannya lagi 🙏
+
+👉 metiq-math.vercel.app
+
+==================================================
+2. Guru di Sekolah Alam Indonesia Sukabumi
+==================================================
+Assalamu'alaikum, [Pak/Bu nama] 🙏
+
+Saya ingin berbagi Metiq, aplikasi latihan matematika berbahasa Indonesia dari TK sampai SMA. Gratis untuk guru dan tanpa iklan.
+
+Yang mungkin cocok dengan Sekolah Alam:
+🧑‍🍳 Sehari Bekerja: misi matematika dari pekerjaan nyata, misalnya petani menghitung jarak tanam, koki membagi resep, arsitek mengukur ruang
+🧭 Asesmen awal menempatkan setiap anak sesuai levelnya, jadi anak yang cepat dan yang perlu waktu sama-sama nyaman
+📊 Laporan "Semua kemajuan" per bab dan per anak, bisa diunduh
+
+Daftar di Saya Guru → Daftar gratis, langsung aktif. Atau coba dulu sebagai guru contoh tanpa daftar. Poster kedua untuk dibagikan ke murid.
+
+👉 metiq-math.vercel.app
+
+==================================================
+3. Kepala Sekolah SMP Pesantren Al Umanaa Sukabumi
+==================================================
+Assalamu'alaikum warahmatullah, [Ustadz/Bapak nama] 🙏
+
+Perkenankan saya memperkenalkan Metiq, aplikasi latihan matematika berbahasa Indonesia yang sedang kami kembangkan, mencakup SD, SMP Kelas 7–8, Aljabar, Geometri, sampai Kalkulus.
+
+Untuk santri SMP:
+📐 Soal menyesuaikan level santri, dengan penjelasan langkah demi langkah saat salah
+📝 Kertas coret di layar untuk soal bersusun dan aljabar
+📌 Ustadz/ustadzah memberi tugas per kelas atau kelompok, dan melihat siapa yang sudah mengerjakan
+
+Guru bisa memakai semuanya secara gratis. Untuk pesantren dengan banyak kelas, ada Paket Sekolah (Rp15.000 per santri per tahun): dasbor lintas kelas, admin sekolah mengelola guru, dan asesmen awal–akhir untuk melihat peningkatan. Bisa dicoba dulu dengan beberapa kelas.
+
+Jika berkenan, saya bisa menjelaskan langsung atau mendampingi uji coba. Jazakallahu khairan.
+
+👉 metiq-math.vercel.app
+
+==================================================
+4. Ketua Yayasan Adzkia Sukabumi
+==================================================
+Assalamu'alaikum warahmatullah, [Bapak/Ibu nama] 🙏
+
+Saya ingin memperkenalkan Metiq, aplikasi latihan matematika berbahasa Indonesia untuk TK sampai SMA dalam satu tempat. Cocok untuk yayasan yang menaungi beberapa jenjang sekaligus.
+
+Untuk guru (gratis):
+✅ Daftar langsung aktif, membuat kelas, memberi tugas, laporan setiap murid, dan laporan untuk orang tua
+
+Untuk yayasan dan sekolah (Paket Sekolah, Rp15.000 per siswa per tahun):
+🏫 Dasbor dan laporan lintas kelas dan guru
+🧑‍🏫 Admin sekolah mengatur guru mana yang masuk sekolahnya
+📈 Asesmen awal dan akhir untuk mengukur peningkatan hasil belajar
+🤝 Pelatihan dan pendampingan guru
+
+Formulir penawaran ada di halaman Harga, atau Bapak/Ibu bisa langsung membalas pesan ini. Saya senang jika bisa bersilaturahmi dan memperlihatkan langsung. Jazakumullahu khairan.
+
+👉 metiq-math.vercel.app/#/harga
+
+==================================================
+Caption umum poster anak (untuk diteruskan ke grup orang tua/murid)
+==================================================
+🐙 Ayo jago matematika bareng Meti!
+
+Metiq: latihan matematika dari TK sampai SMA, gratis dan tanpa iklan.
+1️⃣ Buka metiq-math.vercel.app
+2️⃣ Ketuk Mulai belajar, ketik nama, kerjakan tes singkat
+3️⃣ Simpan kode belajar (ada di halaman Aku), berikan ke guru supaya masuk kelas
+
+Ada permainan, misi Sehari Bekerja, cerita bersuara untuk adik TK, dan hadiah bintang ⭐
+
+#Metiq #BelajarMatematika #MatematikaSeru
