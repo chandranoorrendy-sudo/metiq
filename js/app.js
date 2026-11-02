@@ -1938,6 +1938,27 @@
       await ensure(true); route();
     } catch (e) { f.querySelectorAll('button').forEach((b) => { b.disabled = false; }); toast(e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
   }
+  // Admin: siswa yang belum punya kelas (mulai sendiri atau disetujui tanpa kelas), beserta kodenya
+  async function loadUngrouped(ctx) {
+    const box = document.getElementById('ung-box'); if (!box) return;
+    try {
+      const list = await Cloud.rpc('admin_ungrouped', { p_token: session.get().token });
+      if (!document.getElementById('ung-box')) return;
+      const opts = ctx.classes.slice().sort((a, b) => (a.schoolName || '').localeCompare(b.schoolName || '') || a.name.localeCompare(b.name)).map((c) => `<option value="${c.id}">${c.schoolName ? esc(c.schoolName) + ' · ' : ''}${esc(c.name)}</option>`).join('');
+      const row = (k) => `<section class="card reqcard"><div class="lrow"><span class="av">${avHTML(k.avatar || '🦁')}</span><span class="grow"><b>${esc(k.name)}</b><small>Mulai ${ftime(k.createdAt)}</small></span></div>
+        <div class="kpis"><div class="kpi"><small>Kode belajar (untuk siswa)</small><b class="code">${esc(k.code || '–')}</b></div><div class="kpi"><small>Kode orang tua</small><b class="code">${esc(k.parentCode || '–')}</b></div></div>
+        <form data-form="assignkid" data-id="${k.id}" class="form inline"><select name="classId" required aria-label="Kelas untuk ${esc(k.name)}"><option value="">— pilih kelas —</option>${opts}</select><button class="btn">Masukkan ke kelas</button></form></section>`;
+      box.innerHTML = `<section class="card"><h2>🧺 Siswa tanpa kelas <small class="muted">(${list.length})</small></h2><p class="small muted">Anak yang mulai belajar sendiri atau disetujui tanpa kelas. Siswa masuk dengan kode belajar (menu "Saya sudah punya kode"); orang tua melihat laporan dengan kode orang tua.</p></section>`
+        + (list.length ? list.map(row).join('') : emptyCard('Belum ada', 'Semua siswa sudah punya kelas.'));
+    } catch (e) { box.innerHTML = emptyCard('Tidak bisa memuat', e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
+  }
+  async function assignKid(f, fd) {
+    const b = f.querySelector('button'); if (b) b.disabled = true;
+    try {
+      await Cloud.rpc('admin_assign_student', { p_token: session.get().token, p_student_id: f.dataset.id, p_class_id: fd.get('classId') });
+      toast('Siswa dimasukkan ke kelas ✔'); await ensure(true); route();
+    } catch (e) { if (b) b.disabled = false; toast(e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
+  }
   async function superNewSchool(f, fd) {
     try { await Cloud.rpc('super_school_save', { p_token: session.get().token, p_id: null, p_name: fd.get('name'), p_kind: fd.get('kind'), p_city: null }); toast('Sekolah ditambahkan ✔'); route(); }
     catch (e) { toast(e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
@@ -2898,6 +2919,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (kind === 'request') return submitRequest(f, fd);
     if (kind === 'reqcheck') { const code = String(fd.get('code') || '').trim().toUpperCase(); return code ? go('#/ajukan/status/' + code) : null; }
     if (kind === 'decide') return superDecide(f, fd, e.submitter);
+    if (kind === 'assignkid') return assignKid(f, fd);
     if (kind === 'newschool') return superNewSchool(f, fd);
     if (kind === 'trystart') return startDemo(f.dataset.r, fd.get('name'), fd.get('child'), fd.getAll('link'));
     if (kind === 'fb') {
