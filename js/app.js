@@ -2095,29 +2095,63 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   const G = window.METIQ_GAMES;
   let stopGame = null;
   const gameKid = () => { const ses = session.get(); return ses.role === 'siswa' && S.student(ses.id); };
-  const starRow = (n, max = 3) => `<span class="gstars">${'⭐'.repeat(n)}<i>${'⭐'.repeat(max - n)}</i></span>`;
+  const gStar = (on) => `<svg class="gst ${on ? 'on' : ''}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9z"/></svg>`;
+  // Permainan mengikuti belajar: terbuka sampai kelas yang sedang dipelajari anak
+  // (hasil asesmen, atau kelas tertinggi yang sudah punya keterampilan Mahir); tuntas satu kelas membuka kelas berikutnya.
+  const skillOk = (pr) => (s) => ((pr[s.id] || {}).score || 0) >= 80;
+  function gameGradeMax(sid) {
+    const ok = skillOk(S.progressAll(sid)), last = GRADES[GRADES.length - 1].id;
+    let top = Math.max(1, ...['a', 'b'].map((pf) => (S.diagOf(sid, pf) || {}).level || 1));
+    GRADES.forEach((x) => { if (unitsOf(x.id).some((u) => u.skills.some(ok))) top = Math.max(top, x.id); });
+    while (top < last && unitsOf(top).every((u) => u.skills.every(ok))) top++;
+    return Math.min(top, last);
+  }
+  // Kelas yang dilihat di Main disimpan terpisah dari kelas di peta belajar
+  const gameGrade = (max) => { const g = +sessionStorage.getItem('metiq_ggrade') || Math.min(getGrade(), max); return GRADES.some((x) => x.id === g) ? g : 1; };
   function viewGames() {
-    const kid = gameKid(), g = getGrade();
+    const kid = gameKid(), max = kid ? gameGradeMax(kid.id) : GRADES[GRADES.length - 1].id, g = gameGrade(max);
     const best = (id) => { const p = kid ? S.progress(kid.id, 'g:' + id) : null; return p && p.att ? p : null; };
-    app.innerHTML = shell(`<a class="back" href="${kid ? '#/belajar' : '#/'}">← Kembali</a>
-      <h1>🎮 Permainan matematika</h1>
-      <p class="muted">${kid ? `Kamu punya <b>⭐ ${S.starsOf(kid.id)} bintang</b>. Bintang dihitung dari skor terbaikmu di tiap permainan (maksimal 3 per permainan).` : 'Masuk sebagai siswa agar bintangmu tersimpan. Tanpa masuk, kamu tetap bisa mencoba.'}</p>
-      ${gradeTabs()}
-      <div class="glist">${G.GAMES.filter((x) => x.grade === g && !(adabOn() && x.type === 'kilat')).map((x) => { const b = best(x.id); return `<a class="card gitem" href="#/main/${x.id}"><span class="gicon g-${x.type}">${x.icon}</span><span class="grow"><b>${x.name}</b><small>${x.desc}</small><small class="gtype">${G.TYPES[x.type]}</small></span><span class="gbest">${b ? `${starRow(G.starsFor(x, b.score))}<small>terbaik ${b.score} poin · ${b.att}× main</small>` : '<small>Belum dimainkan</small>'}</span></a>`; }).join('')}</div>`,
-    { right: `<span class="topr"><a class="help" href="#/panduan/siswa" aria-label="Panduan">❓</a></span>` });
-    mqNavAfter('main');
+    const pill = (x) => { const lock = x.id > max; return `<button class="mq-gg ${x.id === g ? 'on' : ''} ${lock ? 'lock' : ''}" data-act="ggrade" data-g="${x.id}" aria-label="Kelas ${x.id}${lock ? ' (terkunci)' : ''}"><b>${x.id}</b>${lock ? `<i>${IC.lock}</i>` : ''}</button>`; };
+    const tile = (x) => {
+      const b = best(x.id), st = b ? G.starsFor(x, b.score) : 0, [c, bg] = G.LOOK[x.type];
+      return `<a class="mq-gt" href="#/main/${x.id}" style="--c:${c};--bg:${bg}" aria-label="${esc(x.name)}, ${st} bintang">${x.isNew && !b ? '<span class="new">Baru</span>' : ''}<span class="art">${G.art(x.type)}</span><b>${x.name}</b><span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span></a>`;
+    };
+    let body;
+    if (g > max) {
+      const sk = unitsOf(max).flatMap((u) => u.skills), dn = sk.filter(skillOk(S.progressAll(kid.id))).length;
+      body = `<div class="mq-glock">${MQ.svg('think', { size: 130 })}<div class="lk">${IC.lock}</div>
+        <h2>Kelas ${g}</h2><p>Tuntaskan belajar <b>Kelas ${max}</b> dulu</p>
+        <div class="mq-glbar" role="img" aria-label="${dn} dari ${sk.length} keterampilan Mahir"><i style="width:${pct(dn, sk.length)}%"></i></div><small>${dn} / ${sk.length} ✓</small>
+        <a class="mq-btn" href="#/belajar">Ayo belajar</a></div>`;
+    } else {
+      body = `<div class="mq-ggrid">${G.GAMES.filter((x) => x.grade === g && !(adabOn() && x.type === 'kilat')).map(tile).join('')}</div>`;
+    }
+    app.innerHTML = mqPage(`
+      <div class="mq-ghead">${kid ? '' : `<a class="mq-ico" href="#/" aria-label="Kembali">${IC.back}</a>`}
+        <div class="mq-gsay">${MQ.svg('happy', { size: 74 })}<div class="mq-bubble"><p>Ayo main!</p></div></div>
+        ${kid ? `<button class="mq-gchip" data-act="tip" data-t="⭐ Bintang dari skor terbaik tiap permainan (maksimal 3)">${gStar(true)}${S.starsOf(kid.id)}</button>` : ''}</div>
+      <div class="mq-ggs" role="tablist" aria-label="Kelas">${GRADES.map(pill).join('')}</div>
+      ${body}`, 'main');
   }
   function viewGame(id) {
     const x = G.byId(id); if (!x || (adabOn() && x.type === 'kilat')) return go('#/permainan');
-    const kid = gameKid(), how = { kilat: 'Jawab soal sebanyak mungkin dalam 60 detik. Jawaban benar berturut-turut membuat kombo 🔥.', balon: 'Balon terbang ke atas. Ketuk balon yang sesuai perintah di atas. Ketuk balon yang salah, poinmu berkurang 1. Perintah berganti setiap 5 balon.', pasangan: 'Buka dua kartu. Jika soal dan jawabannya cocok, kartu tetap terbuka. Semakin sedikit salah tebak, semakin banyak bintang.', susun: `Ketuk sebuah kolom untuk menjatuhkan balok. Dua balok yang bersentuhan (samping atau atas-bawah) dan jumlahnya ${x.target !== undefined ? x.show(x.target) : ''} akan hilang. Hilang beruntun = poin bonus! Permainan selesai jika semua kolom penuh.`, kembar: `Balok jatuh terus dan makin cepat. Ketuk kolom (atau ◀ ▶) untuk menggeser balok, ketuk lagi kolom yang sama (atau ▼) untuk menjatuhkannya. Balok yang sama dan bersentuhan menyatu menjadi dua kali lipat. Jika tumpukan masuk ke baris merah paling atas, permainan selesai. Poin naik setiap balok terbesarmu berlipat dua (64 = 50 poin, 128 = 60, 256 = 70).` }[x.type];
-    app.innerHTML = shell(`<a class="back" href="#/permainan">← Semua permainan</a>
-      <section class="card ghead"><span class="gicon g-${x.type}">${x.icon}</span><div class="grow"><small class="muted">Kelas ${x.grade} · ${G.TYPES[x.type]}</small><h1>${x.name}</h1></div></section>
-      <div id="garea"><section class="card center gintro"><p>${how}</p><p class="small muted">⭐ ${x.stars[0]} poin · ⭐⭐ ${x.stars[1]} poin · ⭐⭐⭐ ${x.stars[2]} poin</p>${kid ? '' : '<p class="small muted">Kamu belum masuk sebagai siswa, jadi bintang tidak disimpan.</p>'}<button class="btn" data-act="gstart">▶ Mulai</button></section></div>`,
-    { right: `<span class="topr"><button class="pback psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button></span>` });
+    const kid = gameKid();
+    if (kid && x.grade > gameGradeMax(kid.id)) { toast('🔒 Tuntaskan belajarmu dulu ya'); return go('#/permainan'); }
+    const [c, bg] = G.LOOK[x.type];
+    app.innerHTML = `<div class="mq-top"><a class="mq-ico" href="#/permainan" aria-label="Keluar">${IC.x}</a><span class="mq-gtitle">${x.name}</span>
+        <button class="mq-ico psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button></div>
+      <main class="mq-screen mq-gplay" id="garea" style="--c:${c};--bg:${bg}">
+        <div class="mq-gintro"><div class="mq-gart">${G.art(x.type, 210)}</div>
+          <div class="mq-how">${G.HOW[x.type](x).map(([e, t]) => `<div><span class="e">${e}</span>${t}</div>`).join('')}</div>
+          <div class="mq-goal">${x.stars.map((p, i) => `<div><span>${gStar(true).repeat(i + 1)}</span><b>${p}</b></div>`).join('')}</div>
+          ${kid ? '' : '<p class="mq-note">Masuk sebagai siswa agar bintangmu tersimpan.</p>'}
+          <details class="mq-gmore"><summary>Cara main lengkap</summary><p>${x.desc}</p></details></div></main>
+      <div class="mq-foot" id="gfoot"><div class="mq-foot-in"><button class="mq-btn pulse" data-act="gstart">Mulai</button></div></div>`;
   }
   function startGame() {
     const x = G.byId(location.hash.split('/')[2]), area = document.getElementById('garea'); if (!x || !area) return;
     if (stopGame) stopGame();
+    const foot = document.getElementById('gfoot'); if (foot) foot.hidden = true;
     stopGame = G.start(area, x, ({ points, ms }) => {
       stopGame = null;
       const kid = gameKid(), stars = G.starsFor(x, points);
@@ -2131,11 +2165,12 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         if (STARS_SRV && cloudOn()) Cloud.queueClaim(kid.id, session.get().code, { id: 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), kind: 'game', game: x.id, points, stars, d: S.todayKey() });
       }
       if (stars >= 3) window.SFX.mastered(); else if (stars) window.SFX.levelUp();
-      area.innerHTML = `<section class="card center gend"><div class="gbig">${starRow(stars)}</div><h2>${stars >= 3 ? 'Luar biasa!' : stars === 2 ? 'Hebat!' : stars ? 'Bagus!' : 'Ayo coba lagi!'}</h2>
-        <p>Kamu mendapat <b>${points} poin</b>${stars ? ` dan <b>${stars} bintang</b>` : ''}.${kid && points > prevBest && before && before.att ? ' 🎉 Rekor baru!' : ''}</p>
-        ${kid ? `<p class="small muted">Total bintangmu sekarang ⭐ ${S.starsOf(kid.id)}</p>` : ''}
-        ${stars < 3 ? `<p class="small muted">Butuh ${x.stars[stars]} poin untuk ${stars + 1} bintang.</p>` : ''}
-        <div class="row-btn"><button class="btn" data-act="gstart">Main lagi</button><a class="btn ghost" href="#/permainan">Permainan lain</a></div></section>`;
+      area.innerHTML = `<div class="mq-gend">${MQ.svg(stars ? 'cheer' : 'think', { size: 150 })}
+        <div class="mq-gstars">${[0, 1, 2].map((i) => gStar(i < stars)).join('')}</div>
+        <h2>${stars >= 3 ? 'Luar biasa!' : stars === 2 ? 'Hebat!' : stars ? 'Bagus!' : 'Ayo coba lagi!'}</h2>
+        <div class="mq-gpts"><b>${points}</b><small>poin</small>${kid && points > prevBest && before && before.att ? '<span class="rec">🎉 Rekor baru!</span>' : ''}</div>
+        ${stars < 3 ? `<p class="mq-note">Butuh ${x.stars[stars]} poin untuk ${'⭐'.repeat(stars + 1)}</p>` : ''}</div>`;
+      if (foot) { foot.hidden = false; foot.innerHTML = '<div class="mq-foot-in"><button class="mq-btn" data-act="gstart">Main lagi</button><a class="mq-btn ghost" href="#/permainan">Permainan lain</a></div>'; }
     });
   }
 
@@ -2620,7 +2655,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (seq !== routeSeq) return;
     window.METIQ_CURRICULUM.setKonteks(curSettings().konteks);
     window.scrollTo(0, 0);
-    document.body.classList.toggle('mq-body', ['', undefined, 'siswa', 'siswa-baru', 'kode', 'mulai', 'belajar', 'asesmen', 'latihan', 'tugas', 'aku', 'ujian'].includes(a));
+    document.body.classList.toggle('mq-body', ['', undefined, 'siswa', 'siswa-baru', 'kode', 'mulai', 'belajar', 'asesmen', 'latihan', 'tugas', 'aku', 'ujian', 'permainan', 'main'].includes(a));
     switch (a) {
       case '': case undefined: return viewHome();
       case 'kurikulum': return viewCurriculum();
@@ -2658,6 +2693,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (!el) return;
     const act = el.dataset.act;
     if (act === 'gstart') return startGame();
+    if (act === 'ggrade') { sessionStorage.setItem('metiq_ggrade', el.dataset.g); return route(); }
     if (act === 'obage') { OB.age = +el.dataset.a; document.querySelectorAll('.mq-age').forEach((b) => b.classList.toggle('sel', b === el)); document.getElementById('obbtn').disabled = false; window.SFX.step(); return; }
     if (act === 'obgoal') { OB.goal = +el.dataset.m; ls.set('metiq_goal_' + OB.sid, OB.goal); document.querySelectorAll('.mq-choice').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); return; }
     if (act === 'obnext') return obNext();
