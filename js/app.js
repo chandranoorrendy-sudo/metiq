@@ -406,9 +406,41 @@
       <div class="mq-tiles3">${tile('Beruntun', `🔥 ${streakOf(st.id)}`, '#ff8a00')}${tile('Bintang', `⭐ ${S.starsOf(st.id)}`, '#e0a800')}${tile('Tuntas', `🏆 ${gold}`, '#19b796')}</div>
       ${!st.classId && ses.code ? `<section class="mq-card"><h3>🔑 Kode belajarmu</h3><p class="mq-bigcode">${esc(ses.code)}</p><p class="mq-hint">Simpan kode ini. Di HP lain, buka Metiq lalu pilih <b>Saya sudah punya kode</b>.</p></section>` : ''}
       <section class="mq-card"><h3>🏅 Lencana bab · Kelas ${getGrade()}</h3><div class="mq-badges">${unitsOf(getGrade()).map((u) => { const t = S.testOf(st.id, u.id), on = t && t.best >= 60; return `<button class="mq-bd ${on ? 'on' : ''}" data-act="tip" data-t="${on ? '🏅 Lencana Bab ' + u.id + ' didapat!' : '🔒 Lulus ujian bab ' + u.id + ' untuk mendapatkan lencana ini'}" aria-label="Lencana bab ${u.id}"><span>${chLogo(u)}</span></button>`; }).join('')}</div></section>
-      <section class="mq-card"><h3>📈 Minggu ini</h3><div class="mq-tiles3" style="margin:0">${tile('Soal', wk.n, '#1c9be8')}${tile('Waktu', fmtTime(wk.ms), '#19b796')}${tile('Maju', wk.skills, '#e0a800')}</div></section>
+      ${meCharts(st.id, goal)}
       <div class="mq-list"><a href="#/laporanku"><span class="em">📄</span>Laporanku<span class="go">›</span></a>
         <a href="#/pengaturan"><span class="em">⚙️</span>Pengaturan<span class="go">›</span></a></div>`, 'aku');
+  }
+
+  /* ---------- Grafik untuk siswa di halaman Aku ----------
+   * 1) Menit belajar 7 hari terakhir (batang, satu seri) dengan garis target harian.
+   * 2) Kemajuan keterampilan di kelas yang sedang dipelajari (satu batang bertumpuk, gradasi satu warna). */
+  const MS_CAP = 180000; // sama dengan perhitungan waktu di tempat lain: satu jawaban dihitung paling lama 3 menit
+  const HARI3 = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'], HARI7 = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
+  function meCharts(sid, goal) {
+    const t0 = todayStart(), ans = S.answersOf(sid);
+    const days = [...Array(7)].map((_, k) => {
+      const from = t0 - (6 - k) * DAY, list = ans.filter((a) => a.ts >= from && a.ts < from + DAY);
+      return { d: new Date(from), min: Math.round(list.reduce((t, a) => t + Math.min(a.ms || 0, MS_CAP), 0) / 60000), n: list.length, today: k === 6 };
+    });
+    const top = Math.max(goal, ...days.map((x) => x.min), 1), totMin = days.reduce((t, x) => t + x.min, 0), hit = days.filter((x) => x.min >= goal).length;
+    const H = 120, y = (v) => Math.round((v / top) * H);
+    const bars = days.map((x) => `<button class="mc-col ${x.today ? 'today' : ''}" data-act="tip" data-t="${HARI7[(x.d.getDay() + 6) % 7]}: ${x.min} menit · ${x.n} soal" aria-label="${HARI7[(x.d.getDay() + 6) % 7]}, ${x.min} menit, ${x.n} soal">
+        <span class="mc-bar" style="height:${Math.max(x.min ? 4 : 0, y(x.min))}px"></span><small>${x.today ? 'Hari ini' : HARI3[x.d.getDay()]}</small></button>`).join('');
+    const week = `<section class="mq-card mc"><h3>📈 Belajarku 7 hari</h3>
+      <p class="mc-key"><i></i>Target ${goal} menit sehari</p><div class="mc-hero"><div><b>${totMin}</b><small>menit</small></div><div><b>${days.reduce((t, x) => t + x.n, 0)}</b><small>soal</small></div><div><b>${hit}/7</b><small>hari capai target</small></div></div>
+      <div class="mc-plot" aria-label="Menit belajar 7 hari terakhir: ${days.map((x) => `${HARI3[x.d.getDay()]} ${x.min}`).join(', ')}. Target ${goal} menit per hari.">
+        <div class="mc-goal" style="bottom:${y(goal) + 22}px"></div>${bars}</div></section>`;
+    // kemajuan keterampilan di kelas yang sedang dipelajari
+    const g = getGrade(), prog = S.progressAll(sid), sk = unitsOf(g).flatMap((u) => u.skills);
+    const LV = [['Tuntas', '#0a7d68'], ['Mahir', '#19b796'], ['Berkembang', '#66e3c4'], ['Mulai', '#c2f3e6'], ['Belum dicoba', '#e6eae9']];
+    const cnt = LV.map(([l]) => sk.filter((s) => { const p = prog[s.id] || {}; return (p.att ? level(p.score || 0)[0] : 'Belum dicoba') === l; }).length);
+    const seg = LV.map(([l, c], k) => cnt[k] ? `<button class="mc-seg" style="flex:${cnt[k]};background:${c}" data-act="tip" data-t="${l}: ${cnt[k]} keterampilan" aria-label="${l}: ${cnt[k]} keterampilan"></button>` : '').join('');
+    const mastered = cnt[0] + cnt[1];
+    const prog2 = `<section class="mq-card mc"><h3>🎯 Kemajuanku di Kelas ${g}</h3>
+      <p class="mc-big"><b>${mastered}</b> dari ${sk.length} keterampilan sudah Mahir atau Tuntas</p>
+      <div class="mc-stack" aria-label="${LV.map(([l], k) => `${l} ${cnt[k]}`).join(', ')}">${seg}</div>
+      <div class="mc-legend">${LV.map(([l, c], k) => `<span><i style="background:${c}"></i>${l} <b>${cnt[k]}</b></span>`).join('')}</div></section>`;
+    return week + prog2;
   }
 
   /* ---------- Pengaturan siswa (seperti Settings di Duolingo): Preferensi, Metiq untuk Sekolah, Pusat Bantuan, Masukan ---------- */
@@ -510,27 +542,46 @@
     return { st, cells, next, open: cells.filter((x) => x.open).length };
   }
   const nextWin = (pb, short) => { const parts = Object.entries(pb.next).map(([k, n]) => `${n} ${chUnit[k]} lagi`); return short ? parts.slice(0, 2).join(' atau ') : parts.join(', atau '); };
+  // Album Nusantara: setiap tantangan papan hadiah (semua kelas) = 1 keping; 9 keping membuka satu gambar.
+  const ALB = window.METIQ_ALBUM, PIECES = 9;
+  const pieceTotal = (sid) => GRADES.reduce((t, x) => t + prizeBoard(sid, x.id).open, 0);
+  // urutan keping yang terbuka diacak tetap per gambar, supaya gambarnya muncul sedikit demi sedikit dari berbagai sudut
+  const pieceOrder = (i) => { const o = [...Array(PIECES).keys()]; let x = (i + 3) * 7919; for (let k = o.length - 1; k > 0; k--) { x = (x * 9301 + 49297) % 233280; const j = Math.floor((x / 233280) * (k + 1)); [o[k], o[j]] = [o[j], o[k]]; } return o; };
+  const puzzleHTML = (i, have, cls) => {
+    const open = new Set(pieceOrder(i).slice(0, have));
+    return `<div class="alb-pz ${cls || ''}">${ALB[i].svg}<div class="alb-cover">${[...Array(PIECES).keys()].map((k) => `<i class="${open.has(k) ? 'open' : ''}"></i>`).join('')}</div></div>`;
+  };
   function viewPrizes() {
     const ses = session.get(); const st = S.student(ses.id);
     if (ses.role !== 'siswa' || !st) return go('#/siswa');
     if (adabOn()) return go('#/belajar');
-    const g = getGrade(), pb = prizeBoard(st.id, g);
-    app.innerHTML = shell(`<a class="back" href="#/belajar">← Kembali</a>
-      <h1>🎁 Papan hadiah</h1><p class="muted">Ada apa di balik kotak itu? Setiap kotak punya tantangan. Selesaikan tantangannya untuk membuka hadiah!</p>
-      ${gradeTabs()}
-      <div class="pzwrap"><div class="pzboard">${pb.cells.map((x) => `<button class="pz ${x.open ? 'open' : ''}" data-act="pz" data-i="${x.pos}" aria-label="${x.open ? 'Hadiah terbuka' : 'Kotak tertutup'}">${x.open ? x.prize : '?'}</button>`).join('')}</div>
-        <aside class="card pzside"><h2>Kesibukanmu di Kelas ${g}</h2>
-          <div id="pzinfo" class="pzinfo small">👆 Ketuk sebuah kotak untuk melihat tantangannya.</div>
-          <div class="lrow"><span class="grow">Soal dijawab</span><b>${pb.st.q}</b></div>
-          <div class="lrow"><span class="grow">Waktu berlatih</span><b>${fmtTime(pb.st.t * 60000)}</b></div>
-          <div class="lrow"><span class="grow">Keterampilan mahir ⭐</span><b>${pb.st.s}</b></div>
-          <div class="lrow"><span class="grow">Keterampilan tuntas 🏆</span><b>${pb.st.m}</b></div>
-          <div class="lrow"><span class="grow">Hadiah terbuka 🎁</span><b>${pb.open}/${pb.cells.length}</b></div>
-          ${pb.open < pb.cells.length ? `<p class="small"><b>Hadiah berikutnya:</b> ${nextWin(pb)}.</p>` : `<p class="small"><b>Semua hadiah Kelas ${g} sudah terbuka! 🎉</b></p>`}
-        </aside></div>
-      <div class="row-btn"><a class="btn" href="#/belajar">Ayo berlatih</a></div>`,
-    { right: `<span class="topr"><a class="help" href="#/panduan/siswa" aria-label="Panduan">❓</a></span>` });
-    mqNavAfter('hadiah');
+    const g = getGrade(), pb = prizeBoard(st.id, g), total = Math.min(pieceTotal(st.id), ALB.length * PIECES);
+    const cur = Math.min(Math.floor(total / PIECES), ALB.length - 1), have = total >= ALB.length * PIECES ? PIECES : total % PIECES, a = ALB[cur];
+    const done = (i) => i < Math.floor(total / PIECES);
+    // tantangan berikutnya di kelas ini, satu per jenis, dengan kemajuannya
+    const goals = Object.keys(pb.next).map((k) => { const n = pb.st[k] + pb.next[k]; return { k, n, have: pb.st[k], label: chLabel({ k, n }) }; });
+    const goalRow = (x) => `<div class="alb-goal"><span class="em">${{ q: '✏️', t: '⏱️', s: '⭐', m: '🏆' }[x.k]}</span><span class="grow"><b>${x.label}</b><span class="alb-bar"><i style="width:${pct(x.have, x.n)}%"></i></span><small>${x.k === 't' ? fmtTime(x.have * 60000) : x.have} / ${x.k === 't' ? fmtTime(x.n * 60000) : x.n}</small></span></div>`;
+    const thumb = (x, i) => done(i) ? `<button class="alb-th done" data-act="album" data-i="${i}" aria-label="${esc(x.name)}">${x.svg}<b>${esc(x.name)}</b></button>`
+      : i === cur ? `<button class="alb-th cur" data-act="album" data-i="${i}" aria-label="${esc(x.name)}, ${have} dari ${PIECES} keping">${puzzleHTML(i, have)}<b>${esc(x.name)}</b></button>`
+        : `<button class="alb-th lock" data-act="tip" data-t="🔒 Lengkapi puzzle sebelumnya dulu ya" aria-label="Terkunci">${x.svg}<span class="lk">${IC.lock}</span><b>?</b></button>`;
+    app.innerHTML = mqPage(`
+      <div class="alb-head"><div><h1>Album Nusantara</h1><p>Kumpulkan keping, buka gambar Indonesia!</p></div><span class="mq-gchip">🧩 ${total}</span></div>
+      <section class="alb-main"><small>Puzzle ${cur + 1} dari ${ALB.length}</small><h2>${esc(a.name)}</h2><p class="pl">📍 ${esc(a.place)}</p>
+        ${puzzleHTML(cur, have, 'big')}
+        <div class="alb-prog"><i style="width:${(have / PIECES) * 100}%"></i><span>${have}/${PIECES}</span></div>
+        <p class="alb-msg">${total >= ALB.length * PIECES ? '🎉 Semua puzzle sudah lengkap. Hebat!' : have ? `Tinggal <b>${PIECES - have} keping</b> lagi untuk membuka gambar ini!` : 'Selesaikan tantangan di bawah untuk mendapat keping pertama!'}</p></section>
+      ${goals.length ? `<section class="mq-card"><h3>🧩 Cara dapat keping</h3>${goals.map(goalRow).join('')}<a class="mq-btn" href="#/belajar">Ayo belajar</a></section>` : ''}
+      <h2 class="mq-sethead">Albumku</h2><div class="alb-grid">${ALB.map(thumb).join('')}</div>
+      <div class="mq-modal" id="albsheet" hidden data-act="albclose"><div class="mq-sheet alb-sheet" id="albbox"></div></div>`, 'hadiah');
+  }
+  function openAlbum(i) {
+    const st = studentNow(); if (!st) return;
+    const total = pieceTotal(st.id), a = ALB[i], full = i < Math.floor(total / PIECES);
+    const box = document.getElementById('albbox'), sh = document.getElementById('albsheet'); if (!box || !sh) return;
+    box.innerHTML = `${full ? a.svg : puzzleHTML(i, total % PIECES, 'big')}<h2>${esc(a.name)}</h2><p class="pl">📍 ${esc(a.place)}</p>
+      <p>${full ? `💡 ${esc(a.fact)}` : 'Lengkapi semua keping untuk membuka fakta seru tentang tempat ini.'}</p><button class="mq-btn" data-act="albclose">Tutup</button>`;
+    sh.hidden = false;
+    if (full) window.SFX.levelUp();
   }
   function viewMyReport() {
     const ses = session.get(); const st = S.student(ses.id);
@@ -675,7 +726,7 @@
     document.querySelectorAll('.mq-key').forEach((b) => { b.disabled = true; });
     const m = document.getElementById('mqm'); m.innerHTML = MQ.svg(ok ? 'happy' : 'oops', { size: 92, enter: false }); m.firstChild.classList.add('mq-react');
     const finished = ok ? myAsg.filter(asgDone) : [];
-    if (!adabOn() && prizeBoard(P.sid, P.sk.grade).open > pzBefore) setTimeout(() => toast('🎁 Hadiah baru terbuka!'), 1200);
+    if (!adabOn() && prizeBoard(P.sid, P.sk.grade).open > pzBefore) setTimeout(() => toast('🧩 Dapat keping puzzle baru!'), 1200);
     finished.forEach((a) => markDone(a.id, P.sid, 'siswa'));
     const fb = document.getElementById('fb'), pq = document.getElementById('pq');
     const how = `<details class="mq-how" open><summary>💡 Lihat caranya</summary><div class="explain">${q.explain}<p>${LESSONS[P.sk.unit] ? `<button class="link" data-act="lopen" data-u="${P.sk.unit}">📖 Belum paham? Buka materi</button>` : ''}${window.METIQ_ANIM.has(P.sk.unit) ? ` · <button class="link small" data-act="anim" data-u="${P.sk.unit}">🎬 Tonton animasi</button>` : ''}</p><div class="anim-inline"></div></div></details>`;
@@ -2785,7 +2836,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (seq !== routeSeq) return;
     window.METIQ_CURRICULUM.setKonteks(curSettings().konteks);
     window.scrollTo(0, 0);
-    document.body.classList.toggle('mq-body', ['', undefined, 'siswa', 'siswa-baru', 'kode', 'mulai', 'belajar', 'asesmen', 'latihan', 'tugas', 'aku', 'ujian', 'permainan', 'main', 'pengaturan'].includes(a));
+    document.body.classList.toggle('mq-body', ['', undefined, 'siswa', 'siswa-baru', 'kode', 'mulai', 'belajar', 'asesmen', 'latihan', 'tugas', 'aku', 'ujian', 'permainan', 'main', 'pengaturan', 'hadiah'].includes(a));
     switch (a) {
       case '': case undefined: return viewHome();
       case 'kurikulum': return viewCurriculum();
@@ -2825,6 +2876,8 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const act = el.dataset.act;
     if (act === 'gstart') return startGame();
     if (act === 'coret') return openCoret();
+    if (act === 'album') return openAlbum(+el.dataset.i);
+    if (act === 'albclose') { if (e.target === el || el.tagName === 'BUTTON') { const sh = document.getElementById('albsheet'); if (sh) sh.hidden = true; } return; }
     if (act === 'ggrade') { sessionStorage.setItem('metiq_ggrade', el.dataset.g); return route(); }
     if (act === 'obage') { OB.age = +el.dataset.a; document.querySelectorAll('.mq-age').forEach((b) => b.classList.toggle('sel', b === el)); document.getElementById('obbtn').disabled = false; window.SFX.step(); return; }
     if (act === 'obgoal') { OB.goal = +el.dataset.m; ls.set('metiq_goal_' + OB.sid, OB.goal); document.querySelectorAll('.mq-choice').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); return; }
