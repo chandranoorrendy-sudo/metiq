@@ -1,7 +1,7 @@
 {
-  "name": "Metiq — Matematika SD",
+  "name": "Metiq — Matematika SD sampai SMA",
   "short_name": "Metiq",
-  "description": "Latihan matematika SD kelas 1–6 dalam bahasa Indonesia, dengan dasbor guru dan laporan orang tua.",
+  "description": "Latihan matematika SD, SMP, dan SMA (kelas 1 sampai Kalkulus) dalam bahasa Indonesia, dengan dasbor guru dan laporan orang tua.",
   "lang": "id",
   "start_url": "./",
   "scope": "./",

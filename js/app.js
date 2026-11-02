@@ -27,6 +27,9 @@
   const setGrade = (g) => { try { localStorage.setItem('metiq_grade', g); } catch (e) {} };
   const gradeTabs = () => `<div class="gtabs" role="tablist">${GRADES.map((g) => `<button role="tab" class="${g.id === getGrade() ? 'on' : ''}" data-act="grade" data-g="${g.id}">${g.name}</button>`).join('')}</div>`;
   const curUnits = () => unitsOf(getGrade());
+  // Nama jenjang untuk label (kelas 9 ke atas memakai nama mata pelajaran SMA, seperti IXL)
+  const gname = (g) => (GRADES.find((x) => x.id === g) || {}).name || 'Kelas ' + g;
+  const gshort = (g) => (GRADES.find((x) => x.id === g) || {}).short || String(g);
   const chip = (s) => { const [l, c] = level(s); return `<span class="chip ${c}" title="${l}">${s >= 100 ? '🏆' : s}</span>`; };
   const session = { get() { try { return JSON.parse(localStorage.getItem('metiq_session')) || {}; } catch (e) { return {}; } }, set(v) { try { localStorage.setItem('metiq_session', JSON.stringify(v)); } catch (e) {} } };
   const go = (h) => { location.hash = h; };
@@ -178,8 +181,8 @@
         <div style="--bg:#fff3c4"><span class="em">🎬</span>Pelajaran beranimasi</div>
         <div style="--bg:#ffe3ec"><span class="em">🎁</span>Kumpulkan hadiah</div>
       </section>
-      <p class="mq-gb-t">Untuk siswa SD kelas 1 sampai 6</p>
-      <div class="mq-gb">${GRADES.map((g) => `<span>${g.id}</span>`).join('')}</div>
+      <p class="mq-gb-t">Untuk SD, SMP, dan SMA: kelas 1 sampai Kalkulus</p>
+      <div class="mq-gb">${GRADES.map((g) => `<span title="${g.name}">${g.short || g.id}</span>`).join('')}</div>
       <footer class="mq-lfoot"><a href="#/permainan">Permainan</a><a href="#/panduan/siswa">Bantuan</a><a href="#/ajukan">Ajukan akun</a><a href="#/ajukan/status">Cek status</a></footer>
     </div>`;
   }
@@ -187,7 +190,7 @@
   function viewCurriculum() {
     app.innerHTML = shell(`
       <a class="back" href="#/">← Kembali</a>
-      <h1>Kurikulum Matematika SD</h1>
+      <h1>Kurikulum Matematika SD, SMP, dan SMA</h1>
       <p class="muted">Setiap bab mencantumkan rujukan IXL, Singapore Math, dan Kurikulum Merdeka yang setara.</p>
       <details class="card cdesign-wrap"><summary><b>🧭 Bagaimana kurikulum ini disusun, dan mengapa?</b></summary>${curriculumDesignHTML(false)}</details>
       ${gradeTabs()}
@@ -364,17 +367,17 @@
       return `<button class="mq-unit lock" data-act="tip" data-t="🔒 Selesaikan bab sebelumnya dulu ya"><span class="em">${chLogo(u)}</span><span class="grow"><small>Bab ${u.id}</small><b>${u.name}</b></span><span>${IC.lock.replace('<svg', '<svg width="24" height="24"')}</span></button>`;
     }).join('');
     const allDone = m.cur >= m.flat.length;
-    const gradeSheet = `<div class="mq-modal" id="gsheet" hidden data-act="gclose"><div class="mq-sheet"><h2>Pilih kelas</h2><div class="mq-grades">${GRADES.map((x) => { const sk = unitsOf(x.id).flatMap((u) => u.skills), pr = S.progressAll(st.id), dn = sk.filter((s) => ((pr[s.id] || {}).score || 0) >= 80).length; return `<button class="mq-g ${x.id === g ? 'on' : ''}" data-act="grade" data-g="${x.id}"><small>Kelas</small><b>${x.id}</b><span class="bar"><i style="width:${pct(dn, sk.length)}%"></i></span></button>`; }).join('')}</div><button class="mq-btn ghost" style="margin-top:16px" data-act="gclose">Tutup</button></div></div>`;
+    const gradeSheet = `<div class="mq-modal" id="gsheet" hidden data-act="gclose"><div class="mq-sheet"><h2>Pilih kelas</h2><div class="mq-grades">${GRADES.map((x) => { const sk = unitsOf(x.id).flatMap((u) => u.skills), pr = S.progressAll(st.id), dn = sk.filter((s) => ((pr[s.id] || {}).score || 0) >= 80).length; return `<button class="mq-g ${x.id === g ? 'on' : ''}" data-act="grade" data-g="${x.id}"><small>${x.stage || 'Kelas'}</small><b>${x.short || x.id}</b><span class="bar"><i style="width:${pct(dn, sk.length)}%"></i></span></button>`; }).join('')}</div><button class="mq-btn ghost" style="margin-top:16px" data-act="gclose">Tutup</button></div></div>`;
     app.innerHTML = mqPage(`
       <div class="mq-bar">
-        <button class="mq-chip grade" data-act="gsheet" aria-label="Pilih kelas">Kelas ${g} <small>▾</small></button>
+        <button class="mq-chip grade" data-act="gsheet" aria-label="Pilih kelas">${gname(g)} <small>▾</small></button>
         <button class="mq-chip" data-act="tip" data-t="🔥 ${streakOf(st.id)} hari belajar berturut-turut" aria-label="Hari beruntun"><span class="em">🔥</span>${streakOf(st.id)}</button>
         <button class="mq-chip star" data-act="tip" data-t="⭐ Total bintangmu: dari latihan, ujian bab, dan permainan" aria-label="Bintang"><span class="em">⭐</span>${S.starsOf(st.id)}</button>
         <button class="mq-ring ${mins >= goal ? 'done' : ''}" style="--p:${Math.min(100, (mins / goal) * 100)}" data-act="tip" data-t="🎯 Target hari ini: ${Math.min(goal, Math.floor(mins))} dari ${goal} menit" aria-label="Target harian"><span>🎯</span></button>
       </div>
       ${unsent ? `<div class="mq-demo">📶 ${unsent} jawaban menunggu internet untuk dikirim ke guru.</div>` : ''}
       ${TASKS_ON && todo ? `<a class="mq-task" href="#/tugas"><span class="em">📌</span><b>${todo} tugas dari gurumu</b><span>›</span></a>` : ''}
-      ${allDone ? `<div class="mq-all">${MQ.svg('cheer', { size: 120 })}<div>Semua bab Kelas ${g} sudah tuntas! 🎉</div><button class="mq-btn" style="margin-top:12px" data-act="gsheet">Pilih kelas lain</button></div>` : ''}
+      ${allDone ? `<div class="mq-all">${MQ.svg('cheer', { size: 120 })}<div>Semua bab ${gname(g)} sudah tuntas! 🎉</div><button class="mq-btn" style="margin-top:12px" data-act="gsheet">Pilih kelas lain</button></div>` : ''}
       ${blocks}
       ${gradeSheet}`, 'belajar');
     setTimeout(() => { const c = document.querySelector('.mq-n.cur'); if (c) c.scrollIntoView({ block: 'center' }); }, 80);
@@ -405,7 +408,7 @@
       <section class="mq-me"><a class="mq-gear" href="#/pengaturan" aria-label="Pengaturan">${IC.gear}</a><a class="av" href="#/avatar/saya" aria-label="Ganti gambar profil">${avHTML(st.avatar)}<span class="edit">✏️</span></a><h1>${esc(st.name)}</h1><p>${c ? esc(c.name) : 'Belajar sendiri'}</p></section>
       <div class="mq-tiles3">${tile('Beruntun', `🔥 ${streakOf(st.id)}`, '#ff8a00')}${tile('Bintang', `⭐ ${S.starsOf(st.id)}`, '#e0a800')}${tile('Tuntas', `🏆 ${gold}`, '#19b796')}</div>
       ${!st.classId && ses.code ? `<section class="mq-card"><h3>🔑 Kode belajarmu</h3><p class="mq-bigcode">${esc(ses.code)}</p><p class="mq-hint">Simpan kode ini. Di HP lain, buka Metiq lalu pilih <b>Saya sudah punya kode</b>.</p></section>` : ''}
-      <section class="mq-card"><h3>🏅 Lencana bab · Kelas ${getGrade()}</h3><div class="mq-badges">${unitsOf(getGrade()).map((u) => { const t = S.testOf(st.id, u.id), on = t && t.best >= 60; return `<button class="mq-bd ${on ? 'on' : ''}" data-act="tip" data-t="${on ? '🏅 Lencana Bab ' + u.id + ' didapat!' : '🔒 Lulus ujian bab ' + u.id + ' untuk mendapatkan lencana ini'}" aria-label="Lencana bab ${u.id}"><span>${chLogo(u)}</span></button>`; }).join('')}</div></section>
+      <section class="mq-card"><h3>🏅 Lencana bab · ${gname(getGrade())}</h3><div class="mq-badges">${unitsOf(getGrade()).map((u) => { const t = S.testOf(st.id, u.id), on = t && t.best >= 60; return `<button class="mq-bd ${on ? 'on' : ''}" data-act="tip" data-t="${on ? '🏅 Lencana Bab ' + u.id + ' didapat!' : '🔒 Lulus ujian bab ' + u.id + ' untuk mendapatkan lencana ini'}" aria-label="Lencana bab ${u.id}"><span>${chLogo(u)}</span></button>`; }).join('')}</div></section>
       ${meCharts(st.id, goal)}
       <div class="mq-list"><a href="#/laporanku"><span class="em">📄</span>Laporanku<span class="go">›</span></a>
         <a href="#/pengaturan"><span class="em">⚙️</span>Pengaturan<span class="go">›</span></a></div>`, 'aku');
@@ -436,7 +439,7 @@
     const cnt = LV.map(([l]) => sk.filter((s) => { const p = prog[s.id] || {}; return (p.att ? level(p.score || 0)[0] : 'Belum dicoba') === l; }).length);
     const seg = LV.map(([l, c], k) => cnt[k] ? `<button class="mc-seg" style="flex:${cnt[k]};background:${c}" data-act="tip" data-t="${l}: ${cnt[k]} keterampilan" aria-label="${l}: ${cnt[k]} keterampilan"></button>` : '').join('');
     const mastered = cnt[0] + cnt[1];
-    const prog2 = `<section class="mq-card mc"><h3>🎯 Kemajuanku di Kelas ${g}</h3>
+    const prog2 = `<section class="mq-card mc"><h3>🎯 Kemajuanku di ${gname(g)}</h3>
       <p class="mc-big"><b>${mastered}</b> dari ${sk.length} keterampilan sudah Mahir atau Tuntas</p>
       <div class="mc-stack" aria-label="${LV.map(([l], k) => `${l} ${cnt[k]}`).join(', ')}">${seg}</div>
       <div class="mc-legend">${LV.map(([l, c], k) => `<span><i style="background:${c}"></i>${l} <b>${cnt[k]}</b></span>`).join('')}</div></section>`;
@@ -491,7 +494,7 @@
   }
   // Rekomendasi: ulangi yang lemah, lanjutkan yang sedang dikerjakan, lalu keterampilan baru setelah yang terakhir dikuasai
   function recommend(sid, g) {
-    const dg = S.diagOf(sid, 'b') || S.diagOf(sid), gaps = dg ? dg.items.filter((x) => !x.ok && SKILLS[x.id] && S.progress(sid, x.id).score < 80).map((x) => ({ id: x.id, why: `Dari asesmen awal · Kelas ${SKILLS[x.id].grade}` })) : [];
+    const dg = S.diagOf(sid, 'b') || S.diagOf(sid), gaps = dg ? dg.items.filter((x) => !x.ok && SKILLS[x.id] && S.progress(sid, x.id).score < 80).map((x) => ({ id: x.id, why: `Dari asesmen awal · ${gname(SKILLS[x.id].grade)}` })) : [];
     if (gaps.length) return [...gaps.slice(0, 4), ...recommendBase(sid, g).filter((r) => !gaps.some((x) => x.id === r.id))].slice(0, 6);
     return recommendBase(sid, g);
   }
@@ -517,6 +520,13 @@
     4: '⚽🏀🏈⚾🥎🎾🏐🏉🥏🎱🏓🏸🏒🥍🏏🥅🎯🪁🛹🥊🥋🎽🛷🥌🎿🏆🥇🥈🥉🏅🎻🎸🎺🎷🥁🎹',
     5: '🌵🎄🌲🌳🌴🌱🌿🍀🎍🍁🍂🍃🍄🌾💐🌷🌹🥀🌺🌸🌼🌻🌞🌝🌛🌈🌊🔥💧🌋🗻🐚🪸🪨🌰🎋',
     6: '🔭🔬💡🔦🧭🧲🧪🧫🧬💎🔑🎁🎈🎀🎨🧩🎲🧸📚📐📏🧮🎓👑🎩🎒🧳⌛⏰📷🎥💻📱🎧🎤🪄',
+    7: '🐋🦈🐡🐟🦑🦐🦞🐊🦭🦦🦫🦨🦡🦔🦇🐺🐗🦓🦒🦘🦬🐃🐂🐄🐎🐖🐏🐑🦙🐐🦌🐕🐩🐈🐓🦃',
+    8: '🍏🥯🥨🥖🧇🥓🥩🍗🍖🌮🌯🥙🧆🥗🥘🍝🍜🍲🍛🍣🍱🥟🍤🍙🍚🍘🍥🥮🍢🍡🍧🍨🍦🥧🍰🫓',
+    9: '🔧🔨🪛🪚🔩🧰🧱🪜🧯🛒🪣🧹🧺🧻🧼🪥🧽🪒🧴🔋🔌💰💳🪙💸📦📫📮📁📝📎📌📍🔒🔓🔔',
+    10: '🔴🟠🟡🟢🔵🟣🟤⚫⚪🟥🟧🟨🟩🟦🟪🟫⬛⬜🔶🔷🔸🔹🔺🔻💠🔘🔲🔳🎴🃏🀄🎯🧿🪀🪃🪅',
+    11: '🎭🎬🎤🎧🎼🎵🎶🪕🪘🎻🪗🪈📯📻📺📸📹🎮👾🎰🎳🎪🎨🧵🧶🪡👓🥽🥼🦺👔👕👖🧣🧤🧥',
+    12: '🏠🏡🏢🏣🏤🏥🏦🏨🏩🏪🏫🏬🏭🏯🏰💒🗼🗽⛪🕌🛕🕍🕋⛲⛺🌁🌃🌄🌅🌆🌇🌉🎠🎡🎢🗾',
+    13: '🎉🎊🎆🎇🧨✨🎃🎄🎋🎍🎎🎏🎐🎑🧧🎀🎁🎫🏆🥇🥈🥉🏅👑💎💍🔮🪄🧿📿🪩🪅🌠🌌🌈🦄',
   };
   const CHALLENGES = [
     ...[10, 20, 30, 50, 75, 100, 150, 200, 250, 300, 400, 500].map((n) => ({ k: 'q', n })),
@@ -535,7 +545,7 @@
   function prizeBoard(sid, g) {
     const rows = Object.entries(S.progressAll(sid)).filter(([k]) => SKILLS[k] && SKILLS[k].grade === g).map(([, p]) => p);
     const st = { q: rows.reduce((t, p) => t + (p.att || 0), 0), t: Math.floor(rows.reduce((t, p) => t + (p.ms || 0), 0) / 60000), s: rows.filter((p) => p.score >= 80).length, m: rows.filter((p) => p.score >= 100).length };
-    const prizes = [...PRIZES[g]];
+    const prizes = [...(PRIZES[g] || PRIZES[6])];
     const cells = boardOrder(g).map((ci, pos) => { const c = CHALLENGES[ci]; return { pos, c, prize: prizes[ci], have: st[c.k], open: st[c.k] >= c.n }; });
     const next = {};
     CHALLENGES.forEach((c) => { if (st[c.k] < c.n && !(c.k in next)) next[c.k] = c.n - st[c.k]; });
@@ -603,8 +613,16 @@
       <button class="mq-ico mq-coretbtn" id="mqcoret" data-act="coret" aria-label="Kertas coret" hidden>✏️</button><button class="mq-ico psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button></div>
     <div class="mq-combo" id="mqcombo"></div>
     <main class="mq-screen" id="pq"></main><div class="mq-foot" id="fb"></div>`;
-  /* ---------- Kertas coret: kanvas bergaris untuk menghitung perkalian dan pembagian dengan jari atau mouse ---------- */
-  const coretOn = (sk) => !!sk && /perkalian|pembagian|(di)?kali|(di)?bagi/i.test(`${sk.name} ${(UNITS.find((u) => u.id === sk.unit) || {}).name || ''}`);
+  /* ---------- Kertas coret: kanvas bergaris untuk soal yang perlu dihitung di kertas (bersusun, pecahan, persen, aljabar, kalkulus) ---------- */
+  // Bisa diatur per keterampilan atau bab dengan coret: true/false; kelas 7 ke atas selalu menyediakannya
+  const CORET_RE = /perkalian|pembagian|\b(di)?kali\b|\b(di)?bagi\b|bersusun|menyimpan|meminjam|sampai 1\.000|pecahan|desimal|persen|FPB|KPK|faktor|kelipatan|campuran|soal cerita|model batang|luas|keliling|volume|rasio|perbandingan|skala|kecepatan|debit|rata-rata|statistik|bilangan bulat|pangkat|akar/i;
+  const coretOn = (sk) => {
+    if (!sk) return false;
+    const u = UNITS.find((x) => x.id === sk.unit) || {};
+    if (sk.coret !== undefined) return !!sk.coret;
+    if (u.coret !== undefined) return !!u.coret;
+    return sk.grade >= 7 || CORET_RE.test(`${sk.name} ${u.name || ''}`);
+  };
   function closeCoret(wipe) {
     const pad = document.getElementById('coret'); if (!pad) return;
     if (wipe) pad.remove(); else pad.hidden = true;
@@ -1221,9 +1239,9 @@
       const units = {};
       all.forEach((s) => s.hard.filter((h) => h.kids.length >= 2).forEach((h) => { const u = SKILLS[h.id].unit; const x = units[u] = units[u] || { u, kids: new Set(), classes: new Set() }; h.kids.forEach((k) => x.kids.add(k.id)); x.classes.add(s.c.id); }));
       const ul = Object.values(units).sort((a, b) => b.kids.size - a.kids.size).slice(0, 8);
-      body = `<section class="card"><h2>Bab yang paling banyak belum dipahami (seluruh sekolah)</h2>${ul.length ? ul.map((x) => { const u = UNITS.find((y) => y.id === x.u); return `<div class="lrow"><span class="uicon">${u.icon}</span><span class="grow"><b>Kelas ${u.grade} · ${u.name}</b><small>${x.kids.size} siswa di ${x.classes.size} kelas</small></span><a class="btn sm ghost" href="#/pelajaran/${u.id}">📖 Pelajaran</a></div>`; }).join('') : '<p class="muted">Belum ada materi yang menonjol sulit. 👍</p>'}</section>
+      body = `<section class="card"><h2>Bab yang paling banyak belum dipahami (seluruh sekolah)</h2>${ul.length ? ul.map((x) => { const u = UNITS.find((y) => y.id === x.u); return `<div class="lrow"><span class="uicon">${u.icon}</span><span class="grow"><b>${gname(u.grade)} · ${u.name}</b><small>${x.kids.size} siswa di ${x.classes.size} kelas</small></span><a class="btn sm ghost" href="#/pelajaran/${u.id}">📖 Pelajaran</a></div>`; }).join('') : '<p class="muted">Belum ada materi yang menonjol sulit. 👍</p>'}</section>
         ${all.filter((s) => s.n).map((s) => `<section class="card"><div class="lrow"><span class="grow"><b>${esc(s.c.name)}</b> · ${esc(s.c.teacherName || '')}<small>${s.behind} dari ${s.n} siswa belum memahami sebagian materi</small></span>${statusPill(s.status)}</div>
-          ${s.hard.length ? s.hard.slice(0, 5).map((h) => `<div class="hardrow"><div class="lrow"><span class="grow"><b>${SKILLS[h.id].code} ${SKILLS[h.id].name}</b><small>Kelas ${SKILLS[h.id].grade} · ketepatan rata-rata ${h.acc}%</small></span><span class="pill">${h.kids.length}/${s.n} siswa</span></div><p class="small muted">${h.kids.map((k) => esc(k.name)).join(', ')}</p></div>`).join('') : '<p class="muted small">Tidak ada materi yang tertinggal.</p>'}
+          ${s.hard.length ? s.hard.slice(0, 5).map((h) => `<div class="hardrow"><div class="lrow"><span class="grow"><b>${SKILLS[h.id].code} ${SKILLS[h.id].name}</b><small>${gname(SKILLS[h.id].grade)} · ketepatan rata-rata ${h.acc}%</small></span><span class="pill">${h.kids.length}/${s.n} siswa</span></div><p class="small muted">${h.kids.map((k) => esc(k.name)).join(', ')}</p></div>`).join('') : '<p class="muted small">Tidak ada materi yang tertinggal.</p>'}
           <div class="row-btn left">${openBtn(s.c)}</div></section>`).join('')}`;
     } else if (sub === 'coba') {
       body = `<div id="trial-box">${loadingHTML}</div>`;
@@ -1520,8 +1538,8 @@
         ${!pre && dg.level > ageGradeOf(dg.age) ? '<div class="mq-unlock">⚡ Kamu menjawab cepat dan tepat, jadi levelmu di atas kelas untuk usiamu!</div>' : ''}
         <details class="mq-more"><summary>Lihat rinciannya ▾</summary>
           ${good.length ? `<section class="card"><h2>💪 Yang sudah kamu kuasai</h2><div class="diag-chips">${good.map((x) => `<span class="pill okp">${SKILLS[x.id].code} ${SKILLS[x.id].name}</span>`).join(' ')}</div></section>` : ''}
-          ${slow.length ? `<section class="card"><h2>🐢 Benar, tapi perlu lebih lancar</h2><div class="sklist">${slow.map((x) => skillLink(x.id, prog[x.id], `Kelas ${SKILLS[x.id].grade}`)).join('')}</div></section>` : ''}
-          <section class="card"><h2>🎯 Yang perlu kamu pelajari</h2>${gaps.length ? `<div class="sklist">${gaps.map((x) => skillLink(x.id, prog[x.id], `Kelas ${SKILLS[x.id].grade}`)).join('')}</div>` : `<p>Hebat! Semua soal kunci sudah benar. Lanjutkan ke bab pertama Kelas ${dg.level}.</p><div class="sklist">${first.skills.slice(0, 3).map((x) => skillLink(x.id, prog[x.id])).join('')}</div>`}</section>
+          ${slow.length ? `<section class="card"><h2>🐢 Benar, tapi perlu lebih lancar</h2><div class="sklist">${slow.map((x) => skillLink(x.id, prog[x.id], `${gname(SKILLS[x.id].grade)}`)).join('')}</div></section>` : ''}
+          <section class="card"><h2>🎯 Yang perlu kamu pelajari</h2>${gaps.length ? `<div class="sklist">${gaps.map((x) => skillLink(x.id, prog[x.id], `${gname(SKILLS[x.id].grade)}`)).join('')}</div>` : `<p>Hebat! Semua soal kunci sudah benar. Lanjutkan ke bab pertama Kelas ${dg.level}.</p><div class="sklist">${first.skills.slice(0, 3).map((x) => skillLink(x.id, prog[x.id])).join('')}</div>`}</section>
         </details>
       </div></main>
       <div class="mq-foot"><div class="mq-foot-in"><a class="mq-btn pulse" href="#/belajar">Mulai belajar</a></div></div>`;
@@ -1602,7 +1620,7 @@
         else o += `<path class="vzmark" d="M${x} ${base}V${Y(v) + 4}q0 -4 4 -4h${bw - 8}q4 0 4 4V${base}Z" fill="${slotColor[i % 3]}" ${tip(`${s.c.name} · ${m[1]}`, `${v}%`)}/><text x="${x + bw / 2}" y="${Y(v) - 4}" text-anchor="middle" font-size="9" font-weight="800" fill="#16302b">${v}</text>`;
         o += `<text x="${x + bw / 2}" y="${base + 12}" text-anchor="middle" font-size="9" font-weight="700" fill="${VZ.ink2}">${esc(s.short)}</text>`;
       });
-      o += `<text x="${L + gi * gw + gw / 2}" y="${base + 28}" text-anchor="middle" font-size="10" font-weight="800" fill="#16302b">Kelas ${g}</text>`;
+      o += `<text x="${L + gi * gw + gw / 2}" y="${base + 28}" text-anchor="middle" font-size="10" font-weight="800" fill="#16302b">${gname(g)}</text>`;
     });
     o += `<line x1="${L}" x2="${W - 4}" y1="${base}" y2="${base}" stroke="#16302b" stroke-width="1"/>`;
     const suffix = (i) => { const sx = classes.filter((s) => s.g).map((s) => s.short.replace(/^\d+/, '')).filter(Boolean); const u = [...new Set(sx)].sort(); return u[i] ? `Kelas paralel ${u[i]}` : `Kelas paralel ke-${i + 1}`; };
@@ -1633,14 +1651,14 @@
         });
       });
       units.forEach((u, j) => { const a = unitAvg[j], m = Math.round(a.reduce((t, x) => t + x, 0) / a.length); if (m > 0 && m < 50) weak.push([g, u, m]); });
-      return `<div class="vzhm"><b class="small">Kelas ${g}</b><svg viewBox="0 0 ${W} ${H}" class="vzsvg" style="max-width:${W * 1.6}px" role="img" aria-label="Penguasaan bab kelas ${g}">${o}</svg></div>`;
+      return `<div class="vzhm"><b class="small">${gname(g)}</b><svg viewBox="0 0 ${W} ${H}" class="vzsvg" style="max-width:${W * 1.6}px" role="img" aria-label="Penguasaan bab kelas ${g}">${o}</svg></div>`;
     }).join('');
     const scale = [['belum dicoba', VZ.none], ['1–19', VZ.seq[1]], ['20–39', VZ.seq[2]], ['40–59', VZ.seq[3]], ['60–79', VZ.seq[4]], ['80–89', VZ.seq[5]], ['90–100', VZ.seq[6]]];
     weak.sort((a, b) => a[2] - b[2]);
     return `<section class="card vz"><h2>3. Peta penguasaan bab × kelas</h2>
       <p class="small muted">Rata-rata SmartScore setiap bab di setiap kelas (semua siswa kelas dihitung). Kolom = bab jenjang itu; ketuk kotak untuk rinciannya.</p>
       ${legend(scale.map(([l, c]) => [c, l]))}${blocks}
-      ${weak.length ? `<p class="small"><b>Bab yang masih lemah (rata-rata &lt; 50):</b> ${weak.slice(0, 6).map(([g, u, m]) => `Kelas ${g} · ${u.name} (${m})`).join(' · ')}</p>` : ''}
+      ${weak.length ? `<p class="small"><b>Bab yang masih lemah (rata-rata &lt; 50):</b> ${weak.slice(0, 6).map(([g, u, m]) => `${gname(g)} · ${u.name} (${m})`).join(' · ')}</p>` : ''}
       ${vzTable(['Kelas', 'Bab', 'Rata-rata SmartScore'], classes.flatMap((s) => unitsOf(s.g || 1).map((u) => { const kids = S.studentsOf(s.c.id); return [esc(s.c.name), `${u.id} ${u.name}`, Math.round(kids.reduce((t, k) => t + unitScore(k.id, u).avg, 0) / (kids.length || 1))]; })))}</section>`;
   }
 
@@ -2290,7 +2308,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   function viewGames() {
     const kid = gameKid(), max = kid ? gameGradeMax(kid.id) : GRADES[GRADES.length - 1].id, g = gameGrade(max);
     const best = (id) => { const p = kid ? S.progress(kid.id, 'g:' + id) : null; return p && p.att ? p : null; };
-    const pill = (x) => { const lock = x.id > max; return `<button class="mq-gg ${x.id === g ? 'on' : ''} ${lock ? 'lock' : ''}" data-act="ggrade" data-g="${x.id}" aria-label="Kelas ${x.id}${lock ? ' (terkunci)' : ''}"><b>${x.id}</b>${lock ? `<i>${IC.lock}</i>` : ''}</button>`; };
+    const pill = (x) => { const lock = x.id > max; return `<button class="mq-gg ${x.id === g ? 'on' : ''} ${lock ? 'lock' : ''}" data-act="ggrade" data-g="${x.id}" aria-label="${gname(x.id)}${lock ? ' (terkunci)' : ''}"><b>${x.short || x.id}</b>${lock ? `<i>${IC.lock}</i>` : ''}</button>`; };
     const tile = (x) => {
       const b = best(x.id), st = b ? G.starsFor(x, b.score) : 0, [c, bg] = G.LOOK[x.type];
       return `<a class="mq-gt" href="#/main/${x.id}" style="--c:${c};--bg:${bg}" aria-label="${esc(x.name)}, ${st} bintang">${x.isNew && !b ? '<span class="new">Baru</span>' : ''}<span class="art">${G.art(x.type)}</span><b>${x.name}</b><span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span></a>`;
@@ -2299,7 +2317,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (g > max) {
       const sk = unitsOf(max).flatMap((u) => u.skills), dn = sk.filter(skillOk(S.progressAll(kid.id))).length;
       body = `<div class="mq-glock">${MQ.svg('think', { size: 130 })}<div class="lk">${IC.lock}</div>
-        <h2>Kelas ${g}</h2><p>Tuntaskan belajar <b>Kelas ${max}</b> dulu</p>
+        <h2>${gname(g)}</h2><p>Tuntaskan belajar <b>${gname(max)}</b> dulu</p>
         <div class="mq-glbar" role="img" aria-label="${dn} dari ${sk.length} keterampilan Mahir"><i style="width:${pct(dn, sk.length)}%"></i></div><small>${dn} / ${sk.length} ✓</small>
         <a class="mq-btn" href="#/belajar">Ayo belajar</a></div>`;
     } else {
@@ -2400,7 +2418,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       const per = t.sids.map((sid) => ({ k: S.student(sid), n: t.w.filter((a) => a.sid === sid).length })).filter((x) => x.k).sort((a, b) => b.n - a.n);
       const tags = tagCounts(t.w).filter(([x]) => x !== 'konsep' && TAGS[x]).slice(0, 2);
       const recent = t.w.slice().sort((a, b) => b.ts - a.ts).slice(0, 6);
-      return `<details class="card trouble"><summary><span class="grow"><b>${sk.code} ${sk.name}</b><small>Kelas ${sk.grade} · ${t.w.length} salah dari ${t.tot} soal · ${t.sids.length} siswa</small></span><span class="pill warn">${pct(t.w.length, t.tot)}% salah</span></summary>
+      return `<details class="card trouble"><summary><span class="grow"><b>${sk.code} ${sk.name}</b><small>${gname(sk.grade)} · ${t.w.length} salah dari ${t.tot} soal · ${t.sids.length} siswa</small></span><span class="pill warn">${pct(t.w.length, t.tot)}% salah</span></summary>
         <div class="kidchips">${per.map((x) => `<a href="#/guru/siswa/${x.k.id}" class="kchip">${avHTML(x.k.avatar)} ${esc(x.k.name)} <b>${x.n}×</b></a>`).join('')}</div>
         ${tags.length ? `<p class="small"><b>Pola kesalahan:</b> ${tags.map(([x, n]) => `${TAGS[x].label} (${n}×)`).join('; ')}</p>` : ''}
         <div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Soal</th><th>Jawaban</th><th>Benar</th></tr></thead><tbody>${recent.map((a) => { const k = S.student(a.sid); return `<tr><td>${k ? `${avHTML(k.avatar)} ${esc(k.name)}` : ''}</td><td class="wrap">${esc(a.text)}</td><td class="strike">${esc(a.given)}</td><td><b>${esc(a.answer)}</b></td></tr>`; }).join('')}</tbody></table></div>
@@ -2497,7 +2515,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         </fieldset>
         <label>Catatan untuk siswa<input name="note" placeholder="mis. Latihan untuk ulangan Jumat"></label>
         <label>Tenggat (opsional)<input name="due" type="date"></label>
-        <div class="pickskills">${UNITS.map((u) => `<fieldset><legend>${u.icon} Kelas ${u.grade} · ${u.id}. ${u.name}</legend>${u.skills.map((x) => `<label class="cb"><input type="checkbox" name="sk" value="${x.id}" ${preSkill === x.id ? 'checked' : ''}> ${x.code} ${x.name}</label>`).join('')}</fieldset>`).join('')}</div>
+        <div class="pickskills">${UNITS.map((u) => `<fieldset><legend>${u.icon} ${gname(u.grade)} · ${u.id}. ${u.name}</legend>${u.skills.map((x) => `<label class="cb"><input type="checkbox" name="sk" value="${x.id}" ${preSkill === x.id ? 'checked' : ''}> ${x.code} ${x.name}</label>`).join('')}</fieldset>`).join('')}</div>
         <button class="btn">Simpan tugas</button></form></section>`;
   }
   // Halaman siswa: saran tugas khusus (mengulang yang lemah, atau materi lanjutan)
@@ -2512,7 +2530,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     return `<section class="card"><h2>🎯 Tugas khusus untuk ${esc(k.name)}</h2>
       ${mine.length ? `<p class="small">Tugas khusus aktif: ${mine.map((a) => `<span class="pill special">${esc(a.note || 'Tugas')}${S.isDone(a.id, k.id) ? ' ✅' : ''}</span>`).join(' ')}</p>` : ''}
       ${weak.length ? `<h3 class="sub">Perlu mengulang</h3>${weak.map((w) => row(w.id, `${w.att} soal · ${w.acc}% benar · skor ${w.score}`)).join('')}` : ''}
-      ${next.length ? `<h3 class="sub">Materi lanjutan</h3>${next.map((id) => row(id, `Kelas ${SKILLS[id].grade} · belum pernah dicoba`)).join('')}` : ''}
+      ${next.length ? `<h3 class="sub">Materi lanjutan</h3>${next.map((id) => row(id, `${gname(SKILLS[id].grade)} · belum pernah dicoba`)).join('')}` : ''}
       <div class="row-btn left"><button class="btn sm" data-act="asgform" data-s="${k.id}">Buat tugas khusus lainnya</button></div></section>`;
   }
   function settingsCard(ctx) {
@@ -2580,7 +2598,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
           <p class="small tip">💡 ${w.tag && w.tag !== 'konsep' ? TAGS[w.tag].tip : UNITS.find((u) => u.id === w.skill.unit).tip} <a href="#/pelajaran/${w.skill.unit}">📖 Pelajarannya</a></p></div>`).join('') : `<p class="muted">Tidak ada keterampilan yang tertinggal. Mantap!</p>`}</section>
       </div>
       ${tags.length ? `<section class="card"><h2>🔍 Pola kesalahan dari jawaban ${nm} (30 hari)</h2>${tags.map(([t, n]) => `<div class="tagrow"><b>${TAGS[t].label}</b> <span class="pill">${n}×</span><p class="small">${audience === 'ortu' ? 'Di rumah: ' : 'Saran: '}${TAGS[t].tip}</p></div>`).join('')}</section>` : ''}
-      <section class="card"><h2>Kemajuan per bab</h2>${reportGrades(k.id).map((g, _, all) => (all.length > 1 ? `<p class="small"><b>Kelas ${g}</b></p>` : '') + unitsOf(g).map((u) => { const us = unitScore(k.id, u); return `<div class="uprog"><span>${u.icon} ${u.name}</span><span class="ubar"><i style="width:${us.avg}%;background:${u.color}"></i></span><small>${us.prof}/${us.total}</small></div>`; }).join('')).join('')}</section>
+      <section class="card"><h2>Kemajuan per bab</h2>${reportGrades(k.id).map((g, _, all) => (all.length > 1 ? `<p class="small"><b>${gname(g)}</b></p>` : '') + unitsOf(g).map((u) => { const us = unitScore(k.id, u); return `<div class="uprog"><span>${u.icon} ${u.name}</span><span class="ubar"><i style="width:${us.avg}%;background:${u.color}"></i></span><small>${us.prof}/${us.total}</small></div>`; }).join('')).join('')}</section>
       ${audience === 'ortu' && recentWrong.length ? `<section class="card"><h2>Jawaban yang belum tepat (terbaru)</h2>${recentWrong.map((a) => `<div class="wa"><p>${esc(a.text)}</p><small>Jawaban ${nm}: <b class="strike">${esc(a.given)}</b> · Benar: <b>${esc(a.answer)}</b> · ${ago(a.ts)}</small></div>`).join('')}</section>` : ''}`;
   }
 
@@ -2756,7 +2774,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const prog = kid ? S.progressAll(session.get().id) : {};
     return `
       ${inPractice ? '' : '<button class="back link" data-act="back">← Kembali</button>'}
-      <section class="card lhead" style="--c:${u.color}"><span class="uicon">${u.icon}</span><div class="grow"><small class="muted">Pelajaran · Kelas ${u.grade} · Bab ${u.id}</small><h1>${u.name}</h1><p>${les.intro}</p></div><button class="say" data-act="lsay" data-u="${uid}" data-i="-1" aria-label="Bacakan">🔊</button></section>
+      <section class="card lhead" style="--c:${u.color}"><span class="uicon">${u.icon}</span><div class="grow"><small class="muted">Pelajaran · ${gname(u.grade)} · Bab ${u.id}</small><h1>${u.name}</h1><p>${les.intro}</p></div><button class="say" data-act="lsay" data-u="${uid}" data-i="-1" aria-label="Bacakan">🔊</button></section>
       ${hikmahHTML(uid)}
       ${window.METIQ_ANIM.has(uid) ? `<section class="card anim-card"><h2>🎬 Animasi: ${u.name}</h2><div id="anim-box"></div></section>` : ''}
       ${les.parts.length > 1 ? `<div class="ltoc">${les.parts.map((p, i) => `<button data-act="lgo" data-i="${i}">${i + 1}. ${p.t}</button>`).join('')}</div>` : ''}

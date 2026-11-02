@@ -188,6 +188,65 @@
     desc: gr === 1 ? 'Putar jarum panjang sampai jam menunjukkan waktu di soal. Jam tepat dan setengah.' : gr === 4 ? 'Putar jarum jam untuk waktu 24 jam dan saat kegiatan selesai.' : `Putar jarum panjang sampai jam menunjukkan waktu di soal, per ${gr === 2 ? '5 menit' : 'menit'}.` });
   for (let gr = 1; gr <= 3; gr++) GAMES.push({ id: gr + 'i', grade: gr, type: 'uang', icon: '🪙', name: 'Ayo Belanja', isNew: true, stars: [6, 8, 10], next: UANG[gr],
     desc: gr === 3 ? 'Ketuk uang untuk membayar dengan pas, atau untuk memberi kembalian yang tepat.' : 'Ketuk koin dan uang kertas sampai jumlahnya sama dengan harga barang.' });
+  /* ---------- SMP dan SMA: Kelas 7, 8, Aljabar 1, Geometri, Aljabar 2, Prakalkulus, Kalkulus ---------- */
+  // Kilat: pilihan teks biasa (boleh negatif), pangkat memakai huruf superskrip
+  const SUP = { '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹', '-': '⁻' };
+  const sp = (n) => String(n).split('').map((c) => SUP[c] || c).join('');
+  const qn = (text, ans, near) => { const set = new Set([ans]); let guard = 0; while (set.size < 4 && guard++ < 80) { const d = Math.round(near() * 1000) / 1000; if (d !== ans) set.add(d); } return { text, answer: f(ans), options: shuffle([...set]).map(f) }; };
+  const qs = (text, ans, wrong) => ({ text, answer: ans, options: shuffle([ans, ...shuffle(wrong.filter((w) => w !== ans)).slice(0, 3)]) });
+  const nz = (a, b) => { let v; do v = R(a, b); while (!v); return v; };
+  const lin = (a, b) => `${a === 1 ? '' : a === -1 ? '−' : f(a)}x${b ? ` ${b < 0 ? '−' : '+'} ${Math.abs(b)}` : ''}`;
+  GAMES.push(
+    // Kelas 7
+    { id: '7a', grade: 7, type: 'kilat', icon: '⚡', name: 'Kilat Bilangan Bulat', desc: 'Tambah, kurang, dan kali bilangan bulat negatif. Jawab secepat mungkin!', stars: [6, 11, 16],
+      next() { const a = nz(-12, 12), b = nz(-12, 12), k = R(0, 2); if (k === 0) return qn(`${f(a)} + ${neg(b)}`, a + b, () => pick([a - b, -(a + b), a + b + pick([-1, 1, 2])])); if (k === 1) return qn(`${f(a)} − ${neg(b)}`, a - b, () => pick([a + b, b - a, a - b + pick([-1, 1])])); const x = nz(-9, 9), y = nz(-9, 9); return qn(`${f(x)} × ${neg(y)}`, x * y, () => pick([-x * y, x * y + pick([-x, x, y])])); } },
+    { id: '7b', grade: 7, type: 'balon', icon: '🎈', name: 'Balon Persamaan', desc: 'Pecahkan persamaan yang penyelesaiannya sesuai bilangan sasaran.', stars: [6, 11, 16],
+      rule() { const k = nz(-6, 6); return { label: `Pecahkan persamaan dengan <b>x = ${f(k)}</b>`, make(ok) { const a = nz(-5, 5), b = R(-9, 9); let x = k; if (!ok) do x = nz(-9, 9); while (x === k); return `${lin(a, b)} = ${f(a * x + b)}`; } }; } },
+    { id: '7c', grade: 7, type: 'pasangan', icon: '🃏', name: 'Pasangan Pangkat', desc: 'Cocokkan bilangan berpangkat dengan nilainya.',
+      pairs() { return shuffle([[2, 5], [2, 7], [2, 10], [3, 3], [3, 4], [4, 3], [5, 3], [10, 3], [6, 2], [7, 2], [11, 2], [12, 2]]).slice(0, 6).map(([a, n]) => [`${a}${sp(n)}`, (a ** n).toLocaleString('id-ID')]); } },
+    // Kelas 8
+    { id: '8a', grade: 8, type: 'kilat', icon: '⚡', name: 'Kilat Akar dan Pangkat', desc: 'Akar kuadrat, akar pangkat tiga, dan kuadrat bilangan.', stars: [6, 11, 16],
+      next() { const k = R(0, 2); if (k === 0) { const n = R(2, 20); return qn(`√${n * n}`, n, () => n + pick([-2, -1, 1, 2])); } if (k === 1) { const n = R(2, 10); return qn(`∛${n ** 3}`, n, () => n + pick([-2, -1, 1, 2])); } const n = R(11, 25); return qn(`${n}²`, n * n, () => n * n + pick([-10, -1, 1, 10, n])); } },
+    { id: '8b', grade: 8, type: 'balon', icon: '🎈', name: 'Balon Pythagoras', desc: 'Pecahkan tiga bilangan yang bisa menjadi sisi segitiga siku-siku.', stars: [6, 11, 16],
+      rule() { return { label: 'Pecahkan <b>tripel Pythagoras</b> (a² + b² = c²)', make(ok) { const T = [[3, 4, 5], [5, 12, 13], [8, 15, 17], [7, 24, 25], [20, 21, 29], [9, 40, 41]]; const [a, b, c] = pick(T), k = pick([1, 1, 2, 3]); return ok ? `${a * k}, ${b * k}, ${c * k}` : `${a * k}, ${b * k}, ${c * k + pick([-1, 1, 2])}`; } }; } },
+    { id: '8c', grade: 8, type: 'pasangan', icon: '🃏', name: 'Pasangan Notasi Ilmiah', desc: 'Cocokkan bilangan dengan bentuk notasi ilmiahnya.',
+      pairs() { const seen = new Set(), out = []; while (out.length < 6) { const m = R(11, 99) / 10, e = R(2, 6), v = Math.round(m * 10) * 10 ** (e - 1); if (seen.has(v)) continue; seen.add(v); out.push([`${f(m)} × 10${sp(e)}`, v.toLocaleString('id-ID')]); } return out; } },
+    // Aljabar 1
+    { id: '9a', grade: 9, type: 'kilat', icon: '⚡', name: 'Kilat Persamaan Linear', desc: 'Cari nilai x secepat mungkin.', stars: [5, 10, 15],
+      next() { const a = nz(-6, 6), x = nz(-9, 9), b = R(-12, 12); return qn(`${lin(a, b)} = ${f(a * x + b)} → x`, x, () => pick([-x, x + pick([-2, -1, 1, 2]), x * 2])); } },
+    { id: '9b', grade: 9, type: 'balon', icon: '🎈', name: 'Balon Akar Persamaan Kuadrat', desc: 'Pecahkan bilangan yang merupakan akar persamaan kuadrat.', stars: [5, 10, 15],
+      rule() { let p = nz(-7, 7), q = nz(-7, 7); if (p === q) q = p + 1 || 2; const s = p + q, m = p * q; return { label: `Pecahkan akar dari <b>x² ${s > 0 ? '−' : '+'} ${Math.abs(s) === 1 ? '' : Math.abs(s)}x ${m < 0 ? '−' : '+'} ${Math.abs(m)} = 0</b>`.replace(' + 0x', '').replace(' − 0x', ''), make(ok) { if (ok) return f(pick([p, q])); let v; do v = R(-9, 9); while (v === p || v === q); return f(v); } }; } },
+    { id: '9c', grade: 9, type: 'pasangan', icon: '🃏', name: 'Pasangan Faktor', desc: 'Cocokkan bentuk kuadrat dengan faktornya.',
+      pairs() { const seen = new Set(), out = []; while (out.length < 6) { const p = nz(-6, 6), q = nz(-6, 6), key = [p, q].sort().join(); if (seen.has(key) || p + q === 0) continue; seen.add(key); const term = (v) => `(x ${v < 0 ? '−' : '+'} ${Math.abs(v)})`; out.push([`x² ${p + q < 0 ? '−' : '+'} ${Math.abs(p + q) === 1 ? '' : Math.abs(p + q)}x ${p * q < 0 ? '−' : '+'} ${Math.abs(p * q)}`, term(p) + term(q)]); } return out; } },
+    // Geometri
+    { id: '10a', grade: 10, type: 'kilat', icon: '⚡', name: 'Kilat Sudut', desc: 'Sudut berpelurus, berpenyiku, segitiga, dan segi banyak.', stars: [6, 11, 16],
+      next() { const k = R(0, 3); if (k === 0) { const a = R(10, 170); return qn(`Pelurus ${a}°`, 180 - a, () => pick([90 - a, 180 - a + pick([-10, 10]), a])); } if (k === 1) { const a = R(5, 85); return qn(`Penyiku ${a}°`, 90 - a, () => pick([180 - a, 90 - a + pick([-10, 10]), a])); } if (k === 2) { const a = R(20, 90), b = R(20, 160 - a); return qn(`Segitiga: ${a}°, ${b}°, ?`, 180 - a - b, () => 180 - a - b + pick([-10, 10, 20])); } const n = R(5, 10); return qn(`Jumlah sudut dalam segi-${n}`, (n - 2) * 180, () => (n - 2 + pick([-1, 1])) * 180); } },
+    { id: '10b', grade: 10, type: 'balon', icon: '🎈', name: 'Balon Jenis Sudut', desc: 'Pecahkan sudut lancip, siku-siku, atau tumpul sesuai perintah.', stars: [6, 11, 16],
+      rule() { const want = pick(['LANCIP', 'TUMPUL']); return { label: `Pecahkan sudut <b>${want}</b>`, make(ok) { const lancip = (want === 'LANCIP') === ok; return `${lancip ? R(5, 89) : R(91, 179)}°`; } }; } },
+    { id: '10c', grade: 10, type: 'pasangan', icon: '🃏', name: 'Pasangan Trigonometri', desc: 'Cocokkan nilai sin, cos, dan tan sudut istimewa.',
+      pairs() { return shuffle([['sin 30°', '½'], ['cos 60°', '½'], ['sin 90°', '1'], ['cos 0°', '1'], ['tan 45°', '1'], ['sin 45°', '½√2'], ['cos 30°', '½√3'], ['tan 60°', '√3'], ['tan 30°', '⅓√3'], ['cos 90°', '0']]).reduce((acc, p) => (acc.some((x) => x[1] === p[1]) || acc.length >= 6 ? acc : [...acc, p]), []); } },
+    // Aljabar 2
+    { id: '11a', grade: 11, type: 'kilat', icon: '⚡', name: 'Kilat Logaritma', desc: 'Hitung nilai logaritma secepat mungkin.', stars: [6, 11, 16],
+      next() { const b = pick([2, 3, 5, 10]), k = R(0, b === 2 ? 8 : b === 10 ? 5 : 4); return qn(`${b === 10 ? '' : sp(b)}log ${(b ** k).toLocaleString('id-ID')}`, k, () => k + pick([-2, -1, 1, 2, b])); } },
+    { id: '11b', grade: 11, type: 'balon', icon: '🎈', name: 'Balon Pangkat i', desc: 'Pecahkan pangkat i yang hasilnya sesuai perintah.', stars: [6, 11, 16],
+      rule() { const want = pick(['1', '−1', 'i', '−i']), m = { '1': 0, i: 1, '−1': 2, '−i': 3 }[want]; return { label: `Pecahkan yang hasilnya <b>${want}</b>`, make(ok) { let n; do n = R(2, 40); while ((n % 4 === m) !== ok); return `i${sp(n)}`; } }; } },
+    { id: '11c', grade: 11, type: 'pasangan', icon: '🃏', name: 'Pasangan Radian', desc: 'Cocokkan ukuran derajat dengan radian.',
+      pairs() { return shuffle([['30°', 'π/6'], ['45°', 'π/4'], ['60°', 'π/3'], ['90°', 'π/2'], ['120°', '2π/3'], ['135°', '3π/4'], ['150°', '5π/6'], ['180°', 'π'], ['270°', '3π/2'], ['360°', '2π']]).slice(0, 6); } },
+    // Prakalkulus
+    { id: '12a', grade: 12, type: 'kilat', icon: '⚡', name: 'Kilat Determinan', desc: 'Hitung determinan matriks 2 × 2: ad − bc.', stars: [5, 10, 15],
+      next() { const a = R(-5, 5), b = R(-5, 5), c = R(-5, 5), d = R(-5, 5), v = a * d - b * c; return qn(`|${f(a)} ${f(b)} ; ${f(c)} ${f(d)}|`, v, () => pick([a * d + b * c, b * c - a * d, v + pick([-2, -1, 1, 2])])); } },
+    { id: '12b', grade: 12, type: 'balon', icon: '🎈', name: 'Balon Fungsi Genap Ganjil', desc: 'Pecahkan fungsi genap atau ganjil sesuai perintah.', stars: [6, 11, 16],
+      rule() { const want = pick(['GENAP', 'GANJIL']); const E = ['x²', 'cos x', '|x|', 'x⁴ − 3x²', '5', 'x² + 1', 'x⁶'], O = ['x³', 'sin x', 'x', 'x³ − 2x', 'x⁵ + x', 'tan x', '−4x']; return { label: `Pecahkan fungsi <b>${want}</b>`, make(ok) { return pick((want === 'GENAP') === ok ? E : O); } }; } },
+    { id: '12c', grade: 12, type: 'pasangan', icon: '🃏', name: 'Pasangan Identitas', desc: 'Cocokkan bentuk trigonometri dengan identitasnya.',
+      pairs() { return shuffle([['sin²x + cos²x', '1'], ['sin 2x', '2 sin x cos x'], ['cos²x − sin²x', 'cos 2x'], ['sin x / cos x', 'tan x'], ['1 + tan²x', 'sec²x'], ['sin(−x)', '−sin x'], ['cos(−x)', 'cos x'], ['1 / cos x', 'sec x']]).slice(0, 6); } },
+    // Kalkulus
+    { id: '13a', grade: 13, type: 'kilat', icon: '⚡', name: "Kilat Turunan", desc: "Hitung f'(a) dari aturan pangkat secepat mungkin.", stars: [5, 10, 15],
+      next() { const a = nz(-4, 5), n = R(2, 5), x = pick([-2, -1, 1, 2]), v = a * n * x ** (n - 1); return qn(`f(x) = ${a === 1 ? '' : a === -1 ? '−' : f(a)}x${sp(n)} → f'(${f(x)})`, v, () => pick([a * x ** n, a * n * x ** n, v + pick([-a, a, n]), -v])); } },
+    { id: '13b', grade: 13, type: 'balon', icon: '🎈', name: 'Balon Turunan', desc: 'Pecahkan turunan yang benar dari fungsi pada perintah.', stars: [5, 10, 15],
+      rule() { const n = R(2, 6), a = R(1, 5); const fx = `${a === 1 ? '' : a}x${sp(n)}`, right = `${a * n}x${n - 1 === 1 ? '' : sp(n - 1)}`; const wrongs = [`${a}x${sp(n - 1)}`, `${a * n}x${sp(n)}`, `${a * (n - 1)}x${sp(n - 1)}`, `${a * n}x${sp(n + 1)}`, `${a + n}x${n - 1 === 1 ? '' : sp(n - 1)}`].filter((w) => w !== right); return { label: `Pecahkan turunan dari <b>${fx}</b>`, make(ok) { return ok ? right : pick(wrongs); } }; } },
+    { id: '13c', grade: 13, type: 'pasangan', icon: '🃏', name: 'Pasangan Integral', desc: 'Cocokkan integral dengan hasilnya.',
+      pairs() { return shuffle([['∫ 2x dx', 'x² + C'], ['∫ 3x² dx', 'x³ + C'], ['∫ cos x dx', 'sin x + C'], ['∫ sin x dx', '−cos x + C'], ['∫ eˣ dx', 'eˣ + C'], ['∫ 1/x dx', 'ln|x| + C'], ['∫ 4x³ dx', 'x⁴ + C'], ['∫ 5 dx', '5x + C']]).slice(0, 6); } },
+  );
   GAMES.forEach((g) => { if (g.type === 'pasangan') g.stars = [10, 14, 17]; });
   const TYPES = { kilat: 'Cepat tepat · 60 detik', balon: 'Pecahkan balon · 60 detik', pasangan: 'Kartu memori', susun: 'Balok jatuh · jumlah sasaran', kembar: 'Balok jatuh · gabung kembar', garis: 'Geser di garis · 10 soal', juring: 'Ketuk bagian · 10 soal', jam: 'Putar jarum · 10 soal', uang: 'Bayar pas · 10 soal' };
   // Cara main dalam gambar: ikon + dua-tiga kata
