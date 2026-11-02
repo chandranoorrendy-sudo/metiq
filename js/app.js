@@ -93,9 +93,11 @@
     speechSynthesis.speak(u);
   }
 
+  // Tombol emas di strip mode coba: siswa langsung mulai sungguhan (tanpa persetujuan), guru mengajukan akun guru
+  const realBtn = () => { const r = session.get().role; return r === 'siswa' ? '<button class="mq-real" data-act="realstart" aria-label="Mulai belajar sungguhan"><span class="sp">✨</span>Mulai sungguhan</button>' : r === 'guru' ? '<button class="mq-real" data-act="realsignup" data-k="guru" aria-label="Ajukan akun guru"><span class="sp">✨</span>Ajukan akun guru</button>' : ''; };
   const shell = (inner, opts = {}) => `
     <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=69" alt="">Metiq<span class="alpha">Beta</span></a>${opts.right || ''}</header>
-    <main class="wrap ${opts.cls || ''}">${session.get().demo ? `<div class="demobar">🧪 <span class="grow"><b>Mode coba</b>${tryInfo() && tryInfo().name ? ` · ${esc(tryInfo().name)}` : ''} · data contoh di perangkat ini</span><button class="mq-real" data-act="realsignup" data-k="" aria-label="Ajukan akun asli, gratis"><span class="sp">✨</span>Ajukan akun asli</button><button class="link" data-act="logout">Keluar</button></div>` : ''}${inner}</main>`;
+    <main class="wrap ${opts.cls || ''}">${session.get().demo ? `<div class="demobar">🧪 <span class="grow"><b>Mode coba</b>${tryInfo() && tryInfo().name ? ` · ${esc(tryInfo().name)}` : ''} · data contoh di perangkat ini</span>${realBtn()}<button class="link" data-act="logout">Keluar</button></div>` : ''}${inner}</main>`;
 
   /* ---------- Analitik (dipakai guru dan orang tua) ---------- */
   function stats(sid, days) {
@@ -198,6 +200,7 @@
   /* ---------- Siswa ---------- */
   /* ---------- Siswa: masuk, peta belajar, tugas, profil (gaya aplikasi belajar, sedikit teks, banyak gambar) ---------- */
   const IC = {
+    gear: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>',
     x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M5 5l14 14M19 5L5 19"/></svg>',
     back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>',
     spk: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M15.5 8.5a5 5 0 010 7M18 6a8.5 8.5 0 010 12" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>',
@@ -236,7 +239,7 @@
     const m = app.querySelector('main.wrap'); if (m) m.classList.add('mq-has-nav');
     app.insertAdjacentHTML('beforeend', studentNav(active));
   }
-  const demoStrip = () => (session.get().demo ? '<div class="mq-demo"><span>🧪 Mode coba</span><span><button class="mq-real" data-act="realsignup" data-k="" aria-label="Ajukan akun asli, gratis"><span class="sp">✨</span>Ajukan akun asli</button><button class="mq-link" style="padding:2px 6px" data-act="logout">Keluar</button></span></div>' : '');
+  const demoStrip = () => (session.get().demo ? '<div class="mq-demo"><span>🧪 Mode coba</span><span>'+realBtn()+'<button class="mq-link" style="padding:2px 6px" data-act="logout">Keluar</button></span></div>' : '');
   const mqPage = (inner, active) => `<div class="mq-page">${demoStrip()}${inner}</div>${studentNav(active)}`;
 
   // Layar penuh dengan tombol kembali dan maskot (masuk kelas, pilih nama)
@@ -343,8 +346,17 @@
       const state = chestStateOf(st.id, u), t = S.testOf(st.id, u.id);
       return `<div class="mq-row"><div class="mq-n chest ${state}">${state === 'ready' ? `<a class="mq-label" href="#/ujian/${u.id}">Ujian!</a>` : ''}<button class="mq-chest ${state}" data-act="chest" data-u="${u.id}" aria-label="Peti ujian bab ${u.id}">${chestSVG(state)}</button>${state === 'open' && t ? `<span class="mq-cstars">${'★'.repeat(chestTier(t.stars))}</span>` : ''}</div></div><div class="mq-pop-slot" id="pop-ch-${u.id}"></div>`;
     };
+    // Seperti peta Duolingo: hanya bab yang sudah/sedang dipelajari yang tampil, ditambah satu bab berikutnya berwarna abu.
+    // Bab sesudahnya disembunyikan supaya layar tidak penuh gembok.
+    let teaser = false;
     const blocks = m.units.map((u) => {
-      const ss = u.skills.map((s) => m.st(s.id)), all = ss.every((s) => s.state === 'done' || s.state === 'gold'), hasCur = ss.some((s) => s.state === 'cur'), hasOpen = ss.some((s) => s.state === 'open');
+      const ss = u.skills.map((s) => m.st(s.id)), started = ss.some((s) => s.state === 'cur' || s.state === 'done' || s.state === 'gold' || s.att > 0);
+      if (!started) {
+        if (teaser) return '';
+        teaser = true;
+        return `<div class="mq-next"><span class="tag">Berikutnya</span><span class="em">${chLogo(u)}</span><b>${u.name}</b><small>Bab ${u.id} · ${u.skills.length} langkah</small><button class="mq-btn ghost sm" data-act="tip" data-t="🔒 Selesaikan bab sebelumnya dulu ya">${IC.lock.replace('<svg', '<svg width="18" height="18"')} Terkunci</button></div>`;
+      }
+      const all = ss.every((s) => s.state === 'done' || s.state === 'gold'), hasCur = ss.some((s) => s.state === 'cur'), hasOpen = ss.some((s) => s.state === 'open');
       const reward = chestRow(u);
       if (all) return `<details class="mq-ud"><summary>${banner(u, 'done', '<span class="chev">⌄</span>')}</summary><div class="mq-path">${ss.map((s) => node(s, u, false)).join('')}${reward}</div></details>`;
       if (hasCur) return `<section class="mq-sec">${banner(u, '')}<div class="mq-path">${ss.map((s) => node(s, u, s.state === 'cur')).join('')}${reward}</div></section>`;
@@ -390,16 +402,50 @@
     const gold = Object.entries(S.progressAll(st.id)).filter(([k, p]) => SKILLS[k] && p.score >= 100).length;
     const tile = (l, v, col) => `<div class="mq-stat" style="--c:${col}"><small>${l}</small><b>${v}</b></div>`;
     app.innerHTML = mqPage(`
-      <section class="mq-me"><a class="av" href="#/avatar/saya" aria-label="Ganti gambar profil">${avHTML(st.avatar)}<span class="edit">✏️</span></a><h1>${esc(st.name)}</h1><p>${c ? esc(c.name) : 'Belajar sendiri'}</p></section>
+      <section class="mq-me"><a class="mq-gear" href="#/pengaturan" aria-label="Pengaturan">${IC.gear}</a><a class="av" href="#/avatar/saya" aria-label="Ganti gambar profil">${avHTML(st.avatar)}<span class="edit">✏️</span></a><h1>${esc(st.name)}</h1><p>${c ? esc(c.name) : 'Belajar sendiri'}</p></section>
       <div class="mq-tiles3">${tile('Beruntun', `🔥 ${streakOf(st.id)}`, '#ff8a00')}${tile('Bintang', `⭐ ${S.starsOf(st.id)}`, '#e0a800')}${tile('Tuntas', `🏆 ${gold}`, '#19b796')}</div>
       ${!st.classId && ses.code ? `<section class="mq-card"><h3>🔑 Kode belajarmu</h3><p class="mq-bigcode">${esc(ses.code)}</p><p class="mq-hint">Simpan kode ini. Di HP lain, buka Metiq lalu pilih <b>Saya sudah punya kode</b>.</p></section>` : ''}
       <section class="mq-card"><h3>🏅 Lencana bab · Kelas ${getGrade()}</h3><div class="mq-badges">${unitsOf(getGrade()).map((u) => { const t = S.testOf(st.id, u.id), on = t && t.best >= 60; return `<button class="mq-bd ${on ? 'on' : ''}" data-act="tip" data-t="${on ? '🏅 Lencana Bab ' + u.id + ' didapat!' : '🔒 Lulus ujian bab ' + u.id + ' untuk mendapatkan lencana ini'}" aria-label="Lencana bab ${u.id}"><span>${chLogo(u)}</span></button>`; }).join('')}</div></section>
-      <section class="mq-card"><h3>🎯 Target belajar tiap hari</h3><div class="mq-goalchips">${[[5, 'Santai'], [10, 'Biasa'], [15, 'Serius'], [20, 'Hebat']].map(([m, l]) => `<button class="${m === goal ? 'on' : ''}" data-act="goal" data-m="${m}">${m} mnt<small>${l}</small></button>`).join('')}</div></section>
       <section class="mq-card"><h3>📈 Minggu ini</h3><div class="mq-tiles3" style="margin:0">${tile('Soal', wk.n, '#1c9be8')}${tile('Waktu', fmtTime(wk.ms), '#19b796')}${tile('Maju', wk.skills, '#e0a800')}</div></section>
       <div class="mq-list"><a href="#/laporanku"><span class="em">📄</span>Laporanku<span class="go">›</span></a>
-        <button data-act="soundtoggle"><span class="em">${window.SFX.enabled() ? '🔔' : '🔕'}</span><span class="t">${window.SFX.enabled() ? 'Suara menyala' : 'Suara mati'}</span></button>
-        <a href="#/panduan/siswa"><span class="em">❓</span>Bantuan<span class="go">›</span></a>
-        <button class="danger" data-act="logout"><span class="em">🚪</span>Keluar</button></div>`, 'aku');
+        <a href="#/pengaturan"><span class="em">⚙️</span>Pengaturan<span class="go">›</span></a></div>`, 'aku');
+  }
+
+  /* ---------- Pengaturan siswa (seperti Settings di Duolingo): Preferensi, Metiq untuk Sekolah, Pusat Bantuan, Masukan ---------- */
+  function viewSettings(sub) {
+    const ses = session.get(), st = S.student(ses.id);
+    if (ses.role !== 'siswa' || !st) return go('#/siswa');
+    const top = (title, back) => `<div class="mq-top mq-settop"><a class="mq-ico" href="${back}" aria-label="Kembali">${IC.back}</a><h1>${title}</h1><span class="mq-ico"></span></div>`;
+    const c = S.cls(st.classId), real = cloudOn() && !ses.demo;
+    if (sub === 'preferensi') {
+      const goal = goalOf(st.id);
+      app.innerHTML = mqPage(`${top('Preferensi', '#/pengaturan')}
+        <section class="mq-card"><h3>🎯 Target belajar tiap hari</h3><div class="mq-goalchips">${[[5, 'Santai'], [10, 'Biasa'], [15, 'Serius'], [20, 'Hebat']].map(([m, l]) => `<button class="${m === goal ? 'on' : ''}" data-act="goal" data-m="${m}">${m} mnt<small>${l}</small></button>`).join('')}</div></section>
+        <div class="mq-list"><button data-act="soundtoggle"><span class="em">${window.SFX.enabled() ? '🔔' : '🔕'}</span><span class="t">${window.SFX.enabled() ? 'Efek suara menyala' : 'Efek suara mati'}</span></button>
+          <a href="#/avatar/saya"><span class="em">🖼️</span>Ganti gambar profil<span class="go">›</span></a></div>`, 'aku');
+      return;
+    }
+    if (sub === 'sekolah') {
+      app.innerHTML = mqPage(`${top('Metiq untuk Sekolah', '#/pengaturan')}
+        <section class="mq-school"><span class="a1">${avHTML('👩‍🏫')}</span>${MQ.svg('cheer', { size: 130 })}<span class="a2">${avHTML('🧒')}</span></section>
+        <section class="mq-card mq-join">${c ? `<h3>🏫 Kelasmu</h3><p class="mq-classnow"><b>${esc(c.name)}</b>${c.teacherName ? `<small>${esc(c.teacherName)}</small>` : ''}</p><p class="mq-hint">Gurumu bisa melihat kemajuan belajarmu dan memberi tugas.</p>`
+          : `<h3>Gabung kelas</h3><p class="mq-hint">Masukkan kode dari gurumu. Gurumu bisa melihat kemajuanmu, termasuk semua yang sudah kamu pelajari sebelumnya, dan memberi tugas.</p>
+          ${real ? '<form data-form="joinclass"><input class="mq-code" name="code" maxlength="6" placeholder="••••••" autocomplete="off" autocapitalize="characters" autocorrect="off" spellcheck="false" aria-label="Kode kelas" required><button class="mq-btn">Gabung</button></form>'
+            : '<p class="mq-hint"><b>Ini mode coba.</b> Untuk gabung kelas, mulai belajar sungguhan dulu.</p><button class="mq-btn" data-act="realstart">✨ Mulai sungguhan</button>'}`}</section>
+        ${!st.classId && ses.code && real ? `<section class="mq-card"><h3>🔑 Kode belajarmu</h3><p class="mq-bigcode">${esc(ses.code)}</p><p class="mq-hint">Untuk masuk lagi di HP lain.</p></section>` : ''}`, 'aku');
+      return;
+    }
+    if (sub === 'masukan') {
+      app.innerHTML = mqPage(`${top('Kirim masukan', '#/pengaturan')}
+        <form data-form="appfeedback" class="mq-card mq-fbform"><h3>💬 Ceritakan pada kami</h3><p class="mq-hint">Ada soal yang salah, permainan yang membingungkan, atau ide baru? Tulis di sini.</p>
+          <textarea name="text" maxlength="1000" rows="5" required placeholder="Tulis masukanmu…" aria-label="Masukan"></textarea><button class="mq-btn">Kirim</button></form>`, 'aku');
+      return;
+    }
+    const row = (href, em, t, note) => `<a href="${href}"><span class="em">${em}</span><span class="t">${t}${note ? `<small>${note}</small>` : ''}</span><span class="go">›</span></a>`;
+    app.innerHTML = mqPage(`${top('Pengaturan', '#/aku')}
+      <h2 class="mq-sethead">Akun</h2><div class="mq-list">${row('#/pengaturan/preferensi', '🎛️', 'Preferensi', 'Target harian, suara, gambar profil')}${row('#/pengaturan/sekolah', '🏫', 'Metiq untuk Sekolah', c ? esc(c.name) : 'Gabung kelas dengan kode dari guru')}</div>
+      <h2 class="mq-sethead">Dukungan</h2><div class="mq-list">${row('#/panduan/siswa', '❓', 'Pusat Bantuan')}${row('#/pengaturan/masukan', '💬', 'Kirim masukan')}</div>
+      <div class="mq-list"><button class="danger" data-act="logout"><span class="em">🚪</span>Keluar</button></div>`, 'aku');
   }
 
   /* ---------- Dasbor siswa: sapaan, rekomendasi, kemajuan minggu ini, papan hadiah ---------- */
@@ -503,9 +549,54 @@
   const mmss = (ms) => { const s = Math.round(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
   const lessonShell = (pct, quit, diag) => `<div class="mq-top"><button class="mq-ico" data-act="${quit}" aria-label="Keluar">${IC.x}</button>
       <div class="mq-prog" id="mqprog" ${diag ? 'data-diag="1"' : ''}><i id="sbar" style="width:${pct}%"></i></div>
-      <button class="mq-ico psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button></div>
+      <button class="mq-ico mq-coretbtn" id="mqcoret" data-act="coret" aria-label="Kertas coret" hidden>✏️</button><button class="mq-ico psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button></div>
     <div class="mq-combo" id="mqcombo"></div>
     <main class="mq-screen" id="pq"></main><div class="mq-foot" id="fb"></div>`;
+  /* ---------- Kertas coret: kanvas bergaris untuk menghitung perkalian dan pembagian dengan jari atau mouse ---------- */
+  const coretOn = (sk) => !!sk && /perkalian|pembagian|(di)?kali|(di)?bagi/i.test(`${sk.name} ${(UNITS.find((u) => u.id === sk.unit) || {}).name || ''}`);
+  function closeCoret(wipe) {
+    const pad = document.getElementById('coret'); if (!pad) return;
+    if (wipe) pad.remove(); else pad.hidden = true;
+    const b = document.getElementById('mqcoret'); if (b) b.classList.remove('on');
+  }
+  function openCoret() {
+    let pad = document.getElementById('coret');
+    const b = document.getElementById('mqcoret');
+    if (pad && !pad.hidden) return closeCoret(false);
+    if (b) b.classList.add('on');
+    // duduk tepat di atas kaki layar (tombol jawaban dan Periksa tetap bisa diketuk)
+    const foot = document.getElementById('fb'), place = () => { if (pad) pad.style.bottom = (foot ? foot.offsetHeight : 0) + 'px'; };
+    if (pad) { pad.hidden = false; place(); return; }
+    const COLORS = [['#0a7d68', 'hijau'], ['#1c9be8', 'biru'], ['#ff5a5f', 'merah']];
+    pad = document.createElement('div'); pad.id = 'coret'; pad.className = 'mq-coret';
+    pad.innerHTML = `<div class="bar"><b>✏️<span class="lbl"> Kertas coret</span></b><span class="tools">${COLORS.map(([c, n], i) => `<button data-c="${c}" class="${i ? '' : 'on'}" aria-label="Pensil ${n}"><i style="background:${c}"></i></button>`).join('')}
+      <button data-c="erase" aria-label="Penghapus">🧽</button><button data-k="clear" aria-label="Hapus semua coretan">🗑️</button><button data-k="close" aria-label="Tutup kertas coret">✕</button></span></div><canvas aria-label="Kertas coret"></canvas>`;
+    document.body.appendChild(pad); place();
+    const cv = pad.querySelector('canvas'), ctx = cv.getContext('2d');
+    let pen = COLORS[0][0], last = null;
+    const fit = () => {
+      const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1, old = cv.width ? cv.toDataURL() : null;
+      cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      if (old) { const im = new Image(); im.onload = () => ctx.drawImage(im, 0, 0, r.width, r.height); im.src = old; }
+    };
+    fit();
+    const at = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+    cv.addEventListener('pointerdown', (e) => { cv.setPointerCapture(e.pointerId); last = at(e); ctx.beginPath(); ctx.arc(last[0], last[1], pen === 'erase' ? 11 : 1.8, 0, Math.PI * 2); if (pen === 'erase') { ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.fill(); ctx.restore(); } else { ctx.fillStyle = pen; ctx.fill(); } });
+    cv.addEventListener('pointermove', (e) => {
+      if (!last) return; const p = at(e);
+      ctx.save(); if (pen === 'erase') ctx.globalCompositeOperation = 'destination-out';
+      ctx.strokeStyle = pen === 'erase' ? '#000' : pen; ctx.lineWidth = pen === 'erase' ? 22 : 3.6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(last[0], last[1]); ctx.lineTo(p[0], p[1]); ctx.stroke(); ctx.restore(); last = p;
+    });
+    const stop = () => { last = null; };
+    cv.addEventListener('pointerup', stop); cv.addEventListener('pointercancel', stop); cv.addEventListener('pointerleave', stop);
+    pad.querySelector('.tools').addEventListener('click', (e) => {
+      const t = e.target.closest('button'); if (!t) return;
+      if (t.dataset.k === 'close') return closeCoret(false);
+      if (t.dataset.k === 'clear') { ctx.clearRect(0, 0, cv.width, cv.height); return; }
+      pen = t.dataset.c; pad.querySelectorAll('[data-c]').forEach((x) => x.classList.toggle('on', x === t));
+    });
+  }
   function viewPractice(id, again) {
     const ses = session.get(); const st = S.student(ses.id);
     if (ses.role !== 'siswa' || !st) return go('#/siswa');
@@ -538,6 +629,7 @@
     let q, guard = 0;
     do { q = P.sk.gen(); } while (P.q && strip(q.text + (q.vis || '')) === strip(P.q.text + (P.q.vis || '')) && guard++ < 5);
     P.q = q; P.input = ''; P.sel = -1; P.locked = false; P.qStart = Date.now();
+    closeCoret(true); { const cb = document.getElementById('mqcoret'); if (cb) cb.hidden = !coretOn(P.sk); }
     const choice = q.type === 'choice', box = document.getElementById('pq');
     box.innerHTML = `
       <h2 class="mq-title">${choice ? 'Pilih jawaban yang benar' : 'Tulis jawabannya'}</h2>
@@ -1757,11 +1849,13 @@
   function viewRequestChooser() {
     app.innerHTML = shell(`<a class="back" href="#/">← Kembali</a><h1>✋ Ajukan akun Metiq</h1>
       <p class="muted">Akun sungguhan menyimpan data di server dan bisa dibuka dari HP mana pun. Setiap pengajuan diperiksa admin Metiq, biasanya dalam 1–2 hari.</p>
-      <div class="glist">${Object.entries(REQ).filter(([k]) => PARENTS_ON || k !== 'ortu').map(([k, r]) => `<a class="card gitem" href="#/ajukan/${k}"><span class="gicon g-pasangan">${r.icon}</span><span class="grow"><b>${r.title}</b><small>${r.desc}</small></span>→</a>`).join('')}</div>
+      <div class="glist">${Object.entries(REQ).filter(([k]) => (PARENTS_ON || k !== 'ortu') && k !== 'siswa').map(([k, r]) => `<a class="card gitem" href="#/ajukan/${k}"><span class="gicon g-pasangan">${r.icon}</span><span class="grow"><b>${r.title}</b><small>${r.desc}</small></span>→</a>`).join('')}</div>
+      <a class="card gitem" href="#/siswa-baru"><span class="gicon g-garis">🧒</span><span class="grow"><b>Siswa</b><small>Tidak perlu mengajukan. Langsung mulai belajar dengan nama, lalu gabung kelas dengan kode dari guru.</small></span>→</a>
       <p class="center small"><a href="#/ajukan/status">Sudah mengajukan? Cek status →</a></p>`);
   }
   function viewRequestForm(kind) {
     if (kind === 'ortu' && !PARENTS_ON) return go('#/ajukan');
+    if (kind === 'siswa') return go('#/siswa-baru');
     const r = REQ[kind]; if (!r) return go('#/ajukan');
     const t = tryInfo() || {}, nm = t.name || '';
     const acct = `<label>Email<input name="email" type="email" required autocomplete="email"></label>
@@ -2177,6 +2271,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       <main class="mq-screen mq-gplay" id="garea" style="--c:${c};--bg:${bg}">
         <div class="mq-gintro"><div class="mq-gart">${G.art(x.type, 210)}</div>
           <div class="mq-ghow">${G.HOW[x.type](x).map(([e, t]) => `<div><span class="e">${e}</span>${t}</div>`).join('')}</div>
+          ${G.EX[x.type] ? `<div class="mq-gex"><small>Contoh</small>${G.EX[x.type](x)}</div>` : ''}
           <div class="mq-goal">${x.stars.map((p, i) => `<div><span>${gStar(true).repeat(i + 1)}</span><b>${p}</b></div>`).join('')}</div>
           ${kid ? '' : '<p class="mq-note">Masuk sebagai siswa agar bintangmu tersimpan.</p>'}
           <details class="mq-gmore"><summary>Cara main lengkap</summary><p>${x.desc}</p></details></div></main>
@@ -2677,6 +2772,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     clearInterval(timer);
     { const ov = document.getElementById('mqover'); if (ov) { ov.remove(); document.body.classList.remove('mq-noscroll'); } }
     if (stopGame) { stopGame(); stopGame = null; }
+    closeCoret(true);
     window.METIQ_ANIM.stop();
     if ('speechSynthesis' in window) speechSynthesis.cancel();
     const parts = location.hash.replace(/^#\/?/, '').split('/');
@@ -2689,7 +2785,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (seq !== routeSeq) return;
     window.METIQ_CURRICULUM.setKonteks(curSettings().konteks);
     window.scrollTo(0, 0);
-    document.body.classList.toggle('mq-body', ['', undefined, 'siswa', 'siswa-baru', 'kode', 'mulai', 'belajar', 'asesmen', 'latihan', 'tugas', 'aku', 'ujian', 'permainan', 'main'].includes(a));
+    document.body.classList.toggle('mq-body', ['', undefined, 'siswa', 'siswa-baru', 'kode', 'mulai', 'belajar', 'asesmen', 'latihan', 'tugas', 'aku', 'ujian', 'permainan', 'main', 'pengaturan'].includes(a));
     switch (a) {
       case '': case undefined: return viewHome();
       case 'kurikulum': return viewCurriculum();
@@ -2704,6 +2800,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       case 'tugas': return TASKS_ON ? viewTasks() : go('#/belajar');
       case 'ujian': return viewTest(b);
       case 'aku': return viewProfile();
+      case 'pengaturan': return viewSettings(b);
       case 'main': return viewGame(b);
       case 'hadiah': return viewPrizes();
       case 'laporanku': return viewMyReport();
@@ -2727,6 +2824,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (!el) return;
     const act = el.dataset.act;
     if (act === 'gstart') return startGame();
+    if (act === 'coret') return openCoret();
     if (act === 'ggrade') { sessionStorage.setItem('metiq_ggrade', el.dataset.g); return route(); }
     if (act === 'obage') { OB.age = +el.dataset.a; document.querySelectorAll('.mq-age').forEach((b) => b.classList.toggle('sel', b === el)); document.getElementById('obbtn').disabled = false; window.SFX.step(); return; }
     if (act === 'obgoal') { OB.goal = +el.dataset.m; ls.set('metiq_goal_' + OB.sid, OB.goal); document.querySelectorAll('.mq-choice').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); return; }
@@ -2836,6 +2934,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     else if (act === 'pickkid') { session.set({ role: 'siswa', id: el.dataset.id, code: el.dataset.code, demo: session.get().demo || undefined }); go('#/belajar'); }
     else if (act === 'trydemo') go('#/mulai/' + el.dataset.r);
     else if (act === 'trykid') startDemo('siswa', '', '', [], el.dataset.s);
+    else if (act === 'realstart') { tlog('view', { p: 'mulai' }); tflush(); session.set({}); S.setMode(cloudOn()); go('#/siswa-baru'); }
     else if (act === 'realsignup') { tlog('view', { p: 'daftar' }); tflush(); session.set({}); S.setMode(cloudOn()); go('#/ajukan/' + (el.dataset.k || '')); }
     else if (act === 'reqlogin') { const r = JSON.parse(el.dataset.r); session.set({ role: 'siswa', id: r.studentId, code: r.classCode }); go('#/belajar'); }
     else if (act === 'schooledit') superEditSchool(el.dataset.id, el.dataset.n);
@@ -2958,6 +3057,8 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (cloudOn()) return cloudSubmit(f, fd, kind);
     if (kind === 'newkid') return startDemo('siswa', fd.get('name'));
     if (kind === 'kidcode') return toast('Kode belajar butuh internet. Coba lagi saat online ya.');
+    if (kind === 'joinclass') return toast('Gabung kelas butuh internet. Coba lagi saat online ya.');
+    if (kind === 'appfeedback') { tlog('feedback', { t: String(fd.get('text') || '').slice(0, 1000) }); toast('Terima kasih atas masukanmu 💚'); return go('#/pengaturan'); }
     if (kind === 'classcode') { const c = S.classByCode(fd.get('code')); if (!c) return toast('Kode kelas tidak ditemukan'); go('#/siswa/' + c.code); }
     if (kind === 'parentcode') { const k = S.studentByParentCode(fd.get('code')); if (!k) return toast('Kode tidak ditemukan. Periksa lagi ya.'); session.set({ role: 'ortu', id: k.id }); go('#/ortu/laporan'); }
     if (kind === 'register') { const t = S.createTeacher(fd.get('name'), fd.get('pin')); const c = S.createClass(t.id, fd.get('cls')); session.set({ role: 'guru', id: t.id, classId: c.id }); go('#/guru/kelola'); }
@@ -2982,6 +3083,16 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         session.set({ role: 'siswa', id: r.id, code: r.code });
         loaded = { key: '', at: 0 };
         return go('#/asesmen');
+      }
+      if (kind === 'appfeedback') {
+        const ses = session.get();
+        await Cloud.rpc('app_feedback_send', { p_text: String(fd.get('text') || '').trim(), p_role: ses.role || null, p_student_id: ses.role === 'siswa' ? ses.id : null, p_page: 'pengaturan' });
+        toast('Terima kasih atas masukanmu 💚'); return go('#/pengaturan');
+      }
+      if (kind === 'joinclass') {
+        const ses = session.get(), r = await Cloud.rpc('student_join_class', { p_student_id: ses.id, p_code: ses.code, p_class_code: String(fd.get('code') || '').trim().toUpperCase() });
+        loaded = { key: '', at: 0 }; await ensure(true);
+        toast(`🎉 Kamu bergabung dengan ${esc(r.className)}`); return go('#/belajar');
       }
       if (kind === 'kidcode') {
         const code = String(fd.get('code') || '').trim().toUpperCase();

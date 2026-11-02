@@ -546,3 +546,45 @@ body.mq-noscroll { overflow: hidden; }
 .toast { pointer-events: none; }
 body.mq-body .toast { white-space: nowrap; top: calc(66px + env(safe-area-inset-top)); bottom: auto; padding: 12px 20px; border-radius: 999px; background: #fff; color: var(--mq-ink); border: 2px solid #ffe08a; box-shadow: 0 6px 18px rgba(4, 56, 46, .16); font-weight: 900; animation: mq-toast .35s cubic-bezier(.3, 1.4, .5, 1); }
 @keyframes mq-toast { from { transform: translate(-50%, -16px); opacity: 0; } }
+
+/* Peta belajar: kartu bab berikutnya (abu-abu), bab sesudahnya disembunyikan */
+.mq-next { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 26px 14px 10px; padding: 22px 16px 18px; border-top: 2px solid #eef3f2; text-align: center; color: #8c9694; }
+.mq-next .tag { padding: 4px 12px; border-radius: 10px; background: #eef1f0; font-size: .8rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: #9aa7a4; }
+.mq-next .em { display: grid; place-items: center; width: 64px; height: 64px; margin-top: 6px; border-radius: 50%; background: #eef1f0; font-size: 1.9rem; filter: grayscale(1); opacity: .7; }
+.mq-next b { font-size: 1.35rem; font-weight: 900; color: #6b7573; }
+.mq-next small { font-weight: 800; }
+.mq-next .mq-btn { width: auto; min-width: 180px; margin-top: 8px; color: #8c9694; border-color: #dfe3e2; box-shadow: 0 4px 0 #dfe3e2; }
+.mq-gex { width: 100%; padding: 12px 14px; border-radius: 18px; background: var(--bg); text-align: center; }
+.mq-gex > small { display: block; margin-bottom: 6px; font-weight: 900; font-size: .78rem; letter-spacing: .08em; text-transform: uppercase; color: var(--c); }
+.mq-gex .row { display: flex; align-items: center; justify-content: center; gap: 6px; }
+.mq-gex i { display: grid; place-items: center; min-width: 54px; height: 46px; padding: 0 8px; border: 2px solid #fff; border-radius: 10px; font-style: normal; font-weight: 900; font-size: 1.2rem; color: var(--mq-ink); box-shadow: 0 3px 0 rgba(0, 0, 0, .08); }
+.mq-gex .op { font-size: 1.4rem; font-weight: 900; color: var(--c); } .mq-gex .poof { font-size: 2rem; }
+.mq-gex p { margin: 8px 0 0; font-weight: 700; font-size: .92rem; color: #4d625d; }
+
+/* Pengaturan siswa */
+.mq-me { position: relative; }
+.mq-gear { position: absolute; top: 12px; right: 12px; display: grid; place-items: center; width: 44px; height: 44px; border-radius: 14px; color: #6a7f7a; }
+.mq-gear svg { width: 28px; height: 28px; } .mq-gear:active { background: #eef3f2; }
+.mq-settop { border-bottom: 2px solid #eef3f2; max-width: none; }
+.mq-settop h1 { flex: 1; margin: 0; text-align: center; font-size: 1.2rem; font-weight: 900; }
+.mq-sethead { margin: 20px 16px 0; font-size: .82rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; color: #9aa7a4; }
+.mq-list .t small { display: block; font-size: .82rem; font-weight: 700; color: #8c9694; }
+.mq-school { display: flex; align-items: flex-end; justify-content: center; gap: 6px; margin: 0 0 4px; padding: 22px 16px 10px; background: linear-gradient(#e3f3ff, #fff); }
+.mq-school .a1, .mq-school .a2 { display: grid; place-items: center; width: 74px; height: 74px; margin-bottom: 8px; border-radius: 50%; background: #fff; font-size: 2.8rem; line-height: 1; box-shadow: 0 4px 0 #cfe6f7; }
+.mq-classnow { margin: 4px 0; } .mq-classnow b { display: block; font-size: 1.3rem; } .mq-classnow small { font-weight: 800; color: #6a7f7a; }
+.mq-join form { display: grid; gap: 10px; margin-top: 8px; }
+.mq-fbform { display: grid; gap: 10px; }
+.mq-fbform textarea { width: 100%; padding: 12px; border: 2px solid var(--mq-line); border-radius: 14px; font: inherit; font-weight: 700; resize: vertical; }
+.mq-fbform textarea:focus { outline: none; border-color: var(--mq); }
+
+/* Kertas coret (soal perkalian dan pembagian) */
+.mq-coretbtn { font-size: 1.3rem; } .mq-coretbtn.on { background: #fff3c4; }
+.mq-coret { position: fixed; left: 0; right: 0; z-index: 25; max-width: 520px; height: min(42vh, 360px); margin: 0 auto; display: flex; flex-direction: column; border: 2px solid #f1d98a; border-bottom: 0; border-radius: 20px 20px 0 0; background: #fffdf3; box-shadow: 0 -8px 24px rgba(4, 56, 46, .14); animation: mq-up .25s ease; }
+.mq-coret .bar { display: flex; align-items: center; gap: 4px; padding: 4px 6px 4px 12px; border-bottom: 2px solid #f6e7ad; }
+.mq-coret .bar b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 900; color: #8a6a00; white-space: nowrap; }
+.mq-coret .tools { display: flex; flex: none; gap: 2px; }
+.mq-coret .tools button { display: grid; place-items: center; width: 38px; height: 44px; padding: 0; border: 2px solid transparent; border-radius: 12px; background: none; font-size: 1.15rem; cursor: pointer; }
+.mq-coret .tools button.on { border-color: #f1d98a; background: #fff; }
+.mq-coret .tools i { width: 20px; height: 20px; border-radius: 50%; }
+.mq-coret canvas { flex: 1; width: 100%; touch-action: none; cursor: crosshair; background-image: linear-gradient(#e7eef7 1px, transparent 1px); background-size: 100% 28px; }
+@media (max-width: 400px) { .mq-coret .bar b .lbl { display: none; } .mq-coret .tools button { width: 36px; } }

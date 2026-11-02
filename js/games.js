@@ -195,12 +195,21 @@
     kilat: () => [['👀', 'Lihat soal'], ['👆', 'Ketuk jawaban'], ['⏱️', '60 detik']],
     balon: () => [['📢', 'Baca perintah'], ['🎈', 'Pecahkan yang cocok'], ['💥', 'Salah: −1']],
     pasangan: () => [['🃏', 'Buka 2 kartu'], ['🔗', 'Cari pasangannya'], ['🧠', 'Ingat letaknya']],
-    susun: (g) => [['👆', 'Ketuk kolom'], ['✨', `Jumlah ${g.show(g.target)} hilang`], ['🧱', 'Jangan penuh']],
+    susun: (g) => [['👆', 'Ketuk kolom untuk menjatuhkan'], ['✨', `Jumlah ${g.show(g.target)}: hilang`], ['🧱', 'Jangan sampai penuh']],
     kembar: () => [['◀▶', 'Geser balok'], ['🟰', 'Sama: menyatu'], ['🚧', 'Jangan lewati batas']],
     garis: () => [['👀', 'Lihat soal'], ['👉', 'Geser penunjuk'], ['✅', 'Periksa']],
     juring: () => [['🍕', 'Lihat pecahan'], ['👆', 'Ketuk bagian'], ['✅', 'Periksa']],
     jam: () => [['👀', 'Baca waktunya'], ['🕒', 'Putar jarum'], ['✅', 'Periksa']],
     uang: (g) => [['🏷️', 'Lihat harga'], ['🪙', g.grade >= 3 ? 'Bayar atau beri kembalian' : 'Ketuk uangnya'], ['✅', 'Periksa']],
+  };
+  // Contoh bergambar di layar sebelum main, untuk permainan yang aturannya tidak langsung terlihat
+  const exBlk = (t, c) => `<i style="background:${c}">${t}</i>`;
+  const EX = {
+    susun(g) {
+      const ok = g.vals.filter((v) => g.vals.includes(g.target - v) && v !== g.target - v), round = ok.filter((v) => v % 5 === 0), a = pick(round.length ? round : ok), b = g.target - a;
+      return `<div class="row">${exBlk(g.show(a), '#9fd8ff')}${exBlk(g.show(b), '#ffd1dc')}<span class="op">→</span><span class="poof">✨</span></div><p><b>${g.show(a)} + ${b < 0 ? `(${g.show(b)})` : g.show(b)}</b> = ${g.show(g.target)}. Dua balok bersebelahan atau bertumpuk yang jumlahnya ${g.show(g.target)} langsung hilang.</p>`;
+    },
+    kembar: () => `<div class="row">${exBlk('4', '#a8f0de')}${exBlk('4', '#a8f0de')}<span class="op">→</span>${exBlk('8', '#7be3c6')}</div><p>Balok yang sama dan bersentuhan menyatu menjadi dua kali lipat.</p>`,
   };
   // Warna dan ilustrasi tiap jenis permainan (SVG, 120 × 90)
   const LOOK = { kilat: ['#ffb020', '#fff4d6'], balon: ['#ff6b81', '#ffe8ec'], pasangan: ['#8e7cc3', '#efeaff'], susun: ['#1c9be8', '#e3f3ff'], kembar: ['#19b796', '#e6fffa'], garis: ['#58cc02', '#eaffd6'], juring: ['#ff8a00', '#fff0e0'], jam: ['#0ea5e9', '#e0f6ff'], uang: ['#16a34a', '#e7f8ec'] };
@@ -596,7 +605,7 @@
         if (!sum) el.querySelector('#gaux').textContent = top ? g.show(top) : '–';
       };
       el.innerHTML = `<div class="ghud"><div><small>Poin</small><b id="gpts">0</b></div><div><small>${sum ? 'Jumlah sasaran' : 'Terbesar'}</small><b id="gaux">${sum ? g.show(g.target) : '–'}</b></div><div><small>Berikutnya</small><b id="gnext" class="gnext"></b></div></div>
-        <p class="small muted center gtip">Ketuk kolom untuk menjatuhkan balok.</p><div class="gtower" id="gtower"></div><div class="row-btn"><button class="btn sm ghost" id="gquit">Selesai</button></div>`;
+        <p class="small muted center gtip">${sum ? `Ketuk kolom. Pasangkan balok yang jumlahnya <b>${g.show(g.target)}</b>.` : 'Ketuk kolom untuk menjatuhkan balok.'}</p><div class="gtower" id="gtower"></div><div class="row-btn"><button class="btn sm ghost" id="gquit">Selesai</button></div>`;
       next = spawn(); render(-1);
       el.querySelector('#gquit').addEventListener('click', end);
       el.querySelector('#gtower').addEventListener('click', (e) => {
@@ -635,5 +644,5 @@
     return () => { alive = false; timers.forEach(clearTimeout); clearInterval(tick); };
   }
 
-  window.METIQ_GAMES = { GAMES, TYPES, HOW, LOOK, art, starsFor, start, byId: (id) => GAMES.find((g) => g.id === id) };
+  window.METIQ_GAMES = { GAMES, TYPES, HOW, EX, LOOK, art, starsFor, start, byId: (id) => GAMES.find((g) => g.id === id) };
 })();
