@@ -1659,8 +1659,9 @@
   function diagStart(age, pf, cls) {
     const st = diagKid(); if (!st) return;
     // titik mulai sama untuk asesmen awal dan akhir: satu level di bawah kelas sesuai usia (6–7 tahun = kelas 1).
-    // Rentang level: TK dari TK A, SD tetap Kelas 1–6 (sama seperti data penelitian lama), SMP/SMA Kelas 1 sampai Kalkulus.
-    const ag = ageGradeOf({ age, cls }), lo = ag < 1 ? -2 : 1, hi = ag <= 6 ? 6 : 13;
+    // Rentang level: TK hanya TK A–TK B (anak TK belum mengenal satuan, puluhan, ratusan), SD tetap Kelas 1–6
+    // (sama seperti data penelitian lama), SMP/SMA Kelas 1 sampai Kalkulus.
+    const ag = ageGradeOf({ age, cls }), lo = ag < 1 ? -2 : 1, hi = ag < 1 ? -1 : ag <= 6 ? 6 : 13;
     D = { sid: st.id, pf: pf || 'a', age, cls: cls || null, lo, hi, bands: {}, n: 0, t0: Date.now(), order: [] };
     OB = null;
     diagBand(lvGap(ag, lo) >= 1 ? lvStep(ag, -1) : lo);
