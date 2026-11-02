@@ -645,6 +645,8 @@
     if (u.coret !== undefined) return !!u.coret;
     return sk.grade >= 7 || CORET_RE.test(`${sk.name} ${u.name || ''}`);
   };
+  // Posisi hasil geser dan ukuran kertas coret diingat antarsoal
+  let coretPos = null, coretTall = false;
   function closeCoret(wipe) {
     const pad = document.getElementById('coret'); if (!pad) return;
     if (wipe) pad.remove(); else pad.hidden = true;
@@ -656,12 +658,17 @@
     if (pad && !pad.hidden) return closeCoret(false);
     if (b) b.classList.add('on');
     // duduk tepat di atas kaki layar (tombol jawaban dan Periksa tetap bisa diketuk)
-    const foot = document.getElementById('fb'), place = () => { if (pad) pad.style.bottom = (foot ? foot.offsetHeight : 0) + 'px'; };
+    const foot = document.getElementById('fb'), place = () => {
+      if (!pad) return;
+      if (coretPos) { const w = Math.min(pad.offsetWidth || 520, innerWidth), h = pad.offsetHeight || 300; Object.assign(pad.style, { left: Math.max(0, Math.min(innerWidth - w, coretPos[0])) + 'px', top: Math.max(0, Math.min(innerHeight - 52, coretPos[1])) + 'px', bottom: 'auto', right: 'auto', margin: '0', width: w + 'px', animation: 'none' }); return; }
+      pad.style.bottom = (foot ? foot.offsetHeight : 0) + 'px';
+    };
     if (pad) { pad.hidden = false; place(); return; }
     const COLORS = [['#0a7d68', 'hijau'], ['#1c9be8', 'biru'], ['#ff5a5f', 'merah']];
     pad = document.createElement('div'); pad.id = 'coret'; pad.className = 'mq-coret';
     pad.innerHTML = `<div class="bar"><b>✏️<span class="lbl"> Kertas coret</span></b><span class="tools">${COLORS.map(([c, n], i) => `<button data-c="${c}" class="${i ? '' : 'on'}" aria-label="Pensil ${n}"><i style="background:${c}"></i></button>`).join('')}
-      <button data-c="erase" aria-label="Penghapus">🧽</button><button data-k="clear" aria-label="Hapus semua coretan">🗑️</button><button data-k="close" aria-label="Tutup kertas coret">✕</button></span></div><canvas aria-label="Kertas coret"></canvas>`;
+      <button data-c="erase" aria-label="Penghapus">🧽</button><button data-k="clear" aria-label="Hapus semua coretan">🗑️</button><button data-k="size" aria-label="Perbesar atau perkecil kertas coret">↕</button><button data-k="close" aria-label="Tutup kertas coret">✕</button></span></div><canvas aria-label="Kertas coret"></canvas>`;
+    if (coretTall) pad.classList.add('tall');
     document.body.appendChild(pad); place();
     const cv = pad.querySelector('canvas'), ctx = cv.getContext('2d');
     let pen = COLORS[0][0], last = null;
@@ -681,9 +688,20 @@
     });
     const stop = () => { last = null; };
     cv.addEventListener('pointerup', stop); cv.addEventListener('pointercancel', stop); cv.addEventListener('pointerleave', stop);
+    const bar = pad.querySelector('.bar');
+    let drag = null;
+    bar.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('button')) return;
+      const x0 = pad.offsetLeft, y0 = pad.offsetTop; drag = [e.clientX - x0, e.clientY - y0];
+      coretPos = [x0, y0]; pad.style.animation = 'none'; place(); try { bar.setPointerCapture(e.pointerId); } catch (err) { /* sentuhan buatan tanpa pointer aktif */ } pad.classList.add('drag'); e.preventDefault();
+    });
+    bar.addEventListener('pointermove', (e) => { if (!drag) return; coretPos = [e.clientX - drag[0], e.clientY - drag[1]]; place(); });
+    const endDrag = () => { if (drag) { drag = null; pad.classList.remove('drag'); } };
+    bar.addEventListener('pointerup', endDrag); bar.addEventListener('pointercancel', endDrag);
     pad.querySelector('.tools').addEventListener('click', (e) => {
       const t = e.target.closest('button'); if (!t) return;
       if (t.dataset.k === 'close') return closeCoret(false);
+      if (t.dataset.k === 'size') { coretTall = !coretTall; pad.classList.toggle('tall', coretTall); place(); fit(); return; }
       if (t.dataset.k === 'clear') { ctx.clearRect(0, 0, cv.width, cv.height); return; }
       pen = t.dataset.c; pad.querySelectorAll('[data-c]').forEach((x) => x.classList.toggle('on', x === t));
     });
