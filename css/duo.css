@@ -669,3 +669,12 @@ html .mq-bubble .mq-spk.aud { display: inline-flex !important; background: #ff9f
 .tkpair div { letter-spacing: .1em; }
 .tktwo { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px; font-size: 1.7rem; }
 .tktwo b { font-size: 1.6rem; color: #04382e; }
+
+/* Kertas coret: atribut hidden harus menang atas display:flex (tombol ✕), bisa digeser lewat batang judul, dan ada ukuran besar */
+.mq-coret[hidden] { display: none !important; }
+.mq-coret .bar { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
+.mq-coret .bar b::before { content: '⠿'; margin-right: 6px; color: #c9a93a; font-weight: 400; }
+.mq-coret.drag { box-shadow: 0 14px 34px rgba(4, 56, 46, .28); opacity: .96; }
+.mq-coret.drag .bar { cursor: grabbing; }
+.mq-coret[style*="top"] { border-bottom: 2px solid #f1d98a; border-radius: 20px; }
+.mq-coret.tall { height: min(68vh, 560px); }
