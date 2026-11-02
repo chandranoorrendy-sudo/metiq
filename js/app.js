@@ -661,13 +661,16 @@
     const foot = document.getElementById('fb'), place = () => {
       if (!pad) return;
       if (coretPos) { const w = Math.min(pad.offsetWidth || 520, innerWidth), h = pad.offsetHeight || 300; Object.assign(pad.style, { left: Math.max(0, Math.min(innerWidth - w, coretPos[0])) + 'px', top: Math.max(0, Math.min(innerHeight - 52, coretPos[1])) + 'px', bottom: 'auto', right: 'auto', margin: '0', width: w + 'px', animation: 'none' }); return; }
-      pad.style.bottom = (foot ? foot.offsetHeight : 0) + 'px';
+      const fh = foot ? foot.offsetHeight : 0, vis = document.querySelector('#pq .mq-vis') || document.querySelector('#pq .mq-say');
+      pad.style.bottom = fh + 'px';
+      const room = vis ? innerHeight - fh - vis.getBoundingClientRect().bottom - 12 : 0;
+      pad.style.height = !coretTall && room >= 170 ? Math.min(room, 360) + 'px' : '';
     };
-    if (pad) { pad.hidden = false; place(); return; }
+    if (pad) { pad.hidden = false; place(); if (pad.fit) pad.fit(); return; }
     const COLORS = [['#0a7d68', 'hijau'], ['#1c9be8', 'biru'], ['#ff5a5f', 'merah']];
     pad = document.createElement('div'); pad.id = 'coret'; pad.className = 'mq-coret';
     pad.innerHTML = `<div class="bar"><b>✏️<span class="lbl"> Kertas coret</span></b><span class="tools">${COLORS.map(([c, n], i) => `<button data-c="${c}" class="${i ? '' : 'on'}" aria-label="Pensil ${n}"><i style="background:${c}"></i></button>`).join('')}
-      <button data-c="erase" aria-label="Penghapus">🧽</button><button data-k="clear" aria-label="Hapus semua coretan">🗑️</button><button data-k="size" aria-label="Perbesar atau perkecil kertas coret">↕</button><button data-k="close" aria-label="Tutup kertas coret">✕</button></span></div><canvas aria-label="Kertas coret"></canvas>`;
+      <button data-c="erase" aria-label="Penghapus">🧽</button><button data-k="clear" aria-label="Hapus semua coretan">🗑️</button><button data-k="size" aria-label="Perbesar atau perkecil kertas coret">↕</button><button data-k="close" aria-label="Tutup kertas coret">✕</button></span></div>${P && P.q ? `<div class="qcopy">${esc(strip(P.q.log || P.q.text))}</div>` : ''}<canvas aria-label="Kertas coret"></canvas>`;
     if (coretTall) pad.classList.add('tall');
     document.body.appendChild(pad); place();
     const cv = pad.querySelector('canvas'), ctx = cv.getContext('2d');
@@ -677,7 +680,7 @@
       cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       if (old) { const im = new Image(); im.onload = () => ctx.drawImage(im, 0, 0, r.width, r.height); im.src = old; }
     };
-    fit();
+    fit(); pad.fit = fit;
     const at = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
     cv.addEventListener('pointerdown', (e) => { cv.setPointerCapture(e.pointerId); last = at(e); ctx.beginPath(); ctx.arc(last[0], last[1], pen === 'erase' ? 11 : 1.8, 0, Math.PI * 2); if (pen === 'erase') { ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.fill(); ctx.restore(); } else { ctx.fillStyle = pen; ctx.fill(); } });
     cv.addEventListener('pointermove', (e) => {
@@ -738,13 +741,15 @@
     let q, guard = 0;
     do { q = P.sk.gen(); } while (P.q && strip(q.text + (q.vis || '')) === strip(P.q.text + (P.q.vis || '')) && guard++ < 5);
     P.q = q; P.input = ''; P.sel = -1; P.locked = false; P.qStart = Date.now();
-    closeCoret(true); { const cb = document.getElementById('mqcoret'); if (cb) cb.hidden = !coretOn(P.sk); }
+    const canCoret = coretOn(P.sk) || /class="stack/.test(q.vis || '');
+    closeCoret(true); { const cb = document.getElementById('mqcoret'); if (cb) cb.hidden = !canCoret; }
     const choice = q.type === 'choice', box = document.getElementById('pq');
     box.innerHTML = `
       <h2 class="mq-title">${choice ? 'Pilih jawaban yang benar' : 'Tulis jawabannya'}</h2>
       ${P.diag && D && D.n === 0 ? '<p class="mq-hint">Tidak apa-apa kalau belum tahu. Tebak saja ya!</p>' : ''}
       <div class="mq-say"><div id="mqm">${MQ.svg('normal', { size: choice ? 92 : 76, enter: false })}</div><div class="mq-bubble"><button class="mq-spk${q.audio ? ' aud' : ''}" data-act="say" aria-label="Dengarkan soal">${IC.spk}</button><span>${q.text}</span></div></div>
       ${q.vis ? `<div class="mq-vis">${q.vis}</div>` : ''}
+      ${canCoret ? '<button class="mq-coretcta" data-act="coret">✏️ Kertas coret</button>' : ''}
       ${choice
     ? `<div class="mq-opts ${q.options.every((o) => strip(o).length <= 4) ? 'short' : ''}">${q.options.map((o, i) => `<button class="mq-opt" data-act="choose" data-i="${i}">${o}</button>`).join('')}</div>`
     : `<div class="mq-ans">${q.unit ? `<span class="u">${q.unit}</span>` : ''}<div class="mq-disp" id="indisp">&nbsp;</div></div>`}`;

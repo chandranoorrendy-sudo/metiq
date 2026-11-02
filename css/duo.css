@@ -679,3 +679,8 @@ html .mq-bubble .mq-spk.aud { display: inline-flex !important; background: #ff9f
 .mq-coret.drag .bar { cursor: grabbing; }
 .mq-coret[style*="top"] { border-bottom: 2px solid #f1d98a; border-radius: 20px; }
 .mq-coret.tall { height: min(68vh, 560px); }
+
+/* Ajakan memakai kertas coret, tepat di bawah soal */
+.mq-coretcta { display: block; margin: 8px auto 4px; padding: 7px 16px; border: 2px dashed #f1d98a; border-radius: 999px; background: #fffdf3; color: #8a6a00; font: inherit; font-weight: 900; font-size: .92rem; cursor: pointer; }
+.mq-coretcta:active { transform: scale(.97); }
+.mq-coret .qcopy { padding: 4px 12px; border-bottom: 2px dashed #f6e7ad; font-weight: 900; font-size: 1.05rem; color: #04382e; white-space: nowrap; overflow-x: auto; }
