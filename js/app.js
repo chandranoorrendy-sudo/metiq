@@ -1838,7 +1838,7 @@
       if (r.status === 'menunggu') next = '<p class="small muted">Admin Metiq akan memeriksa pengajuanmu. Buka halaman ini lagi nanti; kode pengajuanmu tersimpan di perangkat ini.</p>';
       if (r.status === 'disetujui' && (r.kind === 'guru' || r.kind === 'homeschool')) next = `<p>Silakan masuk dengan email dan kata sandi yang kamu buat. Kelasmu: <b>${esc(res.className || '')}</b> · kode kelas <b class="code">${esc(res.classCode || '')}</b>${res.schoolName ? ` · ${esc(res.schoolName)}` : ''}.</p>${(res.children || []).length ? `<p class="small">Akun anak: ${res.children.map((c) => `${esc(c.name)} (kode orang tua <b class="code">${esc(c.parentCode)}</b>)`).join(' · ')}</p>` : ''}<div class="row-btn left"><a class="btn" href="#/guru/masuk">Masuk sebagai guru →</a></div>`;
       if (r.status === 'disetujui' && r.kind === 'ortu') next = '<p>Silakan masuk dengan email dan kata sandi yang kamu buat, lalu tambahkan anak dengan kode orang tua dari gurunya.</p><div class="row-btn left"><a class="btn" href="#/ortu">Masuk sebagai orang tua →</a></div>';
-      if (r.status === 'disetujui' && r.kind === 'siswa') next = `<p>Kelasmu: <b>${esc(res.className || '')}</b>. Simpan kode ini:</p><div class="kpis"><div class="kpi"><small>Kode kelas (untuk siswa)</small><b class="code">${esc(res.classCode || '')}</b></div><div class="kpi"><small>Kode orang tua</small><b class="code">${esc(res.parentCode || '')}</b></div></div><div class="row-btn left"><button class="btn" data-act="reqlogin" data-r="${esc(JSON.stringify({ studentId: res.studentId, classCode: res.classCode }))}">Masuk sebagai ${esc(res.studentName || r.name)} →</button></div>`;
+      if (r.status === 'disetujui' && r.kind === 'siswa') next = `<p>${res.classCode ? `Kelasmu: <b>${esc(res.className || '')}</b>.` : 'Kamu bisa langsung belajar, belum perlu kelas.'} Simpan kode ini:</p><div class="kpis"><div class="kpi"><small>${res.classCode ? 'Kode kelas (untuk siswa)' : 'Kode belajar (untuk siswa)'}</small><b class="code">${esc(res.classCode || res.learnCode || '')}</b></div><div class="kpi"><small>Kode orang tua</small><b class="code">${esc(res.parentCode || '')}</b></div></div><div class="row-btn left"><button class="btn" data-act="reqlogin" data-r="${esc(JSON.stringify({ studentId: res.studentId, classCode: res.classCode || res.learnCode }))}">Masuk sebagai ${esc(res.studentName || r.name)} →</button></div>`;
       if (r.status === 'ditolak') next = `<p class="small">${r.note ? 'Catatan admin: ' + esc(r.note) : 'Hubungi admin Metiq jika ada pertanyaan.'}</p>`;
       return `<section class="card reqcard ${r.status}"><div class="lrow"><span class="gicon g-pasangan">${k.icon || '✋'}</span><span class="grow"><b>${esc(r.name)}</b><small>${k.title || r.kind} · kode <b class="code">${esc(r.code)}</b> · ${ftime(r.createdAt)}</small></span></div><p><b>${badge}</b></p>${next}</section>`;
     }).join('');
@@ -1883,7 +1883,7 @@
         const extra = r.kind === 'guru' ? `<label>Sekolah<select name="school">${schoolOpts(r.schoolName)}</select></label><label>Nama sekolah baru<input name="schoolName" maxlength="100" value="${esc(r.schoolName || '')}"></label>
             <label>Kelas untuk guru ini<select name="classId"><option value="">➕ Buat kelas baru: ${esc(d.className || 'Kelas 1')}</option>${classOpts}</select></label><label class="cb"><input type="checkbox" name="admin" value="1"> Jadikan admin sekolah (koordinator)</label>`
           : r.kind === 'homeschool' ? `<p class="small muted">Akan dibuat: sekolah homeschool "${esc(r.schoolName || 'Homeschool ' + r.name)}", kelas keluarga, dan akun siswa untuk ${(d.children || []).length || 0} anak.</p>`
-          : r.kind === 'siswa' ? `<label>Tempatkan di kelas<select name="classId" required><option value="">— pilih kelas —</option>${classOpts}</select></label>` : '';
+          : r.kind === 'siswa' ? `<label>Tempatkan di kelas<select name="classId"><option value="">🧺 Tanpa kelas dulu (belajar sendiri)</option>${classOpts}</select></label><p class="small muted">Tanpa kelas: anak mendapat kode belajar pribadi dan bisa langsung belajar. Kelas bisa diatur nanti di tab 🧺 Tanpa kelas.</p>` : '';
         return `<section class="card reqcard menunggu"><div class="lrow"><span class="gicon g-pasangan">${k.icon || '✋'}</span><span class="grow"><b>${esc(r.name)}</b><small>${k.title || r.kind} · ${ftime(r.createdAt)} · kode ${esc(r.code)}</small></span></div>
           <p class="small">${info.join(' · ')}</p>
           <form data-form="decide" data-id="${r.id}" data-kind="${r.kind}" class="form">${extra}<label>Catatan <small class="muted">(opsional, terlihat oleh pemohon)</small><input name="note" maxlength="300"></label>
@@ -1930,12 +1930,11 @@
   async function superDecide(f, fd, btn) {
     const approve = !btn || btn.value !== '0';
     const kind = f.dataset.kind;
-    if (approve && kind === 'siswa' && !fd.get('classId')) return toast('Pilih kelas untuk siswa ini');
     if (!approve && !confirm('Tolak pengajuan ini?')) return;
     f.querySelectorAll('button').forEach((b) => { b.disabled = true; });
     try {
       const r = await Cloud.rpc('super_decide', { p_token: session.get().token, p_request_id: f.dataset.id, p_approve: approve, p_school_id: fd.get('school') || null, p_school_name: fd.get('schoolName') || null, p_make_admin: fd.get('admin') === '1', p_class_id: fd.get('classId') || null, p_note: fd.get('note') || null });
-      toast(approve ? `Disetujui ✔${r.classCode ? ` · kode kelas ${esc(r.classCode)}` : ''}${r.parentCode ? ` · kode orang tua ${esc(r.parentCode)}` : ''}` : 'Pengajuan ditolak');
+      toast(approve ? `Disetujui ✔${r.classCode ? ` · kode kelas ${esc(r.classCode)}` : r.learnCode ? ` · kode belajar ${esc(r.learnCode)}` : ''}${r.parentCode ? ` · kode orang tua ${esc(r.parentCode)}` : ''}` : 'Pengajuan ditolak');
       await ensure(true); route();
     } catch (e) { f.querySelectorAll('button').forEach((b) => { b.disabled = false; }); toast(e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
   }
