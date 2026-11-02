@@ -145,6 +145,7 @@ body.mq-body { background: #fff; }
 .mq-age { display: grid; place-items: center; gap: 0; min-height: 84px; border: 2px solid #e5e5e5; border-bottom-width: 5px; border-radius: 18px; background: #fff; font: inherit; color: var(--mq-ink); cursor: pointer; }
 .mq-age b { font-size: 2rem; line-height: 1; } .mq-age small { font-weight: 800; color: #6a7f7a; }
 .mq-age.sel { border-color: var(--mq); background: var(--mq-bg); color: var(--mq-dd); } .mq-age:active { transform: translateY(2px); }
+.mq-ages.many { grid-template-columns: repeat(4, 1fr); gap: 10px; } .mq-ages.many .mq-age { min-height: 70px; } .mq-ages.many .mq-age b { font-size: 1.7rem; }
 .mq-gain { display: grid; gap: 18px; width: 100%; text-align: left; margin-top: 8px; }
 .mq-gain div { display: flex; gap: 14px; align-items: center; } .mq-gain .em { flex: none; display: grid; place-items: center; width: 56px; height: 56px; border-radius: 16px; background: var(--mq-bg); font-size: 1.9rem; }
 .mq-gain b { display: block; font-size: 1.08rem; } .mq-gain small { color: #6a7f7a; font-weight: 700; }

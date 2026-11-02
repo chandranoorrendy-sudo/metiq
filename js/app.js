@@ -1413,8 +1413,8 @@
       kids.forEach(({ k, c }) => S.viewsOf(k.id).filter((v) => v.at >= g.from && v.at <= g.to).sort((a, b) => a.at - b.at).forEach((v) => rows.push([sc[k.id], cc[c.id], tc[c.teacherId], isoDay(v.at), hhmm(v.at), v.via === 'akun' ? 'akun orang tua' : 'kode orang tua'])));
     } else if (type === 'asesmen') {
       rows = [['kode_siswa', 'kode_kelas', 'kode_guru', 'usia_awal', 'kelas_sesuai_usia_awal', 'level_awal', 'benar_awal', 'soal_awal', 'cepat_awal', 'menit_awal', 'tanggal_awal', 'usia_akhir', 'kelas_sesuai_usia_akhir', 'level_akhir', 'benar_akhir', 'soal_akhir', 'cepat_akhir', 'menit_akhir', 'tanggal_akhir', 'kenaikan_level', 'selisih_usia_awal', 'selisih_usia_akhir']];
-      const part = (d) => (d ? [d.age, ageGradeOf(d.age), d.level, d.items.filter((x) => x.ok).length, d.items.length, d.items.filter((x) => x.fast).length, dec(d.ms / 60000), isoDay(d.at)] : ['', '', '', '', '', '', '', '']);
-      kids.forEach(({ k, c }) => { const a = S.diagOf(k.id), b = S.diagOf(k.id, 'b'); if (!a && !b) return; rows.push([sc[k.id], cc[c.id], tc[c.teacherId], ...part(a), ...part(b), a && b ? b.level - a.level : '', a ? ageGradeOf(a.age) - a.level : '', b ? ageGradeOf(b.age) - b.level : '']); });
+      const part = (d) => (d ? [d.age, ageGradeOf(d), d.level, d.items.filter((x) => x.ok).length, d.items.length, d.items.filter((x) => x.fast).length, dec(d.ms / 60000), isoDay(d.at)] : ['', '', '', '', '', '', '', '']);
+      kids.forEach(({ k, c }) => { const a = S.diagOf(k.id), b = S.diagOf(k.id, 'b'); if (!a && !b) return; rows.push([sc[k.id], cc[c.id], tc[c.teacherId], ...part(a), ...part(b), a && b ? lvGap(b.level, a.level) : '', a ? lvGap(ageGradeOf(a), a.level) : '', b ? lvGap(ageGradeOf(b), b.level) : '']); });
     } else if (type === 'kunci') {
       rows = [['kode', 'jenis', 'nama', 'kelas', 'nisn']];
       [...new Set(classes.map((c) => c.teacherId))].forEach((t) => rows.push([tc[t], 'guru', (classes.find((c) => c.teacherId === t) || {}).teacherName || '', '', '']));
@@ -1445,13 +1445,21 @@
   }
 
   /* ---------- Asesmen awal (sekali di awal): usia, lalu soal adaptif dari keterampilan kunci tiap kelas ---------- */
-  // Lima keterampilan kunci per kelas (bilangan, tambah/kurang, kali/bagi, pecahan/desimal, pengukuran/aljabar) ada di S.DIAG
-  const FAST = { 1: 8000, 2: 10000, 3: 12000, 4: 15000, 5: 18000, 6: 20000 }, GUESS = 3000;
+  // Keterampilan kunci per kelas ada di S.DIAG: lima per kelas SD–SMA, tiga sampai lima cerita beraudio untuk TK.
+  // Batas "cepat" TK sudah termasuk waktu mendengarkan rekaman cerita.
+  const FAST = { '-2': 20000, '-1': 22000, 1: 8000, 2: 10000, 3: 12000, 4: 15000, 5: 18000, 6: 20000, 7: 25000, 8: 30000, 9: 35000, 10: 40000, 11: 40000, 12: 45000, 13: 50000 }, GUESS = 3000;
   let D = null;
   const diagKid = () => { const ses = session.get(); return ses.role === 'siswa' && S.student(ses.id); };
   const isAdminNow = () => { const x = session.get(), t = x.role === 'guru' && S.teacher(x.id); return !!(t && (t.isAdmin || t.isSchoolAdmin)); };
   const DMODE = { a: { name: 'Asesmen awal', start: '#/asesmen', result: '#/asesmen/hasil' }, b: { name: 'Asesmen akhir', start: '#/asesmen/akhir', result: '#/asesmen/akhir/hasil' } };
-  const ageGradeOf = (age) => Math.max(1, Math.min(6, age - 6));
+  // Urutan level: TK A (−2), TK B (−1), Kelas 1–8, lalu Aljabar 1 (9), Geometri, Aljabar 2, Prakalkulus, Kalkulus (13).
+  // lvPos merapatkan urutan (TK A = −1, TK B = 0, Kelas n = n) agar selisih dan rata-rata level benar; untuk Kelas 1–6 nilainya = nomor kelas.
+  const lvPos = (g) => (g < 0 ? g + 1 : g), lvAt = (p) => (p <= 0 ? p - 1 : p), lvGap = (a, b) => lvPos(a) - lvPos(b);
+  const lvStep = (g, k) => { const x = lvAt(lvPos(g) + k); return S.DIAG[x] ? x : null; };
+  // Kelas sesuai usia, atau jenjang yang dipilih siswa SMP/SMA (d.cls). Data lama (usia 6–12) hasilnya tetap: 6–7 = Kelas 1, …, 12 = Kelas 6.
+  const ageGradeOf = (d) => { if (d && typeof d === 'object') { if (d.cls) return d.cls; d = d.age; } return d <= 4 ? -2 : d === 5 ? -1 : Math.max(1, Math.min(13, d - 6)); };
+  // Nama level untuk rata-rata (boleh pecahan): Kelas 1 ke atas tetap "Kelas 2,5"; di bawahnya dibulatkan ke TK terdekat
+  const lvLabel = (p) => (Number.isInteger(p) ? gname(lvAt(p)) : p >= 1 ? 'Kelas ' + dec(p) : '≈ ' + gname(lvAt(Math.round(p))));
   // Asesmen awal dibuka seperti aplikasi belajar: sapaan Meti, usia, target harian, lalu soal satu per satu.
   let OB = null;
   const GOALS = [[5, 'Santai', '🌱'], [10, 'Biasa', '🚶'], [15, 'Serius', '🚀'], [20, 'Hebat', '🏆']];
@@ -1459,7 +1467,7 @@
     const st = diagKid(); if (!st) return go('#/siswa');
     if (pf === 'a' && S.onboarded(st.id)) return go('#/belajar');
     if (pf === 'b' && !S.postPending(st.id)) return go(S.diagOf(st.id, 'b') ? DMODE.b.result : '#/belajar');
-    if (!OB || OB.pf !== pf || OB.sid !== st.id) OB = { pf, sid: st.id, step: 0, age: null, goal: goalOf(st.id), steps: pf === 'a' ? ['hello', 'count', 'age', 'goal', 'gain', 'ready'] : ['hello', 'age', 'ready'] };
+    if (!OB || OB.pf !== pf || OB.sid !== st.id) OB = { pf, sid: st.id, step: 0, age: null, cls: null, goal: goalOf(st.id), steps: pf === 'a' ? ['hello', 'count', 'age', 'goal', 'gain', 'ready'] : ['hello', 'age', 'ready'] };
     obRender();
   }
   function obRender() {
@@ -1475,8 +1483,12 @@
       inner = bigSay('cheer', 'Hanya <b class="hl">beberapa soal</b> singkat sebelum kita mulai belajar!<span class="sub">Ini bukan ujian, santai saja.</span>', 180);
       foot = next('Lanjutkan');
     } else if (key === 'age') {
-      inner = `${rowSay('ask', 'Berapa <b class="hl">umurmu</b>?')}<div class="mq-ages">${[6, 7, 8, 9, 10, 11, 12].map((a) => `<button class="mq-age ${OB.age === a ? 'sel' : ''}" data-act="obage" data-a="${a}"><b>${a}${a === 12 ? '+' : ''}</b><small>tahun</small></button>`).join('')}</div>`;
+      inner = `${rowSay('ask', 'Berapa <b class="hl">umurmu</b>?')}<div class="mq-ages many">${[4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17].map((a) => `<button class="mq-age ${OB.age === a ? 'sel' : ''}" data-act="obage" data-a="${a}"><b>${a}${a === 17 ? '+' : ''}</b><small>tahun</small></button>`).join('')}</div>`;
       foot = next('Lanjutkan', OB.age !== null);
+    } else if (key === 'cls') {
+      // usia saja tidak membedakan Aljabar 1, Geometri, Aljabar 2, Prakalkulus, dan Kalkulus
+      inner = `${rowSay('ask', 'Sekarang kamu belajar <b class="hl">materi apa</b> di sekolah?')}<div class="mq-choices">${GRADES.filter((x) => x.id >= 7).map((x) => `<button class="mq-choice ${OB.cls === x.id ? 'sel' : ''}" data-act="obcls" data-g="${x.id}"><span class="em">${x.stage === 'SMA' ? '🎓' : '📘'}</span><span class="grow">${x.name}</span><span class="tag">${x.stage || ''}</span></button>`).join('')}</div>`;
+      foot = next('Lanjutkan', OB.cls !== null);
     } else if (key === 'goal') {
       inner = `${rowSay('ask', 'Berapa menit kamu mau belajar <b class="hl">tiap hari</b>?')}<div class="mq-choices">${GOALS.map(([m, l, e]) => `<button class="mq-choice ${OB.goal === m ? 'sel' : ''}" data-act="obgoal" data-m="${m}"><span class="em">${e}</span><span class="grow">${m} menit / hari</span><span class="tag">${l}</span></button>`).join('')}</div>`;
       foot = next('Lanjutkan');
@@ -1491,17 +1503,27 @@
       <main class="mq-screen"><div class="mq-ob-body">${inner}</div></main><div class="mq-foot"><div class="mq-foot-in">${foot}</div></div>`;
   }
   function obNext() {
-    if (OB.step >= OB.steps.length - 1) return diagStart(OB.age || ageDefault(), OB.pf);
+    // usia 13 ke atas: tanyakan juga jenjang yang sedang ditempuh
+    if (OB.steps[OB.step] === 'age') {
+      const hs = OB.age >= 13, at = OB.steps.indexOf('cls');
+      if (hs && at < 0) OB.steps.splice(OB.step + 1, 0, 'cls');
+      if (!hs && at >= 0) OB.steps.splice(at, 1);
+      OB.cls = hs ? OB.cls || ageGradeOf(OB.age) : null;
+    }
+    if (OB.step >= OB.steps.length - 1) return diagStart(OB.age || ageDefault(), OB.pf, OB.cls);
     OB.step++; obRender();
   }
   const ageDefault = () => 8;
-  function diagStart(age, pf) {
+  function diagStart(age, pf, cls) {
     const st = diagKid(); if (!st) return;
-    // titik mulai sama untuk asesmen awal dan akhir: satu kelas di bawah kelas sesuai usia (6–7 tahun = kelas 1)
-    D = { sid: st.id, pf: pf || 'a', age, bands: {}, n: 0, t0: Date.now(), order: [] };
+    // titik mulai sama untuk asesmen awal dan akhir: satu level di bawah kelas sesuai usia (6–7 tahun = kelas 1).
+    // Rentang level: TK dari TK A, SD tetap Kelas 1–6 (sama seperti data penelitian lama), SMP/SMA Kelas 1 sampai Kalkulus.
+    const ag = ageGradeOf({ age, cls }), lo = ag < 1 ? -2 : 1, hi = ag <= 6 ? 6 : 13;
+    D = { sid: st.id, pf: pf || 'a', age, cls: cls || null, lo, hi, bands: {}, n: 0, t0: Date.now(), order: [] };
     OB = null;
-    diagBand(Math.max(1, ageGradeOf(age) - 1));
+    diagBand(lvGap(ag, lo) >= 1 ? lvStep(ag, -1) : lo);
   }
+  const diagIn = (g) => g !== null && lvGap(g, D.lo) >= 0 && lvGap(D.hi, g) >= 0;
   function diagBand(g) {
     const q = S.DIAG[g].filter((id) => SKILLS[id]).sort(() => Math.random() - 0.5);
     D.grade = g; D.bands[g] = { ok: [], bad: [], fast: [], guess: [], queue: q }; D.order.push(g);
@@ -1518,6 +1540,7 @@
   }
   function diagAnswer(ok) {
     P.locked = true; window.SFX.step();
+    stopClips();
     const b = D.bands[D.grade], ms = Date.now() - P.qStart; (ok ? b.ok : b.bad).push(P.sk.id); D.n++;
     if (ok && ms <= FAST[D.grade]) b.fast.push(P.sk.id);
     if (!ok && ms < GUESS) b.guess.push(P.sk.id);
@@ -1525,7 +1548,7 @@
     document.getElementById('sbar').style.width = Math.min(95, (D.n / 15) * 100) + '%';
     setTimeout(() => diagDecide(false), 400);
   }
-  // lulus = minimal 4 dari 5 (atau 3 benar pertama); belum = 3 salah; selain itu berhenti di kelas ini
+  // lulus = minimal 4 dari 5 (atau 3 benar pertama); belum = 3 salah; selain itu berhenti di kelas ini (TK A hanya 3 cerita: lulus jika 3 benar)
   function diagDecide(empty) {
     const g = D.grade, b = D.bands[g], done = b.ok.length + b.bad.length;
     let v = null;
@@ -1536,14 +1559,15 @@
     b.v = v;
     // semua benar dan cepat: soal kelas ini terlalu mudah, lompat 2 kelas (kelas yang dilewati diperiksa jika nanti gagal)
     const easy = v === 'pass' && !b.bad.length && b.ok.length >= 3 && b.fast.length === b.ok.length;
-    if (easy && g + 2 <= 6 && !D.bands[g + 1] && !D.bands[g + 2]) return diagBand(g + 2);
-    if (v === 'pass' && g < 6 && !D.bands[g + 1]) return diagBand(g + 1);
-    if (v === 'fail' && g > 1 && !D.bands[g - 1]) return diagBand(g - 1);
-    // kelas tempat siswa sebaiknya belajar sekarang
-    const level = v === 'mid' ? g : v === 'pass' ? Math.min(6, g + (D.bands[g + 1] ? 1 : 0)) : g;
+    const up = lvStep(g, 1), up2 = lvStep(g, 2), down = lvStep(g, -1);
+    if (easy && diagIn(up2) && !D.bands[up] && !D.bands[up2]) return diagBand(up2);
+    if (v === 'pass' && diagIn(up) && !D.bands[up]) return diagBand(up);
+    if (v === 'fail' && diagIn(down) && !D.bands[down]) return diagBand(down);
+    // kelas tempat siswa sebaiknya belajar sekarang (lulus di sini tapi kelas di atasnya sudah gagal = belajar di kelas atas itu)
+    const level = v === 'pass' && diagIn(up) && D.bands[up] ? up : g;
     const answers = Object.keys(D.bands).sort().flatMap((k) => { const x = D.bands[k]; return [...x.ok.map((id) => [id, 1, x.fast.includes(id) ? 1 : 0, 0]), ...x.bad.map((id) => [id, 0, 0, x.guess.includes(id) ? 1 : 0])]; });
-    const pf = D.pf, res = S.recordDiag(D.sid, { level, age: D.age, ms: Date.now() - D.t0, answers }, pf);
-    tlog('diag', { pf, level, age: D.age, n: answers.length });
+    const pf = D.pf, res = S.recordDiag(D.sid, { level, age: D.age, cls: D.cls, ms: Date.now() - D.t0, answers }, pf);
+    tlog('diag', { pf, level, age: D.age, cls: D.cls, n: answers.length });
     if (cloudOn()) Object.entries(res).forEach(([key, v2]) => Cloud.queueProgress(D.sid, session.get().code, key, v2));
     setGrade(level); D = null; P = null;
     window.SFX.levelUp();
@@ -1553,19 +1577,19 @@
   function viewDiagResult(pf = 'a') {
     const st = diagKid(); if (!st) return go('#/siswa');
     const dg = S.diagOf(st.id, pf); if (!dg) return go(DMODE[pf].start);
-    const pre = pf === 'b' ? S.diagOf(st.id) : null, gain = pre ? dg.level - pre.level : 0;
+    const pre = pf === 'b' ? S.diagOf(st.id) : null, gain = pre ? lvGap(dg.level, pre.level) : 0;
     const prog = S.progressAll(st.id), good = diagSkills(dg, true), gaps = diagSkills(dg, false).filter((x) => SKILLS[x.id].grade <= dg.level);
     const slow = good.filter((x) => !x.fast);
-    const first = unitsOf(dg.level)[0], acc = pct(good.length, dg.items.length);
+    const first = unitsOf(dg.level)[0], acc = pct(good.length, dg.items.length), lg = GRADES.find((x) => x.id === dg.level) || {};
     app.innerHTML = `<main class="mq-screen"><div class="mq-result">${MQ.svg('cheer', { size: 170 })}
-        <h1 class="mq-rtitle">${DMODE[pf].name} selesai!</h1><p class="mq-rsub">Kamu siap belajar di</p>
-        <div class="mq-stats3"><div class="mq-stat" style="--c:#e0a800"><small>Kelas</small><b>${dg.level}</b></div><div class="mq-stat" style="--c:#19b796"><small>Tepat</small><b>${acc}%</b></div><div class="mq-stat" style="--c:#1c9be8"><small>Waktu</small><b>${mmss(dg.ms)}</b></div></div>
-        ${pre ? `<div class="mq-unlock">${gain > 0 ? `📈 Naik ${gain} kelas sejak asesmen awal!` : gain === 0 ? `Sama dengan asesmen awal (Kelas ${pre.level}). Terus berlatih!` : `Asesmen awal: Kelas ${pre.level}. Tidak apa-apa, ayo berlatih lagi.`}</div>` : ''}
-        ${!pre && dg.level > ageGradeOf(dg.age) ? '<div class="mq-unlock">⚡ Kamu menjawab cepat dan tepat, jadi levelmu di atas kelas untuk usiamu!</div>' : ''}
+        <h1 class="mq-rtitle">${DMODE[pf].name} selesai!</h1><p class="mq-rsub">Kamu siap belajar di${lg.stage ? ` <b>${gname(dg.level)}</b>` : ''}</p>
+        <div class="mq-stats3"><div class="mq-stat" style="--c:#e0a800"><small>${lg.stage || 'Kelas'}</small><b>${lg.short || dg.level}</b></div><div class="mq-stat" style="--c:#19b796"><small>Tepat</small><b>${acc}%</b></div><div class="mq-stat" style="--c:#1c9be8"><small>Waktu</small><b>${mmss(dg.ms)}</b></div></div>
+        ${pre ? `<div class="mq-unlock">${gain > 0 ? `📈 Naik ${gain} kelas sejak asesmen awal!` : gain === 0 ? `Sama dengan asesmen awal (${gname(pre.level)}). Terus berlatih!` : `Asesmen awal: ${gname(pre.level)}. Tidak apa-apa, ayo berlatih lagi.`}</div>` : ''}
+        ${!pre && lvGap(dg.level, ageGradeOf(dg)) > 0 ? '<div class="mq-unlock">⚡ Kamu menjawab cepat dan tepat, jadi levelmu di atas kelas untuk usiamu!</div>' : ''}
         <details class="mq-more"><summary>Lihat rinciannya ▾</summary>
           ${good.length ? `<section class="card"><h2>💪 Yang sudah kamu kuasai</h2><div class="diag-chips">${good.map((x) => `<span class="pill okp">${SKILLS[x.id].code} ${SKILLS[x.id].name}</span>`).join(' ')}</div></section>` : ''}
           ${slow.length ? `<section class="card"><h2>🐢 Benar, tapi perlu lebih lancar</h2><div class="sklist">${slow.map((x) => skillLink(x.id, prog[x.id], `${gname(SKILLS[x.id].grade)}`)).join('')}</div></section>` : ''}
-          <section class="card"><h2>🎯 Yang perlu kamu pelajari</h2>${gaps.length ? `<div class="sklist">${gaps.map((x) => skillLink(x.id, prog[x.id], `${gname(SKILLS[x.id].grade)}`)).join('')}</div>` : `<p>Hebat! Semua soal kunci sudah benar. Lanjutkan ke bab pertama Kelas ${dg.level}.</p><div class="sklist">${first.skills.slice(0, 3).map((x) => skillLink(x.id, prog[x.id])).join('')}</div>`}</section>
+          <section class="card"><h2>🎯 Yang perlu kamu pelajari</h2>${gaps.length ? `<div class="sklist">${gaps.map((x) => skillLink(x.id, prog[x.id], `${gname(SKILLS[x.id].grade)}`)).join('')}</div>` : `<p>Hebat! Semua soal kunci sudah benar. Lanjutkan ke bab pertama ${gname(dg.level)}.</p><div class="sklist">${first.skills.slice(0, 3).map((x) => skillLink(x.id, prog[x.id])).join('')}</div>`}</section>
         </details>
       </div></main>
       <div class="mq-foot"><div class="mq-foot-in"><a class="mq-btn pulse" href="#/belajar">Mulai belajar</a></div></div>`;
@@ -1574,10 +1598,10 @@
   function diagSummaryHTML(k, audience) {
     const dg = S.diagOf(k.id), post = S.diagOf(k.id, 'b'), pending = S.postPending(k.id), admin = audience === 'guru' && isAdminNow();
     if (!dg) return audience === 'guru' ? `<section class="card diag-sum"><h2>🧭 Asesmen awal</h2><p class="muted small">${esc(k.name)} belum mengerjakan asesmen awal. Asesmen muncul otomatis saat ${esc(k.name)} pertama kali masuk sebagai siswa.</p></section>` : '';
-    const gaps = diagSkills(dg, false), good = diagSkills(dg, true), ag = ageGradeOf(dg.age);
+    const gaps = diagSkills(dg, false), good = diagSkills(dg, true), ag = ageGradeOf(dg), lag = lvGap(ag, dg.level), plag = post ? lvGap(ageGradeOf(post), post.level) : 0, pgain = post ? lvGap(post.level, dg.level) : 0;
     return `<section class="card diag-sum"><h2>🧭 Asesmen ${post || pending ? 'awal dan akhir' : 'awal'}</h2>
-      <p>${audience === 'siswa' ? 'Kamu' : esc(k.name)} ditempatkan di <b>materi Kelas ${dg.level}</b> <span class="muted small">(usia ${dg.age} tahun · ${fdate(dg.at)} · ${good.length}/${dg.items.length} soal kunci benar)</span>.${audience !== 'siswa' && dg.level < ag ? ` <span class="warnline small">Tertinggal ${ag - dg.level} kelas dari kelas sesuai usia (Kelas ${ag}).</span>` : ''}</p>
-      ${post ? `<p class="diag-gain">🏁 Asesmen akhir (${fdate(post.at)}): <b>Kelas ${post.level}</b> · ${post.level > dg.level ? `📈 naik ${post.level - dg.level} kelas` : post.level === dg.level ? 'belum berubah' : `turun ${dg.level - post.level} kelas`}${audience !== 'siswa' ? (post.level >= ageGradeOf(post.age) ? ' · ✅ sudah sesuai usia' : ` · masih ${ageGradeOf(post.age) - post.level} kelas di bawah usia`) : ''}</p>` : ''}
+      <p>${audience === 'siswa' ? 'Kamu' : esc(k.name)} ditempatkan di <b>materi ${gname(dg.level)}</b> <span class="muted small">(usia ${dg.age} tahun${dg.cls ? ` · sedang belajar ${gname(dg.cls)}` : ''} · ${fdate(dg.at)} · ${good.length}/${dg.items.length} soal kunci benar)</span>.${audience !== 'siswa' && lag > 0 ? ` <span class="warnline small">Tertinggal ${lag} kelas dari ${dg.cls ? 'jenjang yang sedang ditempuh' : 'kelas sesuai usia'} (${gname(ag)}).</span>` : ''}</p>
+      ${post ? `<p class="diag-gain">🏁 Asesmen akhir (${fdate(post.at)}): <b>${gname(post.level)}</b> · ${pgain > 0 ? `📈 naik ${pgain} kelas` : pgain === 0 ? 'belum berubah' : `turun ${-pgain} kelas`}${audience !== 'siswa' ? (plag <= 0 ? ' · ✅ sudah sesuai usia' : ` · masih ${plag} kelas di bawah usia`) : ''}</p>` : ''}
       ${pending ? `<p class="small muted">⏳ Asesmen akhir sudah dibuka admin dan menunggu ${esc(k.name)} mengerjakannya.</p>` : ''}
       ${gaps.length ? `<p class="small"><b>Perlu dipelajari (asesmen awal):</b> ${gaps.map((x) => `${SKILLS[x.id].code} ${SKILLS[x.id].name}${S.progress(k.id, x.id).score >= 80 ? ' ✅' : ''}`).join(' · ')}</p>` : '<p class="small">Semua soal kunci yang diberikan sudah dijawab benar.</p>'}
       ${good.length ? `<p class="small">⚡ <b>${good.filter((x) => x.fast).length}</b> dari ${good.length} jawaban benar dijawab cepat${good.some((x) => !x.fast) ? ` · 🐢 benar tapi lambat (perlu kelancaran): ${good.filter((x) => !x.fast).map((x) => SKILLS[x.id].code).join(', ')}` : ''}.</p>` : ''}
@@ -1607,7 +1631,7 @@
     const cats = [['Sesuai usia', VZ.ord[0]], ['Tertinggal 1 kelas', VZ.ord[1]], ['Tertinggal 2 kelas', VZ.ord[2]], ['Tertinggal ≥3 kelas', VZ.ord[3]], ['Belum asesmen', VZ.none]];
     const data = classes.map((s) => {
       const cnt = [0, 0, 0, 0, 0];
-      S.studentsOf(s.c.id).forEach((k) => { const d = S.diagOf(k.id, 'b') || S.diagOf(k.id); if (!d) return cnt[4]++; const gap = ageGradeOf(d.age) - d.level; cnt[gap <= 0 ? 0 : Math.min(3, gap)]++; });
+      S.studentsOf(s.c.id).forEach((k) => { const d = S.diagOf(k.id, 'b') || S.diagOf(k.id); if (!d) return cnt[4]++; const gap = lvGap(ageGradeOf(d), d.level); cnt[gap <= 0 ? 0 : Math.min(3, gap)]++; });
       return { s, cnt, n: cnt.reduce((t, x) => t + x, 0) };
     });
     const L = 64, W = 340, RW = W - L - 8, RH = 26, H = data.length * RH + 6;
@@ -1693,24 +1717,27 @@
     const sel = ss.get('vizdb', ''), one = classes.find((s) => s.c.id === sel);
     const avg = (xs) => xs.reduce((t, x) => t + x, 0) / xs.length;
     const rows = one
-      ? S.studentsOf(one.c.id).map((k) => { const a = S.diagOf(k.id), b = S.diagOf(k.id, 'b'); return a ? { label: k.name, pre: a.level, post: b ? b.level : null, age: ageGradeOf((b || a).age), n: 1 } : null; }).filter(Boolean)
+      ? S.studentsOf(one.c.id).map((k) => { const a = S.diagOf(k.id), b = S.diagOf(k.id, 'b'); return a ? { label: k.name, pre: lvPos(a.level), post: b ? lvPos(b.level) : null, age: lvPos(ageGradeOf(b || a)), n: 1 } : null; }).filter(Boolean)
       : classes.map((s) => {
         const both = S.studentsOf(s.c.id).map((k) => [S.diagOf(k.id), S.diagOf(k.id, 'b')]).filter(([a]) => a);
         if (!both.length) return null;
         const paired = both.filter(([, b]) => b);
-        return { label: s.short, pre: avg((paired.length ? paired : both).map(([a]) => a.level)), post: paired.length ? avg(paired.map(([, b]) => b.level)) : null, age: avg(both.map(([a, b]) => ageGradeOf((b || a).age))), n: paired.length, total: both.length };
+        return { label: s.short, pre: avg((paired.length ? paired : both).map(([a]) => lvPos(a.level))), post: paired.length ? avg(paired.map(([, b]) => lvPos(b.level))) : null, age: avg(both.map(([a, b]) => lvPos(ageGradeOf(b || a)))), n: paired.length, total: both.length };
       }).filter(Boolean);
     if (!rows.length) return `<section class="card vz"><h2>4. Asesmen awal → akhir</h2><p class="muted">Belum ada siswa yang mengerjakan asesmen awal.</p></section>`;
-    const L = one ? 70 : 44, W = 340, RH = 24, H = rows.length * RH + 30, X = (v) => L + 12 + ((v - 1) / 5) * (W - L - 30);
-    let o = [1, 2, 3, 4, 5, 6].map((v) => `<line x1="${X(v)}" x2="${X(v)}" y1="4" y2="${H - 22}" stroke="${VZ.grid}"/><text x="${X(v)}" y="${H - 8}" text-anchor="middle" font-size="9" fill="${VZ.ink2}">Kelas ${v}</text>`).join('');
+    // sumbu tetap Kelas 1–6 untuk data SD; melebar ke TK atau SMP/SMA hanya jika ada siswa di sana (posisi lvPos: TK A = −1, TK B = 0)
+    const vals = rows.flatMap((r) => [r.pre, r.post, r.age]).filter((v) => v !== null), lo = Math.min(1, Math.floor(Math.min(...vals))), hi = Math.max(6, Math.ceil(Math.max(...vals)));
+    const ticks = [...Array(hi - lo + 1)].map((_, i) => lo + i), wide = ticks.length > 6;
+    const L = one ? 70 : 44, W = 340, RH = 24, H = rows.length * RH + 30, X = (v) => L + 12 + ((v - lo) / (hi - lo)) * (W - L - 30);
+    let o = ticks.map((v) => `<line x1="${X(v)}" x2="${X(v)}" y1="4" y2="${H - 22}" stroke="${VZ.grid}"/><text x="${X(v)}" y="${H - 8}" text-anchor="middle" font-size="9" fill="${VZ.ink2}">${wide ? gshort(lvAt(v)) : 'Kelas ' + v}</text>`).join('');
     rows.forEach((r, i) => {
-      const y = 14 + i * RH, f1 = (v) => dec(v);
+      const y = 14 + i * RH, f1 = lvLabel;
       o += `<text x="${L - 6}" y="${y + 4}" text-anchor="end" font-size="10" font-weight="800" fill="#16302b">${esc(r.label.length > 9 ? r.label.slice(0, 9) + '…' : r.label)}</text>`;
       o += `<path d="M${X(r.age)} ${y - 8}v16" stroke="${VZ.s2}" stroke-width="3" stroke-linecap="round"/>`;
       if (r.post !== null) o += `<line x1="${X(r.pre)}" x2="${X(r.post)}" y1="${y}" y2="${y}" stroke="${VZ.ord[1]}" stroke-width="3" stroke-linecap="round"/>`;
       o += `<circle cx="${X(r.pre)}" cy="${y}" r="5" fill="#fff" stroke="${VZ.s1}" stroke-width="2.5"/>`;
       if (r.post !== null) o += `<circle cx="${X(r.post)}" cy="${y}" r="5.5" fill="${VZ.s1}" stroke="#fff" stroke-width="2"/>`;
-      o += `<rect x="${L}" y="${y - 11}" width="${W - L}" height="22" fill="transparent" class="vzhit" ${tip(one ? r.label : `${r.label} · ${r.n} dari ${r.total} siswa sudah asesmen akhir`, `awal Kelas ${f1(r.pre)}${r.post !== null ? ` → akhir Kelas ${f1(r.post)} (${r.post - r.pre >= 0 ? '+' : ''}${dec(r.post - r.pre)})` : ' · belum asesmen akhir'} · sesuai usia Kelas ${f1(r.age)}`)}/>`;
+      o += `<rect x="${L}" y="${y - 11}" width="${W - L}" height="22" fill="transparent" class="vzhit" ${tip(one ? r.label : `${r.label} · ${r.n} dari ${r.total} siswa sudah asesmen akhir`, `awal ${f1(r.pre)}${r.post !== null ? ` → akhir ${f1(r.post)} (${r.post - r.pre >= 0 ? '+' : ''}${dec(r.post - r.pre)})` : ' · belum asesmen akhir'} · sesuai usia ${f1(r.age)}`)}/>`;
     });
     const caught = one ? rows.filter((r) => r.post !== null && r.post >= r.age && r.pre < r.age).length : 0;
     return `<section class="card vz"><h2>4. Asesmen awal → akhir</h2>
@@ -1719,7 +1746,7 @@
       ${legend([[VZ.s1, 'Awal', 'ring'], [VZ.s1, 'Akhir', 'dot'], [VZ.s2, 'Kelas sesuai usia', 'tick']])}
       <svg viewBox="0 0 ${W} ${H}" class="vzsvg" role="img" aria-label="Level asesmen awal dan akhir">${o}</svg>
       ${one && caught ? `<p class="small">🎯 ${caught} siswa sudah mengejar kelas sesuai usianya.</p>` : ''}
-      ${vzTable([one ? 'Siswa' : 'Kelas', 'Awal', 'Akhir', 'Naik', 'Sesuai usia'], rows.map((r) => [esc(r.label), dec(r.pre), r.post === null ? '–' : dec(r.post), r.post === null ? '–' : dec(r.post - r.pre), dec(r.age)]))}</section>`;
+      ${vzTable([one ? 'Siswa' : 'Kelas', 'Awal', 'Akhir', 'Naik', 'Sesuai usia'], rows.map((r) => [esc(r.label), wide ? lvLabel(r.pre) : dec(r.pre), r.post === null ? '–' : wide ? lvLabel(r.post) : dec(r.post), r.post === null ? '–' : dec(r.post - r.pre), wide ? lvLabel(r.age) : dec(r.age)]))}</section>`;
   }
 
   // Tooltip bersama untuk semua grafik (teks disisipkan sebagai textContent)
@@ -1784,7 +1811,7 @@
 
   /* ---------- Kelompok belajar: siswa dikelompokkan menurut level asesmen terbaru ---------- */
   function groupsHTML(ctx) {
-    const rows = ctx.kids.map((k) => { const d = S.diagOf(k.id, 'b') || S.diagOf(k.id); return { k, d, level: d ? d.level : null, age: d ? ageGradeOf(d.age) : null }; });
+    const rows = ctx.kids.map((k) => { const d = S.diagOf(k.id, 'b') || S.diagOf(k.id); return { k, d, level: d ? d.level : null, age: d ? ageGradeOf(d) : null, lag: d ? lvGap(ageGradeOf(d), d.level) : 0 }; });
     const levels = [...new Set(rows.filter((r) => r.level).map((r) => r.level))].sort((a, b) => a - b);
     const groups = levels.map((lv) => ({ lv, kids: rows.filter((r) => r.level === lv) }));
     const none = rows.filter((r) => !r.level);
@@ -1796,11 +1823,11 @@
       return [...cand].filter((id) => SKILLS[id]).map((id) => ({ id, need: g.kids.filter((r) => S.progress(r.k.id, id).score < 80).length }))
         .filter((x) => x.need > 0).sort((a, b) => b.need - a.need || SKILLS[a.id].grade - SKILLS[b.id].grade).slice(0, 5);
     };
-    const kidChips = (list) => `<div class="gkids">${list.map((r) => `<a class="kidchip" href="#/guru/siswa/${r.k.id}">${avHTML(r.k.avatar)} ${esc(r.k.name)}${r.age && r.level < r.age ? ` <small class="muted">−${r.age - r.level}</small>` : ''}</a>`).join('')}</div>`;
+    const kidChips = (list) => `<div class="gkids">${list.map((r) => `<a class="kidchip" href="#/guru/siswa/${r.k.id}">${avHTML(r.k.avatar)} ${esc(r.k.name)}${r.lag > 0 ? ` <small class="muted">−${r.lag}</small>` : ''}</a>`).join('')}</div>`;
     const card = (g) => {
-      const sug = suggest(g), behind = g.kids.filter((r) => r.age && r.level < r.age).length;
-      const head = `Kelompok materi Kelas ${g.lv}`;
-      return `<section class="card grp"><div class="lrow"><span class="gicon g-pasangan">${g.lv}</span><span class="grow"><b>${head}</b><small>${g.kids.length} siswa${behind ? ` · ${behind} di bawah kelas sesuai usianya` : ''}</small></span></div>
+      const sug = suggest(g), behind = g.kids.filter((r) => r.lag > 0).length;
+      const head = `Kelompok materi ${gname(g.lv)}`;
+      return `<section class="card grp"><div class="lrow"><span class="gicon g-pasangan">${gshort(g.lv)}</span><span class="grow"><b>${head}</b><small>${g.kids.length} siswa${behind ? ` · ${behind} di bawah kelas sesuai usianya` : ''}</small></span></div>
         ${kidChips(g.kids)}
         ${sug.length ? `<form data-form="grouptask" data-sids="${g.kids.map((r) => r.k.id).join(',')}" class="form">
           <p class="small"><b>Saran tugas untuk kelompok ini</b> <span class="muted">(angka = banyak anggota yang belum mahir)</span></p>
@@ -1811,7 +1838,7 @@
     };
     return `<section class="card"><h2>👥 Kelompok belajar</h2>
         <p class="small muted">Siswa dikelompokkan menurut level dari asesmen terbaru (asesmen akhir jika ada, jika tidak asesmen awal). Tugas kelompok hanya terlihat oleh anggota kelompok, sehingga setiap anak berlatih sesuai levelnya. Angka −1, −2 di samping nama = berapa kelas di bawah kelas sesuai usianya.</p>
-        <div class="kpis">${groups.map((g) => `<div class="kpi"><small>Materi Kelas ${g.lv}</small><b>${g.kids.length}<span> siswa</span></b></div>`).join('')}${none.length ? `<div class="kpi"><small>Belum asesmen</small><b>${none.length}</b></div>` : ''}</div></section>
+        <div class="kpis">${groups.map((g) => `<div class="kpi"><small>Materi ${gname(g.lv)}</small><b>${g.kids.length}<span> siswa</span></b></div>`).join('')}${none.length ? `<div class="kpi"><small>Belum asesmen</small><b>${none.length}</b></div>` : ''}</div></section>
       ${groups.map(card).join('') || emptyCard('Belum ada hasil asesmen', 'Kelompok muncul setelah siswa mengerjakan asesmen awal. Asesmen muncul otomatis saat siswa pertama kali masuk.')}
       ${none.length ? `<section class="card grp"><div class="lrow"><span class="gicon g-pasangan">?</span><span class="grow"><b>Belum mengerjakan asesmen</b><small>${none.length} siswa. Asesmen awal muncul otomatis saat mereka masuk berikutnya.</small></span></div>${kidChips(none)}</section>` : ''}`;
   }
@@ -1825,25 +1852,25 @@
   }
   function prepostRows(kids) {
     return kids.map((k) => {
-      const pre = S.diagOf(k.id), post = S.diagOf(k.id, 'b'), age = (post || pre || {}).age, ag = age ? ageGradeOf(age) : null;
-      return { k, pre, post, pending: S.postPending(k.id), ag, gain: pre && post ? post.level - pre.level : null };
+      const pre = S.diagOf(k.id), post = S.diagOf(k.id, 'b'), ag = pre || post ? ageGradeOf(post || pre) : null;
+      return { k, pre, post, pending: S.postPending(k.id), ag, gain: pre && post ? lvGap(post.level, pre.level) : null };
     });
   }
   function prepostHTML(all) {
     const rows = all.flatMap((s) => prepostRows(S.studentsOf(s.c.id)).map((r) => ({ ...r, c: s.c })));
-    const both = rows.filter((r) => r.pre && r.post), mean = (xs) => (xs.length ? dec(xs.reduce((t, x) => t + x, 0) / xs.length) : '–');
-    const atAge = (list, key) => list.filter((r) => r[key].level >= ageGradeOf(r[key].age)).length;
-    const cell = (d, r) => (d ? `Kelas ${d.level} <small class="muted">${fdate(d.at)}</small>` : '–');
+    const both = rows.filter((r) => r.pre && r.post), mean = (xs) => (xs.length ? lvLabel(xs.reduce((t, x) => t + x, 0) / xs.length).replace(/^Kelas /, '') : '–');
+    const atAge = (list, key) => list.filter((r) => lvGap(r[key].level, ageGradeOf(r[key])) >= 0).length;
+    const cell = (d, r) => (d ? `${gname(d.level)} <small class="muted">${fdate(d.at)}</small>` : '–');
     return `<section class="card"><h2>🧭 Asesmen awal dan akhir</h2>
         <p class="small">Asesmen awal (pretest) dikerjakan otomatis saat siswa pertama kali masuk. Asesmen akhir (posttest) memakai prosedur yang sama dan hanya bisa dibuka oleh admin. Hasil keduanya disimpan terpisah, sehingga hasil awal tidak pernah tertimpa.</p>
         <div class="kpis"><div class="kpi"><small>Sudah asesmen awal</small><b>${rows.filter((r) => r.pre).length}<span>/${rows.length}</span></b></div><div class="kpi"><small>Sudah asesmen akhir</small><b>${both.length}<span> · ${rows.filter((r) => r.pending).length}⏳</span></b></div>
-          <div class="kpi"><small>Rata-rata kelas: awal → akhir</small><b class="sm">${mean(both.map((r) => r.pre.level))} → ${mean(both.map((r) => r.post.level))}</b></div><div class="kpi"><small>Sesuai usia: awal → akhir</small><b class="sm">${both.length ? `${atAge(both, 'pre')} → ${atAge(both, 'post')} dari ${both.length}` : '–'}</b></div></div>
-        <p class="small muted">Rata-rata dan "sesuai usia" dihitung dari siswa yang sudah mengerjakan keduanya. Kelas sesuai usia: 6–7 tahun = Kelas 1, 8 = Kelas 2, …, 11 = Kelas 5, 12+ = Kelas 6.</p></section>
+          <div class="kpi"><small>Rata-rata kelas: awal → akhir</small><b class="sm">${mean(both.map((r) => lvPos(r.pre.level)))} → ${mean(both.map((r) => lvPos(r.post.level)))}</b></div><div class="kpi"><small>Sesuai usia: awal → akhir</small><b class="sm">${both.length ? `${atAge(both, 'pre')} → ${atAge(both, 'post')} dari ${both.length}` : '–'}</b></div></div>
+        <p class="small muted">Rata-rata dan "sesuai usia" dihitung dari siswa yang sudah mengerjakan keduanya. Kelas sesuai usia: 4 tahun = TK A, 5 = TK B, 6–7 tahun = Kelas 1, 8 = Kelas 2, …, 11 = Kelas 5, 12 = Kelas 6. Siswa 13 tahun ke atas memilih sendiri jenjang yang sedang ditempuh (Kelas 7 sampai Kalkulus). Naik dan tertinggal dihitung menurut urutan TK A, TK B, Kelas 1, …, Kelas 8, Aljabar 1, Geometri, Aljabar 2, Prakalkulus, Kalkulus.</p></section>
       ${all.map((s) => { const rs = prepostRows(S.studentsOf(s.c.id)), canOpen = rs.filter((r) => r.pre && !r.pending); return `<section class="card"><div class="lrow"><span class="grow"><b>${esc(s.c.name)}</b><small>${esc(s.c.teacherName || '')} · ${rs.filter((r) => r.pre).length}/${rs.length} sudah asesmen awal</small></span>${canOpen.length ? `<button class="btn sm" data-act="postclass" data-c="${s.c.id}">🏁 Buka asesmen akhir (${canOpen.length})</button>` : ''}</div>
         <div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Usia</th><th>Sesuai usia</th><th>Awal</th><th>Akhir</th><th>Naik</th><th>Status</th><th></th></tr></thead><tbody>
-        ${rs.map((r) => `<tr><td><a href="#/guru/siswa/${r.k.id}" data-act="openkid" data-id="${s.c.id}" data-s="${r.k.id}">${avHTML(r.k.avatar)} ${esc(r.k.name)}</a></td><td>${(r.post || r.pre || {}).age || '–'}</td><td>${r.ag ? 'Kelas ' + r.ag : '–'}</td><td>${cell(r.pre)}</td><td>${r.pending ? '⏳ dibuka' : cell(r.post)}</td>
+        ${rs.map((r) => `<tr><td><a href="#/guru/siswa/${r.k.id}" data-act="openkid" data-id="${s.c.id}" data-s="${r.k.id}">${avHTML(r.k.avatar)} ${esc(r.k.name)}</a></td><td>${(r.post || r.pre || {}).age || '–'}</td><td>${r.ag ? gname(r.ag) : '–'}</td><td>${cell(r.pre)}</td><td>${r.pending ? '⏳ dibuka' : cell(r.post)}</td>
           <td>${r.gain === null ? '–' : `<b class="${r.gain > 0 ? 'okc' : ''}">${r.gain > 0 ? '+' : ''}${r.gain}</b>`}</td>
-          <td>${!r.pre ? '<span class="muted">belum asesmen</span>' : (() => { const d = r.post || r.pre, gap = ageGradeOf(d.age) - d.level; return gap > 0 ? `<span class="accb ${gap >= 2 ? 'r' : 'y'}">tertinggal ${gap}</span>` : '<span class="accb g">sesuai usia</span>'; })()}</td>
+          <td>${!r.pre ? '<span class="muted">belum asesmen</span>' : (() => { const d = r.post || r.pre, gap = lvGap(ageGradeOf(d), d.level); return gap > 0 ? `<span class="accb ${gap >= 2 ? 'r' : 'y'}">tertinggal ${gap}</span>` : '<span class="accb g">sesuai usia</span>'; })()}</td>
           <td>${r.pre ? (r.pending ? `<button class="link small" data-act="postone" data-s="${r.k.id}" data-o="0">Batalkan</button>` : `<button class="link small" data-act="postone" data-s="${r.k.id}" data-o="1">${r.post ? 'Ulangi' : 'Buka'}</button>`) : ''}</td></tr>`).join('')}
         </tbody></table></div></section>`; }).join('')}`;
   }
@@ -2310,7 +2337,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       <section class="card vz"><h2>Fitur yang paling banyak dipakai</h2><p class="small muted">Banyaknya pengunjung yang membuka atau memakai setiap fitur.</p>
         ${feats.map((f) => `<div class="fbar"><span>${FEATURE[f.k]}</span><i><b style="width:${Math.round((f.v / fmax) * 100)}%"></b></i><small>${f.v} orang · ${fmtNum(f.n)}×</small></div>`).join('')}</section>
       <section class="card"><h2>Siapa saja yang mencoba</h2><div class="tscroll"><table class="tbl"><thead><tr><th>Nama</th><th>Peran</th><th>Pertama</th><th>Terakhir</th><th>Hari aktif</th><th>Soal</th><th>Permainan</th><th>Asesmen</th></tr></thead><tbody>
-        ${vs.map((v) => `<tr><td><b>${esc(v.name || '(tanpa nama)')}</b>${v.child ? `<small class="muted"> · anak: ${esc(v.child)}</small>` : ''}</td><td>${ROLE_LABEL[v.role] || v.role}</td><td>${ftime(v.first)}</td><td>${ago(v.last)}</td><td>${v.days}</td><td>${v.answers ? `${v.answers} <small class="muted">(${pct(v.correct, v.answers)}%)</small>` : '–'}</td><td>${v.games || '–'}</td><td>${v.diag ? 'Kelas ' + esc(v.diag) : '–'}</td></tr>`).join('')}
+        ${vs.map((v) => `<tr><td><b>${esc(v.name || '(tanpa nama)')}</b>${v.child ? `<small class="muted"> · anak: ${esc(v.child)}</small>` : ''}</td><td>${ROLE_LABEL[v.role] || v.role}</td><td>${ftime(v.first)}</td><td>${ago(v.last)}</td><td>${v.days}</td><td>${v.answers ? `${v.answers} <small class="muted">(${pct(v.correct, v.answers)}%)</small>` : '–'}</td><td>${v.games || '–'}</td><td>${v.diag ? esc(gname(+v.diag)) : '–'}</td></tr>`).join('')}
       </tbody></table></div><p class="small muted">Nama adalah yang diketik sendiri oleh penguji. Satu baris = satu perangkat.</p></section>`;
   }
 
@@ -2925,6 +2952,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (act === 'album') return openAlbum(+el.dataset.i);
     if (act === 'albclose') { if (e.target === el || el.tagName === 'BUTTON') { const sh = document.getElementById('albsheet'); if (sh) sh.hidden = true; } return; }
     if (act === 'ggrade') { sessionStorage.setItem('metiq_ggrade', el.dataset.g); return route(); }
+    if (act === 'obcls') { OB.cls = +el.dataset.g; document.querySelectorAll('.mq-choice').forEach((b) => b.classList.toggle('sel', b === el)); document.getElementById('obbtn').disabled = false; window.SFX.step(); return; }
     if (act === 'obage') { OB.age = +el.dataset.a; document.querySelectorAll('.mq-age').forEach((b) => b.classList.toggle('sel', b === el)); document.getElementById('obbtn').disabled = false; window.SFX.step(); return; }
     if (act === 'obgoal') { OB.goal = +el.dataset.m; ls.set('metiq_goal_' + OB.sid, OB.goal); document.querySelectorAll('.mq-choice').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); return; }
     if (act === 'obnext') return obNext();

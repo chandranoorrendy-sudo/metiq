@@ -88,16 +88,26 @@
     progressAll(sid) { return db.progress[sid] || {}; },
     answersOf(sid) { return db.answers.filter((a) => a.sid === sid); },
     /* Asesmen: pf 'a' = asesmen awal (pretest), 'b' = asesmen akhir (posttest, dibuka admin).
-     * <pf>:diag -> score = kelas × 10 (0 = diulang), att = nomor percobaan (selalu naik), ok = usia, ms = lama, last = waktu
+     * <pf>:diag -> score = kode level (0 = diulang), att = nomor percobaan (selalu naik), ok = usia, ms = lama, last = waktu
+     *   kode level: Kelas 1–6 = kelas × 10 (10–60, sama seperti data lama); TK A = 2, TK B = 5; Kelas 7–13 (Kelas 7, Kelas 8,
+     *   Aljabar 1, Geometri, Aljabar 2, Prakalkulus, Kalkulus) = 61–67. Server membatasi score 0–100, jadi kelas × 10 tidak muat.
+     *   ok: usia saja (data lama, TK, SD), atau jenjang × 100 + usia bila siswa SMP/SMA memilih jenjangnya (mis. 1116 = Aljabar 2, 16 tahun)
      * <pf>:<keterampilan> -> score 100 benar & cepat, 80 benar tapi lambat, 1 salah sangat cepat, 0 salah; ms = nomor percobaan */
     DIAG: {
+      // TK: hanya cerita beraudio (stories-tk.js), supaya anak yang belum bisa membaca cukup mendengarkan
+      '-2': ['TAK1', 'TAK2', 'TAK3'], '-1': ['TBM1', 'TBM2', 'TBM3', 'TBM4', 'TBM5'],
       1: ['A1', 'B2', 'C3', 'D3', 'G1'], 2: ['2A1', '2C1', '2D2', '2G3', '2I1'], 3: ['3A1', '3E3', '3F2', '3I3', '3K2'],
       4: ['4C1', '4D2', '4E1', '4H4', '4J3'], 5: ['5D1', '5E1', '5H1', '5J2', '5L2'], 6: ['6A2', '6C1', '6D2', '6G2', '6I2'],
+      7: ['7A3', '7B1', '7D2', '7F1', '7I1'], 8: ['8A1', '8C1', '8E2', '8F1', '8H1'], 9: ['A1A1', 'A1E2', 'A1F1', 'A1H2', 'A1I1'],
+      10: ['GB1', 'GD1', 'GE2', 'GG2', 'GI1'], 11: ['A2B1', 'A2C1', 'A2D1', 'A2E2', 'A2H3'], 12: ['PKA2', 'PKC1', 'PKD1', 'PKE3', 'PKH2'],
+      13: ['KA2', 'KD1', 'KD4', 'KF2', 'KI1'],
     },
+    diagCode(level) { return level === -2 ? 2 : level === -1 ? 5 : level >= 7 ? Math.min(67, 54 + level) : Math.min(60, level * 10); },
+    diagLevel(score) { return score >= 61 && score <= 67 ? score - 54 : score < 10 ? (score <= 3 ? -2 : -1) : Math.round(score / 10); },
     diagVersion(sid, pf = 'a') { const d = (db.progress[sid] || {})[pf + ':diag']; return d ? d.att : 0; },
     recordDiag(sid, r, pf = 'a') {
       const p = db.progress[sid] = db.progress[sid] || {}, now = r.at || Date.now(), out = {}, v = Store.diagVersion(sid, pf) + 1;
-      p[pf + ':diag'] = out[pf + ':diag'] = { score: Math.min(100, r.level * 10), att: v, ok: r.age, ms: Math.min(r.ms, 3600000), last: now };
+      p[pf + ':diag'] = out[pf + ':diag'] = { score: Store.diagCode(r.level), att: v, ok: r.cls ? r.cls * 100 + r.age : r.age, ms: Math.min(r.ms, 3600000), last: now };
       r.answers.forEach(([id, ok, fast, guess]) => { const k = pf + ':' + id; p[k] = out[k] = { score: ok ? (fast === 0 ? 80 : 100) : guess ? 1 : 0, att: Math.max(v, ((p[k] || {}).att || 0) + 1), ok: ok ? 1 : 0, ms: v, last: now }; });
       save();
       return out;
@@ -114,7 +124,8 @@
       if (!d || !d.score) return null;
       // hanya jawaban dari percobaan terakhir (ms menyimpan nomor percobaannya)
       const items = Object.entries(p).filter(([k, v]) => k.startsWith(pf + ':') && k !== pf + ':diag' && k !== pf + ':open' && v.ms === d.att).map(([k, v]) => ({ id: k.slice(2), ok: v.score >= 80, fast: v.score >= 100, guess: v.score === 1 }));
-      return { level: Math.round(d.score / 10), age: d.ok, at: d.last, ms: d.ms, items, version: d.att };
+      // cls = jenjang yang dipilih siswa SMP/SMA (null untuk data lama, TK, dan SD: kelas sesuai usia dihitung dari usia)
+      return { level: Store.diagLevel(d.score), age: d.ok % 100, cls: d.ok >= 100 ? Math.floor(d.ok / 100) : null, at: d.last, ms: d.ms, items, version: d.att };
     },
     /* Tanda "sudah pernah melewati asesmen awal". Anak yang menekan "Lewati dulu" juga diingat,
      * supaya pertanyaan usia dan target harian tidak muncul lagi setiap membuka aplikasi.
