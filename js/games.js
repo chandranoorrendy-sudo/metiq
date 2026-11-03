@@ -262,10 +262,39 @@
       rule() { const t = R(5, 15), big = Math.random() < 0.5; return { label: `Pecahkan bilangan yang lebih <b>${big ? 'BESAR' : 'KECIL'}</b> dari <b>${t}</b>`, make(ok) { let v; do v = R(0, 20); while (v === t || ((v > t) === big) !== ok); return String(v); } }; } },
   );
   GAMES.forEach((g) => { if (g.type === 'pasangan') g.stars = [10, 14, 17]; });
-  const TYPES = { kilat: 'Cepat tepat · 60 detik', balon: 'Pecahkan balon · 60 detik', pasangan: 'Kartu memori', susun: 'Balok jatuh · jumlah sasaran', kembar: 'Balok jatuh · gabung kembar', garis: 'Geser di garis · 10 soal', juring: 'Ketuk bagian · 10 soal', jam: 'Putar jarum · 10 soal', uang: 'Bayar pas · 10 soal' };
+
+  /* ---------- Tarik Tambang: dua tim di satu layar (cocok untuk IFP di kelas), soal dari Kilat kelas itu ---------- */
+  const dots = (n) => `<span class="gdots">${'●'.repeat(Math.min(n, 5))}${n > 5 ? '<br>' + '●'.repeat(n - 5) : ''}</span>`;
+  const TT_TK = () => { const n = R(1, 5), set = new Set([n]); while (set.size < 3) set.add(R(1, 5)); return { text: dots(n), answer: String(n), options: shuffle([...set]).map(String), ask: 'Ada berapa?' }; };
+  [-2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13].forEach((gr) => {
+    const k = GAMES.find((x) => x.grade === gr && x.type === 'kilat');
+    GAMES.push({ id: gr + 'tt', grade: gr, type: 'tambang', icon: '🪢', name: 'Tarik Tambang', isNew: true, stars: [3, 5, 7], next: k ? () => k.next() : TT_TK,
+      desc: 'Permainan kelas untuk dua tim di satu layar (cocok untuk layar sentuh besar di kelas). Tim Merah di kiri, Tim Biru di kanan. Setiap jawaban benar menarik tali ke arah tim itu. Jawaban salah membuat tombol tim itu terkunci sebentar. Tim yang menarik bendera sampai garisnya menang, atau tim yang unggul saat waktu 90 detik habis.' });
+  });
+
+  /* ---------- Sudoku: 4 × 4 bergambar untuk TK, 4 × 4 angka, 6 × 6, lalu 9 × 9 untuk SMP–SMA ---------- */
+  const SDK = { '-2': [4, 10, 1], '-1': [4, 8, 1], 1: [4, 8], 2: [4, 6], 3: [6, 20], 4: [6, 16], 5: [6, 14], 6: [6, 12], 7: [9, 40], 8: [9, 36], 9: [9, 34], 10: [9, 32], 11: [9, 30], 12: [9, 28], 13: [9, 26] };
+  Object.entries(SDK).forEach(([gr, [n, clues, pic]]) => {
+    GAMES.push({ id: gr + 'sd', grade: +gr, type: 'sudoku', icon: '🧩', name: `Sudoku ${n} × ${n}`, isNew: true, n, clues, pic: !!pic, stars: [8, 14, 17],
+      desc: `Isi setiap kotak kosong supaya setiap baris, setiap kolom, dan setiap kotak tebal berisi ${pic ? 'semua buah' : `angka 1 sampai ${n}`} tepat satu kali. Ketuk kotak, lalu ketuk ${pic ? 'buah' : 'angka'}nya. Jawaban yang tidak cocok berwarna merah. Poin awal 20, berkurang 3 untuk setiap kesalahan.` });
+  });
+  // Sudoku acak: isi penuh dengan runut-balik, lalu kosongkan kotak selama jawabannya tetap tunggal
+  function sudoku(n, clues) {
+    const [br, bc] = n === 4 ? [2, 2] : n === 6 ? [2, 3] : [3, 3], N = n * n;
+    const peers = [...Array(N)].map((_, i) => { const r = Math.floor(i / n), c = i % n, set = new Set(); for (let k = 0; k < n; k++) { set.add(r * n + k); set.add(k * n + c); } const r0 = r - (r % br), c0 = c - (c % bc); for (let a = 0; a < br; a++) for (let b = 0; b < bc; b++) set.add((r0 + a) * n + c0 + b); set.delete(i); return [...set]; });
+    const fill = (g) => { const i = g.indexOf(0); if (i < 0) return true; for (const v of shuffle([...Array(n)].map((_, k) => k + 1))) { if (peers[i].every((j) => g[j] !== v)) { g[i] = v; if (fill(g)) return true; g[i] = 0; } } return false; };
+    const count = (g, lim) => { let best = -1, opts = null; for (let i = 0; i < N; i++) if (!g[i]) { const o = []; for (let v = 1; v <= n; v++) if (peers[i].every((j) => g[j] !== v)) o.push(v); if (!o.length) return 0; if (best < 0 || o.length < opts.length) { best = i; opts = o; } } if (best < 0) return 1; let t = 0; for (const v of opts) { g[best] = v; t += count(g, lim - t); if (t >= lim) break; } g[best] = 0; return t; };
+    const sol = Array(N).fill(0); fill(sol);
+    const puz = sol.slice(); let left = N;
+    for (const i of shuffle([...Array(N)].map((_, k) => k))) { if (left <= clues) break; const v = puz[i]; puz[i] = 0; if (count(puz.slice(), 2) === 1) left--; else puz[i] = v; }
+    return { sol, puz, br, bc };
+  }
+  const TYPES = { tambang: 'Dua tim · 90 detik', sudoku: 'Teka-teki logika', kilat: 'Cepat tepat · 60 detik', balon: 'Pecahkan balon · 60 detik', pasangan: 'Kartu memori', susun: 'Balok jatuh · jumlah sasaran', kembar: 'Balok jatuh · gabung kembar', garis: 'Geser di garis · 10 soal', juring: 'Ketuk bagian · 10 soal', jam: 'Putar jarum · 10 soal', uang: 'Bayar pas · 10 soal' };
   // Cara main dalam gambar: ikon + dua-tiga kata
   const HOW = {
     kilat: () => [['👀', 'Lihat soal'], ['👆', 'Ketuk jawaban'], ['⏱️', '60 detik']],
+    tambang: () => [['🟥🟦', 'Dua tim'], ['✅', 'Benar: tali tertarik'], ['🏁', 'Bendera sampai garis: menang']],
+    sudoku: (g) => [['👆', 'Ketuk kotak kosong'], [g.pic ? '🍎' : '🔢', g.pic ? 'Pilih buahnya' : 'Pilih angkanya'], ['↔️↕️', 'Tidak boleh kembar']],
     balon: () => [['📢', 'Baca perintah'], ['🎈', 'Pecahkan yang cocok'], ['💥', 'Salah: −1']],
     pasangan: () => [['🃏', 'Buka 2 kartu'], ['🔗', 'Cari pasangannya'], ['🧠', 'Ingat letaknya']],
     susun: (g) => [['👆', 'Ketuk kolom untuk menjatuhkan'], ['✨', `Jumlah ${g.show(g.target)}: hilang`], ['🧱', 'Jangan sampai penuh']],
@@ -285,9 +314,11 @@
     kembar: () => `<div class="row">${exBlk('4', '#a8f0de')}${exBlk('4', '#a8f0de')}<span class="op">→</span>${exBlk('8', '#7be3c6')}</div><p>Balok yang sama dan bersentuhan menyatu menjadi dua kali lipat.</p>`,
   };
   // Warna dan ilustrasi tiap jenis permainan (SVG, 120 × 90)
-  const LOOK = { kilat: ['#ffb020', '#fff4d6'], balon: ['#ff6b81', '#ffe8ec'], pasangan: ['#8e7cc3', '#efeaff'], susun: ['#1c9be8', '#e3f3ff'], kembar: ['#19b796', '#e6fffa'], garis: ['#58cc02', '#eaffd6'], juring: ['#ff8a00', '#fff0e0'], jam: ['#0ea5e9', '#e0f6ff'], uang: ['#16a34a', '#e7f8ec'] };
+  const LOOK = { tambang: ['#e0464b', '#ffeeee'], sudoku: ['#7c5cd6', '#f1ecff'], kilat: ['#ffb020', '#fff4d6'], balon: ['#ff6b81', '#ffe8ec'], pasangan: ['#8e7cc3', '#efeaff'], susun: ['#1c9be8', '#e3f3ff'], kembar: ['#19b796', '#e6fffa'], garis: ['#58cc02', '#eaffd6'], juring: ['#ff8a00', '#fff0e0'], jam: ['#0ea5e9', '#e0f6ff'], uang: ['#16a34a', '#e7f8ec'] };
   const blk = (x, y, c, t) => `<rect x="${x}" y="${y}" width="26" height="22" rx="6" fill="${c}" stroke="#fff" stroke-width="2"/><text x="${x + 13}" y="${y + 16}" text-anchor="middle" font-size="13" font-weight="900" fill="#04382e">${t}</text>`;
   const ART = {
+    tambang: '<path d="M8 52h104" stroke="#c99a5b" stroke-width="5" stroke-linecap="round"/><path d="M8 52h104" stroke="#e8c08a" stroke-width="2" stroke-dasharray="6 5"/><path d="M60 30v44" stroke="#9aa7a4" stroke-width="2" stroke-dasharray="4 4"/><path d="M60 52v-18l14 6-14 6" fill="#ffc800" stroke="#e0a800" stroke-width="2"/><circle cx="18" cy="40" r="11" fill="#ff5a5f"/><circle cx="102" cy="40" r="11" fill="#1f3c88"/><path d="M12 54l-6 22M24 54l4 22M96 54l-4 22M108 54l6 22" stroke="#5c7570" stroke-width="4" stroke-linecap="round"/>',
+    sudoku: '<rect x="24" y="8" width="72" height="72" rx="8" fill="#fff" stroke="#7c5cd6" stroke-width="4"/><path d="M60 8v72M24 44h72" stroke="#7c5cd6" stroke-width="3"/><path d="M42 8v72M78 8v72M24 26h72M24 62h72" stroke="#c9b8f5" stroke-width="2"/>' + [[33, 22, '1'], [69, 22, '3'], [51, 40, '4'], [87, 58, '2'], [33, 76, '2'], [69, 76, '4']].map(([x, y, t]) => `<text x="${x}" y="${y}" text-anchor="middle" font-size="14" font-weight="900" fill="#4b2fa6">${t}</text>`).join(''),
     kilat: '<circle cx="60" cy="45" r="34" fill="#ffe08a"/><path d="M68 10 40 50h17l-7 30 32-42H64z" fill="#ffc800" stroke="#e08a00" stroke-width="3" stroke-linejoin="round"/><circle cx="22" cy="20" r="4" fill="#ffb020"/><circle cx="100" cy="70" r="5" fill="#ffb020"/><circle cx="98" cy="18" r="3" fill="#ffb020"/>',
     balon: '<path d="M38 52q-2 14 6 30M62 46q2 16-2 36M86 54q-4 12 0 28" stroke="#9aa7a4" stroke-width="2" fill="none"/><ellipse cx="38" cy="36" rx="16" ry="19" fill="#ff6b81"/><ellipse cx="62" cy="28" rx="16" ry="19" fill="#4d96ff"/><ellipse cx="86" cy="38" rx="16" ry="19" fill="#ffc800"/><ellipse cx="33" cy="29" rx="4" ry="6" fill="#fff" opacity=".5"/><ellipse cx="57" cy="21" rx="4" ry="6" fill="#fff" opacity=".5"/><ellipse cx="81" cy="31" rx="4" ry="6" fill="#fff" opacity=".5"/>',
     pasangan: '<g transform="rotate(-12 44 46)"><rect x="22" y="16" width="42" height="58" rx="9" fill="#8e7cc3"/><text x="43" y="55" text-anchor="middle" font-size="28" font-weight="900" fill="#fff">?</text></g><g transform="rotate(10 78 46)"><rect x="56" y="16" width="42" height="58" rx="9" fill="#fff" stroke="#8e7cc3" stroke-width="3"/><text x="77" y="54" text-anchor="middle" font-size="22" font-weight="900" fill="#8e7cc3">3+4</text></g>',
@@ -470,7 +501,8 @@
     const sfx = window.SFX || { correct() {}, wrong() {} };
     let pts = 0, combo = 0, alive = true; const t0 = Date.now(); const timers = [];
     const later = (fn, ms) => { const id = setTimeout(() => { if (alive) fn(); }, ms); timers.push(id); return id; };
-    const end = () => { if (!alive) return; alive = false; timers.forEach(clearTimeout); clearInterval(tick); onEnd({ points: pts, ms: Date.now() - t0 }); };
+    let winner = null;
+    const end = () => { if (!alive) return; alive = false; el.classList.remove('tt-wide'); timers.forEach(clearTimeout); clearInterval(tick); onEnd({ points: pts, ms: Date.now() - t0, winner }); };
     const hud = (extra) => `<div class="ghud"><div><small>Poin</small><b id="gpts">0</b></div>${extra}</div>`;
     let tick = null;
     const clock = () => {
@@ -693,6 +725,65 @@
         next = spawn(); render(changed ? -1 : c);
         if (grid.every((col) => col.length >= ROWS)) later(end, 500);
       });
+    } else if (g.type === 'tambang') {
+      // pos: −5 (Tim Merah menang) … 0 … +5 (Tim Biru menang)
+      const GOAL = 5, TT = 90, MQ = window.METIQ_MASCOT;
+      el.classList.add('tt-wide'); // di layar besar kelas (IFP) memakai seluruh lebar layar
+      let pos = 0; const score = { l: 0, r: 0 }, cur = {}, lock = { l: false, r: false };
+      const side = (k) => `<section class="tt-side ${k}"><div class="tt-head"><b>${k === 'l' ? 'Tim Merah' : 'Tim Biru'}</b><span id="tt-s${k}">0</span></div><div class="tt-q" id="tt-q${k}"></div><div class="tt-opts" id="tt-o${k}"></div></section>`;
+      el.innerHTML = `<div class="gtime"><i></i></div><div class="tt-rope"><div class="tt-line"></div><div class="tt-mid"></div><div class="tt-goal l"></div><div class="tt-goal r"></div>
+          <div class="tt-pull" id="tt-pull"><span class="tt-m l">${MQ ? MQ.svg('cheer', { size: 64, who: 'tito', enter: false }) : '🟥'}</span><span class="tt-cord"></span><span class="tt-flag">🚩</span><span class="tt-cord"></span><span class="tt-m r">${MQ ? MQ.svg('cheer', { size: 64, who: 'lumo', enter: false }) : '🟦'}</span></div>
+          <small class="tt-sec"><b id="gsec">${TT}</b> detik</small></div><div class="tt-sides">${side('l')}${side('r')}</div>`;
+      const draw = () => { el.querySelector('#tt-pull').style.setProperty('--p', pos / GOAL); };
+      const ask = (k) => {
+        const x = g.next(); cur[k] = x;
+        el.querySelector('#tt-q' + k).innerHTML = (x.ask ? `<small>${x.ask}</small>` : '') + x.text + (x.ask ? '' : ' = ?');
+        const box = el.querySelector('#tt-o' + k);
+        box.innerHTML = x.options.map((o, i) => `<button class="gopt" data-i="${i}">${o}</button>`).join('');
+        box.querySelectorAll('.gopt').forEach((b) => b.addEventListener('click', () => {
+          if (!alive || lock[k]) return;
+          if (cur[k].options[+b.dataset.i] === cur[k].answer) {
+            sfx.correct(); score[k]++; el.querySelector('#tt-s' + k).textContent = score[k];
+            pos += k === 'l' ? -1 : 1; draw(); b.classList.add('right');
+            const s = el.querySelector('.tt-side.' + k); s.classList.remove('pull'); void s.offsetWidth; s.classList.add('pull');
+            if (Math.abs(pos) >= GOAL) { lock.l = lock.r = true; pts = Math.max(score.l, score.r); winner = pos < 0 ? 'Tim Merah' : 'Tim Biru'; return later(end, 700); }
+            later(() => ask(k), 250);
+          } else {
+            sfx.wrong(); b.classList.add('wrong'); lock[k] = true; el.querySelector('.tt-side.' + k).classList.add('lock');
+            later(() => { lock[k] = false; el.querySelector('.tt-side.' + k).classList.remove('lock'); ask(k); }, 1200);
+          }
+        }));
+      };
+      ask('l'); ask('r'); draw();
+      const bar = el.querySelector('.gtime i');
+      tick = setInterval(() => {
+        const left = Math.max(0, TT - (Date.now() - t0) / 1000); bar.style.width = (left / TT) * 100 + '%'; el.querySelector('#gsec').textContent = Math.ceil(left);
+        if (left <= 0) { pts = Math.max(score.l, score.r); winner = pos < 0 ? 'Tim Merah' : pos > 0 ? 'Tim Biru' : 'Seri'; end(); }
+      }, 200);
+    } else if (g.type === 'sudoku') {
+      const { sol, puz, br, bc } = sudoku(g.n, g.clues), n = g.n, PIC = ['🍎', '🍌', '🍇', '🍊'];
+      const sym = (v) => (v ? (g.pic ? PIC[v - 1] : String(v)) : '');
+      const val = puz.slice(), given = puz.map((v) => !!v); let sel = given.indexOf(false), miss = 0;
+      el.innerHTML = `<div class="ghud"><div><small>Kotak kosong</small><b id="sd-left">0</b></div><div><small>Salah</small><b id="gmiss">0</b></div><div><small>Waktu</small><b id="gsec">0</b></div></div>
+        <div class="sd-grid n${n}${g.pic ? ' pic' : ''}" style="--n:${n}">${val.map((v, i) => { const r = Math.floor(i / n), c = i % n; return `<button class="sd-c${given[i] ? ' giv' : ''}${(c + 1) % bc === 0 && c < n - 1 ? ' br' : ''}${(r + 1) % br === 0 && r < n - 1 ? ' bb' : ''}" data-i="${i}" aria-label="Baris ${r + 1} kolom ${c + 1}">${sym(v)}</button>`; }).join('')}</div>
+        <div class="sd-pad n${n}">${[...Array(n)].map((_, k) => `<button class="sd-k" data-v="${k + 1}">${sym(k + 1)}</button>`).join('')}<button class="sd-k del" data-v="0" aria-label="Hapus">⌫</button></div>`;
+      const cells = [...el.querySelectorAll('.sd-c')];
+      const paint = () => {
+        const r0 = Math.floor(sel / n), c0 = sel % n, b0 = Math.floor(r0 / br) * 10 + Math.floor(c0 / bc), sv = val[sel];
+        cells.forEach((b, i) => { const r = Math.floor(i / n), c = i % n; b.classList.toggle('sel', i === sel); b.classList.toggle('near', i !== sel && (r === r0 || c === c0 || Math.floor(r / br) * 10 + Math.floor(c / bc) === b0)); b.classList.toggle('same', !!sv && i !== sel && val[i] === sv); });
+        el.querySelector('#sd-left').textContent = val.filter((v, i) => v !== sol[i]).length;
+      };
+      cells.forEach((b) => b.addEventListener('click', () => { sel = +b.dataset.i; paint(); }));
+      el.querySelectorAll('.sd-k').forEach((k) => k.addEventListener('click', () => {
+        if (!alive || sel < 0 || given[sel]) return;
+        const v = +k.dataset.v, b = cells[sel];
+        val[sel] = v; b.textContent = sym(v); b.classList.remove('bad', 'ok');
+        if (v) { if (v === sol[sel]) { b.classList.add('ok'); sfx.correct(); } else { b.classList.add('bad'); miss++; sfx.wrong(); el.querySelector('#gmiss').textContent = miss; } }
+        paint();
+        if (val.every((x, i) => x === sol[i])) { pts = Math.max(4, 20 - 3 * miss); cells.forEach((c) => c.classList.add('win')); later(end, 900); }
+      }));
+      paint();
+      tick = setInterval(() => { const s = el.querySelector('#gsec'); if (s) s.textContent = Math.floor((Date.now() - t0) / 1000); }, 500);
     } else {
       const pairs = g.pairs(), cards = shuffle(pairs.flatMap(([a, b], i) => [{ i, html: a, k: 'q' }, { i, html: b, k: 'a' }]));
       let open = [], matched = 0, miss = 0;
@@ -714,11 +805,11 @@
         }
       }));
     }
-    return () => { alive = false; timers.forEach(clearTimeout); clearInterval(tick); };
+    return () => { alive = false; el.classList.remove('tt-wide'); timers.forEach(clearTimeout); clearInterval(tick); };
   }
 
   // Teman Meti yang menemani setiap jenis permainan (bisa diganti per permainan dengan properti buddy)
-  const BUDDY = { kilat: 'tito', garis: 'tito', susun: 'tito', kembar: 'tito', uang: 'tito', ukur: 'tito', nilai: 'tito', juring: 'nahla', bangun: 'nahla', pola: 'nahla', pasangan: 'nahla', jam: 'lumo', peta: 'lumo', grafik: 'lumo', balon: 'lumo' };
+  const BUDDY = { sudoku: 'nahla', kilat: 'tito', garis: 'tito', susun: 'tito', kembar: 'tito', uang: 'tito', ukur: 'tito', nilai: 'tito', juring: 'nahla', bangun: 'nahla', pola: 'nahla', pasangan: 'nahla', jam: 'lumo', peta: 'lumo', grafik: 'lumo', balon: 'lumo' };
   const buddy = (x) => (x && (x.buddy || BUDDY[x.type])) || null;
   window.METIQ_GAMES = { GAMES, TYPES, HOW, EX, LOOK, BUDDY, buddy, art, starsFor, start, byId: (id) => GAMES.find((g) => g.id === id) };
 })();

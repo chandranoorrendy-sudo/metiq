@@ -173,6 +173,8 @@
           'Ketuk <b>🎮 Permainan matematika</b> di beranda. Pilih kelasmu, lalu pilih permainan.',
           '<b>⚡ Kilat</b>: jawab sebanyak mungkin dalam 60 detik. <b>🎈 Balon</b>: ketuk balon yang sesuai perintah. <b>🃏 Pasangan</b>: cocokkan kartu soal dengan jawabannya.',
           '<b>🧱 Menara Pasangan</b>: ketuk kolom untuk menjatuhkan balok; dua balok bersentuhan yang jumlahnya sama dengan sasaran akan hilang. <b>🔢 Menara Kembar</b>: balok 2, 4, 8 … jatuh terus dan makin cepat. Geser ke balok yang sama (ketuk kolom atau ◀ ▶, lalu ▼ untuk menjatuhkan) agar menyatu menjadi dua kali lipat. Jika tumpukan masuk ke baris merah paling atas, permainan selesai!',
+          '<b>🪢 Tarik Tambang</b> (permainan kelas, cocok untuk layar sentuh besar): Tim Merah di kiri dan Tim Biru di kanan menjawab soal bersamaan. Jawaban benar menarik tali ke arah tim itu; jawaban salah mengunci tombol tim itu sebentar. Tim yang menarik bendera sampai garisnya menang, atau yang unggul saat 90 detik habis.',
+          '<b>🧩 Sudoku</b>: isi kotak kosong supaya setiap baris, kolom, dan kotak tebal berisi semua angka tepat satu kali. TK memakai gambar buah (4 × 4), Kelas 1–2 angka 4 × 4, Kelas 3–6 6 × 6, SMP–SMA 9 × 9. Isian yang salah berwarna merah.',
           'Setiap ronde memberi sampai <b>3 bintang ⭐</b>. Bintangmu tersimpan dan terlihat oleh guru dan orang tua.',
         ] },
         { icon: '🎁', t: 'Papan hadiah', steps: [

@@ -2608,7 +2608,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const x = G.byId(location.hash.split('/')[2]), area = document.getElementById('garea'); if (!x || !area) return;
     if (stopGame) stopGame();
     const foot = document.getElementById('gfoot'); if (foot) foot.hidden = true;
-    stopGame = G.start(area, x, ({ points, ms }) => {
+    stopGame = G.start(area, x, ({ points, ms, winner }) => {
       stopGame = null;
       const kid = gameKid(), stars = G.starsFor(x, points);
       const before = kid ? S.progress(kid.id, 'g:' + x.id) : null, prevBest = before && before.att ? before.score : 0;
@@ -2623,7 +2623,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       if (stars >= 3) window.SFX.mastered(); else if (stars) window.SFX.levelUp();
       area.innerHTML = `<div class="mq-gend">${MQ.svg(stars ? 'cheer' : 'think', { size: 150, who: G.buddy(x) || undefined })}
         <div class="mq-gstars">${[0, 1, 2].map((i) => gStar(i < stars)).join('')}</div>
-        <h2>${stars >= 3 ? 'Luar biasa!' : stars === 2 ? 'Hebat!' : stars ? 'Bagus!' : 'Ayo coba lagi!'}</h2>
+        <h2>${winner ? (winner === 'Seri' ? '🤝 Seri!' : `🏆 ${winner} menang!`) : stars >= 3 ? 'Luar biasa!' : stars === 2 ? 'Hebat!' : stars ? 'Bagus!' : 'Ayo coba lagi!'}</h2>
         <div class="mq-gpts"><b>${points}</b><small>poin</small>${kid && points > prevBest && before && before.att ? '<span class="rec">🎉 Rekor baru!</span>' : ''}</div>
         ${stars < 3 ? `<p class="mq-note">Butuh ${x.stars[stars]} poin untuk ${'⭐'.repeat(stars + 1)}</p>` : ''}</div>`;
       if (foot) { foot.hidden = false; foot.innerHTML = '<div class="mq-foot-in"><button class="mq-btn" data-act="gstart">Main lagi</button><a class="mq-btn ghost" href="#/permainan">Permainan lain</a></div>'; }

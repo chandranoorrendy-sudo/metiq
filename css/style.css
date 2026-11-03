@@ -931,3 +931,36 @@ details.faq { border-top: 1px solid var(--line); padding: 10px 0; } details.faq 
 .kpis.ungact .kpi b, .kpis.ungsum .kpi b { font-size: 1.1rem; }
 .tsub.ungf { flex-wrap: wrap; margin-top: 10px; }
 b.big { font-size: 1.3rem; display: block; }
+
+/* Tarik Tambang: dua tim di satu layar */
+.tt-rope { position: relative; height: 104px; margin: 6px 0 10px; border-radius: 18px; background: linear-gradient(90deg, #ffeeee 0 50%, #e9efff 50% 100%); overflow: hidden; }
+.tt-line { position: absolute; left: 0; right: 0; top: 58px; height: 2px; background: #e3e8e7; }
+.tt-mid { position: absolute; left: 50%; top: 8px; bottom: 8px; border-left: 3px dashed #9aa7a4; }
+.tt-goal { position: absolute; top: 8px; bottom: 8px; width: 0; border-left: 4px solid; } .tt-goal.l { left: 27%; border-color: #e0464b; } .tt-goal.r { left: 73%; border-color: #1f3c88; }
+.tt-pull { --p: 0; position: absolute; left: 50%; top: 22px; width: 92%; display: flex; align-items: center; transform: translateX(calc(-50% + var(--p) * 25%)); transition: transform .45s cubic-bezier(.3, 1.4, .5, 1); }
+.tt-cord { flex: 1; height: 8px; border-radius: 4px; background: repeating-linear-gradient(90deg, #c99a5b 0 8px, #e8c08a 8px 14px); margin-top: 18px; }
+.tt-flag { font-size: 1.6rem; margin: 0 -4px; transform: translateY(-4px); } .tt-m { flex: none; } .tt-m.l { margin-right: -10px; } .tt-m.r { margin-left: -10px; }
+.tt-sec { position: absolute; right: 10px; bottom: 4px; font-weight: 800; color: var(--muted); } .tt-sec b { color: var(--ink); }
+.tt-sides { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tt-side { border-radius: 18px; padding: 10px; border: 3px solid; transition: opacity .2s; } .tt-side.l { border-color: #ff8a8c; background: #fff6f6; } .tt-side.r { border-color: #8ea6e6; background: #f4f7ff; }
+.tt-side.lock { opacity: .45; } .tt-side.pull { animation: tt-yank .35s ease; }
+@keyframes tt-yank { 40% { transform: scale(1.03); } }
+.tt-head { display: flex; justify-content: space-between; align-items: center; font-weight: 900; margin-bottom: 6px; } .tt-side.l .tt-head { color: #b52a30; } .tt-side.r .tt-head { color: #142a63; }
+.tt-head span { font-size: 1.4rem; }
+.tt-q { background: #fff; border-radius: 14px; padding: 14px 6px; text-align: center; font-size: clamp(1.2rem, 4.6vw, 2.2rem); font-weight: 900; margin-bottom: 8px; min-height: 72px; display: grid; place-items: center; overflow-wrap: anywhere; }
+.tt-q small { display: block; font-size: .9rem; color: var(--muted); }
+.tt-opts { display: grid; gap: 8px; } .tt-opts .gopt { padding: 12px 6px; font-size: clamp(1.1rem, 4.2vw, 1.8rem); }
+@media (min-width: 700px) { .tt-opts { grid-template-columns: 1fr 1fr; } .tt-rope { height: 120px; } .mq-screen.tt-wide { max-width: 1280px; } .tt-wide .tt-sides { gap: 24px; } .tt-wide .tt-q { min-height: 120px; font-size: clamp(2rem, 4vw, 3.4rem); } .tt-wide .tt-opts .gopt { padding: 22px 8px; font-size: clamp(1.6rem, 3vw, 2.6rem); } }
+
+/* Sudoku */
+.sd-grid { --n: 4; display: grid; grid-template-columns: repeat(var(--n), 1fr); width: min(100%, 420px); margin: 4px auto 12px; border: 3px solid #4b2fa6; border-radius: 12px; overflow: hidden; background: #fff; }
+.sd-c { aspect-ratio: 1; border: 0; border-right: 1px solid #ddd3f7; border-bottom: 1px solid #ddd3f7; background: #fff; font: inherit; font-weight: 900; color: #7c5cd6; font-size: clamp(1rem, 6vw, 1.9rem); padding: 0; cursor: pointer; }
+.sd-grid.n9 .sd-c { font-size: clamp(.95rem, 4.6vw, 1.5rem); } .sd-grid.pic .sd-c { font-size: clamp(1.6rem, 10vw, 2.6rem); }
+.sd-c.br { border-right: 3px solid #4b2fa6; } .sd-c.bb { border-bottom: 3px solid #4b2fa6; }
+.sd-c.giv { color: #16302b; background: #f6f3ff; cursor: default; }
+.sd-c.near { background: #f1ecff; } .sd-c.same { background: #e3d9ff; } .sd-c.sel { background: #ffe9a8; box-shadow: inset 0 0 0 3px #f5a524; }
+.sd-c.bad { color: #e0464b; background: #ffe3e3; } .sd-c.win { animation: sd-win .6s ease; background: #e5f8ef; }
+@keyframes sd-win { 50% { transform: scale(1.12); } }
+.sd-pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: min(100%, 420px); margin: 0 auto; } .sd-pad.n4 { grid-template-columns: repeat(5, 1fr); } .sd-pad.n6 { grid-template-columns: repeat(7, 1fr); }
+.sd-k { min-height: 50px; border: 0; border-radius: 14px; background: #f1ecff; box-shadow: 0 4px 0 #d8ccfa; font: inherit; font-size: 1.4rem; font-weight: 900; color: #4b2fa6; cursor: pointer; touch-action: manipulation; }
+.sd-k.del { background: #ffeeea; box-shadow: 0 4px 0 #f6d2c8; color: #b52a30; } .sd-k:active { transform: translateY(3px); box-shadow: 0 1px 0 #d8ccfa; }
