@@ -294,6 +294,27 @@ details.mq-ud[open] > summary .chev { transform: rotate(180deg); } .mq-unit .che
 .mq-feat .em { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 20px; font-size: 2rem; background: var(--bg, #e6fffa); }
 .mq-gb { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 6px 0 20px; } .mq-gb span { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 50%; font-weight: 900; font-size: 1.3rem; background: var(--mq-bg); color: var(--mq-dd); box-shadow: 0 4px 0 #bfeee2; }
 .mq-gb-t { text-align: center; font-weight: 900; color: #6a7f7a; margin: 0 0 10px; }
+/* Panduan pasang di layar utama HP */
+.mq-install { margin: 0 0 20px; border: 2px solid var(--mq-line); border-bottom-width: 5px; border-radius: 22px; background: #fff; }
+.mq-install summary { display: flex; align-items: center; gap: 12px; padding: 14px 16px; cursor: pointer; list-style: none; } .mq-install summary::-webkit-details-marker { display: none; }
+.mq-install summary .em { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 16px; font-size: 1.6rem; background: var(--mq-bg); flex: none; }
+.mq-install summary .grow { flex: 1; } .mq-install summary small { display: block; color: #6a7f7a; font-weight: 700; }
+.mq-install summary .chev { font-size: 1.6rem; font-weight: 900; color: var(--mq-dd); transition: transform .2s; } .mq-install[open] summary .chev { transform: rotate(90deg); }
+.ig-note { margin: 0 16px 10px; color: #4d625d; font-weight: 700; font-size: .92rem; line-height: 1.5; }
+.ig-steps { list-style: none; margin: 0 0 12px; padding: 0 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.ig-steps li { position: relative; display: grid; gap: 8px; align-content: start; padding: 12px; border-radius: 18px; background: #f4fffc; border: 2px solid #d9f5ed; }
+.ig-steps p { margin: 0; font-weight: 700; font-size: .92rem; line-height: 1.4; color: var(--mq-ink); }
+.ig-n { position: absolute; top: -10px; left: -6px; display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: var(--mq-dd); color: #fff; font-weight: 900; }
+.ig-pic { display: grid; place-items: center; min-height: 118px; padding: 8px; border-radius: 14px; background: #e9eceb; }
+.ig-pic .on { background: var(--mq-l) !important; color: var(--mq-ink) !important; box-shadow: 0 0 0 3px var(--mq-dd); font-weight: 900; }
+.ig-bar { display: flex; gap: 6px; width: 100%; padding: 10px 8px; border-radius: 12px; background: #fff; justify-content: space-between; font-size: 1.1rem; color: #6a7f7a; }
+.ig-bar span { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 8px; }
+.ig-menu { display: grid; gap: 2px; width: 100%; padding: 6px; border-radius: 12px; background: #fff; font-size: .8rem; color: #4d625d; }
+.ig-menu span { padding: 4px 8px; border-radius: 8px; }
+.ig-add { display: grid; justify-items: center; gap: 2px; width: 100%; padding: 8px; border-radius: 12px; background: #fff; }
+.ig-add img { width: 40px; height: 40px; border-radius: 10px; } .ig-add small { font-weight: 700; color: #4d625d; }
+.ig-add div { display: flex; justify-content: space-around; width: 100%; margin-top: 4px; font-size: .85rem; font-weight: 800; } .ig-add div span { padding: 3px 12px; border-radius: 8px; }
+@media (display-mode: standalone) { .mq-install { display: none; } }
 .mq-lfoot { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 18px; padding: 14px 0 0; border-top: 2px solid #eef3f2; font-weight: 800; font-size: .85rem; } .mq-lfoot a { color: #6a7f7a; text-decoration: none; padding: 6px 0; }
 @media (min-width: 860px) {
   .mq-hero { grid-template-columns: 1fr 1fr; text-align: left; justify-items: start; align-items: center; gap: 4px 40px; padding: 30px 0 44px; }

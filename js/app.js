@@ -209,8 +209,24 @@
       </section>
       <p class="mq-gb-t">Untuk TK, SD, SMP, dan SMA: TK A sampai Kalkulus</p>
       <div class="mq-gb">${GRADES.map((g) => `<span title="${g.name}">${g.short || g.id}</span>`).join('')}</div>
+      ${installGuideHTML()}
       <footer class="mq-lfoot"><a href="#/permainan">Permainan</a><a href="#/profesi">Profesi</a><a href="#/harga">Harga</a><a href="#/panduan/siswa">Bantuan</a><a href="#/ajukan">Ajukan akun</a><a href="#/ajukan/status">Cek status</a></footer>
     </div>`;
+  }
+
+  // Panduan memasang Metiq di layar utama HP (disembunyikan bila Metiq sudah dibuka sebagai aplikasi)
+  function installGuideHTML() {
+    const menu = (items, on) => `<div class="ig-menu">${items.map((x) => `<span class="${x === on ? 'on' : ''}">${x}</span>`).join('')}</div>`;
+    const steps = [
+      ['Ketuk ikon menu <b>☰</b> (tiga garis/titik) di <b>pojok kanan bawah</b> browser.', '<div class="ig-bar"><span>‹</span><span>›</span><span>⌂</span><span>▢</span><span class="on">☰</span></div>'],
+      ['Pilih <b>Add page to</b> (Tambahkan halaman ke).', menu(['History', 'Downloads', 'Saved pages', '⊕ Add page to', 'Settings'], '⊕ Add page to')],
+      ['Pilih <b>Home screen</b> (Layar utama).', menu(['Bookmarks', 'Quick access', 'Home screen', 'Install as web app'], 'Home screen')],
+      ['Ketuk <b>Add</b> (Tambahkan). Ikon Metiq muncul di layar HP. Ketuk ikon itu untuk membuka Metiq kapan saja.', '<div class="ig-add"><img src="icons/icon.svg?v=69" alt=""><small>Metiq</small><div><span>Cancel</span><span class="on">Add</span></div></div>'],
+    ];
+    return `<details class="mq-install"><summary><span class="em">📲</span><span class="grow"><b>Pasang Metiq di layar HP</b><small>Buka Metiq dengan satu ketukan, seperti aplikasi</small></span><span class="chev">›</span></summary>
+      <p class="ig-note">Langkah untuk <b>Samsung Internet</b>:</p>
+      <ol class="ig-steps">${steps.map(([t, pic], i) => `<li><span class="ig-n">${i + 1}</span><div class="ig-pic">${pic}</div><p>${t}</p></li>`).join('')}</ol>
+      <p class="ig-note"><b>Chrome:</b> ketuk <b>⋮</b> di pojok kanan atas → <b>Tambahkan ke layar utama</b> → <b>Tambahkan</b>.<br><b>iPhone (Safari):</b> ketuk tombol Bagikan <b>⬆</b> → <b>Tambahkan ke Layar Utama</b> → <b>Tambah</b>.</p></details>`;
   }
 
   function viewCurriculum() {

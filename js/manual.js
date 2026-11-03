@@ -217,7 +217,7 @@
       ['Apakah data hilang jika HP diganti?', 'Tidak. Data tersimpan di server. Cukup masuk lagi di HP lain.'],
       ['Bagaimana jika internet putus saat latihan?', 'Jawaban tetap tersimpan di HP dan akan terkirim otomatis saat internet tersambung lagi.'],
       ['Tampilan masih versi lama?', 'Tarik layar ke bawah untuk memuat ulang halaman.'],
-      ['Bagaimana memasang Metiq seperti aplikasi?', 'Buka menu browser (⋮), lalu pilih "Tambahkan ke layar utama". Ikon Metiq akan muncul di layar HP.'],
+      ['Bagaimana memasang Metiq seperti aplikasi?', 'Samsung Internet: ketuk ikon menu ☰ di pojok kanan bawah → Add page to (Tambahkan halaman ke) → Home screen (Layar utama) → Add. Chrome: ketuk ⋮ di pojok kanan atas → Tambahkan ke layar utama. iPhone: ketuk Bagikan ⬆ → Tambahkan ke Layar Utama. Ikon Metiq akan muncul di layar HP. Panduan bergambar ada di beranda Metiq (📲 Pasang Metiq di layar HP).'],
     ],
   };
 })();
