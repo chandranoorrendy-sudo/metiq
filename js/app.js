@@ -41,15 +41,17 @@
   // Pengaturan kelas (lapisan iman opsional). Kosong = perilaku standar.
   const IMAN = window.METIQ_IMAN || {};
   const MQ = window.METIQ_MASCOT;
-  // Teman Meti untuk bab sesuai topiknya: Lumo (waktu, koordinat, data), Nahla (geometri, pola, pecahan), Tito (berhitung, ukur, uang)
+  // Teman Meti untuk bab sesuai topiknya: Lumo (waktu, koordinat, data), Nahla (geometri, pola, pecahan), Tito (ukur, uang); bab lain bergiliran
   function unitBuddy(u) {
     if (!u) return null;
     if (u.buddy !== undefined) return u.buddy;
     const t = `${u.name} ${u.km || ''}`;
     if (/waktu|jam|kalender|koordinat|data|diagram|grafik|statistik|peluang/i.test(t)) return 'lumo';
     if (/geometri|bangun|bentuk|pola|pecahan|sudut|simetri/i.test(t)) return 'nahla';
-    if (/uang|ukur|panjang|berat|volume|luas|keliling|bilangan|hitung|bilang/i.test(t)) return 'tito';
-    return null;
+    if (/uang|ukur|panjang|berat|volume|luas|keliling/i.test(t)) return 'tito';
+    // bab lain bergiliran Meti, Tito, Nahla, Lumo supaya jalur belajar tidak selalu sama
+    const i = UNITS.filter((x) => x.grade === u.grade).indexOf(u);
+    return i < 0 ? null : [null, 'tito', 'nahla', 'lumo'][i % 4];
   }
   const buddyName = (who) => (MQ.who(who) || MQ.who()).name;
   function curClass() {
@@ -187,7 +189,11 @@
     app.innerHTML = `<div class="mq-land">
       <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=69" alt="">Metiq<span class="alpha">Beta</span></a><a class="mq-tlink" href="#/guru">Saya guru</a></header>
       <section class="mq-hero">
-        <div class="mq-hero-art"><span class="mq-sym a">+</span><span class="mq-sym b">×</span><span class="mq-sym c">=</span><span class="mq-sym d">7</span>${MQ.svg('hello', { size: 230 })}</div>
+        <div class="mq-stage" aria-label="Meti dan teman-temannya"><span class="mq-sym a">+</span><span class="mq-sym b">×</span><span class="mq-sym c">=</span><span class="mq-sym d">7</span>
+          <div class="st st-meti">${MQ.svg('hello', { size: 190 })}</div>
+          <div class="st st-tito"><div class="hop">${MQ.svg('happy', { size: 96, who: 'tito', enter: false })}</div></div>
+          <div class="st st-nahla"><div class="fly">${MQ.svg('cheer', { size: 86, who: 'nahla', enter: false })}</div></div>
+          <div class="st st-lumo"><div class="jump">${MQ.svg('happy', { size: 92, who: 'lumo', enter: false })}</div><svg class="wave" viewBox="0 0 240 30" preserveAspectRatio="none" aria-hidden="true"><path d="M0 15 Q15 3 30 15 T60 15 T90 15 T120 15 T150 15 T180 15 T210 15 T240 15 V30 H0Z"/></svg></div></div>
         <h1>Belajar matematika jadi <span>seru!</span></h1>
         <p>Latihan singkat, naik level, dan kumpulkan hadiah bersama Meti.</p>
         ${kid ? `<a class="mq-resume" href="#/belajar"><span class="av">${avHTML(kid.avatar)}</span><span class="grow">${esc(kid.name)}<small style="display:block;font-weight:700;color:#6a7f7a">Lanjutkan belajarmu</small></span>›</a>` : ''}
@@ -363,7 +369,7 @@
       return `<div class="mq-row"><div class="mq-n ${s.state} ${s.state === 'cur' ? 'cur' : ''}" style="--x:${x}px">
         ${s.state === 'cur' ? `<a class="mq-label" href="#/latihan/${s.id}">Mulai</a>` : ''}
         <button class="mq-bub-node" style="--p:${s.state === 'locked' ? 0 : Math.min(100, s.sc)}" data-act="node" data-id="${s.id}" data-x="${x}" aria-label="${esc(sk.name)}"><i><span>${chLogo(u)}</span></i></button>${badge}${TASKS_ON && s.task ? '<span class="mq-badge task" title="Tugas dari guru">📌</span>' : ''}
-        ${withBuddy ? `<div class="mq-buddy ${x > 0 ? 'l' : 'r'}">${MQ.svg('hello', { size: 104 })}</div>` : ''}</div></div><div class="mq-pop-slot" id="pop-${s.id}"></div>`;
+        ${withBuddy ? `<div class="mq-buddy ${x > 0 ? 'l' : 'r'}">${MQ.svg('hello', { size: 104, who: unitBuddy(u) })}</div>` : ''}</div></div><div class="mq-pop-slot" id="pop-${s.id}"></div>`;
     };
     const banner = (u, cls, extra) => `<div class="mq-unit ${cls}"><span class="em">${chLogo(u)}</span><span class="grow"><small>Bab ${u.id}</small><b>${u.name}</b></span>${extra || `<a class="les" href="#/pelajaran/${u.id}"><span class="em2">📖</span>Belajar</a>`}</div>`;
     const chestRow = (u) => {
@@ -382,9 +388,10 @@
       }
       const all = ss.every((s) => s.state === 'done' || s.state === 'gold'), hasCur = ss.some((s) => s.state === 'cur'), hasOpen = ss.some((s) => s.state === 'open');
       const reward = chestRow(u);
-      if (all) return `<details class="mq-ud"><summary>${banner(u, 'done', '<span class="chev">⌄</span>')}</summary><div class="mq-path">${ss.map((s) => node(s, u, false)).join('')}${reward}</div></details>`;
-      if (hasCur) return `<section class="mq-sec">${banner(u, '')}<div class="mq-path">${ss.map((s) => node(s, u, s.state === 'cur')).join('')}${reward}</div></section>`;
-      if (hasOpen) return `<details class="mq-ud"><summary>${banner(u, 'lock', '<span class="chev">⌄</span>')}</summary><div class="mq-path">${ss.map((s) => node(s, u, false)).join('')}</div></details>`;
+      const th = unitBuddy(u) ? ' th-' + unitBuddy(u) : '';
+      if (all) return `<details class="mq-ud${th}"><summary>${banner(u, 'done', '<span class="chev">⌄</span>')}</summary><div class="mq-path">${ss.map((s) => node(s, u, false)).join('')}${reward}</div></details>`;
+      if (hasCur) return `<section class="mq-sec${th}">${banner(u, '')}<div class="mq-path">${ss.map((s) => node(s, u, s.state === 'cur')).join('')}${reward}</div></section>`;
+      if (hasOpen) return `<details class="mq-ud${th}"><summary>${banner(u, 'lock', '<span class="chev">⌄</span>')}</summary><div class="mq-path">${ss.map((s) => node(s, u, false)).join('')}</div></details>`;
       return `<button class="mq-unit lock" data-act="tip" data-t="🔒 Selesaikan bab sebelumnya dulu ya"><span class="em">${chLogo(u)}</span><span class="grow"><small>Bab ${u.id}</small><b>${u.name}</b></span><span>${IC.lock.replace('<svg', '<svg width="24" height="24"')}</span></button>`;
     }).join('');
     const allDone = m.cur >= m.flat.length;

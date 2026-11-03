@@ -761,3 +761,32 @@ html .mq-bubble .mq-spk.aud { display: inline-flex !important; background: #ff9f
 .jtopics { display: flex; flex-wrap: wrap; gap: 6px; }
 .jtopic { padding: 6px 12px; border-radius: 999px; background: #e6fffa; color: #00806b; font-weight: 900; font-size: .88rem; text-decoration: none; }
 .jfoot { display: grid; gap: 8px; } .jfoot .mq-btn { text-align: center; text-decoration: none; }
+
+/* Jalur belajar: warna bab mengikuti teman Meti yang menemani (Tito merah, Nahla kuning, Lumo biru tua) */
+.th-tito { --mq: #ff8a8c; --mq-l: #ffc2c3; --mq-d: #e0464b; --mq-dd: #b52a30; --mq-bg: #ffeeee; --mq-ink: #4a0d10; }
+.th-nahla { --mq: #ffc93d; --mq-l: #ffe48f; --mq-d: #e09b12; --mq-dd: #8a5a00; --mq-bg: #fff6dc; --mq-ink: #3d2a00; }
+.th-lumo { --mq: #4a6fc7; --mq-l: #b4c8f7; --mq-d: #1f3c88; --mq-dd: #142a63; --mq-bg: #e9efff; --mq-ink: #fff; }
+.th-lumo .mq-unit .les, .th-lumo .mq-label { color: #142a63; }
+.th-lumo .mq-unit.done, .th-lumo .mq-unit.lock { color: #142a63; }
+
+/* Beranda: Meti dan teman-temannya bergerak */
+.mq-stage { position: relative; width: min(340px, 94vw); height: 270px; }
+.mq-stage::before { content: ''; position: absolute; left: 50%; top: 8px; width: 230px; height: 230px; margin-left: -115px; border-radius: 50%; background: radial-gradient(circle, #d9fff5 0 60%, transparent 71%); }
+.mq-stage .mq-sym { z-index: 2; width: 38px; height: 38px; font-size: 1.3rem; border-radius: 13px; }
+.mq-stage .mq-sym.a { left: 64px; top: 0; } .mq-stage .mq-sym.b { right: 96px; top: 6px; } .mq-stage .mq-sym.c { left: 6px; top: 80px; bottom: auto; } .mq-stage .mq-sym.d { right: 4px; top: 118px; bottom: auto; }
+.mq-stage .st { position: absolute; z-index: 1; }
+.st-meti { left: 50%; top: 18px; margin-left: -95px; }
+.st-tito { left: 0; bottom: 0; animation: st-in-l .9s cubic-bezier(.3, 1.3, .5, 1) .4s both; }
+.st-tito .hop { animation: st-hop 1.4s ease-in-out 1.3s infinite; transform-origin: 50% 100%; }
+.st-nahla { right: 14px; top: 10px; animation: st-in-r .9s cubic-bezier(.3, 1.3, .5, 1) .7s both; }
+.st-nahla .fly { animation: st-fly 5s ease-in-out 1.6s infinite; }
+.st-lumo { right: 0; bottom: 0; width: 120px; height: 120px; overflow: hidden; border-radius: 0 0 40px 40px; }
+.st-lumo .jump { position: absolute; left: 14px; bottom: 0; animation: st-jump 3.4s ease-in-out 1s infinite both; }
+.st-lumo .wave { position: absolute; left: 0; bottom: 0; width: 240px; height: 26px; fill: #5fa8ff; opacity: .85; animation: st-wave 2.4s linear infinite; }
+@keyframes st-in-l { from { transform: translateX(-120px); opacity: 0; } }
+@keyframes st-in-r { from { transform: translate(120px, -40px); opacity: 0; } }
+@keyframes st-hop { 0%, 100% { transform: translateY(0) scale(1, 1); } 15% { transform: translateY(0) scale(1.08, .92); } 45% { transform: translateY(-22px) scale(.96, 1.04); } 70% { transform: translateY(0) scale(1.06, .94); } }
+@keyframes st-fly { 0%, 100% { transform: translate(0, 0) rotate(0); } 25% { transform: translate(-34px, 20px) rotate(-10deg); } 50% { transform: translate(-12px, 44px) rotate(4deg); } 75% { transform: translate(18px, 18px) rotate(10deg); } }
+@keyframes st-jump { 0%, 12% { transform: translateY(110%) rotate(30deg); } 45% { transform: translateY(-6%) rotate(-12deg); } 60% { transform: translateY(-2%) rotate(-4deg); } 92%, 100% { transform: translateY(110%) rotate(35deg); } }
+@keyframes st-wave { to { transform: translateX(-120px); } }
+@media (prefers-reduced-motion: reduce) { .mq-stage .st, .mq-stage .st > div, .mq-stage .wave { animation: none !important; } .st-lumo .jump { transform: translateY(10%); } }
