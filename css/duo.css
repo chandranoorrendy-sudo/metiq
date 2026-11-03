@@ -726,6 +726,12 @@ html .mq-bubble .mq-spk.aud { display: inline-flex !important; background: #ff9f
 .jscene .mq-say { text-align: left; }
 .jnote { margin: 12px 4px 0; padding: 8px 12px; border-radius: 14px; background: #fff7e0; font-size: .86rem; font-weight: 700; color: #6b5200; text-align: left; }
 .mq-opt.jbig { font-size: 2rem; }
+.jctx { margin: 0 0 12px; padding: 8px 14px; border: 2px solid #f1d98a; border-radius: 16px; background: #fffbea; font-size: .92rem; font-weight: 700; color: #4a3b00; }
+.jctx summary { cursor: pointer; font-weight: 900; color: #8a6a00; } .jctx p { margin: 6px 0 2px; line-height: 1.45; }
+.jfound { list-style: none; margin: 8px 0 2px; padding: 8px 0 0; border-top: 1px dashed #f1d98a; display: grid; gap: 4px; }
+.jfound li { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; } .jfound small { color: #6b5a1e; font-weight: 700; } .jfound b { white-space: nowrap; color: var(--mq-dd, #00806b); }
+.jhintw { display: block; margin: 4px 0 -6px; } .jhintw .mq-link { padding: 4px 0; font-size: .88rem; }
+.jhint { display: block; margin: 8px 0 0; padding: 8px 12px; border-radius: 14px; background: #fff7e0; font-size: .92rem; font-weight: 800; color: #6b5200; } .jhint[hidden], .jhintw[hidden] { display: none; }
 .jhow { margin: 4px 0 8px; text-align: center; color: #5c7570; font-weight: 800; font-size: .88rem; }
 .jslots, .jbins { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
 .jslot { position: relative; display: grid; place-items: center; min-width: 76px; min-height: 76px; border: 2px dashed #b7e6da; border-radius: 16px; background: #f7fffd; }

@@ -3174,8 +3174,11 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const { m } = JM, st = m.steps[JM.i], box = document.getElementById('pq'), fb = document.getElementById('fb');
     JM.tries = 0; JM.input = ''; JM.sel = -1; JM.place = {}; JM.pick = null;
     document.getElementById('sbar').style.width = (JM.i / m.steps.length) * 100 + '%';
-    box.innerHTML = `<h2 class="mq-title">Langkah ${JM.i + 1} dari ${m.steps.length}</h2>
-      <div class="mq-say"><div id="mqm">${MQ.svg('normal', { size: 76, enter: false })}</div><div class="mq-bubble">${m.audio ? '<button class="mq-spk aud" data-act="jsay" aria-label="Dengarkan soal">' + IC.spk + '</button>' : ''}<span>${esc(st.question)}</span></div></div>
+    // Cerita misi (berisi datanya) dan jawaban langkah sebelumnya tetap terlihat di setiap langkah
+    const found = JM.log.map((x, k) => `<li><small>Langkah ${k + 1}: ${esc(x.q)}</small><b>${x.a}</b></li>`).join('');
+    const ctx = `<details class="jctx" ${m.level === 'TK' ? '' : 'open'}><summary>📋 Data misi</summary><p>${esc(m.scenario)}</p>${found ? `<ul class="jfound">${found}</ul>` : ''}</details>`;
+    box.innerHTML = `<h2 class="mq-title">Langkah ${JM.i + 1} dari ${m.steps.length}</h2>${ctx}
+      <div class="mq-say"><div id="mqm">${MQ.svg('normal', { size: 76, enter: false })}</div><div class="mq-bubble">${m.audio ? '<button class="mq-spk aud" data-act="jsay" aria-label="Dengarkan soal">' + IC.spk + '</button>' : ''}<span>${esc(st.question)}</span>${st.hint ? `<span class="jhintw"><button class="mq-link" data-act="jhint">💡 Butuh petunjuk?</button></span><span class="jhint" id="jhint" hidden>💡 ${esc(st.hint)}</span>` : ''}</div></div>
       ${st.vis ? `<div class="mq-vis">${st.vis}</div>` : ''}<div id="jbody"></div>`;
     jBody();
     jPlay('q' + (JM.i + 1), 300);
@@ -3529,7 +3532,8 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       if (el.dataset.k === 'del') P.input = P.input.slice(0, -1); else if (P.input.length < 12) P.input += el.dataset.k;
       document.getElementById('indisp').innerHTML = P.input || '&nbsp;'; refreshCheck();
       if (!document.querySelector('#fb.cor')) document.getElementById('indisp').scrollIntoView({ block: 'nearest' });
-    } else if (act === 'keystog') { const fb = document.getElementById('fb'); if (fb) fb.classList.toggle('kshow'); }
+    } else if (act === 'jhint') { const h = document.getElementById('jhint'); if (h) { h.hidden = false; el.parentElement.hidden = true; } }
+    else if (act === 'keystog') { const fb = document.getElementById('fb'); if (fb) fb.classList.toggle('kshow'); }
     else if (act === 'check') { if (P && !P.locked) submit(P.q.type === 'choice' ? P.q.options[P.sel] : P.input); }
     else if (act === 'choose') { if (!P || P.locked) return; P.sel = +el.dataset.i; if (P.q.optAudio) playClips([P.q.optAudio[P.sel]]); document.querySelectorAll('.mq-opt').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); refreshCheck(); }
     else if (act === 'next') nextQ();
