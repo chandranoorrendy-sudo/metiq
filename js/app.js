@@ -285,8 +285,7 @@
     const m = app.querySelector('main.wrap'); if (m) m.classList.add('mq-has-nav');
     app.insertAdjacentHTML('beforeend', studentNav(active));
   }
-  const demoStrip = () => (session.get().demo ? '<div class="mq-demo"><span>🧪 Mode coba</span><span>'+realBtn()+'<button class="mq-link" style="padding:2px 6px" data-act="logout">Keluar</button></span></div>' : '');
-  const mqPage = (inner, active) => `<div class="mq-page">${demoStrip()}${inner}</div>${studentNav(active)}`;
+  const mqPage = (inner, active) => `<div class="mq-page">${inner}</div>${studentNav(active)}`;
 
   // Layar penuh dengan tombol kembali dan maskot (masuk kelas, pilih nama)
   const mqBack = (href) => `<div class="mq-top"><a class="mq-ico" href="${href}" aria-label="Kembali">${IC.back}</a></div>`;
@@ -368,6 +367,40 @@
     const lvl = s.att ? `${level(s.sc)[0]} · skor ${s.sc}` : 'Belum dicoba';
     return `<div class="mq-pop" style="--ax:${ax}"><b>${esc(sk.name)}</b><small>${lvl}</small><a class="mq-btn" href="#/latihan/${id}">${s.sc >= 80 ? 'Latih lagi' : s.att ? 'Lanjutkan' : 'Mulai'}</a></div>`;
   }
+  /* ---------- Sapaan di peta belajar (seperti sapaan pembuka di Claude) ----------
+   * 30 kalimat untuk tanggal 1–30 dalam sebulan, ditambah sapaan sesuai jam. Larut malam selalu memakai sapaan larut.
+   * Berganti setiap kali anak membuka Metiq (sesi baru), tetapi tetap sama selama satu sesi. {n} = nama depan. */
+  const SAPA_HARI = [
+    'Sudah siap lanjut, {n}?', '{n}, saatnya belajar!', 'Ayo, {n}, lanjutkan!', 'Hari ini mau belajar apa, {n}?', 'Otakmu siap berhitung, {n}?',
+    'Satu langkah lagi, {n}!', '{n}, Meti sudah menunggumu!', 'Yuk kumpulkan bintang, {n}!', 'Pelan-pelan juga hebat, {n}.', 'Siap jadi juara hitung, {n}?',
+    'Halo lagi, {n}!', 'Kita lanjutkan petualangannya, {n}?', '{n}, angka-angka rindu kamu!', 'Coba satu soal dulu, {n}?', 'Hebat, kamu datang lagi, {n}!',
+    'Ayo jaga apimu tetap menyala, {n}!', '{n}, hari ini pasti seru!', 'Salah itu bagian dari belajar, {n}.', 'Mau pecahkan rekormu, {n}?', 'Sedikit demi sedikit, {n}!',
+    '{n}, ayo asah otakmu!', 'Siap menjawab tantangan, {n}?', 'Senang bertemu lagi, {n}!', 'Kamu makin pintar, {n}!', 'Ayo mulai dengan semangat, {n}!',
+    '{n}, satu bab lagi menantimu!', 'Berani coba soal baru, {n}?', 'Waktunya jadi pemikir hebat, {n}!', 'Teruskan langkahmu, {n}!', '{n}, ayo capai target hari ini!',
+  ];
+  const SAPA_JAM = [
+    [4, 11, ['Selamat pagi, {n}!', 'Pagi yang cerah, {n}!', 'Pagi, {n}! Siap belajar?']],
+    [11, 15, ['Selamat siang, {n}!', 'Siang, {n}! Lanjut sebentar?']],
+    [15, 18, ['Selamat sore, {n}!', 'Sore yang seru, {n}!']],
+    [18, 22, ['Selamat malam, {n}!', 'Belajar sebentar sebelum tidur, {n}?']],
+  ];
+  const SAPA_LARUT = ['Belajar malam-malam, {n}?', 'Masih semangat, {n}?', 'Jangan lupa istirahat, {n}.'];
+  function sapaan(name) {
+    const n = esc(String(name || '').trim().split(/\s+/)[0] || 'kamu'), now = new Date(), h = now.getHours(), day = now.getDate();
+    let visit = 0;
+    try {
+      const keep = sessionStorage.getItem('metiq_sapa');
+      if (keep) visit = +keep;
+      else { visit = (+localStorage.getItem('metiq_sapa_n') || 0) + 1; localStorage.setItem('metiq_sapa_n', visit); sessionStorage.setItem('metiq_sapa', visit); }
+    } catch (e) {}
+    let t;
+    if (h >= 22 || h < 4) t = SAPA_LARUT[(day + visit) % SAPA_LARUT.length];
+    else if (visit % 3 === 0) { const j = SAPA_JAM.find(([a, b]) => h >= a && h < b)[2]; t = j[(day + visit) % j.length]; }
+    else t = SAPA_HARI[(day - 1 + visit) % SAPA_HARI.length];
+    return t.replace('{n}', n);
+  }
+  // bintang delapan sinar, seperti delapan lengan Meti
+  const SAPA_IC = '<svg class="mq-hello-ic" viewBox="0 0 40 40" aria-hidden="true">' + [0, 45, 90, 135].map((a) => `<rect x="17.5" y="2" width="5" height="36" rx="2.5" transform="rotate(${a} 20 20)"/>`).join('') + '</svg>';
   function viewStudentHome() {
     const ses = session.get(); const st = S.student(ses.id);
     if (ses.role !== 'siswa' || !st) return go('#/siswa');
@@ -419,12 +452,13 @@
         <button class="mq-chip star" data-act="tip" data-t="⭐ Total bintangmu: dari latihan, ujian bab, dan permainan" aria-label="Bintang"><span class="em">⭐</span>${S.starsOf(st.id)}</button>
         <button class="mq-ring ${mins >= goal ? 'done' : ''}" style="--p:${Math.min(100, (mins / goal) * 100)}" data-act="tip" data-t="🎯 Target hari ini: ${Math.min(goal, Math.floor(mins))} dari ${goal} menit" aria-label="Target harian"><span>🎯</span></button>
       </div>
+      <h1 class="mq-hello">${SAPA_IC}<span>${sapaan(st.name)}</span></h1>
       ${unsent ? `<div class="mq-demo">📶 ${unsent} jawaban menunggu internet untuk dikirim ke guru.</div>` : ''}
       ${TASKS_ON && todo ? `<a class="mq-task" href="#/tugas"><span class="em">📌</span><b>${todo} tugas dari gurumu</b><span>›</span></a>` : ''}
       ${allDone ? `<div class="mq-all">${MQ.svg('cheer', { size: 120 })}<div>Semua bab ${gname(g)} sudah tuntas! 🎉</div><button class="mq-btn" style="margin-top:12px" data-act="gsheet">Pilih kelas lain</button></div>` : ''}
       ${blocks}
       ${gradeSheet}`, 'belajar');
-    setTimeout(() => { const c = document.querySelector('.mq-n.cur'); if (c) c.scrollIntoView({ block: 'center' }); }, 80);
+    setTimeout(() => { const c = document.querySelector('.mq-n.cur'); if (c && c.getBoundingClientRect().bottom > innerHeight - 110) c.scrollIntoView({ block: 'center' }); }, 80);
     void curId;
   }
 

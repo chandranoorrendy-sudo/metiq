@@ -952,3 +952,10 @@ html .mq-bubble .mq-spk.aud { display: inline-flex !important; background: #ff9f
 .alb-new { margin: 0 0 8px; text-align: center; font-size: 1.3rem; font-weight: 900; color: #e08a00; animation: mq-bpop .5s cubic-bezier(.3, 1.4, .5, 1) both; }
 .alb-reveal { animation: alb-rev .9s cubic-bezier(.3, 1.3, .5, 1) both; } .alb-reveal svg { display: block; width: 100%; height: auto; border-radius: 18px; }
 @keyframes alb-rev { from { transform: scale(.6) rotate(-6deg); opacity: 0; filter: blur(6px); } }
+
+/* Sapaan di peta belajar */
+.mq-hello { display: block; margin: 18px 20px 6px; font-size: 1.5rem; font-weight: 900; line-height: 1.2; color: var(--mq-ink); text-align: center; letter-spacing: -.01em; animation: mq-bpop .5s cubic-bezier(.3, 1.4, .5, 1) both; }
+.mq-hello-ic { display: inline-block; width: 28px; height: 28px; margin-right: 8px; vertical-align: -5px; fill: #19b796; animation: mq-spin 9s linear infinite; }
+@keyframes mq-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .mq-hello, .mq-hello-ic { animation: none; } }
+@media (max-width: 370px) { .mq-hello { font-size: 1.3rem; } }
