@@ -74,18 +74,18 @@
   };
 
   const ALBUM = [
-    { id: 'monas', name: 'Monas', place: 'Jakarta', fact: 'Tugu Monumen Nasional tingginya 132 meter. Puncaknya berbentuk lidah api berlapis emas.' },
-    { id: 'borobudur', name: 'Candi Borobudur', place: 'Magelang, Jawa Tengah', fact: 'Candi Buddha terbesar di dunia, dibangun lebih dari seribu tahun lalu (abad ke-9).' },
-    { id: 'gadang', name: 'Rumah Gadang', place: 'Sumatra Barat', fact: 'Rumah adat Minangkabau. Atapnya runcing ke atas seperti tanduk kerbau, disebut gonjong.' },
-    { id: 'tongkonan', name: 'Tongkonan', place: 'Toraja, Sulawesi Selatan', fact: 'Rumah adat Toraja dengan atap melengkung seperti perahu dan ukiran berwarna merah, hitam, dan kuning.' },
-    { id: 'jamgadang', name: 'Jam Gadang', place: 'Bukittinggi, Sumatra Barat', fact: 'Menara jam yang dibangun tahun 1926 dan menjadi ikon Kota Bukittinggi.' },
-    { id: 'rajaampat', name: 'Raja Ampat', place: 'Papua Barat Daya', fact: 'Kepulauan dengan ratusan pulau kecil dan terumbu karang yang sangat kaya. Surga para penyelam!' },
-    { id: 'prambanan', name: 'Candi Prambanan', place: 'Yogyakarta dan Jawa Tengah', fact: 'Kompleks candi Hindu terbesar di Indonesia. Candi utamanya setinggi sekitar 47 meter.' },
-    { id: 'bromo', name: 'Gunung Bromo', place: 'Jawa Timur', fact: 'Gunung berapi aktif yang dikelilingi lautan pasir yang luas.' },
-    { id: 'toba', name: 'Danau Toba', place: 'Sumatra Utara', fact: 'Danau vulkanik terbesar di Indonesia. Di tengahnya ada Pulau Samosir.' },
-    { id: 'honai', name: 'Honai', place: 'Pegunungan Papua', fact: 'Rumah adat Papua berbentuk bulat beratap jerami, menjaga penghuninya tetap hangat di udara dingin pegunungan.' },
-    { id: 'komodo', name: 'Komodo', place: 'Nusa Tenggara Timur', fact: 'Kadal terbesar di dunia. Hidup di Taman Nasional Komodo dan hanya ada di Indonesia.' },
-    { id: 'ampera', name: 'Jembatan Ampera', place: 'Palembang, Sumatra Selatan', fact: 'Jembatan merah di atas Sungai Musi yang diresmikan tahun 1965.' },
+    { id: 'monas', order: [0, 2, 6, 8, 3, 5, 4, 7, 1], name: 'Monas', place: 'Jakarta', fact: 'Tugu Monumen Nasional tingginya 132 meter. Puncaknya berbentuk lidah api berlapis emas.' },
+    { id: 'borobudur', order: [0, 2, 6, 8, 3, 5, 7, 4, 1], name: 'Candi Borobudur', place: 'Magelang, Jawa Tengah', fact: 'Candi Buddha terbesar di dunia, dibangun lebih dari seribu tahun lalu (abad ke-9).' },
+    { id: 'gadang', order: [6, 8, 3, 5, 7, 0, 2, 4, 1], name: 'Rumah Gadang', place: 'Sumatra Barat', fact: 'Rumah adat Minangkabau. Atapnya runcing ke atas seperti tanduk kerbau, disebut gonjong.' },
+    { id: 'tongkonan', order: [0, 1, 2, 6, 8, 7, 3, 5, 4], name: 'Tongkonan', place: 'Toraja, Sulawesi Selatan', fact: 'Rumah adat Toraja dengan atap melengkung seperti perahu dan ukiran berwarna merah, hitam, dan kuning.' },
+    { id: 'jamgadang', order: [0, 2, 6, 8, 3, 5, 7, 1, 4], name: 'Jam Gadang', place: 'Bukittinggi, Sumatra Barat', fact: 'Menara jam yang dibangun tahun 1926 dan menjadi ikon Kota Bukittinggi.' },
+    { id: 'rajaampat', order: [0, 1, 2, 6, 8, 7, 3, 5, 4], name: 'Raja Ampat', place: 'Papua Barat Daya', fact: 'Kepulauan dengan ratusan pulau kecil dan terumbu karang yang sangat kaya. Surga para penyelam!' },
+    { id: 'prambanan', order: [0, 2, 6, 8, 3, 5, 7, 4, 1], name: 'Candi Prambanan', place: 'Yogyakarta dan Jawa Tengah', fact: 'Kompleks candi Hindu terbesar di Indonesia. Candi utamanya setinggi sekitar 47 meter.' },
+    { id: 'bromo', order: [0, 2, 6, 8, 3, 5, 7, 1, 4], name: 'Gunung Bromo', place: 'Jawa Timur', fact: 'Gunung berapi aktif yang dikelilingi lautan pasir yang luas.' },
+    { id: 'toba', order: [0, 1, 2, 3, 5, 6, 8, 4, 7], name: 'Danau Toba', place: 'Sumatra Utara', fact: 'Danau vulkanik terbesar di Indonesia. Di tengahnya ada Pulau Samosir.' },
+    { id: 'honai', order: [0, 1, 2, 8, 5, 6, 3, 7, 4], name: 'Honai', place: 'Pegunungan Papua', fact: 'Rumah adat Papua berbentuk bulat beratap jerami, menjaga penghuninya tetap hangat di udara dingin pegunungan.' },
+    { id: 'komodo', order: [0, 1, 2, 3, 5, 4, 6, 7, 8], name: 'Komodo', place: 'Nusa Tenggara Timur', fact: 'Kadal terbesar di dunia. Hidup di Taman Nasional Komodo dan hanya ada di Indonesia.' },
+    { id: 'ampera', order: [0, 1, 2, 6, 8, 7, 3, 5, 4], name: 'Jembatan Ampera', place: 'Palembang, Sumatra Selatan', fact: 'Jembatan merah di atas Sungai Musi yang diresmikan tahun 1965.' },
   ];
   ALBUM.forEach((a) => { a.svg = `<svg viewBox="0 0 300 300" class="alb-art" role="img" aria-label="${a.name}">${ART[a.id]}</svg>`; });
   window.METIQ_ALBUM = ALBUM;

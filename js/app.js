@@ -585,8 +585,8 @@
   // Album Nusantara: setiap tantangan papan hadiah (semua kelas) = 1 keping; 9 keping membuka satu gambar.
   const ALB = window.METIQ_ALBUM, PIECES = 9;
   const pieceTotal = (sid) => GRADES.reduce((t, x) => t + prizeBoard(sid, x.id).open, 0);
-  // urutan keping yang terbuka diacak tetap per gambar, supaya gambarnya muncul sedikit demi sedikit dari berbagai sudut
-  const pieceOrder = (i) => { const o = [...Array(PIECES).keys()]; let x = (i + 3) * 7919; for (let k = o.length - 1; k > 0; k--) { x = (x * 9301 + 49297) % 233280; const j = Math.floor((x / 233280) * (k + 1)); [o[k], o[j]] = [o[j], o[k]]; } return o; };
+  // urutan keping per gambar: bagian paling khas (puncak Monas, jam Jam Gadang, kepala komodo) terbuka paling akhir, supaya anak menebak dulu
+  const pieceOrder = (i) => { if (ALB[i].order) return ALB[i].order; const o = [...Array(PIECES).keys()]; let x = (i + 3) * 7919; for (let k = o.length - 1; k > 0; k--) { x = (x * 9301 + 49297) % 233280; const j = Math.floor((x / 233280) * (k + 1)); [o[k], o[j]] = [o[j], o[k]]; } return o; };
   const puzzleHTML = (i, have, cls) => {
     const open = new Set(pieceOrder(i).slice(0, have));
     return `<div class="alb-pz ${cls || ''}">${ALB[i].svg}<div class="alb-cover">${[...Array(PIECES).keys()].map((k) => `<i class="${open.has(k) ? 'open' : ''}"></i>`).join('')}</div></div>`;
@@ -602,24 +602,29 @@
     const goals = Object.keys(pb.next).map((k) => { const n = pb.st[k] + pb.next[k]; return { k, n, have: pb.st[k], label: chLabel({ k, n }) }; });
     const goalRow = (x) => `<div class="alb-goal"><span class="em">${{ q: '✏️', t: '⏱️', s: '⭐', m: '🏆' }[x.k]}</span><span class="grow"><b>${x.label}</b><span class="alb-bar"><i style="width:${pct(x.have, x.n)}%"></i></span><small>${x.k === 't' ? fmtTime(x.have * 60000) : x.have} / ${x.k === 't' ? fmtTime(x.n * 60000) : x.n}</small></span></div>`;
     const thumb = (x, i) => done(i) ? `<button class="alb-th done" data-act="album" data-i="${i}" aria-label="${esc(x.name)}">${x.svg}<b>${esc(x.name)}</b></button>`
-      : i === cur ? `<button class="alb-th cur" data-act="album" data-i="${i}" aria-label="${esc(x.name)}, ${have} dari ${PIECES} keping">${puzzleHTML(i, have)}<b>${esc(x.name)}</b></button>`
+      : i === cur ? `<button class="alb-th cur" data-act="album" data-i="${i}" aria-label="Gambar misteri, ${have} dari ${PIECES} keping">${puzzleHTML(i, have)}<b>❓</b></button>`
         : `<button class="alb-th lock" data-act="tip" data-t="🔒 Lengkapi puzzle sebelumnya dulu ya" aria-label="Terkunci">${x.svg}<span class="lk">${IC.lock}</span><b>?</b></button>`;
     app.innerHTML = mqPage(`
       <div class="alb-head"><div><h1>Album Nusantara</h1><p>Kumpulkan keping, buka gambar Indonesia!</p></div><span class="mq-gchip">🧩 ${total}</span></div>
-      <section class="alb-main"><small>Puzzle ${cur + 1} dari ${ALB.length}</small><h2>${esc(a.name)}</h2><p class="pl">📍 ${esc(a.place)}</p>
+      <section class="alb-main"><small>Puzzle ${cur + 1} dari ${ALB.length}</small>${done(cur) ? `<h2>${esc(a.name)}</h2><p class="pl">📍 ${esc(a.place)}</p>` : '<h2>❓ Gambar misteri</h2><p class="pl">Tempat apa di Indonesia ini? Tebak sebelum terbuka!</p>'}
         ${puzzleHTML(cur, have, 'big')}
         <div class="alb-prog"><i style="width:${(have / PIECES) * 100}%"></i><span>${have}/${PIECES}</span></div>
         <p class="alb-msg">${total >= ALB.length * PIECES ? '🎉 Semua puzzle sudah lengkap. Hebat!' : have ? `Tinggal <b>${PIECES - have} keping</b> lagi untuk membuka gambar ini!` : 'Selesaikan tantangan di bawah untuk mendapat keping pertama!'}</p></section>
       ${goals.length ? `<section class="mq-card"><h3>🧩 Cara dapat keping</h3>${goals.map(goalRow).join('')}<a class="mq-btn" href="#/belajar">Ayo belajar</a></section>` : ''}
       <h2 class="mq-sethead">Albumku</h2><div class="alb-grid">${ALB.map(thumb).join('')}</div>
       <div class="mq-modal" id="albsheet" hidden data-act="albclose"><div class="mq-sheet alb-sheet" id="albbox"></div></div>`, 'hadiah');
+    // gambar yang baru lengkap langsung dibuka: nama, tempat, dan faktanya baru terlihat sekarang
+    const full = Math.floor(total / PIECES), seenKey = 'metiq_albseen_' + st.id; let seen = 0;
+    try { seen = +localStorage.getItem(seenKey) || 0; } catch (e) {}
+    if (full > seen) { try { localStorage.setItem(seenKey, String(full)); } catch (e) {} setTimeout(() => openAlbum(full - 1, true), 350); }
   }
-  function openAlbum(i) {
+  function openAlbum(i, fresh) {
     const st = studentNow(); if (!st) return;
     const total = pieceTotal(st.id), a = ALB[i], full = i < Math.floor(total / PIECES);
     const box = document.getElementById('albbox'), sh = document.getElementById('albsheet'); if (!box || !sh) return;
-    box.innerHTML = `${full ? a.svg : puzzleHTML(i, total % PIECES, 'big')}<h2>${esc(a.name)}</h2><p class="pl">📍 ${esc(a.place)}</p>
-      <p>${full ? `💡 ${esc(a.fact)}` : 'Lengkapi semua keping untuk membuka fakta seru tentang tempat ini.'}</p><button class="mq-btn" data-act="albclose">Tutup</button>`;
+    box.innerHTML = full ? `${fresh ? '<p class="alb-new">🎉 Gambar terbuka!</p>' : ''}<div class="${fresh ? 'alb-reveal' : ''}">${a.svg}</div><h2>${esc(a.name)}</h2><p class="pl">📍 ${esc(a.place)}</p>
+      <p>💡 ${esc(a.fact)}</p><button class="mq-btn" data-act="albclose">${fresh ? 'Hore!' : 'Tutup'}</button>`
+      : `${puzzleHTML(i, total % PIECES, 'big')}<h2>❓ Gambar misteri</h2><p>Sudah bisa menebak? Nama, tempat, dan fakta serunya terbuka setelah ${PIECES} keping lengkap.</p><button class="mq-btn" data-act="albclose">Tutup</button>`;
     sh.hidden = false;
     if (full) window.SFX.levelUp();
   }

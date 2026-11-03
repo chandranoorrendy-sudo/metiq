@@ -790,3 +790,8 @@ html .mq-bubble .mq-spk.aud { display: inline-flex !important; background: #ff9f
 @keyframes st-jump { 0%, 12% { transform: translateY(110%) rotate(30deg); } 45% { transform: translateY(-6%) rotate(-12deg); } 60% { transform: translateY(-2%) rotate(-4deg); } 92%, 100% { transform: translateY(110%) rotate(35deg); } }
 @keyframes st-wave { to { transform: translateX(-120px); } }
 @media (prefers-reduced-motion: reduce) { .mq-stage .st, .mq-stage .st > div, .mq-stage .wave { animation: none !important; } .st-lumo .jump { transform: translateY(10%); } }
+
+/* Album: gambar baru lengkap */
+.alb-new { margin: 0 0 8px; text-align: center; font-size: 1.3rem; font-weight: 900; color: #e08a00; animation: mq-bpop .5s cubic-bezier(.3, 1.4, .5, 1) both; }
+.alb-reveal { animation: alb-rev .9s cubic-bezier(.3, 1.3, .5, 1) both; } .alb-reveal svg { display: block; width: 100%; height: auto; border-radius: 18px; }
+@keyframes alb-rev { from { transform: scale(.6) rotate(-6deg); opacity: 0; filter: blur(6px); } }
