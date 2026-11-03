@@ -930,6 +930,18 @@ details.faq { border-top: 1px solid var(--line); padding: 10px 0; } details.faq 
 .kpis.ungact .kpi small, .kpis.ungsum .kpi small { font-size: .74rem; line-height: 1.2; }
 .kpis.ungact .kpi b, .kpis.ungsum .kpi b { font-size: 1.1rem; }
 .tsub.ungf { flex-wrap: wrap; margin-top: 10px; }
+/* Tabel siswa tanpa kelas: kolom nama menempel saat tabel digeser */
+.ungtbl td { vertical-align: middle; }
+.ungtbl td.num, .ungtbl th:nth-child(n+4):nth-child(-n+7) { text-align: right; }
+.ungtbl td.ungname, .ungtbl th:first-child { position: sticky; left: 0; z-index: 1; background: #fff; box-shadow: 2px 0 0 var(--line); }
+.ungtbl .ungn { display: flex; align-items: center; gap: 8px; min-width: 210px; }
+.ungtbl td.ungname .famchk { width: 32px; height: 32px; }
+.ungtbl td.ungname .av { width: 34px; height: 34px; font-size: 1.1rem; flex: none; }
+.ungtbl td.ungname small { display: block; color: var(--muted); font-size: .74rem; }
+.ungtbl tbody tr:hover td { background: #f4fdfa; }
+.ungtbl .form.inline { margin: 0; flex-wrap: nowrap; gap: 6px; } .ungtbl .form.inline select { min-width: 170px; padding: 6px 8px; }
+.pager { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin-top: 14px; }
+.pager .btn[disabled] { opacity: .4; pointer-events: none; }
 b.big { font-size: 1.3rem; display: block; }
 
 /* Tarik Tambang: dua tim di satu layar */

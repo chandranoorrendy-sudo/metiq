@@ -2329,6 +2329,7 @@
   // Keadaan anak tanpa kelas menurut aktivitasnya
   const ungState = (k) => (!k.att ? 'belum' : k.lastTs && Date.now() - k.lastTs > 14 * DAY ? 'diam' : k.week ? 'aktif' : 'jeda');
   const UNG_F = [['semua', 'Semua'], ['aktif', '🟢 Aktif minggu ini'], ['jeda', '🟡 Jeda 7–14 hari'], ['diam', '🔴 Tidak aktif >14 hari'], ['belum', '⚪ Belum mulai']];
+  const UNG_PER = 15, UNG_SEL = new Set(); // anak per halaman; anak yang dicentang tetap tercentang antarhalaman
   const skillWhere = (id) => { const sk = SKILLS[id]; if (!sk) return ''; const u = UNITS.find((x) => x.id === sk.unit); return `${gname(sk.grade)} · ${u ? u.icon + ' ' + u.name : sk.unit}`; };
   function renderUngrouped(ctx) {
     const box = document.getElementById('ung-box'); if (!box || !UNG) return;
@@ -2336,16 +2337,23 @@
     const list = all.filter((k) => f === 'semua' || ungState(k) === f).sort((a, b) => (b.lastTs || 0) - (a.lastTs || 0) || b.createdAt - a.createdAt);
     {
       const opts = ctx.classes.slice().sort((a, b) => (a.schoolName || '').localeCompare(b.schoolName || '') || a.name.localeCompare(b.name)).map((c) => `<option value="${c.id}">${c.schoolName ? esc(c.schoolName) + ' · ' : ''}${esc(c.name)}</option>`).join('');
-      const row = (k) => `<section class="card reqcard"><div class="lrow"><label class="famchk" title="Pilih untuk kode keluarga"><input type="checkbox" data-fam="${k.id}" aria-label="Pilih ${esc(k.name)} untuk kode keluarga"></label><span class="av">${avHTML(k.avatar || '🦁')}</span><span class="grow"><b>${esc(k.name)}</b><small>Mulai ${ftime(k.createdAt)}${k.lastSkill ? ` · sedang di ${esc(skillWhere(k.lastSkill))}` : ''}</small></span><span class="pill ung-${ungState(k)}">${{ aktif: 'Aktif', jeda: 'Jeda', diam: 'Tidak aktif', belum: 'Belum mulai' }[ungState(k)]}</span></div>
-        <div class="kpis ungact"><div class="kpi"><small>Terakhir aktif</small><b>${ago(k.lastTs)}</b></div><div class="kpi"><small>Soal minggu ini</small><b>${k.week || 0}</b></div><div class="kpi"><small>Total soal</small><b>${k.att || 0}</b></div><div class="kpi"><small>Ketepatan</small><b>${k.att ? pct(k.ok, k.att) + '%' : '–'}</b></div><div class="kpi"><small>Keterampilan mahir</small><b>${k.mastered || 0}</b></div></div>
-        <p class="small"><a href="#/guru/tanpa/${k.id}">📄 Lihat laporan ${esc(k.name.split(' ')[0])} →</a></p>
-        <div class="kpis"><div class="kpi"><small>Kode belajar (untuk siswa)</small><b class="code">${esc(k.code || '–')}</b></div><div class="kpi"><small>Kode orang tua</small><b class="code">${esc(k.parentCode || '–')}</b></div>${k.familyCode ? `<div class="kpi"><small>Kode keluarga</small><b class="code">${esc(k.familyCode)}</b><button class="link small" data-act="famdel" data-id="${k.id}">Lepas</button></div>` : ''}</div>
-        <form data-form="assignkid" data-id="${k.id}" class="form inline"><select name="classId" required aria-label="Kelas untuk ${esc(k.name)}"><option value="">— pilih kelas —</option>${opts}</select><button class="btn">Masukkan ke kelas</button></form></section>`;
+      // satu baris tabel per anak; tabel bisa digeser ke samping, kolom nama tetap terlihat
+      const row = (k) => `<tr><td class="ungname"><div class="ungn"><label class="famchk" title="Pilih untuk kode keluarga"><input type="checkbox" data-fam="${k.id}" ${UNG_SEL.has(k.id) ? 'checked' : ''} aria-label="Pilih ${esc(k.name)} untuk kode keluarga"></label><span class="av">${avHTML(k.avatar || '🦁')}</span><span><a href="#/guru/tanpa/${k.id}" title="Lihat laporan"><b>${esc(k.name)}</b></a><small>Mulai ${ftime(k.createdAt)}</small></span></div></td>
+        <td><span class="pill ung-${ungState(k)}">${{ aktif: 'Aktif', jeda: 'Jeda', diam: 'Tidak aktif', belum: 'Belum mulai' }[ungState(k)]}</span></td><td>${ago(k.lastTs)}</td><td class="num">${k.week || 0}</td><td class="num">${k.att || 0}</td><td class="num">${k.att ? pct(k.ok, k.att) + '%' : '–'}</td><td class="num">${k.mastered || 0}</td>
+        <td class="wrap small">${k.lastSkill ? esc(skillWhere(k.lastSkill)) : '<span class="muted">–</span>'}</td>
+        <td><b class="code">${esc(k.code || '–')}</b></td><td><b class="code">${esc(k.parentCode || '–')}</b></td><td>${k.familyCode ? `<b class="code">${esc(k.familyCode)}</b> <button class="link small" data-act="famdel" data-id="${k.id}">Lepas</button>` : '<span class="muted">–</span>'}</td>
+        <td><form data-form="assignkid" data-id="${k.id}" class="form inline"><select name="classId" required aria-label="Kelas untuk ${esc(k.name)}"><option value="">— pilih kelas —</option>${opts}</select><button class="btn sm">Masukkan</button></form></td></tr>`;
+      const pages = Math.max(1, Math.ceil(list.length / UNG_PER)), p = Math.min(Math.max(1, ss.get('ungp', 1)), pages), from = (p - 1) * UNG_PER;
+      const nums = [...Array(pages)].map((_, i) => i + 1).filter((n) => n === 1 || n === pages || Math.abs(n - p) <= 2);
+      const pager = pages < 2 ? '' : `<nav class="pager" aria-label="Halaman"><button class="btn sm ghost" data-act="ungp" data-p="${p - 1}" ${p === 1 ? 'disabled' : ''}>← Sebelumnya</button>${nums.map((n, i) => `${i && n - nums[i - 1] > 1 ? '<span class="muted">…</span>' : ''}<button class="btn sm ${n === p ? '' : 'ghost'}" data-act="ungp" data-p="${n}" ${n === p ? 'aria-current="page"' : ''}>${n}</button>`).join('')}<button class="btn sm ghost" data-act="ungp" data-p="${p + 1}" ${p === pages ? 'disabled' : ''}>Berikutnya →</button></nav>`;
+      const table = `<section class="card"><p class="small muted">Menampilkan ${from + 1}–${Math.min(from + UNG_PER, list.length)} dari ${list.length} anak · geser tabel ke samping untuk melihat kode dan kelas · klik nama untuk laporan.</p>
+        <div class="tscroll"><table class="tbl ungtbl"><thead><tr><th>Siswa</th><th>Keadaan</th><th>Terakhir aktif</th><th>Soal minggu ini</th><th>Total soal</th><th>Ketepatan</th><th>Mahir</th><th>Sedang di</th><th>Kode belajar</th><th>Kode orang tua</th><th>Kode keluarga</th><th>Masukkan ke kelas</th></tr></thead>
+        <tbody>${list.slice(from, from + UNG_PER).map(row).join('')}</tbody></table></div>${pager}</section>`;
       box.innerHTML = `<section class="card"><h2>🧺 Siswa tanpa kelas <small class="muted">(${all.length})</small></h2>
         <div class="kpis ungsum"><div class="kpi"><small>Aktif minggu ini</small><b>${cnt('aktif')}</b></div><div class="kpi"><small>Jeda 7–14 hari</small><b>${cnt('jeda')}</b></div><div class="kpi"><small>Tidak aktif >14 hari</small><b>${cnt('diam')}</b></div><div class="kpi"><small>Belum mulai</small><b>${cnt('belum')}</b></div><div class="kpi"><small>Soal minggu ini</small><b>${all.reduce((n, k) => n + (k.week || 0), 0)}</b></div></div>
         <div class="tsub ungf">${UNG_F.map(([v, l]) => `<button class="${f === v ? 'on' : ''}" data-act="ungf" data-v="${v}">${l}${v === 'semua' ? '' : ` (${cnt(v)})`}</button>`).join('')}</div><p class="small muted">Anak yang mulai belajar sendiri atau disetujui tanpa kelas. Siswa masuk dengan kode belajar (menu "Saya sudah punya kode"); orang tua melihat laporan di <b>#/ortu</b> dengan kode orang tua atau kode keluarga.</p>
         <p class="small"><b>👨‍👩‍👧 Kakak-adik?</b> Centang anak-anaknya, lalu buat satu kode keluarga untuk orang tua.</p><button class="btn sm" data-act="famset">Buat kode keluarga untuk yang dicentang</button></section>`
-        + (list.length ? list.map(row).join('') : all.length ? emptyCard('Tidak ada', 'Tidak ada anak dengan keadaan ini.') : emptyCard('Belum ada', 'Semua siswa sudah punya kelas.'));
+        + (list.length ? table : all.length ? emptyCard('Tidak ada', 'Tidak ada anak dengan keadaan ini.') : emptyCard('Belum ada', 'Semua siswa sudah punya kelas.'));
     }
   }
   // Laporan satu siswa tanpa kelas untuk admin: kemajuan per bab dan jawaban terakhir
@@ -2375,9 +2383,9 @@
       <section class="card"><h2>📝 ${A.length} jawaban terakhir</h2>${A.length ? A.map((a) => `<div class="lrow"><span>${a.ok ? '✅' : '❌'}</span><span class="grow">${SKILLS[a.skill] ? `<b>${SKILLS[a.skill].code}</b> ` : ''}${esc(String(a.text || '').replace(/<[^>]*>/g, ' ').slice(0, 90))}<small>${a.ok ? '' : `Menjawab ${esc(a.given || '–')}, seharusnya ${esc(a.answer || '–')} · `}${ftime(a.ts)}${a.ms ? ` · ${Math.round(a.ms / 1000)} dtk` : ''}</small></span></div>`).join('') : '<p class="muted">Belum ada jawaban.</p>'}</section>`;
   }
   async function famSet() {
-    const ids = [...document.querySelectorAll('[data-fam]:checked')].map((x) => x.dataset.fam);
+    const ids = [...UNG_SEL];
     if (ids.length < 2) return toast('Centang minimal 2 anak dari satu keluarga');
-    try { const r = await Cloud.rpc('admin_family_set', { p_token: session.get().token, p_student_ids: ids }); toast(`Kode keluarga ${esc(r.familyCode)} untuk ${r.count} anak ✔`); route(); }
+    try { const r = await Cloud.rpc('admin_family_set', { p_token: session.get().token, p_student_ids: ids }); toast(`Kode keluarga ${esc(r.familyCode)} untuk ${r.count} anak ✔`); UNG_SEL.clear(); route(); }
     catch (e) { toast(e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
   }
   async function famDel(id) {
@@ -3445,7 +3453,8 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (act === 'jband') { ls.set('metiq_jband', el.dataset.b); return route(); }
     if (act === 'jfilter') { const f = ls.get('metiq_jfilter', {}); f[el.dataset.k] = el.dataset.v; ls.set('metiq_jfilter', f); return route(); }
     if (act === 'apstu') return;
-    if (act === 'ungf') { ss.set('ungf', el.dataset.v); const ctx = teacherCtx(); if (ctx) renderUngrouped(ctx); return; }
+    if (act === 'ungp') { ss.set('ungp', +el.dataset.p); const ctx = teacherCtx(); if (ctx) renderUngrouped(ctx); const t = document.querySelector('.ungtbl'); if (t) t.closest('.card').scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+    if (act === 'ungf') { ss.set('ungf', el.dataset.v); ss.set('ungp', 1); const ctx = teacherCtx(); if (ctx) renderUngrouped(ctx); return; }
     if (act === 'apcsv') { const ctx = teacherCtx(); if (ctx) exportAllProgress(ctx); return; }
     if (act === 'quotego') { e.preventDefault(); const q = document.getElementById('quote'); if (q) q.scrollIntoView({ behavior: 'smooth' }); return; }
     if (act === 'sgdel') { if (!confirm(`Lepas ${el.dataset.n} dari sekolah? Kelas dan siswanya tetap milik guru itu, tetapi tidak lagi tampil di dasbor sekolah.`)) return; Cloud.rpc('school_teacher_remove', { p_token: session.get().token, p_teacher_id: el.dataset.id }).then(() => { toast('Guru dilepas dari sekolah ✔'); loadSchoolTeachers(); }).catch((er) => toast(er.status ? esc(er.message) : 'Tidak bisa terhubung ke server')); return; }
@@ -3628,6 +3637,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   });
   document.addEventListener('change', (e) => {
     const el = e.target;
+    if (el.dataset.fam) { if (el.checked) UNG_SEL.add(el.dataset.fam); else UNG_SEL.delete(el.dataset.fam); return; }
     if (el.dataset.act === 'teacherset') return superTeacherSet(el);
     if (el.dataset.act === 'classteacher') return superClassTeacher(el);
     if (el.dataset.act === 'apstu') { ss.set('apStu', el.value); return route(); }
