@@ -674,6 +674,19 @@ html .mq-bubble .mq-spk.aud { display: inline-flex !important; background: #ff9f
 
 /* Kertas coret: atribut hidden harus menang atas display:flex (tombol ✕), bisa digeser lewat batang judul, dan ada ukuran besar */
 .mq-coret[hidden] { display: none !important; }
+/* Soal dengan kertas coret (SMP–SMA dan soal bersusun): tombol lebih kecil, dan papan angka bisa dilipat */
+.mq-foot.compact .mq-keys { gap: 6px; max-width: 320px; } .mq-foot.compact .mq-key { min-height: 40px; font-size: 1.15rem; border-radius: 11px; }
+.mq-foot.compact .mq-keys.extra .mq-key { font-size: 1rem; } .mq-foot.compact .mq-btn { min-height: 46px; }
+.mq-krow { display: none; align-items: center; gap: 10px; max-width: 520px; width: 100%; margin: 0 auto; }
+.mq-ktog { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 2px solid var(--mq-line); border-radius: 999px; background: #fff; font: inherit; font-weight: 900; color: var(--mq-ink); cursor: pointer; }
+.mq-ktog i { font-style: normal; font-size: .8em; transition: transform .2s; }
+.mq-mini { flex: 1; min-width: 0; text-align: right; font-weight: 800; color: var(--mq-muted, #5c7570); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mq-mini b { color: var(--mq-ink); font-size: 1.2rem; margin-left: 4px; }
+.mq-foot.cor .mq-krow { display: flex; }
+.mq-foot.cor .mq-keys { display: none; }
+.mq-foot.cor.kshow .mq-keys { display: grid; animation: mq-up .22s ease; }
+.mq-foot.cor.kshow .mq-ktog i { transform: rotate(180deg); }
+.mq-ktog .kb, .mq-foot.cor.kshow .mq-ktog .ka { display: none; } .mq-foot.cor.kshow .mq-ktog .kb { display: inline; }
 .mq-coret .bar { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .mq-coret .bar b::before { content: '⠿'; margin-right: 6px; color: #c9a93a; font-weight: 400; }
 .mq-coret.drag { box-shadow: 0 14px 34px rgba(4, 56, 46, .28); opacity: .96; }

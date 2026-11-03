@@ -652,20 +652,24 @@
     const pad = document.getElementById('coret'); if (!pad) return;
     if (wipe) pad.remove(); else pad.hidden = true;
     const b = document.getElementById('mqcoret'); if (b) b.classList.remove('on');
+    const fb = document.getElementById('fb'); if (fb) fb.classList.remove('cor', 'kshow');
   }
   function openCoret() {
     let pad = document.getElementById('coret');
     const b = document.getElementById('mqcoret');
     if (pad && !pad.hidden) return closeCoret(false);
     if (b) b.classList.add('on');
+    // Papan angka dilipat selama kertas coret terbuka, supaya kertasnya selebar mungkin; tombol 🔢 memunculkannya lagi
+    const foot = document.getElementById('fb');
+    if (foot && foot.querySelector('.mq-krow')) { foot.classList.add('cor'); foot.classList.remove('kshow'); }
     // duduk tepat di atas kaki layar (tombol jawaban dan Periksa tetap bisa diketuk)
-    const foot = document.getElementById('fb'), place = () => {
+    const place = () => {
       if (!pad) return;
       if (coretPos) { const w = Math.min(pad.offsetWidth || 520, innerWidth), h = pad.offsetHeight || 300; Object.assign(pad.style, { left: Math.max(0, Math.min(innerWidth - w, coretPos[0])) + 'px', top: Math.max(0, Math.min(innerHeight - 52, coretPos[1])) + 'px', bottom: 'auto', right: 'auto', margin: '0', width: w + 'px', animation: 'none' }); return; }
       const fh = foot ? foot.offsetHeight : 0, vis = document.querySelector('#pq .mq-vis') || document.querySelector('#pq .mq-say');
       pad.style.bottom = fh + 'px';
       const room = vis ? innerHeight - fh - vis.getBoundingClientRect().bottom - 12 : 0;
-      pad.style.height = !coretTall && room >= 170 ? Math.min(room, 360) + 'px' : '';
+      pad.style.height = !coretTall && room >= 170 ? Math.min(room, foot && foot.classList.contains('cor') ? 640 : 360) + 'px' : '';
     };
     if (pad) { pad.hidden = false; place(); if (pad.fit) pad.fit(); return; }
     const COLORS = [['#0a7d68', 'hijau'], ['#1c9be8', 'biru'], ['#ff5a5f', 'merah']];
@@ -735,6 +739,7 @@
     const b = document.getElementById('mqcheck'); if (!b || !P || P.locked) return;
     b.disabled = !(P.q.type === 'choice' ? P.sel >= 0 : P.input !== '');
     const d = document.getElementById('indisp'); if (d) d.classList.toggle('has', P.input !== '');
+    const d2 = document.getElementById('indisp2'); if (d2) d2.textContent = P.input || '–';
   }
   function nextQ() {
     if (P.test) { if (P.count >= TEST_N) return renderChest(); P.sk = SKILLS[P.test.queue[P.count]]; }
@@ -757,8 +762,9 @@
     // Papan angka dan tombol Periksa menempel di bawah layar, supaya selalu terjangkau tanpa menggulir
     const keys = choice ? '' : `${q.keys ? `<div class="mq-keys extra">${q.keys.map((k) => `<button class="mq-key" data-act="key" data-k="${k}">${k}</button>`).join('')}</div>` : ''}
        <div class="mq-keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button class="mq-key" data-act="key" data-k="${n}">${n}</button>`).join('')}<button class="mq-key del" data-act="key" data-k="del" aria-label="Hapus">⌫</button><button class="mq-key" data-act="key" data-k="0">0</button><span></span></div>`;
-    const fb = document.getElementById('fb'); fb.className = 'mq-foot';
-    fb.innerHTML = `<div class="mq-foot-in">${keys}<button class="mq-btn" id="mqcheck" data-act="check" disabled>Periksa</button></div>`;
+    const fb = document.getElementById('fb'); fb.className = 'mq-foot' + (!choice && canCoret ? ' compact' : '');
+    const krow = !choice && canCoret ? '<div class="mq-krow"><button class="mq-ktog" data-act="keystog" aria-label="Tampilkan atau sembunyikan tombol angka">🔢 <span class="ka">Tombol angka</span><span class="kb">Sembunyikan</span> <i>▲</i></button><span class="mq-mini">Jawaban: <b id="indisp2">–</b></span></div>' : '';
+    fb.innerHTML = `<div class="mq-foot-in">${krow}${keys}<button class="mq-btn" id="mqcheck" data-act="check" disabled>Periksa</button></div>`;
     box.style.paddingBottom = fb.offsetHeight + 20 + 'px';
     const d = document.getElementById('indisp'); if (d) d.style.scrollMarginBottom = fb.offsetHeight + 12 + 'px';
     // Cerita TK dibacakan otomatis saat soal muncul
@@ -3522,8 +3528,9 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       if (!P || P.locked) return;
       if (el.dataset.k === 'del') P.input = P.input.slice(0, -1); else if (P.input.length < 12) P.input += el.dataset.k;
       document.getElementById('indisp').innerHTML = P.input || '&nbsp;'; refreshCheck();
-      document.getElementById('indisp').scrollIntoView({ block: 'nearest' });
-    } else if (act === 'check') { if (P && !P.locked) submit(P.q.type === 'choice' ? P.q.options[P.sel] : P.input); }
+      if (!document.querySelector('#fb.cor')) document.getElementById('indisp').scrollIntoView({ block: 'nearest' });
+    } else if (act === 'keystog') { const fb = document.getElementById('fb'); if (fb) fb.classList.toggle('kshow'); }
+    else if (act === 'check') { if (P && !P.locked) submit(P.q.type === 'choice' ? P.q.options[P.sel] : P.input); }
     else if (act === 'choose') { if (!P || P.locked) return; P.sel = +el.dataset.i; if (P.q.optAudio) playClips([P.q.optAudio[P.sel]]); document.querySelectorAll('.mq-opt').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); refreshCheck(); }
     else if (act === 'next') nextQ();
     else if (act === 'again') viewPractice(P.sk.id, true);
