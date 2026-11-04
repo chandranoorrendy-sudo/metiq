@@ -959,3 +959,4 @@ html .mq-bubble .mq-spk.aud { display: inline-flex !important; background: #ff9f
 @keyframes mq-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .mq-hello, .mq-hello-ic { animation: none; } }
 @media (max-width: 370px) { .mq-hello { font-size: 1.3rem; } }
+.mq-hero .mq-install { width: 100%; margin: 6px 0 18px; text-align: left; }
