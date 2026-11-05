@@ -940,6 +940,11 @@ details.faq { border-top: 1px solid var(--line); padding: 10px 0; } details.faq 
 .ungtbl td.ungname small { display: block; color: var(--muted); font-size: .74rem; }
 .ungtbl tbody tr:hover td { background: #f4fdfa; }
 .ungtbl .form.inline { margin: 0; flex-wrap: nowrap; gap: 6px; } .ungtbl .form.inline select { min-width: 170px; padding: 6px 8px; }
+.ungtools { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 4px; }
+.ungtools select { flex: 1 1 210px; min-width: 0; padding: 9px 10px; }
+.ungq { flex: 3 1 260px; display: flex; align-items: center; gap: 8px; padding: 0 12px; border: 2px solid var(--line); border-radius: 12px; background: #fff; }
+.ungq:focus-within { border-color: var(--brand); }
+.ungq input { flex: 1; min-width: 0; border: 0; outline: 0; padding: 10px 0; font: inherit; background: none; }
 .pager { display: flex; flex-wrap: wrap; justify-content: center; align-items: center; gap: 6px; margin-top: 14px; }
 .pager .btn[disabled] { opacity: .4; pointer-events: none; }
 b.big { font-size: 1.3rem; display: block; }

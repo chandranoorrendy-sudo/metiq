@@ -2381,10 +2381,41 @@
   const UNG_F = [['semua', 'Semua'], ['aktif', '🟢 Aktif minggu ini'], ['jeda', '🟡 Jeda 7–14 hari'], ['diam', '🔴 Tidak aktif >14 hari'], ['belum', '⚪ Belum mulai']];
   const UNG_PER = 15, UNG_SEL = new Set(); // anak per halaman; anak yang dicentang tetap tercentang antarhalaman
   const skillWhere = (id) => { const sk = SKILLS[id]; if (!sk) return ''; const u = UNITS.find((x) => x.id === sk.unit); return `${gname(sk.grade)} · ${u ? u.icon + ' ' + u.name : sk.unit}`; };
+  const ungGrade = (k) => (SKILLS[k.lastSkill] ? String(SKILLS[k.lastSkill].grade) : 'none');
+  const UNG_SORT = [['aktif', 'Aktif terbaru'], ['aktiflama', 'Paling lama tidak aktif'], ['baru', 'Daftar terbaru'], ['lama', 'Daftar terlama'], ['nama', 'Nama A–Z'], ['minggu', 'Soal minggu ini terbanyak'], ['total', 'Total soal terbanyak'], ['tepat', 'Ketepatan terendah']];
+  const UNG_CMP = {
+    aktif: (a, b) => (b.lastTs || 0) - (a.lastTs || 0) || b.createdAt - a.createdAt,
+    aktiflama: (a, b) => (a.lastTs || 0) - (b.lastTs || 0) || a.createdAt - b.createdAt,
+    lama: (a, b) => a.createdAt - b.createdAt,
+    nama: (a, b) => a.name.localeCompare(b.name, 'id'),
+    minggu: (a, b) => (b.week || 0) - (a.week || 0),
+    total: (a, b) => (b.att || 0) - (a.att || 0),
+    tepat: (a, b) => (a.att ? a.ok / a.att : 2) - (b.att ? b.ok / b.att : 2),
+    baru: (a, b) => b.createdAt - a.createdAt,
+  };
+  // huruf kecil tanpa tanda baca/aksen, agar "Haeqal" cocok dengan "haeq" dan kode cocok tanpa memedulikan huruf besar
+  const fold = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
   function renderUngrouped(ctx) {
     const box = document.getElementById('ung-box'); if (!box || !UNG) return;
     const all = UNG, f = ss.get('ungf', 'semua'), cnt = (st) => all.filter((k) => ungState(k) === st).length;
-    const list = all.filter((k) => f === 'semua' || ungState(k) === f).sort((a, b) => (b.lastTs || 0) - (a.lastTs || 0) || b.createdAt - a.createdAt);
+    const g = ss.get('ungg', ''), sort = ss.get('ungs', 'aktif');
+    const grades = [...new Set(all.map(ungGrade))].sort((a, b) => (a === 'none') - (b === 'none') || +a - +b);
+    box.innerHTML = `<section class="card"><h2>🧺 Siswa tanpa kelas <small class="muted">(${all.length})</small></h2>
+        <div class="kpis ungsum"><div class="kpi"><small>Aktif minggu ini</small><b>${cnt('aktif')}</b></div><div class="kpi"><small>Jeda 7–14 hari</small><b>${cnt('jeda')}</b></div><div class="kpi"><small>Tidak aktif >14 hari</small><b>${cnt('diam')}</b></div><div class="kpi"><small>Belum mulai</small><b>${cnt('belum')}</b></div><div class="kpi"><small>Soal minggu ini</small><b>${all.reduce((n, k) => n + (k.week || 0), 0)}</b></div></div>
+        <div class="tsub ungf">${UNG_F.map(([v, l]) => `<button class="${f === v ? 'on' : ''}" data-act="ungf" data-v="${v}">${l}${v === 'semua' ? '' : ` (${cnt(v)})`}</button>`).join('')}</div>
+        <div class="ungtools"><label class="ungq"><span aria-hidden="true">🔍</span><input id="ung-q" type="search" placeholder="Cari nama, kode belajar, kode orang tua…" value="${esc(ss.get('ungq', ''))}" autocomplete="off" aria-label="Cari siswa"></label>
+          <select data-act="ungsel" data-k="ungg" aria-label="Saring jenjang"><option value="">Semua jenjang</option>${grades.map((x) => `<option value="${x}" ${x === g ? 'selected' : ''}>${x === 'none' ? 'Belum mengerjakan soal' : esc(gname(+x))} (${all.filter((k) => ungGrade(k) === x).length})</option>`).join('')}</select>
+          <select data-act="ungsel" data-k="ungs" aria-label="Urutkan">${UNG_SORT.map(([v, l]) => `<option value="${v}" ${v === sort ? 'selected' : ''}>Urut: ${l}</option>`).join('')}</select></div>
+        <p class="small muted">Anak yang mulai belajar sendiri atau disetujui tanpa kelas. Siswa masuk dengan kode belajar (menu "Saya sudah punya kode"); orang tua melihat laporan di <b>#/ortu</b> dengan kode orang tua atau kode keluarga.</p>
+        <p class="small"><b>👨‍👩‍👧 Kakak-adik?</b> Centang anak-anaknya, lalu buat satu kode keluarga untuk orang tua.</p><button class="btn sm" data-act="famset">Buat kode keluarga untuk yang dicentang</button></section><div id="ung-list"></div>`;
+    renderUngList(ctx);
+  }
+  // Hanya tabel yang digambar ulang saat mengetik, agar kotak pencarian tidak kehilangan kursor
+  function renderUngList(ctx) {
+    const box = document.getElementById('ung-list'); if (!box || !UNG) return;
+    const all = UNG, f = ss.get('ungf', 'semua'), g = ss.get('ungg', ''), q = fold(ss.get('ungq', '').trim()), sort = UNG_CMP[ss.get('ungs', 'aktif')] || UNG_CMP.aktif;
+    const hit = (k) => !q || [k.name, k.code, k.parentCode, k.familyCode].some((v) => fold(v).includes(q));
+    const list = all.filter((k) => (f === 'semua' || ungState(k) === f) && (!g || ungGrade(k) === g) && hit(k)).sort(sort);
     {
       const opts = ctx.classes.slice().sort((a, b) => (a.schoolName || '').localeCompare(b.schoolName || '') || a.name.localeCompare(b.name)).map((c) => `<option value="${c.id}">${c.schoolName ? esc(c.schoolName) + ' · ' : ''}${esc(c.name)}</option>`).join('');
       // satu baris tabel per anak; tabel bisa digeser ke samping, kolom nama tetap terlihat
@@ -2399,11 +2430,9 @@
       const table = `<section class="card"><p class="small muted">Menampilkan ${from + 1}–${Math.min(from + UNG_PER, list.length)} dari ${list.length} anak · geser tabel ke samping untuk melihat kode dan kelas · klik nama untuk laporan.</p>
         <div class="tscroll"><table class="tbl ungtbl"><thead><tr><th>Siswa</th><th>Keadaan</th><th>Terakhir aktif</th><th>Soal minggu ini</th><th>Total soal</th><th>Ketepatan</th><th>Mahir</th><th>Sedang di</th><th>Kode belajar</th><th>Kode orang tua</th><th>Kode keluarga</th><th>Masukkan ke kelas</th></tr></thead>
         <tbody>${list.slice(from, from + UNG_PER).map(row).join('')}</tbody></table></div>${pager}</section>`;
-      box.innerHTML = `<section class="card"><h2>🧺 Siswa tanpa kelas <small class="muted">(${all.length})</small></h2>
-        <div class="kpis ungsum"><div class="kpi"><small>Aktif minggu ini</small><b>${cnt('aktif')}</b></div><div class="kpi"><small>Jeda 7–14 hari</small><b>${cnt('jeda')}</b></div><div class="kpi"><small>Tidak aktif >14 hari</small><b>${cnt('diam')}</b></div><div class="kpi"><small>Belum mulai</small><b>${cnt('belum')}</b></div><div class="kpi"><small>Soal minggu ini</small><b>${all.reduce((n, k) => n + (k.week || 0), 0)}</b></div></div>
-        <div class="tsub ungf">${UNG_F.map(([v, l]) => `<button class="${f === v ? 'on' : ''}" data-act="ungf" data-v="${v}">${l}${v === 'semua' ? '' : ` (${cnt(v)})`}</button>`).join('')}</div><p class="small muted">Anak yang mulai belajar sendiri atau disetujui tanpa kelas. Siswa masuk dengan kode belajar (menu "Saya sudah punya kode"); orang tua melihat laporan di <b>#/ortu</b> dengan kode orang tua atau kode keluarga.</p>
-        <p class="small"><b>👨‍👩‍👧 Kakak-adik?</b> Centang anak-anaknya, lalu buat satu kode keluarga untuk orang tua.</p><button class="btn sm" data-act="famset">Buat kode keluarga untuk yang dicentang</button></section>`
-        + (list.length ? table : all.length ? emptyCard('Tidak ada', 'Tidak ada anak dengan keadaan ini.') : emptyCard('Belum ada', 'Semua siswa sudah punya kelas.'));
+      const filtered = f !== 'semua' || g || q;
+      box.innerHTML = list.length ? table : !all.length ? emptyCard('Belum ada', 'Semua siswa sudah punya kelas.')
+        : emptyCard('Tidak ditemukan', `${q ? `Tidak ada anak yang cocok dengan "<b>${esc(ss.get('ungq', '').trim())}</b>"` : 'Tidak ada anak'}${filtered ? ' pada saringan ini' : ''}. <button class="link" data-act="ungreset">Hapus pencarian dan saringan</button>`);
     }
   }
   // Laporan satu siswa tanpa kelas untuk admin: kemajuan per bab dan jawaban terakhir
@@ -3504,6 +3533,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (act === 'jfilter') { const f = ls.get('metiq_jfilter', {}); f[el.dataset.k] = el.dataset.v; ls.set('metiq_jfilter', f); return route(); }
     if (act === 'apstu') return;
     if (act === 'ungp') { ss.set('ungp', +el.dataset.p); const ctx = teacherCtx(); if (ctx) renderUngrouped(ctx); const t = document.querySelector('.ungtbl'); if (t) t.closest('.card').scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+    if (act === 'ungreset') { ['ungq', 'ungg'].forEach((k) => ss.set(k, '')); ss.set('ungf', 'semua'); ss.set('ungp', 1); const ctx = teacherCtx(); if (ctx) renderUngrouped(ctx); return; }
     if (act === 'ungf') { ss.set('ungf', el.dataset.v); ss.set('ungp', 1); const ctx = teacherCtx(); if (ctx) renderUngrouped(ctx); return; }
     if (act === 'apcsv') { const ctx = teacherCtx(); if (ctx) exportAllProgress(ctx); return; }
     if (act === 'quotego') { e.preventDefault(); const q = document.getElementById('quote'); if (q) q.scrollIntoView({ behavior: 'smooth' }); return; }
@@ -3688,6 +3718,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   document.addEventListener('change', (e) => {
     const el = e.target;
     if (el.dataset.fam) { if (el.checked) UNG_SEL.add(el.dataset.fam); else UNG_SEL.delete(el.dataset.fam); return; }
+    if (el.dataset.act === 'ungsel') { ss.set(el.dataset.k, el.value); ss.set('ungp', 1); const ctx = teacherCtx(); if (ctx) renderUngList(ctx); return; }
     if (el.dataset.act === 'teacherset') return superTeacherSet(el);
     if (el.dataset.act === 'classteacher') return superClassTeacher(el);
     if (el.dataset.act === 'apstu') { ss.set('apStu', el.value); return route(); }
@@ -3714,7 +3745,9 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   });
   // Kode kelas: huruf besar otomatis, tombol Masuk aktif setelah 4 huruf, dan langsung masuk saat 5 huruf
   document.addEventListener('input', (e) => {
-    const el = e.target; if (el && el.dataset && el.dataset.act === 'pcalc') { const o = document.getElementById('pcalc-v'); if (o) o.textContent = rp(Math.max(0, Math.round(+el.value || 0)) * PRICE); return; }
+    const el = e.target;
+    if (el && el.id === 'ung-q') { ss.set('ungq', el.value); ss.set('ungp', 1); const ctx = teacherCtx(); if (ctx) renderUngList(ctx); return; }
+    if (el && el.dataset && el.dataset.act === 'pcalc') { const o = document.getElementById('pcalc-v'); if (o) o.textContent = rp(Math.max(0, Math.round(+el.value || 0)) * PRICE); return; }
     if (!el || el.id !== 'mqcode') return;
     el.value = el.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); el.classList.remove('bad');
     const b = document.getElementById('mqgo'); if (b) b.disabled = el.value.length < 4;
