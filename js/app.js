@@ -194,9 +194,9 @@
           <div class="st st-tito"><div class="hop">${MQ.svg('happy', { size: 96, who: 'tito', enter: false })}</div></div>
           <div class="st st-nahla"><div class="fly">${MQ.svg('cheer', { size: 86, who: 'nahla', enter: false })}</div></div>
           <div class="st st-lumo"><div class="jump">${MQ.svg('happy', { size: 92, who: 'lumo', enter: false })}</div><svg class="wave" viewBox="0 0 240 30" preserveAspectRatio="none" aria-hidden="true"><path d="M0 15 Q15 3 30 15 T60 15 T90 15 T120 15 T150 15 T180 15 T210 15 T240 15 V30 H0Z"/></svg></div></div>
-        ${installGuideHTML()}
         <h1>Belajar matematika jadi <span>seru!</span></h1>
         <p>Latihan singkat, naik level, dan kumpulkan hadiah bersama Meti.</p>
+        ${installGuideHTML()}
         ${kid ? `<a class="mq-resume" href="#/belajar"><span class="av">${avHTML(kid.avatar)}</span><span class="grow">${esc(kid.name)}<small style="display:block;font-weight:700;color:#6a7f7a">Lanjutkan belajarmu</small></span>›</a>` : ''}
         <div class="mq-cta">${kid
     ? '<a class="mq-btn pulse" href="#/belajar">Lanjut belajar</a><a class="mq-btn ghost" href="#/kode">Kode belajar</a>'
