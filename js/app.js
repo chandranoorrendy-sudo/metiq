@@ -715,7 +715,11 @@
     if (wipe) pad.remove(); else pad.hidden = true;
     const b = document.getElementById('mqcoret'); if (b) b.classList.remove('on');
     const fb = document.getElementById('fb'); if (fb) fb.classList.remove('cor', 'kshow');
+    document.body.classList.remove('coret-side');
   }
+  // Tablet: setelah pensil (Apple Pencil/stylus) terdeteksi, sentuhan jari dan telapak tangan tidak ikut mencoret
+  let penSeen = false;
+  addEventListener('resize', () => { const pad = document.getElementById('coret'); if (pad && !pad.hidden && pad.place) { pad.place(); if (pad.fit) pad.fit(); } });
   function openCoret() {
     let pad = document.getElementById('coret');
     const b = document.getElementById('mqcoret');
@@ -723,23 +727,31 @@
     if (b) b.classList.add('on');
     // Papan angka dilipat selama kertas coret terbuka, supaya kertasnya selebar mungkin; tombol 🔢 memunculkannya lagi
     const foot = document.getElementById('fb');
-    if (foot && foot.querySelector('.mq-krow')) { foot.classList.add('cor'); foot.classList.remove('kshow'); }
+    if (foot) foot.classList.remove('kshow');
     // duduk tepat di atas kaki layar (tombol jawaban dan Periksa tetap bisa diketuk)
     const place = () => {
       if (!pad) return;
+      // tablet mendatar: kertas coret menjadi panel penuh di kanan, soal dan tombol tetap di kiri
+      const side = innerWidth >= 900 && innerWidth > innerHeight;
+      document.body.classList.toggle('coret-side', side); pad.classList.toggle('side', side);
+      if (foot && foot.querySelector('.mq-krow')) foot.classList.toggle('cor', !side); // di samping, papan angka tidak perlu dilipat
+      Object.assign(pad.style, { top: '', left: '', right: '', width: '', maxWidth: '', margin: '', height: '' });
+      if (side) { Object.assign(pad.style, { top: '64px', bottom: '16px', left: '568px', right: '16px', height: 'auto', maxWidth: 'none', margin: '0', animation: 'none' }); return; }
+      // tablet tegak: selebar layar, tidak dibatasi 520 px seperti di HP
+      if (innerWidth >= 700) Object.assign(pad.style, { left: '16px', right: '16px', maxWidth: 'none', margin: '0' });
       if (coretPos) { const w = Math.min(pad.offsetWidth || 520, innerWidth), h = pad.offsetHeight || 300; Object.assign(pad.style, { left: Math.max(0, Math.min(innerWidth - w, coretPos[0])) + 'px', top: Math.max(0, Math.min(innerHeight - 52, coretPos[1])) + 'px', bottom: 'auto', right: 'auto', margin: '0', width: w + 'px', animation: 'none' }); return; }
       const fh = foot ? foot.offsetHeight : 0, vis = document.querySelector('#pq .mq-vis') || document.querySelector('#pq .mq-say');
       pad.style.bottom = fh + 'px';
       const room = vis ? innerHeight - fh - vis.getBoundingClientRect().bottom - 12 : 0;
       pad.style.height = !coretTall && room >= 170 ? Math.min(room, foot && foot.classList.contains('cor') ? 640 : 360) + 'px' : '';
     };
-    if (pad) { pad.hidden = false; place(); if (pad.fit) pad.fit(); return; }
+    if (pad) { pad.hidden = false; pad.place = place; place(); if (pad.fit) pad.fit(); return; }
     const COLORS = [['#0a7d68', 'hijau'], ['#1c9be8', 'biru'], ['#ff5a5f', 'merah']];
     pad = document.createElement('div'); pad.id = 'coret'; pad.className = 'mq-coret';
     pad.innerHTML = `<div class="bar"><b>✏️<span class="lbl"> Kertas coret</span></b><span class="tools">${COLORS.map(([c, n], i) => `<button data-c="${c}" class="${i ? '' : 'on'}" aria-label="Pensil ${n}"><i style="background:${c}"></i></button>`).join('')}
       <button data-c="erase" aria-label="Penghapus">🧽</button><button data-k="clear" aria-label="Hapus semua coretan">🗑️</button><button data-k="size" aria-label="Perbesar atau perkecil kertas coret">↕</button><button data-k="close" aria-label="Tutup kertas coret">✕</button></span></div>${P && P.q ? `<div class="qcopy">${esc(strip(P.q.log || P.q.text))}</div>` : ''}<canvas aria-label="Kertas coret"></canvas>`;
     if (coretTall) pad.classList.add('tall');
-    document.body.appendChild(pad); place();
+    document.body.appendChild(pad); pad.place = place; place();
     const cv = pad.querySelector('canvas'), ctx = cv.getContext('2d');
     let pen = COLORS[0][0], last = null;
     const fit = () => {
@@ -749,9 +761,9 @@
     };
     fit(); pad.fit = fit;
     const at = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
-    cv.addEventListener('pointerdown', (e) => { cv.setPointerCapture(e.pointerId); last = at(e); ctx.beginPath(); ctx.arc(last[0], last[1], pen === 'erase' ? 11 : 1.8, 0, Math.PI * 2); if (pen === 'erase') { ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.fill(); ctx.restore(); } else { ctx.fillStyle = pen; ctx.fill(); } });
+    cv.addEventListener('pointerdown', (e) => { if (e.pointerType === 'pen') penSeen = true; else if (penSeen && e.pointerType === 'touch') return; try { cv.setPointerCapture(e.pointerId); } catch (err) { /* sentuhan buatan */ } last = at(e); ctx.beginPath(); ctx.arc(last[0], last[1], pen === 'erase' ? 11 : 1.8, 0, Math.PI * 2); if (pen === 'erase') { ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.fill(); ctx.restore(); } else { ctx.fillStyle = pen; ctx.fill(); } });
     cv.addEventListener('pointermove', (e) => {
-      if (!last) return; const p = at(e);
+      if (!last || (penSeen && e.pointerType === 'touch')) return; const p = at(e);
       ctx.save(); if (pen === 'erase') ctx.globalCompositeOperation = 'destination-out';
       ctx.strokeStyle = pen === 'erase' ? '#000' : pen; ctx.lineWidth = pen === 'erase' ? 22 : 3.6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
       ctx.beginPath(); ctx.moveTo(last[0], last[1]); ctx.lineTo(p[0], p[1]); ctx.stroke(); ctx.restore(); last = p;
@@ -761,7 +773,7 @@
     const bar = pad.querySelector('.bar');
     let drag = null;
     bar.addEventListener('pointerdown', (e) => {
-      if (e.target.closest('button')) return;
+      if (e.target.closest('button') || pad.classList.contains('side')) return;
       const x0 = pad.offsetLeft, y0 = pad.offsetTop; drag = [e.clientX - x0, e.clientY - y0];
       coretPos = [x0, y0]; pad.style.animation = 'none'; place(); try { bar.setPointerCapture(e.pointerId); } catch (err) { /* sentuhan buatan tanpa pointer aktif */ } pad.classList.add('drag'); e.preventDefault();
     });

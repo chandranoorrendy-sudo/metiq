@@ -960,3 +960,9 @@ html .mq-bubble .mq-spk.aud { display: inline-flex !important; background: #ff9f
 @media (prefers-reduced-motion: reduce) { .mq-hello, .mq-hello-ic { animation: none; } }
 @media (max-width: 370px) { .mq-hello { font-size: 1.3rem; } }
 .mq-hero .mq-install { width: 100%; margin: 6px 0 18px; text-align: left; }
+
+/* Tablet mendatar: kertas coret di kanan, soal dan tombol di kiri */
+body.coret-side .mq-screen, body.coret-side .mq-top { margin-left: 24px; margin-right: auto; }
+body.coret-side .mq-foot { right: auto; width: 568px; }
+.mq-coret.side { border-bottom: 2px solid #f1d98a; border-radius: 20px; }
+.mq-coret.side [data-k="size"] { display: none; }
