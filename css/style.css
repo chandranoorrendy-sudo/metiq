@@ -1027,6 +1027,14 @@ b.big { font-size: 1.3rem; display: block; }
 .pg-ask { color: var(--warn); }
 .pgap.pg-q { font-size: 2.2rem; display: flex; justify-content: center; }
 .pgap.pg-q .pg-board { border: 0; background: none; padding: 0; }
+.kmul .km-a { color: var(--ink); }
+.kmul .km-op { color: var(--ink); animation: kc-in .4s ease both; }
+.kmul .km-p { color: #1f3c88; animation: kc-pop2 .45s cubic-bezier(.3, 1.5, .5, 1) both; }
+.kmul .km-r { color: #15a36b; animation: kc-pop2 .45s cubic-bezier(.3, 1.5, .5, 1) both; }
+.kmul .km-cy { font-size: .72em; line-height: 1.1; align-self: end; color: #e0464b; animation: kc-fly .45s ease both; }
+.kmul .km-cy.blink { animation-name: km-blink; animation-timing-function: linear; }
+.pg-ln.st { animation: none; }
+@keyframes km-blink { 0% { opacity: 0; } 6%, 88% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes pg-down { from { opacity: 0; transform: translateY(-1.6em); } }
 @keyframes pg-line { from { transform: scaleX(0); } }
 

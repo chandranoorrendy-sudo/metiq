@@ -147,5 +147,71 @@
       <ol class="kc-cap">${cap.map(([s, x]) => `<li ${dl(s)}>${x}</li>`).join('')}</ol><button class="link small kc-again" data-act="kolomplay">↻ Putar lagi</button></div>`;
   }
 
-  window.METIQ_KOLOM = { html, bagi, porogapit };
+  /* ---------- Perkalian bersusun ----------
+   * Pengali satu angka (23 × 9): kalikan setiap angka yang dikali dengan pengali, tulis hasilnya sejajar tempatnya
+   * (3 × 9 = 27 sejajar satuan, 2 × 9 = 18 mulai kolom puluhan), lalu jumlahkan dengan angka simpanan: 27 + 180 = 207.
+   * Pengali dua angka atau lebih (23 × 45): satu baris per angka pengali, angka yang disimpan ditulis kecil di atas
+   * yang dikali (hilang saat baris berikutnya dimulai), baris kedua bergeser satu kolom, lalu dijumlahkan.
+   *   METIQ_KOLOM.kali(23, 9) */
+  const PL = ['satuan', 'puluhan', 'ratusan', 'ribuan', 'puluh ribuan', 'ratus ribuan', 'jutaan', 'puluh jutaan'];
+  function kali(a, b) {
+    if (!Number.isInteger(a) || !Number.isInteger(b) || a < 10 || b < 2 || a * b > 99999999) return '';
+    const A = String(a), B = String(b), Rs = String(a * b), C = Math.max(Rs.length, A.length, B.length) + 1;
+    const col = (k) => C - k, da = A.split('').reverse().map(Number), db = B.split('').reverse().map(Number);
+    const hot = (r, c, s, dur) => `<i class="pg-hot sm" style="grid-row:${r};grid-column:${c};animation-delay:${s.toFixed(2)}s${dur ? `;animation-duration:${dur.toFixed(2)}s` : ''}"></i>`;
+    let s = '', t = 0.6, row = 6;
+    const cap = [], parts = [];
+    da.forEach((x, k) => { s += cell(2, col(k), 'km-a', x); });
+    db.forEach((x, k) => { s += cell(3, col(k), 'km-a', x); });
+    s += cell(3, 1, 'km-op', '×') + `<i class="pg-ln st" style="grid-row:4;grid-column:1 / ${C + 1}"></i>`;
+    if (db.length === 1) {
+      const m = db[0];
+      da.forEach((x, k) => {
+        const p = x * m, P = String(p);
+        s += hot(2, col(k), t) + hot(3, col(0), t);
+        P.split('').forEach((y, i) => { s += cell(row, col(k) - P.length + 1 + i, 'km-p', y, t + 0.6); });
+        cap.push([t, `<b>${cap1(PL[k])}:</b> ${x} × ${m} = <b>${p}</b>. Tulis ${p} sejajar ${PL[k]} yang dikali${P.length > 1 && k ? ` (angka ${P.slice(-1)} di kolom ${PL[k]})` : ''}.`]);
+        parts.push([p, k]); row++; t += 2.2;
+      });
+    } else {
+      db.forEach((m, i) => {
+        let carry = 0, tt = t; const bits = [];
+        const rowEnd = t + da.length * 1.2 + 0.6, last = i === db.length - 1;
+        s += hot(3, col(i), t, rowEnd - t);
+        da.forEach((x, k) => {
+          const v = x * m + carry, cin = carry; carry = Math.floor(v / 10);
+          s += hot(2, col(k), tt);
+          const lastDigit = k === da.length - 1;
+          const out = lastDigit ? String(v) : String(v % 10);
+          out.split('').forEach((y, j) => { s += cell(row, col(k + i) - out.length + 1 + j, 'km-p', y, tt + 0.4); });
+          if (!lastDigit && carry) s += last ? cell(1, col(k + 1), 'km-cy', carry, tt + 0.5) : cell(1, col(k + 1), 'km-cy blink', carry, tt + 0.5, `animation-duration:${(rowEnd - tt - 0.5).toFixed(2)}s;`);
+          bits.push(`${x} × ${m}${cin ? ` + ${cin}` : ''} = ${v}${!lastDigit && carry ? `, tulis ${v % 10} simpan <b class="kc-hl">${carry}</b>` : ''}`);
+          tt += 1.2;
+        });
+        cap.push([t, `<b>Kali dengan ${PL[i]} pengali (${m})${i ? `, mulai kolom ${PL[i]}` : ''}:</b> ${bits.join('; ')}. Baris ini: <b>${(a * m).toLocaleString('id-ID')}</b>.`]);
+        parts.push([a * m, i]); row++; t = rowEnd;
+      });
+    }
+    // jumlahkan baris-baris hasil, angka simpanan ditulis kecil di baris atas
+    s += cell(row - 1, 1, 'km-op', '+', t) + `<i class="pg-ln" style="grid-row:${row};grid-column:1 / ${C + 1};animation-delay:${t.toFixed(2)}s"></i>`;
+    const res = row + 1, bits = [];
+    let c = 0; t += 0.5;
+    const t0 = t;
+    for (let k = 0; k < Rs.length; k++) {
+      const terms = parts.map(([v, sh]) => { const d = String(v).split('').reverse()[k - sh]; return k >= sh && d !== undefined ? +d : null; }).filter((v) => v !== null);
+      const sum = terms.reduce((x, y) => x + y, 0) + c, cin = c; c = Math.floor(sum / 10);
+      s += cell(res, col(k), 'km-r', sum % 10, t + 0.3);
+      if (c && k < Rs.length - 1) s += cell(5, col(k + 1), 'km-cy', c, t + 0.4);
+      const expr = [...terms.map(String), ...(cin ? [`${cin} (simpanan)`] : [])];
+      bits.push(`${PL[k]} ${expr.length > 1 || cin ? `${expr.join(' + ')}${expr.length > 1 ? ` = ${sum}` : ''}` : sum}${c && k < Rs.length - 1 ? `, tulis ${sum % 10} simpan <b class="kc-hl">${c}</b>` : ''}`);
+      t += 1;
+    }
+    cap.push([t0, `<b>Jumlahkan dari satuan:</b> ${bits.join('; ')}.`]);
+    cap.push([t, `Jawabannya <b>${(a * b).toLocaleString('id-ID')}</b>.`]);
+    const dl = (x) => `style="animation-delay:${x.toFixed(2)}s"`;
+    return `<div class="kolom pgap kmul" style="--cols:${C}"><div class="pg-board">${s}</div>
+      <ol class="kc-cap">${cap.map(([x, y]) => `<li ${dl(x)}>${y}</li>`).join('')}</ol><button class="link small kc-again" data-act="kolomplay">↻ Putar lagi</button></div>`;
+  }
+
+  window.METIQ_KOLOM = { html, bagi, porogapit, kali };
 })();

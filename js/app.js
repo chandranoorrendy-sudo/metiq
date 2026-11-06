@@ -3125,6 +3125,8 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (!K || !m || !sk || sk.grade < 1 || !Number.isInteger(m.a) || !Number.isInteger(m.b)) return '';
     // pembagian bersusun (Kelas 3-5): porogapit langkah demi langkah (bagi, kali, kurang, turunkan)
     if (m.op === '/') return sk.grade <= 5 && K.bagi && m.a >= 10 && (/class="pgap/.test(q.vis || '') || /bersusun|bersisa|dua angka/i.test(sk.name)) ? K.bagi(m.a, m.b) : '';
+    // perkalian bersusun (Kelas 3-5): kalikan per angka, tulis sejajar tempatnya, jumlahkan dengan angka simpanan
+    if (m.op === 'x') return sk.grade <= 5 && K.kali && m.kind !== 'unit' && /class="stack/.test(q.vis || '') ? K.kali(m.a, m.b) : '';
     if (sk.grade > 4 || (m.op !== '+' && m.op !== '-')) return '';
     if (!/class="stack/.test(q.vis || '') && !/menyimpan|meminjam|bersusun/i.test(sk.name)) return '';
     return Math.max(m.a, m.b) >= 10 ? K.html(m.a, m.op, m.b) : '';
