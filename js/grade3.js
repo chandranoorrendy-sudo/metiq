@@ -84,7 +84,7 @@
       skills: [
         { id: '3G1', name: 'Dua angka dikali satu angka', gen() { const a = r(12, 99), b = r(2, 9), t = Math.floor(a / 10) * 10, o = a % 10; return inp(`${a} × ${b} = ?`, a * b, `${a} × ${b} = ${t} × ${b} + ${o} × ${b} = ${t * b} + ${o * b} = <b>${a * b}</b>.`, { vis: stack(a, '×', b), meta: { op: 'x', a, b } }); } },
         { id: '3G2', name: 'Tiga angka dikali satu angka', gen() { const a = r(101, 999), b = r(2, 9); return inp(`${a} × ${b} = ?`, a * b, `Kalikan satuan, puluhan, lalu ratusan dengan ${b}, jangan lupa simpanan. Jawabannya <b>${fmt(a * b)}</b>.`, { vis: stack(a, '×', b), meta: { op: 'x', a, b } }); } },
-        { id: '3G3', name: 'Pembagian bersusun (tanpa sisa)', gen() { const d = r(2, 6), q = r(11, Math.floor(99 / d)), n = d * q; return inp(`${n} ÷ ${d} = ?`, q, `Bagi puluhan dulu, lalu satuan. Periksa: ${d} × ${q} = ${n}. Jawabannya <b>${q}</b>.`, { vis: V.big(`${n} ÷ ${d} = <span class="q">?</span>`), meta: { op: '/', a: n, b: d } }); } },
+        { id: '3G3', name: 'Pembagian bersusun (tanpa sisa)', gen() { const d = r(2, 6), q = r(11, Math.floor(99 / d)), n = d * q; return inp(`${n} ÷ ${d} = ?`, q, `Bagi puluhan dulu, lalu satuan. Periksa: ${d} × ${q} = ${n}. Jawabannya <b>${q}</b>.`, { vis: window.METIQ_KOLOM.porogapit(n, d), meta: { op: '/', a: n, b: d } }); } },
         { id: '3G4', name: 'Mengalikan dengan puluhan dan ratusan', gen() { const a = r(2, 9), k = pick([10, 100]), b = r(2, 9); return inp(`${a * k} × ${b} = ?`, a * k * b, `${a} × ${b} = ${a * b}, lalu tambahkan ${k === 10 ? 'satu' : 'dua'} nol: <b>${fmt(a * k * b)}</b>.`, { vis: V.big(`${a * k} × ${b} = <span class="q">?</span>`), meta: { op: 'x', a: a * k, b } }); } },
       ],
     },

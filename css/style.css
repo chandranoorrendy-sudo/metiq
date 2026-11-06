@@ -1009,6 +1009,26 @@ b.big { font-size: 1.3rem; display: block; }
 @keyframes kc-hot { 0% { opacity: 0; } 12%, 80% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes kc-in { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { .kolom * { animation-duration: .01s !important; } }
+/* Pembagian bersusun (porogapit) */
+.pgap { --cw: 1.25em; }
+.pgap .pg-board { position: relative; display: inline-grid; grid-template-columns: repeat(var(--cols), var(--cw)); grid-auto-rows: auto; padding: 8px 14px 10px; border-radius: 16px; background: #fff; border: 2px solid var(--line); font-weight: 900; text-align: center; line-height: 1.3; }
+.pg-c { position: relative; z-index: 1; }
+.pg-dv { color: #d6457a; }
+.pg-nd { color: var(--ink); border-top: 3px solid var(--ink); }
+.pg-br { position: relative; z-index: 1; border-top: 3px solid var(--ink); }
+.pg-br::before { content: ''; position: absolute; left: 22%; right: 22%; top: -3px; bottom: 0; border-right: 3px solid var(--ink); border-radius: 0 60% 60% 0 / 0 50% 50% 0; }
+.pg-qd { color: #15a36b; animation: kc-pop2 .45s cubic-bezier(.3, 1.5, .5, 1) both; }
+.pg-pr, .pg-op { color: #1f3c88; animation: kc-in .4s ease both; }
+.pg-rm { color: var(--ink); animation: kc-in .4s ease both; }
+.pg-dn { color: #e07000; animation: pg-down .5s ease both; }
+.pg-ln { display: block; height: 3px; align-self: center; margin: 2px 0; background: var(--ink); border-radius: 2px; transform-origin: right; animation: pg-line .35s ease both; position: relative; z-index: 1; }
+.pg-hot { display: block; border-radius: 8px; background: #fff3c4; opacity: 0; animation: kc-hot 2.6s ease both; margin: 0 -2px; }
+.pg-hot.sm { animation-duration: 1.2s; background: #ffe2bf; }
+.pg-ask { color: var(--warn); }
+.pgap.pg-q { font-size: 2.2rem; display: flex; justify-content: center; }
+.pgap.pg-q .pg-board { border: 0; background: none; padding: 0; }
+@keyframes pg-down { from { opacity: 0; transform: translateY(-1.6em); } }
+@keyframes pg-line { from { transform: scaleX(0); } }
 
 /* Lembar Hafalan: lembar latihan urut, acak, pola */
 .lb-pick { text-align: center; } .lb-pick p { font-weight: 900; margin: 8px 0 12px; }

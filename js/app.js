@@ -823,7 +823,7 @@
     if (!P.test && !P.diag && window.METIQ_POLA && window.METIQ_POLA.has(P.sk.id)) q = window.METIQ_POLA.next(P.sid, P.sk.id);
     else do { q = P.sk.gen(); } while (P.q && strip(q.text + (q.vis || '')) === strip(P.q.text + (P.q.vis || '')) && guard++ < 5);
     P.q = q; P.input = ''; P.sel = -1; P.locked = false; P.qStart = Date.now();
-    const canCoret = coretOn(P.sk) || /class="stack/.test(q.vis || '');
+    const canCoret = coretOn(P.sk) || /class="(stack|pgap)/.test(q.vis || '');
     closeCoret(true); { const cb = document.getElementById('mqcoret'); if (cb) cb.hidden = !canCoret; }
     const choice = q.type === 'choice', box = document.getElementById('pq');
     box.innerHTML = `
@@ -3122,7 +3122,10 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   // Soal +/− bersusun SD (bilangan bulat, ada angka puluhan): penjelasan diberi animasi menyimpan dan meminjam per kolom
   const kolomOf = (q, sk) => {
     const m = q && q.meta, K = window.METIQ_KOLOM;
-    if (!K || !m || !sk || sk.grade < 1 || sk.grade > 4 || (m.op !== '+' && m.op !== '-') || !Number.isInteger(m.a) || !Number.isInteger(m.b)) return '';
+    if (!K || !m || !sk || sk.grade < 1 || !Number.isInteger(m.a) || !Number.isInteger(m.b)) return '';
+    // pembagian bersusun (Kelas 3-5): porogapit langkah demi langkah (bagi, kali, kurang, turunkan)
+    if (m.op === '/') return sk.grade <= 5 && K.bagi && m.a >= 10 && (/class="pgap/.test(q.vis || '') || /bersusun|bersisa|dua angka/i.test(sk.name)) ? K.bagi(m.a, m.b) : '';
+    if (sk.grade > 4 || (m.op !== '+' && m.op !== '-')) return '';
     if (!/class="stack/.test(q.vis || '') && !/menyimpan|meminjam|bersusun/i.test(sk.name)) return '';
     return Math.max(m.a, m.b) >= 10 ? K.html(m.a, m.op, m.b) : '';
   };
