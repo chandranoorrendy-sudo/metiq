@@ -278,7 +278,7 @@ details.mq-ud[open] > summary .chev { transform: rotate(180deg); } .mq-unit .che
 .mq-lhead { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; }
 .mq-logo { display: flex; align-items: center; gap: 8px; text-decoration: none; color: var(--mq-ink); font-weight: 900; font-size: 1.5rem; letter-spacing: -.5px; } .mq-logo img { width: 36px; height: 36px; border-radius: 10px; } .mq-logo .alpha { font-size: .62rem; padding: 2px 7px; border-radius: 99px; background: var(--mq-bg); color: var(--mq-dd); letter-spacing: 0; }
 .mq-tlink { padding: 10px 14px; border: 2px solid var(--mq-line); border-bottom-width: 4px; border-radius: 14px; font-weight: 900; font-size: .85rem; letter-spacing: .05em; text-transform: uppercase; color: var(--mq-dd); text-decoration: none; background: #fff; }
-.mq-hero { display: grid; justify-items: center; gap: 10px; padding: 14px 0 30px; text-align: center; position: relative; }
+.mq-hero { display: grid; justify-items: center; gap: 10px; padding: 14px 0 30px; text-align: center; position: relative; overflow-x: clip; }
 .mq-hero-art { position: relative; width: 250px; height: 250px; display: grid; place-items: center; }
 .mq-hero-art::before { content: ''; position: absolute; inset: 14px; border-radius: 50%; background: radial-gradient(circle, #d9fff5 0 60%, transparent 71%); }
 .mq-hero-art .mq-mascot { position: relative; }
