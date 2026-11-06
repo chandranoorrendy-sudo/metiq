@@ -265,6 +265,37 @@
   );
   GAMES.forEach((g) => { if (g.type === 'pasangan') g.stars = [10, 14, 17]; });
 
+  /* ---------- Lembar Hafalan: satu kelompok fakta diulang dalam beberapa bentuk (urut, acak, pola), seperti lembar latihan harian ---------- */
+  // Satu baris = potongan teks dan kotak jawaban { a: angka }. Bagian A urut, B acak, C bentuk lain dari fakta yang sama.
+  const BX = (a) => ({ a });
+  function sheet(op, n) {
+    const ks = [...Array(10)].map((_, i) => i + 1), O = { '+': '+', '-': '−', x: '×', ':': ':' }[op];
+    const fact = (k) => (op === '+' ? [`${k} + ${n} =`, k + n] : op === '-' ? [`${k + n} − ${n} =`, k] : op === 'x' ? [`${n} × ${k} =`, n * k] : [`${n * k} : ${n} =`, k]);
+    const line = (k) => { const [t, a] = fact(k); return [t, BX(a)]; };
+    const A = ks.map(line), B = shuffle(ks.slice()).map(line);
+    let C, ct;
+    if (op === '+') { ct = 'Isi angka yang hilang'; C = shuffle(ks.slice()).slice(0, 6).map((k) => [BX(k), `+ ${n} = ${k + n}`]); }
+    else if (op === '-') { ct = 'Isi angka yang hilang'; C = shuffle(ks.slice()).slice(0, 6).map((k) => [BX(k + n), `− ${n} = ${k}`]); }
+    else if (op === 'x') {
+      ct = 'Lanjutkan pola, lalu jumlahkan';
+      const row = (s0) => [...Array(6)].flatMap((_, i) => { const v = n * (s0 + i); return i < 3 ? [`${v}`, i < 5 ? ',' : ''] : [BX(v), i < 5 ? ',' : '']; }).filter((x) => x !== '');
+      C = [row(1), row(3), ...[2, 3, 4].map((m) => [Array(m).fill(n).join(' + ') + ' =', BX(n * m)])];
+    } else { ct = 'Isi faktor yang hilang'; C = shuffle(ks.slice()).slice(0, 6).map((k) => [`${n} ×`, BX(k), `= ${n * k}`]); }
+    return { title: `${{ '+': 'Tambah', '-': 'Kurang', x: 'Kali', ':': 'Bagi' }[op]} ${n}`, op: O, parts: [['A', 'Urut: baca sambil menulis', A], ['B', 'Acak', B], ['C', ct, C]] };
+  }
+  const LEMBAR = [
+    { grade: -1, op: '+', ns: [1, 2, 3, 4, 5] },
+    { grade: 1, op: '+', ns: [1, 2, 3, 4, 5, 6, 7, 8, 9] }, { grade: 1, op: '-', ns: [1, 2, 3, 4, 5, 6, 7, 8, 9] },
+    { grade: 2, op: '-', ns: [1, 2, 3, 4, 5, 6, 7, 8, 9] }, { grade: 2, op: 'x', ns: [2, 3, 4, 5, 10] },
+    { grade: 3, op: 'x', ns: [2, 3, 4, 5, 6, 7, 8, 9] }, { grade: 3, op: ':', ns: [2, 3, 4, 5, 6, 7, 8, 9] },
+    { grade: 4, op: ':', ns: [2, 3, 4, 5, 6, 7, 8, 9] },
+  ];
+  LEMBAR.forEach((L, i) => {
+    const name = { '+': 'Penjumlahan', '-': 'Pengurangan', x: 'Perkalian', ':': 'Pembagian' }[L.op];
+    GAMES.push({ id: L.grade + 'l' + i, grade: L.grade, type: 'lembar', icon: '🗒️', name: `Lembar ${name}`, isNew: true, op: L.op, ns: L.ns, stars: [80, 90, 100],
+      desc: `Pilih satu lembar, misalnya ${{ '+': 'Tambah 4', '-': 'Kurang 4', x: 'Kali 6', ':': 'Bagi 6' }[L.op]}. Bagian A berurutan (baca sambil menulis), bagian B soal yang sama diacak, bagian C bentuk lain dari fakta yang sama. Ketuk kotak, tulis jawaban dengan tombol angka, lalu Periksa. Jawaban yang salah diperbaiki sampai semuanya benar. Bintang dari persen benar pada pemeriksaan pertama: 80%, 90%, dan 100%.` });
+  });
+
   /* ---------- Tarik Tambang: dua tim di satu layar (cocok untuk IFP di kelas), soal dari Kilat kelas itu ---------- */
   const dots = (n) => `<span class="gdots">${'●'.repeat(Math.min(n, 5))}${n > 5 ? '<br>' + '●'.repeat(n - 5) : ''}</span>`;
   const TT_TK = () => { const n = R(1, 5), set = new Set([n]); while (set.size < 3) set.add(R(1, 5)); return { text: dots(n), answer: String(n), options: shuffle([...set]).map(String), ask: 'Ada berapa?' }; };
@@ -704,11 +735,12 @@
     ['pola', 'pl', [-2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 11], (gr) => (gr <= -1 ? 'Lanjutkan Pola' : 'Pola dan Barisan'), POLA, 'Temukan aturannya, lalu lengkapi gambar atau bilangan yang hilang. Kelas lanjut: suku ke-n, rumus suku, dan barisan geometri. 10 soal, tanpa batas waktu.'],
   ];
   NEW8.forEach(([type, suf, grades, name, gen, desc]) => grades.forEach((gr) => GAMES.push({ id: gr + suf, grade: gr, type, icon: { batang: '📊', timbang: '⚖️', peta: '🗺️', nilai: '🧱', bangun: '🔺', ukur: '📏', grafik: '📈', pola: '🔁' }[type], name: name(gr), isNew: true, stars: type === 'ukur' && gr >= 7 ? [8, 13, 17] : [6, 8, 10], next: gen[gr], desc })));
-  const TYPES = { tambang: 'Dua tim · 90 detik', sudoku: 'Teka-teki logika', kilat: 'Cepat tepat · 60 detik', balon: 'Pecahkan balon · 60 detik', pasangan: 'Kartu memori', susun: 'Balok jatuh · jumlah sasaran', kembar: 'Balok jatuh · gabung kembar', garis: 'Geser di garis · 10 soal', juring: 'Ketuk bagian · 10 soal', jam: 'Putar jarum · 10 soal', uang: 'Bayar pas · 10 soal',
+  const TYPES = { lembar: 'Lembar latihan · urut, acak, pola', tambang: 'Dua tim · 90 detik', sudoku: 'Teka-teki logika', kilat: 'Cepat tepat · 60 detik', balon: 'Pecahkan balon · 60 detik', pasangan: 'Kartu memori', susun: 'Balok jatuh · jumlah sasaran', kembar: 'Balok jatuh · gabung kembar', garis: 'Geser di garis · 10 soal', juring: 'Ketuk bagian · 10 soal', jam: 'Putar jarum · 10 soal', uang: 'Bayar pas · 10 soal',
     batang: 'Model batang · 10 soal', timbang: 'Seimbangkan · 10 soal', peta: 'Koordinat · 10 soal', nilai: 'Balok nilai tempat · 10 soal', bangun: 'Ketuk bangun · 10 soal', ukur: 'Baca alat ukur · 10 soal', grafik: 'Baca grafik · 10 soal', pola: 'Lengkapi pola · 10 soal' };
   // Cara main dalam gambar: ikon + dua-tiga kata
   const HOW = {
     kilat: () => [['👀', 'Lihat soal'], ['👆', 'Ketuk jawaban'], ['⏱️', '60 detik']],
+    lembar: () => [['🔢', 'Urut'], ['🔀', 'Acak'], ['🧩', 'Pola'], ['✍️', 'Perbaiki yang salah']],
     tambang: () => [['🟥🟦', 'Dua tim'], ['✅', 'Benar: tali tertarik'], ['🏁', 'Bendera sampai garis: menang']],
     sudoku: (g) => [['👆', 'Ketuk kotak kosong'], [g.pic ? '🍎' : '🔢', g.pic ? 'Pilih buahnya' : 'Pilih angkanya'], ['↔️↕️', 'Tidak boleh kembar']],
     balon: () => [['📢', 'Baca perintah'], ['🎈', 'Pecahkan yang cocok'], ['💥', 'Salah: −1']],
@@ -738,10 +770,11 @@
     kembar: () => `<div class="row">${exBlk('4', '#a8f0de')}${exBlk('4', '#a8f0de')}<span class="op">→</span>${exBlk('8', '#7be3c6')}</div><p>Balok yang sama dan bersentuhan menyatu menjadi dua kali lipat.</p>`,
   };
   // Warna dan ilustrasi tiap jenis permainan (SVG, 120 × 90)
-  const LOOK = { tambang: ['#e0464b', '#ffeeee'], sudoku: ['#7c5cd6', '#f1ecff'], kilat: ['#ffb020', '#fff4d6'], balon: ['#ff6b81', '#ffe8ec'], pasangan: ['#8e7cc3', '#efeaff'], susun: ['#1c9be8', '#e3f3ff'], kembar: ['#19b796', '#e6fffa'], garis: ['#58cc02', '#eaffd6'], juring: ['#ff8a00', '#fff0e0'], jam: ['#0ea5e9', '#e0f6ff'], uang: ['#16a34a', '#e7f8ec'],
+  const LOOK = { lembar: ['#2f7d5b', '#e9f7ef'], tambang: ['#e0464b', '#ffeeee'], sudoku: ['#7c5cd6', '#f1ecff'], kilat: ['#ffb020', '#fff4d6'], balon: ['#ff6b81', '#ffe8ec'], pasangan: ['#8e7cc3', '#efeaff'], susun: ['#1c9be8', '#e3f3ff'], kembar: ['#19b796', '#e6fffa'], garis: ['#58cc02', '#eaffd6'], juring: ['#ff8a00', '#fff0e0'], jam: ['#0ea5e9', '#e0f6ff'], uang: ['#16a34a', '#e7f8ec'],
     batang: ['#c026d3', '#fbe9fd'], timbang: ['#b45309', '#fdf2e3'], peta: ['#0f766e', '#e2f5f2'], nilai: ['#2563eb', '#e8eeff'], bangun: ['#e11d48', '#ffe8ed'], ukur: ['#4f46e5', '#ecebff'], grafik: ['#0891b2', '#e3f7fb'], pola: ['#65a30d', '#f0f9e3'] };
   const blk = (x, y, c, t) => `<rect x="${x}" y="${y}" width="26" height="22" rx="6" fill="${c}" stroke="#fff" stroke-width="2"/><text x="${x + 13}" y="${y + 16}" text-anchor="middle" font-size="13" font-weight="900" fill="#04382e">${t}</text>`;
   const ART = {
+    lembar: '<rect x="30" y="6" width="62" height="80" rx="6" fill="#fff" stroke="#2f7d5b" stroke-width="3"/>' + [0, 1, 2, 3, 4].map((i) => `<text x="40" y="${24 + i * 14}" font-size="10" font-weight="900" fill="#16302b">6 × ${i + 1} =</text><rect x="72" y="${15 + i * 14}" width="14" height="11" rx="2" fill="${i < 3 ? '#d4fcef' : '#fff'}" stroke="#2f7d5b" stroke-width="1.5"/>`).join('') + '<path d="M96 70l10-10 6 6-10 10-8 2z" fill="#ffc800" stroke="#e0a800" stroke-width="2"/>',
     tambang: '<path d="M8 52h104" stroke="#c99a5b" stroke-width="5" stroke-linecap="round"/><path d="M8 52h104" stroke="#e8c08a" stroke-width="2" stroke-dasharray="6 5"/><path d="M60 30v44" stroke="#9aa7a4" stroke-width="2" stroke-dasharray="4 4"/><path d="M60 52v-18l14 6-14 6" fill="#ffc800" stroke="#e0a800" stroke-width="2"/><circle cx="18" cy="40" r="11" fill="#ff5a5f"/><circle cx="102" cy="40" r="11" fill="#1f3c88"/><path d="M12 54l-6 22M24 54l4 22M96 54l-4 22M108 54l6 22" stroke="#5c7570" stroke-width="4" stroke-linecap="round"/>',
     sudoku: '<rect x="24" y="8" width="72" height="72" rx="8" fill="#fff" stroke="#7c5cd6" stroke-width="4"/><path d="M60 8v72M24 44h72" stroke="#7c5cd6" stroke-width="3"/><path d="M42 8v72M78 8v72M24 26h72M24 62h72" stroke="#c9b8f5" stroke-width="2"/>' + [[33, 22, '1'], [69, 22, '3'], [51, 40, '4'], [87, 58, '2'], [33, 76, '2'], [69, 76, '4']].map(([x, y, t]) => `<text x="${x}" y="${y}" text-anchor="middle" font-size="14" font-weight="900" fill="#4b2fa6">${t}</text>`).join(''),
     kilat: '<circle cx="60" cy="45" r="34" fill="#ffe08a"/><path d="M68 10 40 50h17l-7 30 32-42H64z" fill="#ffc800" stroke="#e08a00" stroke-width="3" stroke-linejoin="round"/><circle cx="22" cy="20" r="4" fill="#ffb020"/><circle cx="100" cy="70" r="5" fill="#ffb020"/><circle cx="98" cy="18" r="3" fill="#ffb020"/>',
@@ -1326,6 +1359,45 @@
         next = spawn(); render(changed ? -1 : c);
         if (grid.every((col) => col.length >= ROWS)) later(end, 500);
       });
+    } else if (g.type === 'lembar') {
+      // pilih lembar, lalu kerjakan; papan angka menulis ke kotak yang dipilih
+      const pickSheet = () => {
+        el.innerHTML = `<div class="lb-pick"><p>Pilih lembar:</p><div>${g.ns.map((n) => `<button class="lb-n" data-n="${n}">${g.op === 'x' ? '×' : g.op === ':' ? ':' : g.op === '-' ? '−' : '+'} ${n}</button>`).join('')}</div></div>`;
+        el.querySelectorAll('.lb-n').forEach((b) => b.addEventListener('click', () => play(+b.dataset.n)));
+      };
+      const play = (n) => {
+        const sh = sheet(g.op, n), boxes = []; let cur = 0, first = null;
+        const cell = (x) => (typeof x === 'string' ? `<span>${x}</span>` : `<button class="lb-b" data-i="${boxes.push(x) - 1}"></button>`);
+        el.innerHTML = `<div class="ghud"><div><small>Lembar</small><b>${sh.title}</b></div><div><small>Waktu</small><b id="gsec">0:00</b></div><div><small>Terisi</small><b id="lb-fill">0</b></div></div>
+          <div class="lb-sheet">${sh.parts.map(([k, t, lines]) => `<section><h4><b>${k}</b> ${t}</h4>${lines.map((ln, j) => `<div class="lb-ln"><small>(${j + 1})</small>${ln.map(cell).join('')}</div>`).join('')}</section>`).join('')}</div>
+          <div class="lb-pad">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => `<button data-k="${d}">${d}</button>`).join('')}<button data-k="del" class="del" aria-label="Hapus">⌫</button><button data-k="0">0</button><button data-k="next" class="nx" aria-label="Kotak berikutnya">⏎</button>
+            <button data-k="check" class="ck">Periksa</button></div>`;
+        const els = [...el.querySelectorAll('.lb-b')], val = boxes.map(() => '');
+        const focus = (i) => { cur = i; els.forEach((b, j) => b.classList.toggle('on', j === i)); if (els[i]) els[i].scrollIntoView({ block: 'center', behavior: 'smooth' }); };
+        const nextOpen = (from) => { for (let k = 1; k <= els.length; k++) { const j = (from + k) % els.length; if (!els[j].classList.contains('ok')) return j; } return from; };
+        els.forEach((b, i) => b.addEventListener('click', () => { if (!b.classList.contains('ok')) focus(i); }));
+        el.querySelectorAll('.lb-pad button').forEach((b) => b.addEventListener('click', () => {
+          if (!alive) return;
+          const k = b.dataset.k, box = els[cur];
+          if (k === 'check') {
+            const bad = els.filter((x, i) => String(boxes[i].a) !== val[i]);
+            els.forEach((x, i) => { const ok = String(boxes[i].a) === val[i]; x.classList.toggle('ok', ok); x.classList.toggle('bad', !ok && val[i] !== ''); x.classList.toggle('miss', !ok && val[i] === ''); });
+            if (first === null) first = Math.round(((els.length - bad.length) / els.length) * 100);
+            if (!bad.length) { pts = first; sfx.correct(); return later(end, 900); }
+            sfx.wrong(); el.querySelector('.ck').textContent = `Perbaiki ${bad.length} lalu Periksa`;
+            return focus(els.indexOf(bad[0]));
+          }
+          if (!box || box.classList.contains('ok')) return;
+          if (k === 'next') return focus(nextOpen(cur));
+          val[cur] = k === 'del' ? val[cur].slice(0, -1) : (val[cur] + k).slice(0, 4);
+          box.textContent = val[cur]; box.classList.remove('bad', 'miss');
+          el.querySelector('#lb-fill').textContent = `${val.filter(Boolean).length}/${els.length}`;
+        }));
+        el.querySelector('#lb-fill').textContent = `0/${els.length}`;
+        focus(0);
+        tick = setInterval(() => { const s = Math.floor((Date.now() - t0) / 1000), x = el.querySelector('#gsec'); if (x) x.textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; }, 500);
+      };
+      pickSheet();
     } else if (g.type === 'tambang') {
       // pos: −5 (Tim Merah menang) … 0 … +5 (Tim Biru menang)
       const GOAL = 5, TT = 90, MQ = window.METIQ_MASCOT;
@@ -1410,7 +1482,7 @@
   }
 
   // Teman Meti yang menemani setiap jenis permainan (bisa diganti per permainan dengan properti buddy)
-  const BUDDY = { batang: 'nahla', timbang: 'lumo', sudoku: 'nahla', kilat: 'tito', garis: 'tito', susun: 'tito', kembar: 'tito', uang: 'tito', ukur: 'tito', nilai: 'tito', juring: 'nahla', bangun: 'nahla', pola: 'nahla', pasangan: 'nahla', jam: 'lumo', peta: 'lumo', grafik: 'lumo', balon: 'lumo' };
+  const BUDDY = { lembar: 'tito', batang: 'nahla', timbang: 'lumo', sudoku: 'nahla', kilat: 'tito', garis: 'tito', susun: 'tito', kembar: 'tito', uang: 'tito', ukur: 'tito', nilai: 'tito', juring: 'nahla', bangun: 'nahla', pola: 'nahla', pasangan: 'nahla', jam: 'lumo', peta: 'lumo', grafik: 'lumo', balon: 'lumo' };
   const buddy = (x) => (x && (x.buddy || BUDDY[x.type])) || null;
   window.METIQ_GAMES = { GAMES, TYPES, HOW, EX, LOOK, BUDDY, buddy, art, starsFor, start, byId: (id) => GAMES.find((g) => g.id === id) };
 })();

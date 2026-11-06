@@ -1009,3 +1009,26 @@ b.big { font-size: 1.3rem; display: block; }
 @keyframes kc-hot { 0% { opacity: 0; } 12%, 80% { opacity: 1; } 100% { opacity: 0; } }
 @keyframes kc-in { from { opacity: 0; transform: translateY(6px); } }
 @media (prefers-reduced-motion: reduce) { .kolom * { animation-duration: .01s !important; } }
+
+/* Lembar Hafalan: lembar latihan urut, acak, pola */
+.lb-pick { text-align: center; } .lb-pick p { font-weight: 900; margin: 8px 0 12px; }
+.lb-pick > div { display: grid; grid-template-columns: repeat(auto-fill, minmax(78px, 1fr)); gap: 10px; }
+.lb-n { padding: 16px 6px; border: 0; border-radius: 16px; background: #e9f7ef; box-shadow: 0 4px 0 #bfe5cf; font: inherit; font-size: 1.4rem; font-weight: 900; color: #1f5e44; cursor: pointer; }
+.lb-sheet { background: #fff; border: 2px solid #cfe8da; border-radius: 16px; padding: 6px 14px 10px; margin-bottom: 10px; }
+.lb-sheet section + section { border-top: 2px dashed #cfe8da; margin-top: 8px; }
+.lb-sheet h4 { margin: 10px 0 6px; font-size: .95rem; color: #2f7d5b; } .lb-sheet h4 b { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: 7px; background: #2f7d5b; color: #fff; margin-right: 4px; }
+.lb-ln { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 5px 0; font-size: 1.35rem; font-weight: 900; }
+.lb-ln > small { width: 34px; font-size: .7rem; color: var(--muted); font-weight: 800; }
+.lb-b { min-width: 58px; height: 42px; padding: 0 8px; border: 2px solid #9fcdb5; border-radius: 10px; background: #fbfffd; font: inherit; font-size: 1.3rem; font-weight: 900; color: #16302b; cursor: pointer; }
+.lb-b.on { border-color: #f5a524; background: #fff7dc; box-shadow: 0 0 0 3px #ffe08a; }
+.lb-b.ok { border-color: #15a36b; background: #e5f8ef; color: #0a7d52; cursor: default; }
+.lb-b.bad { border-color: #e0464b; background: #ffe3e3; color: #b52a30; } .lb-b.miss { border-color: #e0464b; border-style: dashed; }
+.lb-pad { position: sticky; bottom: 0; z-index: 5; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; padding: 8px 0 calc(8px + env(safe-area-inset-bottom)); background: var(--bg, #f1fbf8); }
+.lb-pad button { min-height: 44px; border: 0; border-radius: 12px; background: #eefaf7; box-shadow: 0 3px 0 #cdeee5; font: inherit; font-size: 1.25rem; font-weight: 900; color: #04382e; cursor: pointer; touch-action: manipulation; }
+.lb-pad .del { background: #ffeeea; box-shadow: 0 3px 0 #f6d2c8; } .lb-pad .nx { background: #fff3c4; box-shadow: 0 3px 0 #f1d98a; }
+.lb-pad .ck { grid-column: 1 / -1; background: #35e0bd; box-shadow: 0 4px 0 #19b796; font-size: 1.05rem; letter-spacing: .04em; }
+.lb-ln > small + span { min-width: 5.4em; text-align: right; white-space: nowrap; }
+
+/* Latihan fakta berpola (js/pola.js) */
+.pola-tag { display: inline-block; margin: 0 auto 6px; padding: 3px 12px; border-radius: 999px; background: #e9f7ef; color: #1f5e44; font-size: .85rem; font-weight: 900; }
+.pola-prev { color: #9aa7a4; font-weight: 800; font-size: 1.05rem; line-height: 1.5; margin-bottom: 4px; }

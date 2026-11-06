@@ -807,7 +807,9 @@
     if (P.test) { if (P.count >= TEST_N) return renderChest(); P.sk = SKILLS[P.test.queue[P.count]]; }
     else if (!P.diag && (P.count >= ROUND || (P.score >= 100 && P.score0 < 100))) return renderRound();
     let q, guard = 0;
-    do { q = P.sk.gen(); } while (P.q && strip(q.text + (q.vis || '')) === strip(P.q.text + (P.q.vis || '')) && guard++ < 5);
+    // latihan fakta berpola (urut, acak, bentuk lain); asesmen dan ujian bab tetap acak
+    if (!P.test && !P.diag && window.METIQ_POLA && window.METIQ_POLA.has(P.sk.id)) q = window.METIQ_POLA.next(P.sid, P.sk.id);
+    else do { q = P.sk.gen(); } while (P.q && strip(q.text + (q.vis || '')) === strip(P.q.text + (P.q.vis || '')) && guard++ < 5);
     P.q = q; P.input = ''; P.sel = -1; P.locked = false; P.qStart = Date.now();
     const canCoret = coretOn(P.sk) || /class="stack/.test(q.vis || '');
     closeCoret(true); { const cb = document.getElementById('mqcoret'); if (cb) cb.hidden = !canCoret; }
@@ -2716,8 +2718,8 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       area.innerHTML = `<div class="mq-gend">${MQ.svg(stars ? 'cheer' : 'think', { size: 150, who: G.buddy(x) || undefined })}
         <div class="mq-gstars">${[0, 1, 2].map((i) => gStar(i < stars)).join('')}</div>
         <h2>${winner ? (winner === 'Seri' ? '🤝 Seri!' : `🏆 ${winner} menang!`) : stars >= 3 ? 'Luar biasa!' : stars === 2 ? 'Hebat!' : stars ? 'Bagus!' : 'Ayo coba lagi!'}</h2>
-        <div class="mq-gpts"><b>${points}</b><small>poin</small>${kid && points > prevBest && before && before.att ? '<span class="rec">🎉 Rekor baru!</span>' : ''}</div>
-        ${stars < 3 ? `<p class="mq-note">Butuh ${x.stars[stars]} poin untuk ${'⭐'.repeat(stars + 1)}</p>` : ''}</div>`;
+        <div class="mq-gpts"><b>${points}${x.type === 'lembar' ? '%' : ''}</b><small>${x.type === 'lembar' ? 'benar di pemeriksaan pertama' : 'poin'}</small>${kid && points > prevBest && before && before.att ? '<span class="rec">🎉 Rekor baru!</span>' : ''}</div>
+        ${stars < 3 ? `<p class="mq-note">Butuh ${x.stars[stars]}${x.type === 'lembar' ? '%' : ' poin'} untuk ${'⭐'.repeat(stars + 1)}</p>` : ''}</div>`;
       if (foot) { foot.hidden = false; foot.innerHTML = '<div class="mq-foot-in"><button class="mq-btn" data-act="gstart">Main lagi</button><a class="mq-btn ghost" href="#/permainan">Permainan lain</a></div>'; }
     });
   }
