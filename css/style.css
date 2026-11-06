@@ -981,3 +981,31 @@ b.big { font-size: 1.3rem; display: block; }
 .sd-pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; width: min(100%, 420px); margin: 0 auto; } .sd-pad.n4 { grid-template-columns: repeat(5, 1fr); } .sd-pad.n6 { grid-template-columns: repeat(7, 1fr); }
 .sd-k { min-height: 50px; border: 0; border-radius: 14px; background: #f1ecff; box-shadow: 0 4px 0 #d8ccfa; font: inherit; font-size: 1.4rem; font-weight: 900; color: #4b2fa6; cursor: pointer; touch-action: manipulation; }
 .sd-k.del { background: #ffeeea; box-shadow: 0 4px 0 #f6d2c8; color: #b52a30; } .sd-k:active { transform: translateY(3px); box-shadow: 0 1px 0 #d8ccfa; }
+
+/* Penjumlahan dan pengurangan bersusun beranimasi (js/kolom.js) */
+.kolom { --cw: 2.3em; margin: 10px 0 4px; font-size: 1.35rem; }
+.kc-board { position: relative; display: inline-block; padding: 4px 10px 8px; border-radius: 16px; background: #fff; border: 2px solid var(--line); }
+.kc-row { display: grid; grid-template-columns: repeat(calc(var(--w) + 1), var(--cw)); text-align: center; font-weight: 900; position: relative; z-index: 1; }
+.kc-head span { font-size: .55em; font-weight: 900; letter-spacing: .04em; padding-bottom: 2px; }
+.kc-top { padding-top: calc(var(--lv) * 0.95em + 0.2em); }
+.kc-d { position: relative; line-height: 1.25; }
+.kc-s { color: #19a3b8; } .kc-p { color: #1f3c88; } .kc-r { color: #d6457a; } .kc-rb { color: #8a5a00; }
+.kc-op { color: var(--ink); }
+.kc-n { position: absolute; left: 50%; transform: translateX(-50%); font-size: .62em; font-weight: 900; color: #e07000; line-height: 1; animation: kc-pop .45s cubic-bezier(.3, 1.5, .5, 1) both; }
+.kc-n.l1 { top: -0.95em; } .kc-n.l2 { top: -1.85em; } .kc-n.l3 { top: -2.75em; }
+.kc-n.carry { color: #e0464b; animation-name: kc-fly; }
+.kc-x { position: absolute; left: 18%; right: 18%; height: 3px; border-radius: 3px; background: #ff7a00; transform-origin: left; transform: rotate(-35deg) scaleX(1); animation: kc-strike .35s ease both; }
+.kc-x.l0 { top: 55%; left: 24%; right: 24%; } .kc-x.l1 { top: -0.55em; left: 30%; right: 30%; } .kc-x.l2 { top: -1.45em; left: 30%; right: 30%; }
+.kc-line { height: 3px; background: var(--ink); border-radius: 2px; margin: 2px 0 4px var(--cw); position: relative; z-index: 1; }
+.kc-res b { display: inline-block; color: #15a36b; animation: kc-pop .45s cubic-bezier(.3, 1.5, .5, 1) both; }
+.kc-hot { position: absolute; top: 4px; bottom: 6px; left: calc(10px + (var(--c) - 1) * var(--cw)); width: var(--cw); border-radius: 12px; background: #fff3c4; opacity: 0; animation: kc-hot 2.6s ease both; }
+.kc-cap { margin: 8px 0 0; padding-left: 20px; font-size: .95rem; font-weight: 700; line-height: 1.45; }
+.kc-cap li { animation: kc-in .4s ease both; margin-bottom: 4px; } .kc-hl { color: #e07000; }
+.kc-again { margin-top: 2px; }
+@keyframes kc-pop { from { opacity: 0; transform: translateX(-50%) scale(.3); } }
+.kc-res b { animation-name: kc-pop2; } @keyframes kc-pop2 { from { opacity: 0; transform: scale(.3); } }
+@keyframes kc-fly { from { opacity: 0; transform: translate(60%, 2.4em) scale(.6); } }
+@keyframes kc-strike { from { transform: rotate(-35deg) scaleX(0); } }
+@keyframes kc-hot { 0% { opacity: 0; } 12%, 80% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes kc-in { from { opacity: 0; transform: translateY(6px); } }
+@media (prefers-reduced-motion: reduce) { .kolom * { animation-duration: .01s !important; } }

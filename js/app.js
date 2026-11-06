@@ -863,7 +863,7 @@
     if (!adabOn() && prizeBoard(P.sid, P.sk.grade).open > pzBefore) setTimeout(() => toast('🧩 Dapat keping puzzle baru!'), 1200);
     finished.forEach((a) => markDone(a.id, P.sid, 'siswa'));
     const fb = document.getElementById('fb'), pq = document.getElementById('pq');
-    const how = `<details class="mq-how" open><summary>💡 Lihat caranya</summary><div class="explain">${q.explain}<p>${LESSONS[P.sk.unit] ? `<button class="link" data-act="lopen" data-u="${P.sk.unit}">📖 Belum paham? Buka materi</button>` : ''}${window.METIQ_ANIM.has(P.sk.unit) ? ` · <button class="link small" data-act="anim" data-u="${P.sk.unit}">🎬 Tonton animasi</button>` : ''}</p><div class="anim-inline"></div></div></details>`;
+    const how = `<details class="mq-how" open><summary>💡 Lihat caranya</summary><div class="explain">${q.explain}${kolomOf(q, P.sk)}<p>${LESSONS[P.sk.unit] ? `<button class="link" data-act="lopen" data-u="${P.sk.unit}">📖 Belum paham? Buka materi</button>` : ''}${window.METIQ_ANIM.has(P.sk.unit) ? ` · <button class="link small" data-act="anim" data-u="${P.sk.unit}">🎬 Tonton animasi</button>` : ''}</p><div class="anim-inline"></div></div></details>`;
     if (ok) {
       let note = '';
       if (P.score >= 100 && before < 100) { window.SFX.mastered(); note = '🏆 Tuntas! Luar biasa!'; }
@@ -3105,10 +3105,17 @@ Ketik nama untuk konfirmasi: ${x.name}`);
 
   /* ---------- Pelajaran: materi singkat + contoh "Ayo coba!" per bab ---------- */
   const LESSONS = window.METIQ_LESSONS || {};
+  // Soal +/− bersusun SD (bilangan bulat, ada angka puluhan): penjelasan diberi animasi menyimpan dan meminjam per kolom
+  const kolomOf = (q, sk) => {
+    const m = q && q.meta, K = window.METIQ_KOLOM;
+    if (!K || !m || !sk || sk.grade < 1 || sk.grade > 4 || (m.op !== '+' && m.op !== '-') || !Number.isInteger(m.a) || !Number.isInteger(m.b)) return '';
+    if (!/class="stack/.test(q.vis || '') && !/menyimpan|meminjam|bersusun/i.test(sk.name)) return '';
+    return Math.max(m.a, m.b) >= 10 ? K.html(m.a, m.op, m.b) : '';
+  };
   function lessonExample(skillId) {
     const q = SKILLS[skillId].gen();
     return `<p class="qtext">${q.text}</p>${q.vis ? `<div class="qvis">${q.vis}</div>` : ''}${q.options ? `<div class="lopts">${q.options.map((o) => `<span>${o}</span>`).join('')}</div>` : ''}
-      <details class="lsol"><summary>Lihat cara mengerjakan</summary><p class="lans">Jawaban: <b>${q.unit === 'Rp' ? 'Rp' : ''}${q.answer}</b></p><p>${q.explain}</p></details>`;
+      <details class="lsol"><summary>Lihat cara mengerjakan</summary><p class="lans">Jawaban: <b>${q.unit === 'Rp' ? 'Rp' : ''}${q.answer}</b></p><p>${q.explain}</p>${kolomOf(q, SKILLS[skillId])}</details>`;
   }
   // Isi pelajaran dipakai di halaman Pelajaran dan sebagai lembar di atas soal (inPractice), supaya soal tidak hilang saat anak membuka materi
   function lessonInner(uid, inPractice) {
@@ -3597,6 +3604,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       if (r.entry && cloudOn()) Cloud.queueProgress(sid, session.get().code, r.key, r.entry);
       return go('#/belajar');
     }
+    if (act === 'kolomplay') { const k = el.closest('.kolom'); if (k) k.replaceWith(k.cloneNode(true)); return; }
     if (act === 'anim') { const box = el.closest('.explain').querySelector('.anim-inline'); el.remove(); return window.METIQ_ANIM.mount(box, el.dataset.u); }
     if (act === 'fbedit') { ss.set('fbedit', el.dataset.k); return route(); }
     if (act === 'export') return exportResearch(el.dataset.t);
