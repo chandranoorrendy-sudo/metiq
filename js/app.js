@@ -715,16 +715,17 @@
     if (wipe) pad.remove(); else pad.hidden = true;
     const b = document.getElementById('mqcoret'); if (b) b.classList.remove('on');
     const fb = document.getElementById('fb'); if (fb) fb.classList.remove('cor', 'kshow');
-    document.body.classList.remove('coret-side');
+    document.body.classList.remove('coret-side', 'coret-open');
   }
   // Tablet: setelah pensil (Apple Pencil/stylus) terdeteksi, sentuhan jari dan telapak tangan tidak ikut mencoret
-  let penSeen = false;
+  let penSeen = (() => { try { return localStorage.getItem('metiq_pen') === '1'; } catch (e) { return false; } })();
   addEventListener('resize', () => { const pad = document.getElementById('coret'); if (pad && !pad.hidden && pad.place) { pad.place(); if (pad.fit) pad.fit(); } });
   function openCoret() {
     let pad = document.getElementById('coret');
     const b = document.getElementById('mqcoret');
     if (pad && !pad.hidden) return closeCoret(false);
     if (b) b.classList.add('on');
+    document.body.classList.add('coret-open');
     // Papan angka dilipat selama kertas coret terbuka, supaya kertasnya selebar mungkin; tombol 🔢 memunculkannya lagi
     const foot = document.getElementById('fb');
     if (foot) foot.classList.remove('kshow');
@@ -749,11 +750,11 @@
     const COLORS = [['#0a7d68', 'hijau'], ['#1c9be8', 'biru'], ['#ff5a5f', 'merah']];
     pad = document.createElement('div'); pad.id = 'coret'; pad.className = 'mq-coret';
     pad.innerHTML = `<div class="bar"><b>✏️<span class="lbl"> Kertas coret</span></b><span class="tools">${COLORS.map(([c, n], i) => `<button data-c="${c}" class="${i ? '' : 'on'}" aria-label="Pensil ${n}"><i style="background:${c}"></i></button>`).join('')}
-      <button data-c="erase" aria-label="Penghapus">🧽</button><button data-k="clear" aria-label="Hapus semua coretan">🗑️</button><button data-k="size" aria-label="Perbesar atau perkecil kertas coret">↕</button><button data-k="close" aria-label="Tutup kertas coret">✕</button></span></div>${P && P.q ? `<div class="qcopy">${esc(strip(P.q.log || P.q.text))}</div>` : ''}<canvas aria-label="Kertas coret"></canvas>`;
+      <button data-c="erase" aria-label="Penghapus">🧽</button><button data-k="finger" class="${penSeen ? '' : 'off'}" aria-label="Izinkan menulis dengan jari" title="Pensil terdeteksi: sentuhan jari diabaikan. Ketuk untuk menulis dengan jari.">👆</button><button data-k="clear" aria-label="Hapus semua coretan">🗑️</button><button data-k="size" aria-label="Perbesar atau perkecil kertas coret">↕</button><button data-k="close" aria-label="Tutup kertas coret">✕</button></span></div>${P && P.q ? `<div class="qcopy">${esc(strip(P.q.log || P.q.text))}</div>` : ''}<canvas aria-label="Kertas coret"></canvas>`;
     if (coretTall) pad.classList.add('tall');
     document.body.appendChild(pad); pad.place = place; place();
     const cv = pad.querySelector('canvas'), ctx = cv.getContext('2d');
-    let pen = COLORS[0][0], last = null;
+    let pen = COLORS[0][0];
     const fit = () => {
       const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1, old = cv.width ? cv.toDataURL() : null;
       cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -761,15 +762,35 @@
     };
     fit(); pad.fit = fit;
     const at = (e) => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
-    cv.addEventListener('pointerdown', (e) => { if (e.pointerType === 'pen') penSeen = true; else if (penSeen && e.pointerType === 'touch') return; try { cv.setPointerCapture(e.pointerId); } catch (err) { /* sentuhan buatan */ } last = at(e); ctx.beginPath(); ctx.arc(last[0], last[1], pen === 'erase' ? 11 : 1.8, 0, Math.PI * 2); if (pen === 'erase') { ctx.save(); ctx.globalCompositeOperation = 'destination-out'; ctx.fill(); ctx.restore(); } else { ctx.fillStyle = pen; ctx.fill(); } });
-    cv.addEventListener('pointermove', (e) => {
-      if (!last || (penSeen && e.pointerType === 'touch')) return; const p = at(e);
+    // Setiap jari/pensil punya garisnya sendiri, jadi telapak yang terangkat tidak memutus garis pensil.
+    // Sentuhan diabaikan bila: pensil sudah pernah dipakai di perangkat ini, sentuhan kedua (multi-sentuh), atau bidang sentuhnya lebar (telapak).
+    const strokes = new Map();
+    const palm = (e) => e.pointerType === 'touch' && (penSeen || !e.isPrimary || Math.max(e.width || 0, e.height || 0) > 28);
+    const widthOf = (e) => (pen === 'erase' ? 22 : e.pointerType === 'pen' && e.pressure > 0 ? 2.6 + e.pressure * 3 : 3.6);
+    const seg = (a, b, w) => {
       ctx.save(); if (pen === 'erase') ctx.globalCompositeOperation = 'destination-out';
-      ctx.strokeStyle = pen === 'erase' ? '#000' : pen; ctx.lineWidth = pen === 'erase' ? 22 : 3.6; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-      ctx.beginPath(); ctx.moveTo(last[0], last[1]); ctx.lineTo(p[0], p[1]); ctx.stroke(); ctx.restore(); last = p;
+      ctx.strokeStyle = pen === 'erase' ? '#000' : pen; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); ctx.restore();
+    };
+    cv.addEventListener('pointerdown', (e) => {
+      if (e.pointerType === 'pen' && !penSeen) { penSeen = true; try { localStorage.setItem('metiq_pen', '1'); } catch (err) { /* mode privat */ } const fb2 = pad.querySelector('[data-k="finger"]'); if (fb2) fb2.classList.remove('off'); strokes.forEach((v, id) => { if (v.touch) strokes.delete(id); }); }
+      if (palm(e)) return;
+      e.preventDefault();
+      try { cv.setPointerCapture(e.pointerId); } catch (err) { /* sentuhan buatan */ }
+      const p = at(e); strokes.set(e.pointerId, { p, touch: e.pointerType === 'touch' });
+      seg(p, [p[0] + 0.01, p[1]], widthOf(e));
     });
-    const stop = () => { last = null; };
-    cv.addEventListener('pointerup', stop); cv.addEventListener('pointercancel', stop); cv.addEventListener('pointerleave', stop);
+    cv.addEventListener('pointermove', (e) => {
+      const st = strokes.get(e.pointerId); if (!st) return;
+      e.preventDefault();
+      // pensil iPad mengirim titik lebih rapat daripada layar diperbarui; ambil semua titiknya supaya garis tidak putus
+      const pts = e.getCoalescedEvents ? e.getCoalescedEvents() : [];
+      (pts.length ? pts : [e]).forEach((x) => { const p = at(x); seg(st.p, p, widthOf(x)); st.p = p; });
+    });
+    const stop = (e) => { strokes.delete(e.pointerId); };
+    cv.addEventListener('pointerup', stop); cv.addEventListener('pointercancel', stop);
+    // tanpa ini Safari iPad memilih teks (layar menjadi biru), menggulir, atau memperbesar saat telapak menempel
+    ['touchstart', 'touchmove', 'touchend'].forEach((t) => pad.addEventListener(t, (e) => { if (!e.target.closest('button')) e.preventDefault(); }, { passive: false }));
     const bar = pad.querySelector('.bar');
     let drag = null;
     bar.addEventListener('pointerdown', (e) => {
@@ -784,6 +805,7 @@
       const t = e.target.closest('button'); if (!t) return;
       if (t.dataset.k === 'close') return closeCoret(false);
       if (t.dataset.k === 'size') { coretTall = !coretTall; pad.classList.toggle('tall', coretTall); place(); fit(); return; }
+      if (t.dataset.k === 'finger') { penSeen = false; try { localStorage.removeItem('metiq_pen'); } catch (err) { /* mode privat */ } t.classList.add('off'); toast('👆 Sekarang bisa menulis dengan jari'); return; }
       if (t.dataset.k === 'clear') { ctx.clearRect(0, 0, cv.width, cv.height); return; }
       pen = t.dataset.c; pad.querySelectorAll('[data-c]').forEach((x) => x.classList.toggle('on', x === t));
     });

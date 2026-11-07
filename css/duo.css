@@ -970,3 +970,10 @@ body.coret-side .mq-screen, body.coret-side .mq-top { margin-left: 24px; margin-
 body.coret-side .mq-foot { right: auto; width: 568px; }
 .mq-coret.side { border-bottom: 2px solid #f1d98a; border-radius: 20px; }
 .mq-coret.side [data-k="size"] { display: none; }
+
+/* Kertas coret di iPad: telapak tangan tidak memilih teks (layar biru), tidak memunculkan menu salin, tidak menggulir */
+.mq-coret, .mq-coret * { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+body.coret-open { -webkit-user-select: none; user-select: none; -webkit-touch-callout: none; }
+body.coret-open #pq { -webkit-user-select: none; user-select: none; }
+.mq-coret canvas { -webkit-tap-highlight-color: transparent; }
+.mq-coret .tools [data-k="finger"].off { display: none; }
