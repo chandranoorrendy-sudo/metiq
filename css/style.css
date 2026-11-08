@@ -1073,3 +1073,25 @@ b.big { font-size: 1.3rem; display: block; }
 .pola-rows > b { display: block; font-size: .8rem; color: #1f5e44; margin-bottom: 4px; }
 .pola-rows > div { animation: kc-in .4s ease both; animation-delay: var(--t, 0s); padding: 1px 0; } .pola-rows > div.now { color: #0a7d52; font-size: 1.08em; }
 @media (prefers-reduced-motion: reduce) { .lk-steps > li, .lk .mcx::after, .pola-rows > div { animation-duration: .01s !important; animation-delay: 0s !important; } }
+
+/* Panjat Pinang: layar besar kelas. Teks besar untuk anak yang duduk jauh, tombol jawaban di bagian bawah layar agar terjangkau anak TK */
+.mq-screen.pp-full { max-width: none; padding: 0 12px; min-height: 0; }
+.pp { display: grid; grid-template-columns: minmax(170px, 26%) 1fr; gap: 16px; height: calc(100vh - 76px); height: calc(100dvh - 76px); min-height: 460px; }
+.pp-scene { position: relative; border-radius: 22px; background: linear-gradient(#bfe6ff 0 78%, #8fd17a 78%); overflow: hidden; }
+.pp-pole { position: absolute; left: 50%; top: 5%; bottom: 12%; width: 26px; margin-left: -13px; border-radius: 13px; background: linear-gradient(90deg, #8a5526, #c98a4b 45%, #8a5526); }
+.pp-pole i { position: absolute; left: -7px; right: -7px; height: 5px; border-radius: 3px; background: #6d4019; }
+.pp-pole b { position: absolute; left: 44px; top: -24px; font-size: clamp(1.8rem, 3.4vw, 3rem); filter: grayscale(.9); opacity: .6; transition: filter .3s, transform .3s, opacity .3s; } .pp-pole b.got { filter: none; opacity: 1; transform: scale(1.3); }
+.pp-climb { --r: 0; position: absolute; left: 50%; bottom: calc(8% + var(--r) * 7.3%); transform: translateX(-74%); transition: bottom .55s cubic-bezier(.3, 1.3, .5, 1); z-index: 2; }
+.pp-climb svg, .pp-pals svg { display: block; width: clamp(62px, 8vw, 118px); height: auto; }
+.pp-climb.slip .m { display: block; animation: pp-slip .6s ease; } @keyframes pp-slip { 25% { transform: rotate(-14deg); } 60% { transform: rotate(12deg); } }
+.pp-pals { position: absolute; left: 0; right: 0; bottom: 1%; display: flex; justify-content: space-between; padding: 0 2px; } .pp-pals svg { width: clamp(38px, 4.6vw, 70px); } .pp-pals.yay span { animation: pp-yay .6s ease; } .pp-pals span:nth-child(2) { animation-delay: .08s; position: absolute; left: 7%; bottom: 62vh; } .pp-pals span:nth-child(3) { animation-delay: .16s; } @keyframes pp-yay { 40% { transform: translateY(-22px); } }
+.pp-play { display: flex; flex-direction: column; min-width: 0; gap: 10px; padding-bottom: 12px; }
+.pp-hud { display: flex; align-items: center; gap: 22px; padding: 2px 8px; } .pp-hud small { display: block; font-weight: 800; color: var(--muted); font-size: clamp(.78rem, 1.2vw, 1.05rem); } .pp-hud b { font-size: clamp(1.25rem, 2.4vw, 2.2rem); font-weight: 900; color: var(--ink); }
+.pp-fs { margin-left: auto; width: 50px; height: 50px; border: 2px solid var(--line); border-radius: 14px; background: #fff; font-size: 1.5rem; cursor: pointer; }
+.pp-q { flex: 1; display: grid; align-content: center; justify-items: center; text-align: center; min-height: 0; border-radius: 22px; background: #fff; border: 3px solid #16302b; padding: 8px; font-size: clamp(2.6rem, 8.5vw, 8rem); font-weight: 900; line-height: 1.12; color: #0b1f1b; overflow: hidden; }
+.pp-q small { font-size: .38em; font-weight: 900; color: #16302b; } .pp-q .gdots { font-size: 1em; letter-spacing: .1em; color: #d6341f; line-height: 1.05; } .pp-q .gfr { font-size: .9em; }
+.pp-opts { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 12px; height: 38%; min-height: 130px; }
+.pp-opt { border: 0; border-radius: 24px; background: #0b6b58; color: #fff; font: inherit; font-size: clamp(2.2rem, 6.2vw, 6rem); font-weight: 900; box-shadow: 0 8px 0 #06493c; cursor: pointer; touch-action: manipulation; min-width: 0; overflow-wrap: anywhere; } .pp-opt:nth-child(2) { background: #1a55c4; box-shadow: 0 8px 0 #10398a; } .pp-opt:nth-child(3) { background: #c8381f; box-shadow: 0 8px 0 #8e2412; } .pp-opt:nth-child(4) { background: #7a3fc4; box-shadow: 0 8px 0 #542a8a; }
+.pp-opt.right { background: #15a36b; box-shadow: 0 8px 0 #0a7d52; outline: 6px solid #ffc800; } .pp-opt.wrong { background: #6b7572; box-shadow: 0 8px 0 #4c5552; }
+@media (max-width: 699px) { .pp-pals span:nth-child(2) { bottom: 110px; } .pp { grid-template-columns: 1fr; grid-template-rows: 190px 1fr; height: auto; min-height: calc(100dvh - 76px); } .pp-opts { grid-auto-flow: row; grid-template-columns: 1fr 1fr; height: auto; } .pp-opt { min-height: 84px; } .pp-q { font-size: clamp(2rem, 11vw, 3.4rem); min-height: 130px; } .pp-climb { bottom: calc(10% + var(--r) * 6.6%); } .pp-climb svg { width: 48px; } .pp-pals svg { width: 36px; } }
+@media (prefers-reduced-motion: reduce) { .pp-climb { transition: none; } .pp-pals.yay span, .pp-climb.slip .m { animation: none; } }
