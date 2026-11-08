@@ -89,5 +89,30 @@
     st.i++; all[id] = st; keep(all);
     return q;
   }
-  window.METIQ_POLA = { has: (skill) => !!SETS[skill], next };
+  /* ---------- Seri SMP–SMA (dari js/pola-hs.js): soalnya dibuat oleh setiap fokus ---------- */
+  const SERIES = {};
+  const queueS = (f) => { const n = f.items.length, order = shuffle(range(0, n - 1)).slice(0, 6); if (order[0] === n - 1) order.push(order.shift()); return [...range(0, n - 1).map((i) => ({ t: 'u', i })), ...order.map((i) => ({ t: 'a', i })), ...shuffle(range(0, f.forms.length - 1)).map((i) => ({ t: 'f', i }))]; };
+  function buildS(f, s) {
+    let q, head;
+    if (s.t === 'f') { q = f.forms[s.i](); head = `🧩 Bentuk lain · ${f.label}`; }
+    else { q = f.make(f.items[s.i]); head = s.t === 'u' ? `🔢 Urut · ${f.label} · ${s.i + 1}/${f.items.length}` : `🔀 Acak · ${f.label}`; }
+    let prev = '';
+    if (s.t === 'u' && s.i > 0) {
+      prev = f.items.slice(Math.max(0, s.i - 2), s.i).map(f.show).join('<br>');
+      // di penjelasan, baris-baris pola muncul satu per satu sebelum langkahnya
+      const rows = f.items.slice(Math.max(0, s.i - 3), s.i + 1), t0 = rows.length * 0.7 + 0.3;
+      q.explain = `<div class="pola-rows"><b>Lihat polanya</b>${rows.map((x, k) => `<div class="${k === rows.length - 1 ? 'now' : ''}" style="--t:${(k * 0.7).toFixed(1)}s">${f.show(x)}</div>`).join('')}</div><div style="--t0:${t0.toFixed(1)}s">${q.explain}</div>`;
+    }
+    q.vis = `<div class="pola-tag">${head}</div>${prev ? `<div class="pola-prev">${prev}</div>` : ''}${q.vis || ''}`; q.pola = head;
+    return q;
+  }
+  function nextS(sid, skill) {
+    const sets = SERIES[skill](), all = load(), id = sid + ':' + skill;
+    let st = all[id];
+    if (!st || !st.q || st.i >= st.q.length || st.si >= sets.length) { const si = st ? (st.si + 1) % sets.length : 0; st = { si, i: 0, q: queueS(sets[si]) }; }
+    const q = buildS(sets[st.si], st.q[st.i]);
+    st.i++; all[id] = st; keep(all);
+    return q;
+  }
+  window.METIQ_POLA = { has: (skill) => !!SETS[skill] || !!SERIES[skill], next: (sid, skill) => (SERIES[skill] ? nextS(sid, skill) : next(sid, skill)), addSeries: (id, fn) => { SERIES[id] = fn; } };
 })();

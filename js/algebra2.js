@@ -99,9 +99,14 @@
           ['Tulis ' + n + '! sampai muncul ' + (n - k) + '!', `${FR(`${Array.from({ length: k }, (_, i) => n - i).join(' × ')} × ${n - k}!`, `${n - k}!`)}`],
           [`Coret ${n - k}! di atas dan di bawah`, `${FR(`${Array.from({ length: k }, (_, i) => n - i).join(' × ')} × ${CX(`${n - k}!`)}`, CX(`${n - k}!`))} = ${Array.from({ length: k }, (_, i) => n - i).join(' × ')}`], ['Hitung', `<b>${fact(n) / fact(n - k)}</b>`]]); } },
         { id: 'A2H2', name: 'Permutasi', gen() { const n = r(5, 10), k = r(2, 3); return num(`Dari ${n} siswa akan dipilih ${k === 2 ? 'ketua dan wakil' : 'ketua, sekretaris, dan bendahara'}. Ada berapa cara?`, fact(n) / fact(n - k), 'Urutan (jabatan) penting → permutasi P(n, k) = n!/(n − k)!.', [
-          ['Kenali permutasi', `n = ${n}, k = ${k}`], ['Hitung', `${Array.from({ length: k }, (_, i) => n - i).join(' × ')} = <b>${fact(n) / fact(n - k)}</b>`]]); } },
+          ['Kenali permutasi', `n = ${n}, k = ${k}`],
+          ['Tulis rumusnya', `P = ${FR(`${n}!`, `${n - k}!`)} = ${FR(`${Array.from({ length: k }, (_, i) => n - i).join(' × ')} × ${n - k}!`, `${n - k}!`)}`],
+          [`Coret ${n - k}! di atas dan di bawah`, FR(`${Array.from({ length: k }, (_, i) => n - i).join(' × ')} × ${CX(`${n - k}!`)}`, CX(`${n - k}!`))],
+          ['Hitung', `${Array.from({ length: k }, (_, i) => n - i).join(' × ')} = <b>${fact(n) / fact(n - k)}</b>`]]); } },
         { id: 'A2H3', name: 'Kombinasi', gen() { const n = r(5, 12), k = r(2, 4); return num(`Dari ${n} pemain akan dipilih ${k} orang untuk tim (tanpa jabatan). Ada berapa cara?`, nCr(n, k), 'Urutan tidak penting → kombinasi C(n, k) = n!/(k!(n − k)!).', [
-          ['Permutasi dulu', `${Array.from({ length: k }, (_, i) => n - i).join(' × ')} = ${fact(n) / fact(n - k)}`], ['Bagi k!', `${fact(n) / fact(n - k)} : ${fact(k)} = <b>${nCr(n, k)}</b>`]]); } },
+          ['Tulis rumusnya', `C = ${FR(`${n}!`, `${k}! × ${n - k}!`)} = ${FR(`${Array.from({ length: k }, (_, i) => n - i).join(' × ')} × ${n - k}!`, `${k}! × ${n - k}!`)}`],
+          [`Coret ${n - k}! di atas dan di bawah`, FR(`${Array.from({ length: k }, (_, i) => n - i).join(' × ')} × ${CX(`${n - k}!`)}`, `${k}! × ${CX(`${n - k}!`)}`)],
+          ['Bagi k!', `${fact(n) / fact(n - k)} : ${fact(k)} = <b>${nCr(n, k)}</b>`]]); } },
       ],
     },
   ];

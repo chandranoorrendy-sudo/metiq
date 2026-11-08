@@ -45,11 +45,18 @@
   // Bentuk linear ax + b (atau ax − b) sebagai teks
   const lin = (a, b, v = 'x') => poly([a, b], v);
   // Penjelasan bertahap
-  const tahap = (kunci, steps) => `${kunci ? `<div class="kunci"><b>Ide kunci</b><p>${kunci}</p></div>` : ''}<ol class="tahap">${steps.map(([t, d]) => `<li><b>${t}</b><div>${d}</div></li>`).join('')}</ol>`;
+  // Langkah beranimasi (ada coretan atau latihan berpola): muncul satu per satu, garis merah tergambar sesudah langkahnya tampil
+  const tahap = (kunci, steps, motion) => {
+    const head = kunci ? `<div class="kunci"><b>Ide kunci</b><p>${kunci}</p></div>` : '';
+    if (!motion && !steps.some(([, d]) => /class="mcx"/.test(d))) return `${head}<ol class="tahap">${steps.map(([t, d]) => `<li><b>${t}</b><div>${d}</div></li>`).join('')}</ol>`;
+    let at = 0.3;
+    const li = steps.map(([t, d]) => { const s = `<li style="--t:${at.toFixed(2)}s"><b>${t}</b><div>${d}</div></li>`; at += /class="mcx"/.test(d) ? 2.4 : 1.5; return s; }).join('');
+    return `${head}<div class="lk"><ol class="tahap lk-steps">${li}</ol><button class="link small kc-again" data-act="kolomplay">↻ Putar lagi</button></div>`;
+  };
   const KEYS = ['−', ',', '/'];
   // Soal isian dan pilihan ganda dengan penjelasan bertahap
-  const num = (text, ans, kunci, steps, extra = {}) => inp(text, N(ans), tahap(kunci, steps), Object.assign({ keys: KEYS }, plainExtra(text, extra)));
-  const pil = (text, options, ans, kunci, steps, extra = {}) => ch(text, options, ans, tahap(kunci, steps), plainExtra(text, extra));
+  const num = (text, ans, kunci, steps, extra = {}) => inp(text, N(ans), tahap(kunci, steps, extra.motion), Object.assign({ keys: KEYS }, plainExtra(text, extra)));
+  const pil = (text, options, ans, kunci, steps, extra = {}) => ch(text, options, ans, tahap(kunci, steps, extra.motion), plainExtra(text, extra));
   // Pilihan: jawaban benar + 3 pengecoh berbeda
   const opt = (ans, cands) => { const a = String(ans); const rest = uniq(cands.map(String)).filter((x) => x !== a); return shuffle([a, ...shuffle(rest).slice(0, 3)]); };
   const fact = (n) => (n <= 1 ? 1 : n * fact(n - 1));

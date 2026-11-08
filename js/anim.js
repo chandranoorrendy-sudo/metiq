@@ -492,5 +492,39 @@
     active = stop;
     return stop;
   }
+  /* ---------- SMP–SMA: bagian atas pecahan, garis, bagian bawah, lalu faktor yang sama dicoret merah ---------- */
+  // top: [[teks, dicoret?], ...]; bot: teks penyebut (dicoret); res: hasil
+  function cancel({ top, bot, res, d0 = 0.3, fs = 22, intro }) {
+    const w = 300 / top.length, x = (i) => 160 - (w * (top.length - 1)) / 2 + i * w, half = (s) => Math.min(s.length * fs * 0.27, 62), sd = d0 + 1.4;
+    let o = intro ? T(160, 34, intro, { fs: 15, c: C.d, d: 0 }) : '';
+    top.forEach(([s], i) => { o += T(x(i), 82, s, { fs, d: d0 + i * 0.2 }); });
+    o += `<path d="M40 96H280" stroke="${C.ink}" stroke-width="3" stroke-linecap="round" pathLength="1" class="a-draw" ${dl(d0 + 0.4)}/>` + T(160, 126, bot, { fs, d: d0 + 0.6 });
+    const line = (cx, cy, h, d) => `<path d="M${cx - h} ${cy + 11}L${cx + h} ${cy - 11}" stroke="${C.r}" stroke-width="5" stroke-linecap="round" pathLength="1" class="a-draw" ${dl(d)}/>`;
+    top.forEach(([s, c], i) => { if (c) o += line(x(i), 75, half(s), sd); });
+    o += line(160, 119, half(bot), sd + 0.5);
+    return o + T(160, 172, res, { fs: fs + 2, c: C.d, cls: 'a-pop', d: sd + 1.4 });
+  }
+  // baris pola: bagian yang tetap hitam, yang berubah oranye, muncul satu per satu
+  const pattern = (lines, fs = 18) => eq({ lines, fs, step: 1.05 });
+  Object.assign(A, {
+    '7A': [S(() => pattern(['3 + (−5) = {−2}', '4 + (−5) = {−1}', '5 + (−5) = {0}', '[naik 1, hasil naik 1]']), 'Menambah bilangan negatif sama dengan mengurangi. Polanya mudah terlihat.'),
+      S(() => pattern(['−3 × 2 = {−6}', '−3 × 1 = {−3}', '−3 × (−1) = {3}', '−3 × (−2) = {6}']), 'Negatif dikali negatif hasilnya positif.')],
+    '7B': [S(() => cancel({ top: [['3', true], ['×', false], ['4', true]], bot: '8 × 9', res: 'coret silang: 1/2 × 1/3', intro: '3/8 × 4/9' }), 'Saat mengalikan pecahan, faktor yang sama boleh dicoret silang lebih dulu. Hasilnya 1/6.')],
+    '7E': [S(() => pattern(['3(x + 1) = 3x + {3}', '3(x + 2) = 3x + {6}', '3(x + 3) = 3x + {9}', '[bilangan di luar dikali semua suku]']), 'Sifat distributif: bilangan di luar kurung dikalikan ke setiap suku.')],
+    '7F': [S(() => eq({ lines: ['2x + 3 = 11', '2x = 11 [− 3]', '2x = 8', 'x = 8 [: 2]', 'x = {4}'], fs: 18 }), 'Pindahkan konstanta, lalu bagi dengan koefisien x.')],
+    '8E': [S(() => pattern(['f(x) = 2x + 1', 'f(1) = {3}', 'f(2) = {5}', 'f(3) = {7}', '[x naik 1, nilai naik 2]']), 'Pada fungsi linear, nilai berubah tetap setiap x naik 1. Itu gradiennya.')],
+    A1E: [S(() => pattern(['(x + 2)(x + 1) = x² + {3}x + [2]', '(x + 2)(x + 2) = x² + {4}x + [4]', '(x + 2)(x + 3) = x² + {5}x + [6]'], 15), 'Suku tengah adalah jumlah kedua bilangan, konstanta adalah hasil kalinya.')],
+    A1F: [S(() => eq({ lines: ['x² + 5x + 6', 'hasil kali [6], jumlah {5}', '2 × 3 = [6]   2 + 3 = {5}', '(x + 2)(x + 3)'], fs: 18 }), 'Cari dua bilangan: hasil kalinya konstanta, jumlahnya koefisien x.'),
+      S(() => cancel({ top: [['(x + 2)', true], ['(x + 3)', false]], bot: '(x + 2)', res: '= x + 3', intro: 'Faktor sama di atas dan bawah' }), 'Faktor yang sama di pembilang dan penyebut boleh dicoret.')],
+    A2A: [S(() => pattern(['i¹ = {i}', 'i² = {−1}', 'i³ = {−i}', 'i⁴ = {1}', '[lalu berulang setiap 4]']), 'Pangkat i berulang setiap 4.')],
+    A2D: [S(() => pattern(['²log 2 = {1}', '²log 4 = {2}', '²log 8 = {3}', '²log 16 = {4}', '[berapa kali 2 dikalikan?]']), 'Logaritma menjawab: basisnya dipangkatkan berapa?')],
+    A2H: [S(() => cancel({ top: [['8 × 7 ×', false], ['6!', true]], bot: '6!', res: '= 8 × 7 = 56', intro: '8! : 6!' }), 'Faktorial yang sama di atas dan bawah boleh dicoret.')],
+    PKH: [S(() => cancel({ top: [['(x − 1)', true], ['(x + 3)', false]], bot: '(x − 1)', res: 'lim = 1 + 3 = 4', intro: 'x → 1 menghasilkan 0/0' }), 'Saat substitusi menghasilkan 0/0, faktorkan, coret faktor yang sama, lalu substitusi.')],
+    KA: [S(() => cancel({ top: [['(x − 2)', true], ['(x + 5)', false]], bot: '(x − 2)', res: 'lim = 2 + 5 = 7', intro: 'x → 2 menghasilkan 0/0' }), 'Faktor (x − 2) dicoret karena x mendekati 2 tetapi tidak sama dengan 2.')],
+    KC: [S(() => cancel({ top: [['h', true], ['(2x + h)', false]], bot: 'h', res: 'h → 0, hasilnya 2x', intro: 'Turunan x² dengan limit' }), 'Dari definisi limit, h dicoret, lalu h mendekati 0.')],
+    KD: [S(() => pattern(["(x²)' = {2}x", "(x³)' = {3}x²", "(x⁴)' = {4}x³", '[pangkat turun jadi pengali]']), 'Aturan pangkat: pangkat lama menjadi pengali, pangkat turun satu.')],
+    KH: [S(() => pattern(['∫ 2x dx = x² + C', '∫ 3x² dx = x³ + C', '∫ 4x³ dx = x⁴ + C', '[kebalikan turunan]']), 'Integral kebalikan turunan: pangkat naik satu, lalu bagi dengan pangkat baru.'),
+      S(() => cancel({ top: [['(x − 1)', true], ['(x + 2)', false]], bot: '(x − 1)', res: '∫ (x + 2) dx', intro: 'Sederhanakan dulu' }), 'Integral pecahan menjadi mudah setelah faktor yang sama dicoret.')],
+  });
   window.METIQ_ANIM = { has: (id) => !!A[id], mount, stop: () => active && active(), _scripts: A };
 })();

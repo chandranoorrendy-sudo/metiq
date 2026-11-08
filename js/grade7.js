@@ -4,7 +4,15 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, lin, num, pil, opt, lesson } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, lin, num, pil, opt, lesson, FR, CX, gcd } = C.kit;
+  // Coret silang saat mengalikan pecahan: pembilang dan penyebut yang punya faktor sama dicoret, angka barunya ditulis kecil.
+  // Pecahan sudah dalam bentuk seperti yang tampil di soal (paling sederhana). null bila tidak ada yang bisa dicoret.
+  function crossSteps(a, b, c, d) {
+    const g1 = gcd(Math.abs(a), d) || 1, g2 = gcd(Math.abs(c), b) || 1; if ((g1 === 1 && g2 === 1) || b === 1 || d === 1) return null;
+    const x = (v, g) => (g > 1 ? `${CX(Math.abs(v))}<small class="mnew">${Math.abs(v) / g}</small>` : Math.abs(v)), sign = a * c < 0 ? '−' : '', ra = Math.abs(a) / g1, rc = Math.abs(c) / g2, rb = b / g2, rd = d / g1;
+    return [['Coret silang', `${sign}${FR(x(a, g1), x(b, g2))} × ${FR(x(c, g2), x(d, g1))}`], ['Kalikan sisanya', `${sign}(${ra} × ${rc}) / (${rb} × ${rd}) = ${sign}${ra * rc}/${rb * rd}`], ['Hasil', `<b>${F(a * c, b * d)}</b>`]];
+  }
+  const low = (n, d) => { const g = gcd(Math.abs(n), d) || 1; return [n / g, d / g]; };
 
   const UNITS = [
     {
@@ -29,9 +37,9 @@
         { id: '7B1', name: 'Menjumlah dan mengurangi pecahan', gen() { const b = r(2, 9), d = pick([2, 3, 4, 5, 6].filter((x) => x !== b)), a = nz(-8, 8), c = r(1, 8), add = Math.random() < 0.5; const n = add ? a * d + c * b : a * d - c * b; return num(`${FH(a, b)} ${add ? '+' : '−'} ${FH(c, d)} = ? (tulis pecahan paling sederhana, mis. 7/12)`, F(n, b * d), 'Samakan penyebut, lalu jumlah atau kurangkan pembilangnya.', [
           ['Samakan penyebut', `${FH(a, b)} = ${a * d}/${b * d} dan ${FH(c, d)} = ${c * b}/${b * d}`], [add ? 'Jumlahkan pembilang' : 'Kurangkan pembilang', `${a * d} ${add ? '+' : '−'} ${c * b} = ${n}, jadi ${n}/${b * d}`], ['Sederhanakan', `<b>${F(n, b * d)}</b>`]]); } },
         { id: '7B2', name: 'Mengalikan dan membagi pecahan', gen() { const a = nz(-6, 6), b = r(2, 9), c = r(1, 6), d = r(2, 9), mul = Math.random() < 0.5; if (mul) return num(`${FH(a, b)} × ${FH(c, d)} = ? (pecahan paling sederhana)`, F(a * c, b * d), 'Kalikan pembilang dengan pembilang dan penyebut dengan penyebut.', [
-          ['Kalikan', `(${a} × ${c}) / (${b} × ${d}) = ${a * c}/${b * d}`], ['Sederhanakan', `<b>${F(a * c, b * d)}</b>`]]);
+          ...[crossSteps(...low(a, b), ...low(c, d)) || [['Kalikan', `(${a} × ${c}) / (${b} × ${d}) = ${a * c}/${b * d}`], ['Sederhanakan', `<b>${F(a * c, b * d)}</b>`]]][0]]);
           return num(`${FH(a, b)} : ${FH(c, d)} = ? (pecahan paling sederhana)`, F(a * d, b * c), 'Membagi dengan pecahan sama dengan mengalikan dengan kebalikannya.', [
-          ['Balik pecahan pembagi', `${FH(c, d)} → ${FH(d, c)}`], ['Kalikan', `${FH(a, b)} × ${d}/${c} = ${a * d}/${b * c}`], ['Sederhanakan', `<b>${F(a * d, b * c)}</b>`]]); } },
+          ['Balik pecahan pembagi', `${FH(c, d)} → ${FH(d, c)}`], ...(crossSteps(...low(a, b), ...low(d, c)) || [['Kalikan', `${FH(a, b)} × ${d}/${c} = ${a * d}/${b * c}`], ['Sederhanakan', `<b>${F(a * d, b * c)}</b>`]])]); } },
         { id: '7B3', name: 'Mengubah pecahan ke desimal', gen() { const [a, b] = pick([[1, 4], [3, 4], [1, 8], [3, 8], [5, 8], [1, 5], [2, 5], [7, 20], [9, 25], [3, 40], [7, 8], [11, 20]]); return num(`Tulis ${FH(a, b)} sebagai desimal.`, a / b, 'Pecahan berarti pembagian: pembilang dibagi penyebut.', [
           ['Ubah penyebut ke 10, 100, atau 1000 bila bisa', `${a}/${b} = ${a * (1000 / b)}/1000`], ['Tulis desimalnya', `<b>${N(a / b)}</b>`]], { meta: { kind: 'decimal' } }); } },
       ],

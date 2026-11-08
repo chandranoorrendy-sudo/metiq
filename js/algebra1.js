@@ -4,7 +4,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, FR, CX } = C.kit;
   const G = 9;
 
   const UNITS = [
@@ -80,6 +80,8 @@
           ['Hasil kali', `p × q = ${N(a * b)}`], ['Jumlah', `p + q = ${N(a + b)}`], ['Bilangannya', `${N(a)} dan ${N(b)}`], ['Faktor', `<b>${ans}</b>`]]); } },
         { id: 'A1F2', name: 'Selisih dua kuadrat', gen() { const a = r(1, 4), b = r(1, 12), ans = `(${lin(a, b)})(${lin(a, -b)})`; return pil(`Faktorkan ${poly([a * a, 0, -b * b])}.`, opt(ans, [`(${lin(a, b)})${sup(2)}`, `(${lin(a, -b)})${sup(2)}`, `(${lin(a * a, b)})(${lin(1, -b)})`, `(${lin(a, b * b)})(${lin(a, -1)})`]), ans, 'p² − q² = (p + q)(p − q).', [
           ['Kenali kuadratnya', `${poly([a * a, 0, 0])} = (${lin(a, 0)})${sup(2)} dan ${b * b} = ${b}${sup(2)}`], ['Faktor', `<b>${ans}</b>`]]); } },
+        { id: 'A1F4', name: 'Menyederhanakan pecahan aljabar', gen() { const p = nz(-6, 6), q = nz(-6, 6), ans = lin(1, q), f = `(${lin(1, p)})`; return pil(`Sederhanakan: ${FR(poly([1, p + q, p * q]), lin(1, p))}`, opt(ans, [lin(1, -q), lin(1, p), lin(1, p + q), lin(1, p * q), lin(1, -p)]), ans, 'Faktorkan pembilang, lalu coret faktor yang sama di atas dan di bawah.', [
+          ['Faktorkan pembilang', FR(`${f}(${lin(1, q)})`, f)], [`Coret ${f} di atas dan di bawah`, `${FR(`${CX(f)}(${lin(1, q)})`, CX(f))} = ${ans}<br><small>Berlaku untuk x ≠ ${N(-p)}, karena penyebut tidak boleh 0.</small>`], ['Hasil', `<b>${ans}</b>`]]); } },
         { id: 'A1F3', name: 'Faktor persekutuan terbesar', gen() { const k = r(2, 9), a = r(1, 6), b = nz(-9, 9); if (Math.abs(C.kit.gcd(Math.abs(a), Math.abs(b))) !== 1) return C.SKILLS.A1F3.gen(); const ans = `${k}x(${lin(a, b)})`; return pil(`Faktorkan ${poly([k * a, k * b, 0])}.`, opt(ans, [`${k}(${poly([a, b, 0])})`, `x(${lin(k * a, b)})`, `${k}x(${lin(a, k * b)})`, `${k * 2}x(${lin(a, b)})`]), ans, 'Keluarkan faktor yang ada di semua suku (koefisien dan variabel).', [
           ['FPB koefisien', `FPB(${Math.abs(k * a)}, ${Math.abs(k * b)}) = ${k}`], ['Variabel bersama', 'x'], ['Hasil', `<b>${ans}</b>`]]); } },
       ],

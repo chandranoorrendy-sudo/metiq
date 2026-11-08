@@ -51,7 +51,10 @@
         { id: 'KC1', name: 'Laju perubahan rata-rata', gen() { const cs = [nz(-3, 3), r(-5, 5), r(-5, 5)], a = r(-3, 2), b = a + r(1, 4), v = (ev(cs, b) - ev(cs, a)) / (b - a); return num(`f(x) = ${poly(cs)}. Berapa laju perubahan rata-rata f dari x = ${N(a)} sampai x = ${N(b)}?`, v, 'Laju perubahan rata-rata = (f(b) − f(a)) / (b − a), yaitu gradien garis potong.', [
           ['f(' + N(a) + ') dan f(' + N(b) + ')', `${N(ev(cs, a))} dan ${N(ev(cs, b))}`], ['Bagi', `(${N(ev(cs, b))} − ${P(ev(cs, a))}) / ${b - a} = <b>${N(v)}</b>`]]); } },
         { id: 'KC2', name: 'Turunan dengan definisi limit', gen() { const a = nz(-3, 3), b = r(-6, 6), x = r(-4, 4), v = 2 * a * x + b; return num(`f(x) = ${poly([a, b, 0])}. Dengan f'(x) = ${LIM('h', 0)} ${FR('f(x + h) − f(x)', 'h')}, berapa f'(${N(x)})?`, v, "f'(x) = lim(h → 0) [f(x + h) − f(x)] / h.", [
-          ['Selisih', `f(x + h) − f(x) = ${N(2 * a)}xh + ${P(a)}h² + ${P(b)}h`], ['Bagi h lalu h → 0', `f'(x) = ${lin(2 * a, b)}`], ['Substitusi', `f'(${N(x)}) = <b>${N(v)}</b>`]]); } },
+          ['Selisih', `f(x + h) − f(x) = ${N(2 * a)}xh + ${P(a)}h² + ${P(b)}h`],
+          ['Keluarkan h', FR(`h(${lin(2 * a, b)} ${a < 0 ? '−' : '+'} ${Math.abs(a) === 1 ? '' : Math.abs(a)}h)`, 'h')],
+          ['Coret h di atas dan di bawah', `${FR(`${CX('h')}(${lin(2 * a, b)} ${a < 0 ? '−' : '+'} ${Math.abs(a) === 1 ? '' : Math.abs(a)}h)`, CX('h'))} = ${lin(2 * a, b)} ${a < 0 ? '−' : '+'} ${Math.abs(a) === 1 ? '' : Math.abs(a)}h`],
+          ['h → 0', `f'(x) = ${lin(2 * a, b)}`], ['Substitusi', `f'(${N(x)}) = <b>${N(v)}</b>`]]); } },
         { id: 'KC3', name: 'Gradien garis singgung', gen() { const cs = [nz(-2, 2), r(-4, 4), r(-4, 4), r(-5, 5)], x = r(-2, 2), v = ev(der(cs), x); return num(`Berapa gradien garis singgung kurva y = ${poly(cs)} di x = ${N(x)}?`, v, "Gradien garis singgung di x = a adalah f'(a).", [
           ['Turunkan', `y' = ${poly(der(cs))}`], ['Substitusi', `y'(${N(x)}) = <b>${N(v)}</b>`]]); } },
       ],
@@ -116,6 +119,13 @@
       skills: [
         { id: 'KH1', name: 'Antiturunan polinomial', gen() { const a = nz(1, 4), n = r(1, 4), b = nz(-6, 6), c1 = a * (n + 1); const tail = `${b < 0 ? '−' : '+'} ${Math.abs(b) === 1 ? '' : Math.abs(b)}x + C`; const up = (k) => poly([k, ...Array(n + 1).fill(0)]); const ans = `${up(a)} ${tail}`; return pil(`${INT()} (${poly([c1, ...Array(n).fill(0)])} ${b < 0 ? '−' : '+'} ${Math.abs(b)}) dx = ?`, opt(ans, [`${poly([a, ...Array(n).fill(0)])} ${tail}`, `${up(c1)} ${tail}`, `${poly([c1 * n, ...Array(n - 1).fill(0)])} + C`, `${up(a)} + C`]), ans, '∫ xⁿ dx = xⁿ⁺¹/(n + 1) + C. Jangan lupa + C.', [
           ['Naikkan pangkat, bagi dengan pangkat baru', `${c1}x${sup(n)} → ${c1}/${n + 1} x${sup(n + 1)} = ${up(a)}`], ['Integral konstanta', `${N(b)} → ${N(b)}x`], ['Hasil', `<b>${ans}</b>`]]); } },
+        { id: 'KH3', name: 'Sederhanakan dulu, lalu integralkan',
+          // hasil: (k/2)x² + kq x + C
+          res(q, k) { const t = k * q; return `${k === 1 ? `x${sup(2)}/2` : k === 2 ? `x${sup(2)}` : `${k / 2}x${sup(2)}`} ${t < 0 ? '−' : '+'} ${Math.abs(t) === 1 ? '' : Math.abs(t)}x + C`; },
+          top(p, q, k) { return poly([k, k * (p + q), k * p * q]); },
+          line(p, q, k) { return `∫ ${FR(this.top(p, q, k), lin(1, p))} dx = ${this.res(q, k)}`; },
+          make(p, q, k) { const f = `(${lin(1, p)})`, s = k === 1 ? '' : k, ans = this.res(q, k), inner = k === 1 ? lin(1, q) : `${k}(${lin(1, q)})`; return pil(`${INT()} ${FR(this.top(p, q, k), lin(1, p))} dx = ?`, opt(ans, [this.res(-q, k), this.res(p, k), `${k === 1 ? 'x' : `${k}x`} ${q < 0 ? '−' : '+'} ${Math.abs(q)} + C`, this.res(q, k * 2)]), ans, 'Integral pecahan terasa sulit. Faktorkan dulu, coret faktor yang sama, baru integralkan.', [['Faktorkan pembilang', FR(`${s}${f}(${lin(1, q)})`, f)], [`Coret ${f} di atas dan di bawah`, `${FR(`${s}${CX(f)}(${lin(1, q)})`, CX(f))} = ${inner}`], ['Integralkan', `<b>${ans}</b>`]], { motion: true }); },
+          gen() { const p = nz(-5, 5), q = nz(-6, 6); return C.SKILLS.KH3.make(p, q, pick([1, 2, 4])); } },
         { id: 'KH2', name: 'Masalah nilai awal', gen() { const a = nz(-3, 3), b = r(-5, 5), x0 = r(-2, 2), y0 = r(-9, 9), c = y0 - (a * x0 * x0 + b * x0); return num(`F'(x) = ${lin(2 * a, b)} dan F(${N(x0)}) = ${N(y0)}. Berapa konstanta C pada F(x) = ${poly([a, b, 0])} + C?`, c, 'Integralkan, lalu substitusikan syarat awal untuk mencari C.', [
           ['Antiturunan', `F(x) = ${poly([a, b, 0])} + C`], ['Substitusi', `${N(y0)} = ${N(a * x0 * x0 + b * x0)} + C`], ['C', `<b>${N(c)}</b>`]]); } },
       ],

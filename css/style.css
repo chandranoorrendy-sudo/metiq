@@ -1062,3 +1062,14 @@ b.big { font-size: 1.3rem; display: block; }
 /* Latihan fakta berpola (js/pola.js) */
 .pola-tag { display: inline-block; margin: 0 auto 6px; padding: 3px 12px; border-radius: 999px; background: #e9f7ef; color: #1f5e44; font-size: .85rem; font-weight: 900; }
 .pola-prev { color: #9aa7a4; font-weight: 800; font-size: 1.05rem; line-height: 1.5; margin-bottom: 4px; }
+
+/* Langkah beranimasi SMP-SMA: langkah muncul satu per satu, garis coret tergambar sesudahnya */
+.lk-steps > li { animation: kc-in .45s ease both; animation-delay: calc(var(--t0, 0s) + var(--t, 0s)); }
+.lk .mcx { position: relative; display: inline-block; text-decoration: none; }
+.lk .mcx::after { content: ''; position: absolute; left: -2px; right: -2px; top: 50%; height: 3px; border-radius: 3px; background: var(--no); transform-origin: left; transform: rotate(-16deg) scaleX(1); animation: lk-strike .45s ease both; animation-delay: calc(var(--t0, 0s) + var(--t, 0s) + .8s); }
+@keyframes lk-strike { from { transform: rotate(-16deg) scaleX(0); } }
+.mnew { font-size: .72em; font-weight: 900; color: var(--no); vertical-align: super; margin-left: 2px; }
+.pola-rows { margin: 0 0 10px; padding: 10px 14px; border-radius: 12px; background: #e9f7ef; font-weight: 800; }
+.pola-rows > b { display: block; font-size: .8rem; color: #1f5e44; margin-bottom: 4px; }
+.pola-rows > div { animation: kc-in .4s ease both; animation-delay: var(--t, 0s); padding: 1px 0; } .pola-rows > div.now { color: #0a7d52; font-size: 1.08em; }
+@media (prefers-reduced-motion: reduce) { .lk-steps > li, .lk .mcx::after, .pola-rows > div { animation-duration: .01s !important; animation-delay: 0s !important; } }

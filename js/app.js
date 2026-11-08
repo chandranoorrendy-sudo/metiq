@@ -3645,7 +3645,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       if (r.entry && cloudOn()) Cloud.queueProgress(sid, session.get().code, r.key, r.entry);
       return go('#/belajar');
     }
-    if (act === 'kolomplay') { const k = el.closest('.kolom'); if (k) k.replaceWith(k.cloneNode(true)); return; }
+    if (act === 'kolomplay') { const k = el.closest('.kolom, .lk'); if (k) k.replaceWith(k.cloneNode(true)); return; }
     if (act === 'anim') { const box = el.closest('.explain').querySelector('.anim-inline'); el.remove(); return window.METIQ_ANIM.mount(box, el.dataset.u); }
     if (act === 'fbedit') { ss.set('fbedit', el.dataset.k); return route(); }
     if (act === 'export') return exportResearch(el.dataset.t);
