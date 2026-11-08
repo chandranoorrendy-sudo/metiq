@@ -210,7 +210,7 @@
       </section>
       <p class="mq-gb-t">Untuk TK, SD, SMP, dan SMA: TK A sampai Kalkulus</p>
       <div class="mq-gb">${GRADES.map((g) => `<span title="${g.name}">${g.short || g.id}</span>`).join('')}</div>
-      <footer class="mq-lfoot"><a href="#/permainan">Permainan</a><a href="#/profesi">Profesi</a><a href="#/harga">Harga</a><a href="#/panduan/siswa">Bantuan</a><a href="#/ajukan">Ajukan akun</a><a href="#/ajukan/status">Cek status</a></footer>
+      <footer class="mq-lfoot"><a href="#/permainan">Permainan</a><a href="#/profesi">Profesi</a><a href="#/olimpiade">Olimpiade</a><a href="#/harga">Harga</a><a href="#/panduan/siswa">Bantuan</a><a href="#/ajukan">Ajukan akun</a><a href="#/ajukan/status">Cek status</a></footer>
     </div>`;
   }
 
@@ -2713,6 +2713,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       <div class="mq-ghead">${kid ? '' : `<a class="mq-ico" href="#/" aria-label="Kembali">${IC.back}</a>`}
         <div class="mq-gsay">${MQ.svg('happy', { size: 74 })}<div class="mq-bubble"><p>Ayo main!</p></div></div>
         ${kid ? `<button class="mq-gchip" data-act="tip" data-t="⭐ Bintang dari skor terbaik tiap permainan (maksimal 3)">${gStar(true)}${S.starsOf(kid.id)}</button>` : ''}</div>
+      <a class="ol-cta" href="#/olimpiade"><span>🏅</span><span class="grow"><b>Olimpiade</b><small>Latihan soal kompetisi SD, SMP, SMA</small></span>›</a>
       <div class="mq-ggs" role="tablist" aria-label="Kelas">${GRADES.map(pill).join('')}</div>
       ${body}`, 'main');
   }
@@ -3515,6 +3516,108 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       <section class="card"><h2>Pertanyaan yang sering diajukan</h2>${faq.map(([q, a]) => `<details class="faq"><summary>${q}</summary><p>${a}</p></details>`).join('')}</section>`);
   }
 
+  /* ---------- Olimpiade: latihan soal kompetisi (paling nyaman di tablet atau komputer karena butuh kertas coret besar) ---------- */
+  const OLM = window.METIQ_OLIM, OL_SIM_N = 15, OL_SIM_MIN = 60;
+  let OL = null;
+  const olLevel = () => ss.get('olLevel', 'SMP');
+  const olPool = (level, field, tier) => OLM.P.filter((p) => p.level === level && (!field || p.field === field) && (!tier || p.tier === tier));
+  const olKey = (level, field) => 'o' + level + field;
+  const olStat = (kid, level, field) => { const p = kid ? S.progress(kid.id, 'g:' + olKey(level, field)) : null; return p && p.att ? p.score : 0; };
+  function viewOlimpiade() {
+    if (innerWidth < 700 && !ss.get('olPhone', false)) {
+      app.innerHTML = mqPage(`<div class="mq-ghead"><a class="mq-ico" href="#/permainan" aria-label="Kembali">${IC.back}</a></div>
+        <section class="ol-gate"><div class="bigemoji">🏅</div><h1>Olimpiade</h1><p>Soal olimpiade butuh banyak coretan. Bagian ini paling nyaman di <b>tablet atau komputer</b>, dengan kertas coret besar di samping soal.</p><button class="mq-btn ghost" data-act="olphone">Tetap buka di HP</button></section>`, 'main');
+      return;
+    }
+    const kid = gameKid(), L = olLevel(), tier = ss.get('olTier', 1);
+    const card = ([k, [name, em]]) => { const n = olStat(kid, L, k), has = olPool(L, k, tier).length; return `<a class="ol-card ${has ? '' : 'off'}" href="${has ? `#/olimpiade/latih/${L}-${k}-${tier}` : '#/olimpiade'}"><span class="em">${em}</span><b>${name}</b><small>${n ? `${n} soal terpecahkan` : `${olPool(L, k).length} jenis soal`}</small></a>`; };
+    app.innerHTML = mqPage(`<div class="mq-ghead"><a class="mq-ico" href="#/permainan" aria-label="Kembali">${IC.back}</a><div class="mq-gsay">${MQ.svg('think', { size: 74 })}<div class="mq-bubble"><p>Tantang dirimu!</p></div></div></div>
+      <div class="ol-wrap"><h1>🏅 Olimpiade</h1><p class="ol-lead">Latihan soal non-rutin untuk persiapan OSN dan kompetisi matematika. Bandingkan dengan rekormu sendiri.</p>
+      <div class="ol-seg" role="tablist" aria-label="Jenjang">${Object.keys(OLM.LEVELS).map((x) => `<button class="${x === L ? 'on' : ''}" data-act="ollevel" data-v="${x}">${x}</button>`).join('')}</div>
+      <h2>Latihan per bidang</h2>
+      <div class="ol-seg small" role="tablist" aria-label="Tingkat">${[1, 2, 3].map((t) => `<button class="${t === tier ? 'on' : ''}" data-act="oltier" data-v="${t}">Tingkat ${t}</button>`).join('')}</div>
+      <div class="ol-grid">${Object.entries(OLM.FIELDS).map(card).join('')}</div>
+      <h2>Simulasi</h2>
+      <a class="ol-sim" href="#/olimpiade/simulasi/${L}"><b>⏱️ Simulasi ${OL_SIM_N} soal, ${OL_SIM_MIN} menit</b><small>Semua bidang, dari mudah ke sukar. Pembahasan muncul di akhir.</small></a>
+      <details class="ol-info"><summary>Bagaimana soal olimpiade disusun?</summary>
+        <p>Soal olimpiade bersifat <b>non-rutin</b>: materinya tidak jauh dari sekolah, tetapi caranya harus ditemukan sendiri. Kompetisi membaginya ke dalam empat bidang: aljabar, teori bilangan, geometri, dan kombinatorika.</p>
+        <p>Di IMO, setiap negara mengusulkan soal, lalu panitia menyaring menjadi daftar pendek sekitar 30 soal dan juri memilih 6. Di OSN, soal berjenjang dari tingkat kabupaten/kota sampai nasional.</p>
+        <p>Soal di Metiq dibuat sendiri dengan gaya yang sama dan angka yang berubah, bukan salinan soal lomba. Tahap akhir kompetisi memakai soal uraian dan pembuktian yang tidak bisa dinilai otomatis, jadi latihan itu tetap perlu didampingi guru.</p></details></div>`, 'main');
+  }
+  const olFoot = () => `<div class="mq-foot-in"><div class="mq-krow"><button class="mq-ktog" data-act="keystog" aria-label="Tampilkan atau sembunyikan tombol angka">🔢 <span class="ka">Tombol angka</span><span class="kb">Sembunyikan</span> <i>▲</i></button><span class="mq-mini">Jawaban: <b id="indisp2">–</b></span></div>
+    <div class="mq-keys extra">${['−', '/'].map((k) => `<button class="mq-key" data-act="olkey" data-k="${k}">${k}</button>`).join('')}</div>
+    <div class="mq-keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button class="mq-key" data-act="olkey" data-k="${n}">${n}</button>`).join('')}<button class="mq-key del" data-act="olkey" data-k="del" aria-label="Hapus">⌫</button><button class="mq-key" data-act="olkey" data-k="0">0</button></div>
+    <button class="mq-btn" id="olcheck" data-act="olcheck" disabled>${OL && OL.sim ? (OL.i < OL.items.length - 1 ? 'Simpan, lanjut' : 'Simpan') : 'Periksa'}</button></div>`;
+  const olVal = (s) => { s = String(s).replace(/−/g, '-'); if (!/^-?\d+(\/\d+)?$/.test(s)) return NaN; const [a, b] = s.split('/').map(Number); return b === undefined ? a : b ? a / b : NaN; };
+  const olRight = (q, input) => Math.abs(olVal(input) - OLM.value(q.ans)) < 1e-9;
+  const olAns = (q) => (Array.isArray(q.ans) ? OLM.show(q.ans[0], q.ans[1]) : OLM.show(q.ans, 1));
+  const olSol = (t, q) => window.METIQ_CURRICULUM.kit.tahap(`<b>Strategi: ${esc(t.strat)}.</b> ${q.hint}`, q.steps.map(([a, b]) => [a, String(b)]), true);
+  function olPaint() {
+    const q = OL.cur.q, tag = `${OLM.FIELDS[OL.cur.t.field][1]} ${OLM.FIELDS[OL.cur.t.field][0]} · Tingkat ${OL.cur.t.tier}`, box = document.getElementById('pq'), fb = document.getElementById('fb');
+    closeCoret(true);
+    P = null; // soal sudah terlihat di atas kertas coret
+    box.innerHTML = `<div class="ol-tag">${OL.sim ? `Soal ${OL.i + 1} dari ${OL.items.length} · ` : ''}${tag}</div><div class="mq-say"><div class="mq-bubble ol-q" id="olq"><span>${q.text}</span></div></div>
+      <div class="mq-ans"><div class="mq-disp" id="indisp">${esc(OL.input) || '&nbsp;'}</div></div>
+      ${OL.sim ? `<div class="ol-dots">${OL.items.map((x, i) => `<button class="${i === OL.i ? 'on' : ''} ${x.input ? 'done' : ''}" data-act="olgo" data-i="${i}">${i + 1}</button>`).join('')}</div><button class="link small" data-act="olend">Selesai dan lihat hasil</button>`
+    : `<p class="ol-hintw"><button class="mq-link" data-act="olhint">💡 Petunjuk</button><button class="mq-link" data-act="olshow">Lihat pembahasan</button></p><p class="jhint" id="olh" hidden>💡 ${q.hint}</p>`}`;
+    fb.className = 'mq-foot compact'; fb.innerHTML = olFoot(); olSync();
+    box.style.paddingBottom = fb.offsetHeight + 20 + 'px';
+    if (innerWidth >= 700) openCoret();
+  }
+  const olSync = () => { const d = document.getElementById('indisp'), m = document.getElementById('indisp2'), b = document.getElementById('olcheck'); if (d) { d.innerHTML = esc(OL.input) || '&nbsp;'; d.classList.toggle('has', OL.input !== ''); } if (m) m.textContent = OL.input || '–'; if (b && !OL.locked) b.disabled = OL.sim ? false : isNaN(olVal(OL.input)); };
+  const olNew = (pool) => { let t, g = 0; do t = pool[Math.floor(Math.random() * pool.length)]; while (OL && OL.cur && t === OL.cur.t && pool.length > 1 && g++ < 5); return { t, q: t.gen() }; };
+  function viewOlLatih(arg) {
+    const [level, field, tier] = String(arg || '').split('-');
+    let pool = olPool(level, field, +tier); if (!pool.length) return go('#/olimpiade');
+    OL = { sim: false, level, field, pool, input: '', tries: 0, hint: false, seen: false, locked: false, solved: 0, t0: Date.now() };
+    OL.cur = olNew(pool);
+    app.innerHTML = `<div class="mq-top"><a class="mq-ico" href="#/olimpiade" aria-label="Keluar">${IC.x}</a><span class="mq-gtitle">${OLM.FIELDS[field][0]} ${level}</span><span class="ol-count" id="olcount">✓ 0</span></div><main class="mq-screen" id="pq"></main><div class="mq-foot compact" id="fb"></div>`;
+    olPaint();
+  }
+  function olFeedback(ok) {
+    const fb = document.getElementById('fb'), { t, q } = OL.cur; OL.locked = true;
+    fb.className = 'mq-foot ' + (ok ? 'ok' : 'no');
+    fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${ok ? IC.ok : IC.x}</span>${ok ? 'Benar!' : 'Pembahasan'}</div><div class="mq-fbody">${ok ? '' : `<p>Jawabannya: <b>${olAns(q)}</b></p>`}${olSol(t, q)}</div><button class="mq-btn" data-act="olnext">Soal berikutnya</button></div>`;
+  }
+  function olCheck() {
+    if (!OL || OL.locked) return;
+    if (OL.sim) { OL.items[OL.i].input = OL.input; if (OL.i < OL.items.length - 1) return olGo(OL.i + 1); return olEnd(); }
+    if (isNaN(olVal(OL.input))) return;
+    if (olRight(OL.cur.q, OL.input)) {
+      window.SFX.correct(); OL.solved++; const c = document.getElementById('olcount'); if (c) c.textContent = '✓ ' + OL.solved;
+      const kid = gameKid();
+      if (kid && !OL.seen) { const k = olKey(OL.level, OL.field), res = S.recordGame(kid.id, k, olStat(kid, OL.level, OL.field) + 1, 0, Date.now() - OL.t0); OL.t0 = Date.now(); if (cloudOn()) Cloud.queueProgress(kid.id, session.get().code, 'g:' + k, res); }
+      return olFeedback(true);
+    }
+    window.SFX.wrong(); OL.tries++; OL.input = ''; olSync();
+    const h = document.getElementById('olh'); if (h) h.hidden = false;
+    toast('Belum tepat. Coba lagi, atau lihat petunjuk.');
+  }
+  function viewOlSim(level) {
+    if (!OLM.LEVELS[level]) return go('#/olimpiade');
+    const all = olPool(level), byF = Object.keys(OLM.FIELDS).map((f) => all.filter((p) => p.field === f).sort(() => Math.random() - 0.5)), pick2 = [];
+    for (let i = 0; pick2.length < OL_SIM_N; i++) byF.forEach((a) => { if (pick2.length < OL_SIM_N) pick2.push(a[i % a.length]); });
+    OL = { sim: true, level, items: pick2.sort((a, b) => a.tier - b.tier).map((t) => ({ t, q: t.gen(), input: '' })), i: 0, input: '', locked: false, end: Date.now() + OL_SIM_MIN * 60000 };
+    OL.cur = OL.items[0];
+    app.innerHTML = `<div class="mq-top"><a class="mq-ico" href="#/olimpiade" aria-label="Keluar">${IC.x}</a><span class="mq-gtitle">Simulasi ${level}</span><span class="ol-count" id="oltime"></span></div><main class="mq-screen" id="pq"></main><div class="mq-foot compact" id="fb"></div>`;
+    olPaint();
+    const tick = () => { const left = Math.max(0, OL.end - Date.now()), el = document.getElementById('oltime'); if (!el) return clearInterval(timer); el.textContent = `${Math.floor(left / 60000)}:${String(Math.floor(left / 1000) % 60).padStart(2, '0')}`; if (!left) olEnd(); };
+    clearInterval(timer); timer = setInterval(tick, 500); tick();
+  }
+  function olGo(i) { OL.items[OL.i].input = OL.input; OL.i = i; OL.cur = OL.items[i]; OL.input = OL.cur.input; olPaint(); }
+  function olEnd() {
+    clearInterval(timer); closeCoret(true); OL.items[OL.i].input = OL.input;
+    const right = OL.items.filter((x) => olRight(x.q, x.input)).length, pct0 = Math.round((right / OL.items.length) * 100), kid = gameKid(), k = 'oS' + OL.level, before = kid ? S.progress(kid.id, 'g:' + k) : null, best = before && before.att ? before.score : null, used = OL_SIM_MIN * 60000 - Math.max(0, OL.end - Date.now());
+    if (kid) { const res = S.recordGame(kid.id, k, pct0, 0, used); if (cloudOn()) Cloud.queueProgress(kid.id, session.get().code, 'g:' + k, res); }
+    const per = Object.entries(OLM.FIELDS).map(([f, [n, e]]) => { const a = OL.items.filter((x) => x.t.field === f); return `<div><span>${e} ${n}</span><b>${a.filter((x) => olRight(x.q, x.input)).length}/${a.length}</b></div>`; }).join('');
+    document.getElementById('fb').hidden = true; document.getElementById('fb').className = 'mq-foot';
+    document.getElementById('pq').innerHTML = `<div class="ol-end"><h1>${right} dari ${OL.items.length} benar</h1><p>${pct0}%${best !== null ? (pct0 > best ? ` · 🎉 Rekor barumu (sebelumnya ${best}%)` : ` · Rekormu ${best}%`) : ''} · waktu ${Math.ceil(used / 60000)} menit</p><div class="ol-per">${per}</div></div>
+      ${OL.items.map((x, i) => { const ok = olRight(x.q, x.input); return `<details class="ol-rev ${ok ? 'ok' : 'no'}"><summary><span>${ok ? '✅' : '❌'} Soal ${i + 1}</span></summary><p>${x.q.text}</p><p>Jawabanmu: <b>${esc(x.input) || 'kosong'}</b> · Jawaban: <b>${olAns(x.q)}</b></p>${olSol(x.t, x.q)}</details>`; }).join('')}
+      <div class="row-btn left" style="margin:16px 0"><a class="mq-btn" href="#/olimpiade">Kembali ke Olimpiade</a></div>`;
+    document.getElementById('pq').style.paddingBottom = '40px';
+    OL = null; P = null;
+  }
+
   /* ---------- Rute ---------- */
   let routeSeq = 0;
   async function route() {
@@ -3548,6 +3651,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       case 'asesmen': return b === 'hasil' ? viewDiagResult('a') : b === 'akhir' ? (c === 'hasil' ? viewDiagResult('b') : viewDiag('b')) : viewDiag('a');
       case 'permainan': return viewGames();
       case 'harga': return viewPricing();
+      case 'olimpiade': return b === 'latih' ? viewOlLatih(c) : b === 'simulasi' ? viewOlSim(c) : viewOlimpiade();
       case 'profesi': return b === 'topik' ? viewJobTopic(c) : b ? viewProfession(b) : viewJobs();
       case 'misi': return viewMission(b);
       case 'tugas': return TASKS_ON ? viewTasks() : go('#/belajar');
@@ -3645,6 +3749,16 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       if (r.entry && cloudOn()) Cloud.queueProgress(sid, session.get().code, r.key, r.entry);
       return go('#/belajar');
     }
+    if (act === 'olphone') { ss.set('olPhone', true); return route(); }
+    if (act === 'ollevel') { ss.set('olLevel', el.dataset.v); return route(); }
+    if (act === 'oltier') { ss.set('olTier', +el.dataset.v); return route(); }
+    if (act === 'olkey') { if (!OL || OL.locked) return; const k = el.dataset.k; OL.input = k === 'del' ? OL.input.slice(0, -1) : (OL.input + k).slice(0, 12); return olSync(); }
+    if (act === 'olcheck') return olCheck();
+    if (act === 'olhint') { const h = document.getElementById('olh'); if (h) h.hidden = false; el.hidden = true; return; }
+    if (act === 'olshow') { if (OL) { OL.seen = true; olFeedback(false); } return; }
+    if (act === 'olnext') { OL.input = ''; OL.tries = 0; OL.seen = false; OL.locked = false; OL.cur = olNew(OL.pool); return olPaint(); }
+    if (act === 'olgo') return olGo(+el.dataset.i);
+    if (act === 'olend') return olEnd();
     if (act === 'kolomplay') { const k = el.closest('.kolom, .lk'); if (k) k.replaceWith(k.cloneNode(true)); return; }
     if (act === 'anim') { const box = el.closest('.explain').querySelector('.anim-inline'); el.remove(); return window.METIQ_ANIM.mount(box, el.dataset.u); }
     if (act === 'fbedit') { ss.set('fbedit', el.dataset.k); return route(); }
@@ -3779,6 +3893,10 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   });
   document.addEventListener('toggle', (e) => { if (e.target.matches && e.target.matches('details.unit[data-unit]') && e.target.open) sessionStorage.setItem('metiq_open', e.target.dataset.unit); }, true);
   document.addEventListener('keydown', (e) => {
+    if (OL && !OL.locked && document.getElementById('olq') && e.target.tagName !== 'INPUT') {
+      if (/^[0-9]$/.test(e.key) || e.key === '/') OL.input = (OL.input + e.key).slice(0, 12); else if (e.key === '-') OL.input = (OL.input + '−').slice(0, 12); else if (e.key === 'Backspace') OL.input = OL.input.slice(0, -1); else if (e.key === 'Enter') { const b = document.getElementById('olcheck'); if (b && !b.disabled) olCheck(); return; } else return;
+      return olSync();
+    }
     if (!P || !document.getElementById('pq') || e.target.tagName === 'INPUT') return;
     if (document.getElementById('mqover')) return;
     if (e.key === 'Enter') {
