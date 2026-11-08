@@ -996,3 +996,20 @@ body.coret-open #pq { -webkit-user-select: none; user-select: none; }
 .ol-per { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 10px; } .ol-per div { display: flex; justify-content: space-between; padding: 8px 12px; border-radius: 12px; background: #f1fbf8; font-weight: 800; font-size: .92rem; }
 .ol-rev { padding: 10px 14px; margin-bottom: 8px; border: 2px solid var(--mq-line); border-radius: 14px; background: #fff; font-weight: 700; } .ol-rev summary { font-weight: 900; cursor: pointer; } .ol-rev.no { border-color: #ffc2c3; } .ol-rev.ok { border-color: #bfeee2; }
 .mq-coret.side .qcopy { display: none; } /* di samping, soalnya sudah terlihat di kiri */
+
+/* Beranda: angka dan kata pengguna */
+.mq-stats, .mq-testi { padding: 8px 0 22px; } .mq-stats h2, .mq-testi h2 { text-align: center; font-size: 1.25rem; font-weight: 900; margin: 0 0 12px; }
+.mq-marq { overflow: hidden; -webkit-mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); mask-image: linear-gradient(90deg, transparent, #000 5%, #000 95%, transparent); }
+.mq-marq-t { display: flex; width: max-content; animation: mq-marq 60s linear infinite; }
+.mq-marq-t > div { display: flex; align-items: stretch; }
+.mq-marq.rev .mq-marq-t { animation-direction: reverse; animation-duration: 70s; }
+.mq-marq:hover .mq-marq-t, .mq-marq:active .mq-marq-t { animation-play-state: paused; }
+@keyframes mq-marq { to { transform: translateX(-50%); } }
+.mq-marq.stats .mq-marq-t > div > div { display: grid; gap: 2px; align-content: center; width: 190px; margin-right: 12px; padding: 16px 12px; border-radius: 18px; background: #e6fffa; text-align: center; }
+.mq-marq.stats .mq-marq-t > div > div.wide { width: 340px; background: #fff3c4; }
+.mq-marq.stats b { font-size: 1.8rem; font-weight: 900; color: #0a7d68; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.mq-marq.stats small { font-size: .82rem; font-weight: 800; color: #4d625d; line-height: 1.25; }
+.mq-testi figure { margin: 0 12px 0 0; width: min(320px, 78vw); display: flex; flex-direction: column; justify-content: space-between; gap: 12px; padding: 18px; border: 2px solid var(--mq-line); border-bottom-width: 5px; border-radius: 20px; background: #fff; }
+.mq-testi blockquote { margin: 0; font-weight: 700; line-height: 1.45; color: var(--mq-ink); }
+.mq-testi figcaption { display: grid; font-size: .85rem; font-weight: 700; color: #5c7570; } .mq-testi figcaption b { font-size: .98rem; color: var(--mq-ink); }
+@media (prefers-reduced-motion: reduce) { .mq-marq { overflow-x: auto; -webkit-mask-image: none; mask-image: none; } .mq-marq-t { animation: none; } .mq-marq-t > div[aria-hidden] { display: none; } }

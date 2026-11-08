@@ -210,8 +210,29 @@
       </section>
       <p class="mq-gb-t">Untuk TK, SD, SMP, dan SMA: TK A sampai Kalkulus</p>
       <div class="mq-gb">${GRADES.map((g) => `<span title="${g.name}">${g.short || g.id}</span>`).join('')}</div>
+      <section class="mq-stats" id="landstats" hidden></section>
+      <section class="mq-testi"><h2>Kata mereka</h2>${marquee(TESTI.map(([who, role, text]) => `<figure><blockquote>${esc(text)}</blockquote><figcaption><b>${esc(who)}</b>${esc(role)}</figcaption></figure>`).join(''))}</section>
       <footer class="mq-lfoot"><a href="#/permainan">Permainan</a><a href="#/profesi">Profesi</a><a href="#/olimpiade">Olimpiade</a><a href="#/harga">Harga</a><a href="#/panduan/siswa">Bantuan</a><a href="#/ajukan">Ajukan akun</a><a href="#/ajukan/status">Cek status</a></footer>
     </div>`;
+    loadLandingStats();
+  }
+  // Carousel berjalan tanpa putus: isi diulang 4 kali lalu digeser setengah panjangnya. Salinan disembunyikan dari pembaca layar.
+  const marquee = (items, cls = '') => `<div class="mq-marq ${cls}"><div class="mq-marq-t"><div>${items}</div>${'<div aria-hidden="true">' + items + '</div>'}${'<div aria-hidden="true">' + items + '</div>'}${'<div aria-hidden="true">' + items + '</div>'}</div></div>`;
+  const TESTI = [
+    ['Shelvy', 'Orang tua Giselle', 'Keren banget....kayak duolingo. Dia sudah biasa ngerjain itu. Trus fitur kertas bantu itu berguna banget apalagi dia pake tab'],
+    ['Bunda Eneng', 'Guru TK Fathia, Sukabumi', 'Uji coba matematika menggunakan games Tarik Tambang di Metiq, ternyata anak anak sangat antusias!'],
+    ['Ario', 'Orang tua siswa', 'Bagus banget... pas kebetulan lagi ngajarin math ke anak tiap hari jugaa...'],
+  ];
+  // Angka nyata dari server (SQL 022), hanya total. Bagian ini tetap tersembunyi jika datanya belum ada.
+  async function loadLandingStats() {
+    if (!Cloud.enabled) return;
+    let d; try { d = await Cloud.rpc('public_stats'); } catch (e) { return; }
+    const box = document.getElementById('landstats'); if (!box || !d || !d.answers) return;
+    const n = (x) => Number(x).toLocaleString('id-ID'), im = d.improve || {};
+    const tile = (v, l) => `<div><b>${v}</b><small>${l}</small></div>`;
+    const up = im.pairs >= 30 && im.after > im.before ? `<div class="wide"><b>${im.before}% → ${im.after}%</b><small>ketepatan naik saat anak berlatih satu keterampilan minimal 10 soal (5 soal pertama dibanding 5 soal terakhir)</small></div>` : '';
+    box.innerHTML = `<h2>Belajar di Metiq sejauh ini</h2>${marquee(tile(n(d.active30), 'anak aktif 30 hari terakhir') + tile(n(d.answers), 'soal terselesaikan') + tile(d.accuracy + '%', 'ketepatan jawaban') + tile(n(d.mastered), 'keterampilan dikuasai') + up, 'rev stats')}`;
+    box.hidden = false;
   }
 
   // Panduan memasang Metiq di layar utama HP (disembunyikan bila Metiq sudah dibuka sebagai aplikasi)
