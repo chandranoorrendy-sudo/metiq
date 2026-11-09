@@ -1,0 +1,1 @@
+{ "name": "metiq-i18n", "private": true, "dependencies": { "acorn": "^8.14.0", "acorn-walk": "^8.3.4" } }

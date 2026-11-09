@@ -1,2 +1,4 @@
 .claude/
 *.local.*
+tools/i18n/node_modules/
+tools/i18n/todo/

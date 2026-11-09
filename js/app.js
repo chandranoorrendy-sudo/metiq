@@ -187,7 +187,7 @@
     if (ses.role === 'guru' && (cloudOn() ? ses.token : S.teacher(ses.id))) return go('#/guru/ringkasan');
     const kid = ses.role === 'siswa' && S.student(ses.id);
     app.innerHTML = `<div class="mq-land">
-      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=69" alt="">Metiq<span class="alpha">Beta</span></a><a class="mq-tlink" href="#/guru">Saya guru</a></header>
+      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=69" alt="">Metiq<span class="alpha">Beta</span></a><span class="mq-lright"><a class="mq-tlink" href="#/guru">Saya guru</a><button class="mq-lang" data-act="lang" aria-label="Ganti bahasa">${window.METIQ_LANG === 'en' ? 'EN' : 'ID'}</button></span></header>
       <section class="mq-hero">
         <div class="mq-stage" aria-label="Meti dan teman-temannya"><span class="mq-sym a">+</span><span class="mq-sym b">×</span><span class="mq-sym c">=</span><span class="mq-sym d">7</span>
           <div class="st st-meti">${MQ.svg('hello', { size: 190 })}</div>
@@ -3717,6 +3717,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (!el) return;
     const act = el.dataset.act;
     if (['jnext', 'jretry', 'jsay', 'jopt', 'jkey', 'jcheck', 'jitem', 'jbin'].includes(act)) return jAct(act, el);
+    if (act === 'lang') { try { localStorage.setItem('metiq_lang', window.METIQ_LANG === 'en' ? 'id' : 'en'); } catch (e) {} location.href = location.pathname + location.hash; return; }
     if (act === 'jband') { ls.set('metiq_jband', el.dataset.b); return route(); }
     if (act === 'jfilter') { const f = ls.get('metiq_jfilter', {}); f[el.dataset.k] = el.dataset.v; ls.set('metiq_jfilter', f); return route(); }
     if (act === 'apstu') return;
