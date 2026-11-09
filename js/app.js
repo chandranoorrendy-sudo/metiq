@@ -3717,7 +3717,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (!el) return;
     const act = el.dataset.act;
     if (['jnext', 'jretry', 'jsay', 'jopt', 'jkey', 'jcheck', 'jitem', 'jbin'].includes(act)) return jAct(act, el);
-    if (act === 'lang') { try { localStorage.setItem('metiq_lang', window.METIQ_LANG === 'en' ? 'id' : 'en'); } catch (e) {} location.href = location.pathname + location.hash; return; }
+    if (act === 'lang') { location.href = location.pathname + '?lang=' + (window.METIQ_LANG === 'en' ? 'id' : 'en') + location.hash; return; }  // ?lang berbeda selalu memuat ulang halaman; index.html menyimpan pilihannya
     if (act === 'jband') { ls.set('metiq_jband', el.dataset.b); return route(); }
     if (act === 'jfilter') { const f = ls.get('metiq_jfilter', {}); f[el.dataset.k] = el.dataset.v; ls.set('metiq_jfilter', f); return route(); }
     if (act === 'apstu') return;
