@@ -292,15 +292,15 @@
       const now = Date.now();
       batching = true;
       // kemampuan siswa 0–1; null = belum pernah berlatih
-      // light = data lebih sedikit per keterampilan (untuk kelas tambahan agar penyimpanan tidak penuh)
+      // light = lebih sedikit keterampilan (untuk kelas tambahan agar penyimpanan tidak penuh); jawaban per keterampilan tetap cukup untuk skor yang bermakna
       const fill = (cls, grade, kids, light) => {
         const order = C.unitsOf(grade).flatMap((u) => u.skills.map((s) => s.id));
         kids.forEach(([name, skill], ki) => {
         const s = Store.addStudent(cls.id, name);
         if (skill === null) return;
-        const reach = Math.floor(order.length * (0.25 + skill * 0.45));
+        const reach = Math.floor(order.length * (0.25 + skill * 0.45) * (light ? 0.5 : 1));
         order.slice(0, reach).forEach((sk, si) => {
-          const n = light ? 3 + Math.floor(Math.random() * 2) : 5 + Math.floor(Math.random() * 7);
+          const n = light ? 8 + Math.floor(Math.random() * 2) : 8 + Math.floor(Math.random() * 5);
           const hard = C.SKILLS[sk].unit === 'K' || sk === 'H4' || sk === 'G2' ? 0.18 : 0;
           for (let i = 0; i < n; i++) {
             const q = C.SKILLS[sk].gen();
@@ -317,23 +317,23 @@
         });
         });
       };
-      fill(c, 1, [['Alya', 0.92], ['Bima', 0.78], ['Citra', 0.85], ['Dafa', 0.6], ['Eka', 0.7], ['Farel', 0.5]]);
+      fill(c, 1, [['Alya', 0.95], ['Bima', 0.88], ['Citra', 0.92], ['Dafa', 0.66], ['Eka', 0.85], ['Farel', 0.58]]);
       // Kelas lain di sekolah contoh, dengan kondisi berbeda-beda untuk dasbor koordinator
       const others = [
-        ['Mr. Ahmad (Sample)', 'Class 2A (Sample)', 2, [['Gita', 0.9], ['Hana', 0.85], ['Iqbal', 0.8], ['Joko', 0.75], ['Kiki', 0.88]]],
-        ['Ms. Sari (Sample)', 'Class 3A (Sample)', 3, [['Lala', 0.55], ['Miko', 0.45], ['Nina', 0.6], ['Oki', 0.5], ['Girls', 0.75], ['Raka', null]]],
-        ['Ms. Rina (Sample)', 'Class 5A (Sample)', 5, [['Salsa', 0.8], ['Tegar', null], ['Umar', 0.65], ['Vina', null], ['Wawan', 0.6]]],
+        ['Mr. Ahmad (Sample)', 'Class 2A (Sample)', 2, [['Gita', 0.95], ['Hana', 0.9], ['Iqbal', 0.88], ['Joko', 0.86], ['Kiki', 0.92]]],
+        ['Ms. Sari (Sample)', 'Class 3A (Sample)', 3, [['Lala', 0.85], ['Miko', 0.64], ['Nina', 0.88], ['Oki', 0.9], ['Girls', 0.92], ['Raka', null]]],
+        ['Ms. Rina (Sample)', 'Class 5A (Sample)', 5, [['Salsa', 0.92], ['Tegar', null], ['Umar', 0.88], ['Vina', null], ['Wawan', 0.86]]],
       ];
       others.forEach(([tn, cn, g, kids]) => { const t2 = Store.createTeacher(tn, '1234'); t2.demo = true; const c2 = Store.createClass(t2.id, cn); fill(c2, g, kids); });
       // Kelas paralel B (5 jenjang × 2 kelas = 10 kelas), dengan guru yang sudah ada dan dua guru baru
       const tOf = (name) => db.teachers.find((x) => x.name.startsWith(name)) || (() => { const x = Store.createTeacher(name + ' (Contoh)', '1234'); x.demo = true; return x; })();
       [
-        ['Ms. Teacher', 'Class 1B (Sample)', 1, [['Ayu', 0.75], ['Bayu', 0.55], ['Cici', 0.65], ['Doni', 0.45]]],
-        ['Mr. Ahmad', 'Class 2B (Sample)', 2, [['Elsa', 0.6], ['Fajar', 0.5], ['Gina', 0.7], ['Hadi', null]]],
-        ['Ms. Nur', 'Class 3B (Sample)', 3, [['Intan', 0.8], ['Jaka', 0.75], ['Kirana', 0.85], ['Lutfi', 0.7]]],
-        ['Mr. Dimas', 'Class 4A (Sample)', 4, [['Maya', 0.7], ['Nanda', 0.6], ['Oscar', 0.5], ['Ribbon', 0.8]]],
-        ['Ms. Nur', 'Class 4B (Sample)', 4, [['Qori', 0.55], ['Rani', 0.45], ['Sandi', 0.6], ['Tia', null]]],
-        ['Ms. Rina', 'Class 5B (Sample)', 5, [['Ulfa', 0.5], ['Vino', 0.45], ['Wulan', 0.55], ['Yusuf', 0.4]]],
+        ['Ms. Teacher', 'Class 1B (Sample)', 1, [['Ayu', 0.92], ['Bayu', 0.85], ['Cici', 0.88], ['Doni', 0.86]]],
+        ['Mr. Ahmad', 'Class 2B (Sample)', 2, [['Elsa', 0.88], ['Fajar', 0.86], ['Gina', 0.9], ['Hadi', null]]],
+        ['Ms. Nur', 'Class 3B (Sample)', 3, [['Intan', 0.92], ['Jaka', 0.88], ['Kirana', 0.95], ['Lutfi', 0.86]]],
+        ['Mr. Dimas', 'Class 4A (Sample)', 4, [['Maya', 0.88], ['Nanda', 0.86], ['Oscar', 0.85], ['Ribbon', 0.92]]],
+        ['Ms. Nur', 'Class 4B (Sample)', 4, [['Qori', 0.62], ['Rani', 0.5], ['Sandi', 0.66], ['Tia', null]]],
+        ['Ms. Rina', 'Class 5B (Sample)', 5, [['Ulfa', 0.85], ['Vino', 0.62], ['Wulan', 0.88], ['Yusuf', 0.86]]],
       ].forEach(([tn, cn, g, kids]) => fill(Store.createClass(tOf(tn).id, cn), g, kids, true));
       // Contoh asesmen awal (60 hari lalu) dan akhir (hari ini). Siswa lain diminta asesmen awal saat masuk.
       const fake = (L) => [...(L > 1 ? Store.DIAG[L - 1].map((id) => [id, 1, 1, 0]) : []), ...Store.DIAG[L].map((id, i) => [id, i < 2 ? 1 : 0, i === 0 ? 1 : 0, 0])];

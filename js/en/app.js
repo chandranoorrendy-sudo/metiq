@@ -156,7 +156,8 @@
   function strengths(sid) { return skillRows(sid).filter((r) => r.score >= 80).sort((a, b) => b.score - a.score || b.acc - a.acc); }
   function weaknesses(sid) {
     const ans = S.answersOf(sid);
-    return skillRows(sid).filter((r) => r.att >= 4 && r.score < 80 && (r.score < 60 || r.acc < 70)).sort((a, b) => a.acc - b.acc).map((r) => {
+    // Skor naik bertahap, jadi skor rendah baru berarti setelah 8 soal. Sebelum itu hanya banyaknya jawaban salah yang dihitung.
+    return skillRows(sid).filter((r) => r.att >= 4 && r.score < 80 && (r.acc < 70 || (r.att >= 8 && r.score < 60))).sort((a, b) => a.acc - b.acc).map((r) => {
       const wrong = ans.filter((a) => a.skill === r.id && !a.ok).sort((a, b) => b.ts - a.ts);
       const tc = tagCounts(wrong);
       return { ...r, tag: tc[0] && tc[0][0] !== 'konsep' ? tc[0][0] : (tc[1] ? tc[1][0] : (tc[0] || [])[0]), example: wrong[0] };
@@ -1120,15 +1121,18 @@
     const c = classes.find((x) => x.id === ses.classId) || classes[0];
     return { t, c, classes, kids: S.studentsOf(c.id) };
   }
-  // Empat tab utama berbahasa sehari-hari. Halaman lain menjadi pil di dalam tab induknya, jadi semua halaman
-  // terjangkau dalam dua ketukan tanpa menu tersembunyi. Pengaturan kelas ada di tombol ⚙️ di kepala halaman.
+  // Tiga tab saja untuk guru. Setiap halaman menjawab satu pertanyaan: apa yang perlu dilakukan, bagaimana siswa saya, tugas apa yang diberikan.
   const TAB_GROUPS = [
     ['hari', '🏠 Today', [['ringkasan', 'Today']]],
-    ['siswa', '🧒 Students', [['siswa', 'Student list'], ['kelompok', 'Level groups'], ['peta', 'Progress map']]],
+    ['siswa', '🧒 Students', [['siswa', 'Student']]],
     ['tugas', '📌 Tasks', [['tugas', 'Tasks']]],
-    ['laporan', '📈 Reports', [['semua', 'All progress'], ['analitik', 'Analytics'], ['keterampilan', 'Skills'], ['peringkat', 'Leaderboard'], ['referensi', 'References']]],
   ];
-  const groupOf = (tab) => TAB_GROUPS.find((g) => g[2].some(([k]) => k === tab));
+  // Analitik dan data penelitian: hanya akun super admin sungguhan (bukan mode coba, bukan guru, bukan admin sekolah)
+  const canResearch = (ctx) => !!(ctx.t.isAdmin && !session.get().demo);
+  const RESEARCH_SCHOOL = [['data', '📥 Research data'], ['asesmen', '🧭 Pre- and post-assessment'], ['grafik', '📊 Charts'], ['guru', '👩‍🏫 By teacher'], ['ulasan', '⭐ Reviews'], ['coba', '🧪 Demo mode']];
+  const RESEARCH_GROUP = ['riset', '🔬 Research', [['analitik', 'Analytics'], ['semua', 'All progress'], ['peta', 'Progress map'], ['keterampilan', 'Skills'], ['kelompok', 'Level groups'], ['peringkat', 'Leaderboard'], ...RESEARCH_SCHOOL.map(([k, l]) => ['riset/' + k, l])]];
+  const RESEARCH_TABS = new Set(['riset', ...RESEARCH_GROUP[2].map(([k]) => k)]);
+  const groupOf = (tab) => [...TAB_GROUPS, RESEARCH_GROUP].find((g) => g[2].some(([k]) => k === tab));
   // Angka siswa tanpa kelas untuk admin (disimpan sebentar agar tidak memanggil server setiap pindah tab)
   let ungCount = { n: null, at: 0 };
   async function loadUngCount(ctx) {
@@ -1143,78 +1147,96 @@
     if (row && n) row.outerHTML = todoRow('🧺', `${n} students have no class yet`, 'Children who started learning on their own. Add them to the right class.', '<a class="btn sm" href="#/guru/tanpa">Add to a class</a>', 'warn');
   }
   function teacherShell(ctx, tab, inner) {
-    const admin = [...(ctx.t.isAdmin && cloudOn() && !session.get().demo ? [['tanpa', '🧺 No class']] : []), ...(ctx.t.isAdmin || ctx.t.isSchoolAdmin ? [['sekolah', '🏫 School']] : []), ...(ctx.t.isAdmin && !session.get().demo ? [['super', '🌐 Super admin']] : [])];
+    const admin = [...(ctx.t.isAdmin && cloudOn() && !session.get().demo ? [['tanpa', '🧺 No class']] : []), ...(ctx.t.isAdmin || ctx.t.isSchoolAdmin ? [['sekolah', '🏫 School']] : []), ...(canResearch(ctx) ? [['analitik', '🔬 Research'], ['super', '🌐 Super admin']] : [])];
     const grp = groupOf(tab);
     app.innerHTML = shell(`
       <section class="dhead">
         <div class="dh-row"><a class="av avedit" href="#/avatar/guru" aria-label="Change avatar">${avHTML(ctx.t.avatar || 'svg:ustadzah')}<i>✏️</i></a>
-          <div class="dh-text"><div class="dh-who">${esc(ctx.t.name)}${ctx.t.isAdmin ? ' <span class="pill">Super admin</span>' : ctx.t.isSchoolAdmin ? ' <span class="pill">School admin</span>' : ''}${ctx.t.schoolName ? ` <span class="muted small">· ${esc(ctx.t.schoolName)}</span>` : ''}</div>
+          <div class="dh-text"><div class="dh-who">${esc(ctx.t.name)}${canResearch(ctx) ? ' <span class="pill">Super admin</span>' : ctx.t.isAdmin || ctx.t.isSchoolAdmin ? ' <span class="pill">School admin</span>' : ''}${ctx.t.schoolName ? ` <span class="muted small">· ${esc(ctx.t.schoolName)}</span>` : ''}</div>
             ${ctx.classes.length > 1 ? `<select class="dh-title" data-act="switchclass" aria-label="Choose a grade">${ctx.classes.map((c) => `<option value="${c.id}" ${c.id === ctx.c.id ? 'selected' : ''}>${esc(c.name)}${(ctx.t.isAdmin || ctx.t.isSchoolAdmin) && c.teacherName ? ` · ${esc(c.teacherName)}` : ''}</option>`).join('')}</select>` : `<h1>${esc(ctx.c.name)}</h1>`}
             ${ctx.c.teacherName && ctx.c.teacherId !== ctx.t.id ? `<div class="dh-meta">Class teacher: ${esc(ctx.c.teacherName)}</div>` : ''}</div>
           <a class="dh-gear ${tab === 'kelola' ? 'on' : ''}" href="#/guru/kelola" aria-label="Class settings">⚙️<small>Class</small></a>
           <button class="dh-code" data-act="shareclass" aria-label="Share class code"><small>Class code</small><b>${ctx.c.code}</b><small>📤 share</small></button></div>
       </section>
-      <div class="tabbar"><nav class="tabs tmain">${TAB_GROUPS.map(([id, label, pages]) => `<a href="#/guru/${pages[0][0]}" class="${grp && grp[0] === id ? 'on' : ''}">${label}</a>`).join('')}${admin.length ? `<span class="tsep" aria-hidden="true"></span>${admin.map(([k, l]) => `<a href="#/guru/${k}" class="adm ${k === tab ? 'on' : ''}">${l}${k === 'tanpa' ? '<span class="tcount" data-ungc hidden></span>' : ''}</a>`).join('')}` : ''}</nav></div>
+      <div class="tabbar"><nav class="tabs tmain">${TAB_GROUPS.map(([id, label, pages]) => `<a href="#/guru/${pages[0][0]}" class="${grp && grp[0] === id ? 'on' : ''}">${label}</a>`).join('')}${admin.length ? `<span class="tsep" aria-hidden="true"></span>${admin.map(([k, l]) => `<a href="#/guru/${k}" class="adm ${k === tab || (k === 'analitik' && grp && grp[0] === 'riset') ? 'on' : ''}">${l}${k === 'tanpa' ? '<span class="tcount" data-ungc hidden></span>' : ''}</a>`).join('')}` : ''}</nav></div>
       ${grp && grp[2].length > 1 ? `<nav class="tsub" aria-label="Section ${grp[1]}">${grp[2].map(([k, l]) => `<a href="#/guru/${k}" class="${k === tab ? 'on' : ''}">${l}</a>`).join('')}</nav>` : ''}
-      ${session.get().demo && tab === 'ringkasan' ? realTeacherCard() : ''}
-      ${inner}`, { cls: 'wide', right: topRight() });
+      ${inner}
+      ${session.get().demo && tab === 'ringkasan' ? realTeacherCard() : ''}`, { cls: 'wide', right: topRight() });
     loadUngCount(ctx);
   }
 
   function emptyKids(ctx) {
     return `<section class="card center"><div class="bigemoji">🧑‍🤝‍🧑</div><h2>There are no students in this class yet</h2><p class="muted">This page fills in once students start learning.</p><a class="btn" href="#/guru/siswa">➕ Add students</a></section>`;
   }
-  // Satu baris "yang perlu dilakukan": ikon, kalimat, keterangan, satu tombol
-  const todoRow = (ic, text, sub, btn, tone) => `<div class="todo ${tone || ''}"><span class="tic">${ic}</span><span class="grow"><b>${text}</b>${sub ? `<small>${sub}</small>` : ''}</span>${btn || ''}</div>`;
-  // Tiga cara menambah siswa, dari yang paling sering: anak yang sudah belajar sendiri (mayoritas) memakai kode belajarnya
+  // Menambah siswa: cara yang paling sering terlihat lebih dulu, cara lain tidak mengganggu
   function addKidsHTML(ctx, open) {
-    return `<details class="card addkids" id="addkids" ${open ? 'open' : ''}><summary><b>➕ Add students</b><small>Choose one of 3 ways</small></summary>
-      <div class="addways">
-        <section class="way"><span class="wn">1</span><h3>Is the child already learning on Metiq?</h3><p>Ask the child or a parent for the <b>learning code</b> (6 letters). It's on the <b>Me</b> page on the child's phone. Their learning history comes with them.</p>
-          <form data-form="addbycode" class="form inline"><input name="code" maxlength="6" placeholder="Learning code" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Child's learning code" required><button class="btn">Add</button></form></section>
-        <section class="way"><span class="wn">2</span><h3>Child doesn't have an account yet?</h3><p>Type their name. For several children, separate names with commas.</p>
-          <form data-form="addkid" class="form inline"><input name="name" placeholder="e.g. Aisyah, Umar" aria-label="Student name" required><button class="btn">Add</button></form></section>
-        <section class="way"><span class="wn">3</span><h3>Let children join on their own</h3><p>Send the class code <b class="code">${ctx.c.code}</b> to the WhatsApp group. Children open Metiq → <b>Me → Settings → Metiq for Schools → Join a class</b>.</p>
-          <button class="btn sm" data-act="shareclass">📤 Send class code</button></section>
-      </div></details>`;
+    return `<details class="card addkids" id="addkids" ${open ? 'open' : ''}><summary><b>➕ Add students</b></summary>
+      <form data-form="addkid" class="form addname"><label>Type the student names. For several students, separate them with commas.<textarea name="name" rows="2" placeholder="e.g. Aisyah, Umar, Fatimah" required></textarea></label><button class="btn">Save names</button></form>
+      <div class="addnext"><span class="grow"><b>Then send the class code to students</b><small>Students open Metiq, tap I'm a Student, enter the code <b class="code">${ctx.c.code}</b>, then choose their name.</small></span><button class="btn ghost sm" data-act="shareclass">📤 Send code</button></div>
+      <details class="addalt"><summary>Does the student already have their own Metiq account?</summary><p class="small muted">Ask for the <b>learning code</b> (6 letters) on the Me page on the child's phone. Their learning history comes along.</p>
+        <form data-form="addbycode" class="form inline"><input name="code" maxlength="6" placeholder="Learning code" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Child's learning code" required><button class="btn ghost">Add</button></form></details>
+    </details>`;
   }
-  // Daftar siswa: status jelas dalam kata-kata, kode orang tua bisa langsung dikirim
+  // Keadaan satu siswa dalam kata sehari-hari. Dipakai di Hari ini, Siswa, dan halaman siswa.
+  const KID_ST = { bantu: ['🆘', 'Needs help', 'r'], baru: ['📱', 'Not started', 'y'], diam: ['😴', 'No practice for 7 days', 'y'], baik: ['✅', 'Good', 'g'] };
+  function kidState(k) {
+    const w = stats(k.id, 7), all = stats(k.id), weak = weaknesses(k.id), tried = skillRows(k.id).length;
+    const behind = weak.length >= 2 && weak.length >= tried / 4;
+    const st = !all.answered ? 'baru' : !w.answered ? 'diam' : (w.answered >= 10 && w.acc < 65) || behind ? 'bantu' : 'baik';
+    const why = st === 'baru' ? 'Has never opened Metiq' : st === 'diam' ? `Last practiced ${ago(all.last)}` : st === 'bantu' ? (weak[0] ? `Still hard: ${weak[0].skill.name}` : `Only ${w.acc}% correct this week`) : `${w.answered} questions this week, ${w.acc}% correct`;
+    return { k, w, all, weak, st, why };
+  }
+  const parentLinked = (k) => (k.parents || []).length > 0 || S.viewsOf(k.id).length > 0;
+  const taskOpen = (sid, skill) => S.assignmentsFor(sid).some((a) => a.skills.includes(skill) && !S.isDone(a.id, sid));
+  const nameList = (list) => list.slice(0, 3).map((x) => esc((x.k || x).name)).join(', ') + (list.length > 3 ? `, and ${list.length - 3} more` : '');
+  const giveBtn = (sid, skill, label) => (taskOpen(sid, skill) ? '<span class="pill okp">Already given</span>' : `<button class="btn sm" data-act="assignkid" data-id="${skill}" data-s="${sid}">${label || 'Give practice'}</button>`);
+  // Daftar siswa: dikelompokkan menurut keadaan, yang perlu perhatian di atas
   function rosterHTML(ctx) {
-    const rows = ctx.kids.map((k) => ({ k, s: stats(k.id), w: stats(k.id, 7) })).map((r) => Object.assign(r, { need: (r.w.answered >= 10 && r.w.acc < 65) || (r.s.answered > 0 && r.w.answered === 0) || r.s.answered === 0 }))
-      .sort((a, b) => b.need - a.need || a.k.name.localeCompare(b.k.name));
-    const status = (r) => (r.s.answered === 0 ? '<span class="st0">Not started</span>' : r.w.answered === 0 ? '<span class="st1">Inactive 7 days</span>' : r.w.answered >= 10 && r.w.acc < 65 ? '<span class="st1">Needs help</span>' : '<span class="st2">Active</span>');
-    return `<section class="card"><div class="rhead"><h2>Student list <span class="pill">${ctx.kids.length}</span></h2><span class="grow"></span><button class="btn ghost sm" data-act="print">🖨️ Print code cards</button></div>
-      <p class="small muted">Those needing attention are at the top. Tap a name to see the report and give a special task.</p>
-      <div class="tscroll"><table class="tbl roster"><thead><tr><th>Student</th><th>Status</th><th>Questions (7 days)</th><th>Accuracy</th><th>Proficient</th><th>Parent code</th><th></th></tr></thead><tbody>
-      ${rows.map((r) => `<tr data-href="#/guru/siswa/${r.k.id}"><td><span class="av sm">${avHTML(r.k.avatar)}</span> <a href="#/guru/siswa/${r.k.id}">${esc(r.k.name)}</a></td><td>${status(r)}</td><td>${r.w.answered}</td><td><span class="accb ${r.w.acc >= 80 ? 'g' : r.w.acc >= 60 ? 'y' : 'r'}">${r.w.answered ? r.w.acc + '%' : '–'}</span></td><td>${r.s.proficient}</td>
-        <td class="nowrap"><b class="code">${r.k.parentCode || '–'}</b> <button class="link small" data-act="shareparent" data-id="${r.k.id}" aria-label="Send parent code ${esc(r.k.name)}">📤</button>${(r.k.parents || []).length || S.viewsOf(r.k.id).length ? ' <span title="Parent already connected">✅</span>' : ''}</td>
-        <td class="r"><button class="link small danger" data-act="rmkid" data-id="${r.k.id}" aria-label="Remove ${esc(r.k.name)}">Remove</button></td></tr>`).join('')}
-      </tbody></table></div></section>
+    const rows = ctx.kids.map(kidState);
+    const card = (r) => `<div class="kcard ${KID_ST[r.st][2]}" data-href="#/guru/siswa/${r.k.id}"><span class="av">${avHTML(r.k.avatar)}</span><span class="grow"><a href="#/guru/siswa/${r.k.id}"><b>${esc(r.k.name)}</b></a><small>${r.why}</small></span>${parentLinked(r.k) ? '' : `<button class="link small kpar" data-act="shareparent" data-id="${r.k.id}" aria-label="Send parent code for ${esc(r.k.name)}">📤 Parent</button>`}<span class="kgo" aria-hidden="true">›</span></div>`;
+    const group = (st) => { const l = rows.filter((r) => r.st === st).sort((a, b) => a.k.name.localeCompare(b.k.name, 'en')); return l.length ? `<h3 class="kgh">${KID_ST[st][0]} ${KID_ST[st][1]} <span class="pill">${l.length}</span></h3><div class="kgrid">${l.map(card).join('')}</div>` : ''; };
+    return `<section class="card"><div class="rhead"><h2>Students <span class="pill">${ctx.kids.length}</span></h2><span class="grow"></span><button class="btn ghost sm" data-act="print">🖨️ Print code cards</button></div>
+      <p class="small muted">Tap a name to see their progress. 📤 Parent = the parent code has not been sent yet.</p>
+      ${group('bantu')}${group('baru')}${group('diam')}${group('baik')}</section>
       <div class="printcards">${ctx.kids.map((k) => `<div class="pcard"><div class="av">${avHTML(k.avatar)}</div><b>${esc(k.name)}</b><div>Class code: <b>${ctx.c.code}</b></div><div>Parent code: <b>${k.parentCode}</b></div><small>metiq · ${esc(ctx.c.name)}</small></div>`).join('')}</div>`;
   }
-  // "Hari ini": daftar hal yang perlu dilakukan guru, urut dari yang paling penting; satu tombol per baris
+  // Satu baris "yang perlu dilakukan": ikon, kalimat, keterangan, satu tombol
+  const todoRow = (ic, text, sub, btn, tone) => `<div class="todo ${tone || ''}"><span class="tic">${ic}</span><span class="grow"><b>${text}</b>${sub ? `<small>${sub}</small>` : ''}</span>${btn || ''}</div>`;
+  // "Hari ini": satu kalimat keadaan kelas, paling banyak tiga hal untuk dikerjakan, lalu siapa dan apa yang perlu dibantu
   function todayHTML(ctx) {
-    const kids = ctx.kids, rows = [];
-    if (ctx.t.isAdmin && cloudOn() && !session.get().demo) rows.push('<div id="todo-ung"></div>');
+    const kids = ctx.kids, h = new Date().getHours(), hello = h < 11 ? 'Good morning' : h < 15 ? 'Good afternoon' : h < 18 ? 'Good afternoon' : 'Good evening';
+    const ung = ctx.t.isAdmin && cloudOn() && !session.get().demo ? '<div id="todo-ung"></div>' : '';
     if (!kids.length) {
-      rows.push(todoRow('🧒', 'This class has no students yet', 'Add them with a child\'s learning code or a name, or ask children to join on their own.', '<a class="btn sm" href="#/guru/siswa">Add students</a>', 'warn'));
-      return `<section class="card todos"><h2>To do</h2>${rows.join('')}</section>${addKidsHTML(ctx, true)}`;
+      return `${ung}<section class="card thero"><small>${hello}, ${esc(ctx.t.name)}</small><h1>Start in 3 steps</h1>
+        <ol class="steps3"><li class="on"><b>Enter student names</b><small>In the box below.</small></li><li><b>Send the class code to students</b><small>Through your WhatsApp group, with one button.</small></li><li><b>Choose the first task</b><small>Metiq prepares suggestions.</small></li></ol></section>${addKidsHTML(ctx, true)}`;
     }
-    const ids = new Set(kids.map((k) => k.id));
-    const fresh = S.db.done.filter((d) => ids.has(d.sid) && d.at > Date.now() - 3 * DAY);
-    const week = kids.map((k) => ({ k, w: stats(k.id, 7), all: stats(k.id) }));
-    const never = week.filter((x) => x.all.answered === 0), idle = week.filter((x) => x.all.answered > 0 && x.w.answered === 0), weak = week.filter((x) => x.w.answered >= 10 && x.w.acc < 65);
+    const st = kids.map(kidState), by = (x) => st.filter((s) => s.st === x);
+    const help = by('bantu'), never = by('baru'), idle = by('diam'), active = st.filter((s) => s.w.answered > 0);
+    const ids = new Set(kids.map((k) => k.id)), seen = getSeen();
+    const fresh = S.db.done.filter((d) => ids.has(d.sid) && d.at > Math.max(seen, Date.now() - 3 * DAY));
     const asgWeek = S.assignmentsOf(ctx.c.id).filter((a) => (a.createdAt || 0) > Date.now() - 7 * DAY);
-    const noParent = kids.filter((k) => !(k.parents || []).length && !S.viewsOf(k.id).length);
-    const names = (list) => list.slice(0, 3).map((x) => esc((x.k || x).name)).join(', ') + (list.length > 3 ? `, and ${list.length - 3} more` : '');
-    if (fresh.length) rows.push(todoRow('📥', `${fresh.length} new tasks turned in`, 'See the results and respond.', '<a class="btn sm" href="#/notifikasi">View</a>', 'good'));
-    if (weak.length) rows.push(todoRow('🆘', `${weak.length} students need help`, `Accuracy below 65% this week: ${names(weak)}.`, '<a class="btn sm" href="#/guru/siswa">View students</a>', 'warn'));
-    if (never.length) rows.push(todoRow('📱', `${never.length} students have never logged in`, names(never), '<button class="btn sm" data-act="shareclass">Send class code</button>'));
-    if (idle.length) rows.push(todoRow('😴', `${idle.length} students haven't practiced in 7 days`, names(idle), '<a class="btn sm ghost" href="#/guru/siswa">View students</a>'));
-    if (!asgWeek.length) rows.push(todoRow('📌', 'No tasks this week yet', 'Choose a skill, and Metiq will suggest tasks to match each group\'s level.', '<button class="btn sm" data-act="gotoform">Assign a task</button>'));
-    if (noParent.length) rows.push(todoRow('👨‍👩‍👧', `${noParent.length} parents not connected yet`, 'Send the parent code with the 📤 button in the student list.', '<a class="btn sm ghost" href="#/guru/siswa">Send code</a>'));
-    if (rows.length <= 1) rows.push(todoRow('✅', 'All clear today', 'Nothing urgent. See Reports for class details.', '<a class="btn sm ghost" href="#/guru/analitik">Reports</a>', 'good'));
-    return `<section class="card todos"><h2>To do</h2>${rows.join('')}</section>`;
+    const noParent = kids.filter((k) => !parentLinked(k));
+    const pA = pct(active.length, kids.length), mood = pA >= 75 ? 'The class is doing well.' : pA >= 40 ? 'Some students need a nudge to practice.' : 'Many students have not practiced this week.';
+    const todo = [];
+    if (fresh.length) todo.push(todoRow('📥', `${fresh.length} new tasks completed`, 'See who has finished.', '<a class="btn sm" href="#/notifikasi">View</a>', 'good'));
+    if (never.length) todo.push(todoRow('📱', `${never.length} students have never logged in`, nameList(never), '<button class="btn sm" data-act="shareclass">Send class code</button>'));
+    if (!asgWeek.length) todo.push(todoRow('📌', 'No tasks this week yet', 'Metiq has prepared suggestions that are ready to send.', '<a class="btn sm" href="#/guru/tugas">Choose a task</a>'));
+    if (idle.length) todo.push(todoRow('😴', `${idle.length} students haven't practiced in 7 days`, nameList(idle), '<button class="btn sm" data-act="remind">Remind</button>'));
+    if (noParent.length) todo.push(todoRow('👨‍👩‍👧', `${noParent.length} parents not connected yet`, 'Send it so parents can see the reports.', '<a class="btn sm" href="#/guru/siswa">Send code</a>'));
+    const hardMap = {};
+    st.forEach((s) => s.weak.forEach((w) => { (hardMap[w.id] = hardMap[w.id] || []).push(s.k); }));
+    const hard = Object.entries(hardMap).filter(([, l]) => l.length >= 2).sort((a, b) => b[1].length - a[1].length)[0];
+    const stars3Row = st.filter((s) => s.w.correct > 0).sort((a, b) => b.w.correct - a.w.correct).slice(0, 3);
+    const helpRow = (s) => `<div class="lrow"><span class="av sm">${avHTML(s.k.avatar)}</span><span class="grow"><a href="#/guru/siswa/${s.k.id}"><b>${esc(s.k.name)}</b></a><small>${s.why}</small></span>${s.weak[0] ? giveBtn(s.k.id, s.weak[0].id) : ''}</div>`;
+    return `<section class="card thero"><small>${hello}, ${esc(ctx.t.name)}</small>
+        <h1><b>${active.length} of ${kids.length}</b> students practiced this week</h1><div class="tbar"><i style="width:${pA}%"></i></div><p>${mood}</p></section>
+      <section class="card todos"><h2>To do</h2>${ung}${todo.slice(0, 3).join('') || todoRow('✅', 'All clear today', 'Nothing urgent.', '', 'good')}</section>
+      <div class="grid2">
+        ${help.length ? `<section class="card"><h2>🆘 Students who need help</h2>${help.slice(0, 4).map(helpRow).join('')}${help.length > 4 ? `<p class="small"><a href="#/guru/siswa">See ${help.length - 4} more students</a></p>` : ''}</section>` : ''}
+        ${hard ? `<section class="card"><h2>📖 Worth reviewing together</h2><p><b>${SKILLS[hard[0]].name}</b></p><p class="small muted">${hard[1].length} of ${kids.length} students still struggle: ${nameList(hard[1])}.</p>
+          <div class="row-btn left">${LESSONS[SKILLS[hard[0]].unit] ? `<a class="btn sm ghost" href="#/pelajaran/${SKILLS[hard[0]].unit}">Open lesson</a>` : ''}<button class="btn sm" data-act="assign1" data-id="${hard[0]}">Assign to class</button></div></section>` : ''}
+        ${stars3Row.length ? `<section class="card"><h2>⭐ Stars of the week</h2><p class="small muted">Say their names in class. A little praise means a lot.</p>${stars3Row.map((s, i) => `<div class="lrow"><span class="medal">${['🥇', '🥈', '🥉'][i]}</span><span class="grow"><a href="#/guru/siswa/${s.k.id}"><b>${esc(s.k.name)}</b></a><small>${s.w.correct} correct answers</small></span></div>`).join('')}</section>` : ''}
+      </div>`;
   }
 
   function classSkillAgg(kids) {
@@ -1292,39 +1314,23 @@
   function viewTeacher(tab, arg) {
     const ctx = teacherCtx(); if (!ctx) return go('#/guru/masuk');
     const { kids } = ctx;
+    if (RESEARCH_TABS.has(tab) && !canResearch(ctx)) return go('#/guru/ringkasan');
+    if (tab === 'riset') { const sub = RESEARCH_SCHOOL.some(([k]) => k === arg) ? arg : 'data'; teacherShell(ctx, 'riset/' + sub, schoolHTML(ctx, sub, true)); if (sub === 'coba') loadTrialStats(); return; }
     if (tab === 'siswa' && arg) return viewTeacherStudent(ctx, arg);
     if (tab === 'kelola') return teacherShell(ctx, tab, manageHTML(ctx));
     if (tab === 'referensi') return teacherShell(ctx, tab, referenceHTML());
     if (tab === 'tanpa') { if (!ctx.t.isAdmin || !cloudOn() || session.get().demo) return go('#/guru/ringkasan'); teacherShell(ctx, tab, `<div id="ung-box">${loadingHTML}</div>`); if (arg) loadStudentReport(ctx, arg); else loadUngrouped(ctx); return; }
     if (tab === 'peringkat') return teacherShell(ctx, tab, rankingHTML(ctx));
-    if (tab === 'sekolah') { if (!ctx.t.isAdmin && !ctx.t.isSchoolAdmin) return go('#/guru/ringkasan'); teacherShell(ctx, tab, schoolHTML(ctx, arg)); if (arg === 'coba') loadTrialStats(); if (arg === 'kelolaguru') loadSchoolTeachers(); return; }
+    if (tab === 'sekolah') { if (!ctx.t.isAdmin && !ctx.t.isSchoolAdmin) return go('#/guru/ringkasan'); teacherShell(ctx, tab, schoolHTML(ctx, arg)); if (arg === 'kelolaguru') loadSchoolTeachers(); return; }
     if (tab === 'super') { if (!ctx.t.isAdmin || session.get().demo) return go('#/guru/ringkasan'); teacherShell(ctx, tab, `<div id="super-box">${loadingHTML}</div>`); loadSuper(ctx, arg); return; }
     if (tab === 'tugas') return teacherShell(ctx, tab, tasksHTML(ctx));
     if (tab === 'siswa') return teacherShell(ctx, tab, addKidsHTML(ctx, !kids.length) + (kids.length ? rosterHTML(ctx) : ''));
-    if (tab === 'ringkasan' && !kids.length) return teacherShell(ctx, tab, todayHTML(ctx));
+    if (tab === 'ringkasan') return teacherShell(ctx, tab, todayHTML(ctx));
     if (!kids.length) return teacherShell(ctx, tab, emptyKids(ctx));
     if (tab === 'kelompok') return teacherShell(ctx, tab, groupsHTML(ctx));
     if (tab === 'analitik') return teacherShell(ctx, tab, analyticsHTML(ctx, arg));
     if (tab === 'semua') return teacherShell(ctx, tab, allProgressHTML(ctx));
 
-    if (tab === 'ringkasan') {
-      const all = kids.map((k) => ({ k, s: stats(k.id, 7), all: stats(k.id) }));
-      const answered = all.reduce((a, x) => a + x.s.answered, 0), correct = all.reduce((a, x) => a + x.s.correct, 0);
-      const active = all.filter((x) => x.s.answered > 0).length;
-      const attention = all.filter((x) => (x.s.answered >= 10 && x.s.acc < 65) || x.s.answered === 0);
-      const agg = classSkillAgg(kids);
-      const hard = Object.entries(agg).filter(([, a]) => a.att >= 15).map(([id, a]) => ({ id, acc: pct(a.ok, a.att), n: a.n })).sort((a, b) => a.acc - b.acc).slice(0, 5);
-      const tags = tagCounts(kids.flatMap((k) => S.answersOf(k.id).filter((a) => a.ts > Date.now() - 14 * DAY))).filter(([t]) => t !== 'konsep').slice(0, 4);
-      const stars = all.slice().sort((a, b) => b.s.correct - a.s.correct).slice(0, 3).filter((x) => x.s.correct > 0);
-      return teacherShell(ctx, tab, `${todayHTML(ctx)}
-        <div class="kpis"><div class="kpi"><small>Active students (7 days)</small><b>${active}<span>/${kids.length}</span></b></div><div class="kpi"><small>Questions answered (7 days)</small><b>${answered}</b></div><div class="kpi"><small>Accuracy (7 days)</small><b>${pct(correct, answered)}%</b></div><div class="kpi"><small>Skills completed</small><b>${all.reduce((a, x) => a + x.all.mastered, 0)}</b></div></div>
-        <details class="card insights"><summary><b>🔎 Class insights</b><small>Hardest skills, error patterns, and most diligent students</small></summary><div class="grid2">
-          <section class="card"><h2>⚠️ Needs attention</h2>${attention.length ? attention.map((x) => `<a class="lrow" href="#/guru/siswa/${x.k.id}"><span class="av sm">${avHTML(x.k.avatar)}</span><span class="grow"><b>${esc(x.k.name)}</b><small>${x.s.answered === 0 ? `No practice in the last 7 days · last seen ${ago(x.all.last)}` : `Accuracy ${x.s.acc}% from ${x.s.answered} questions`}</small></span>→</a>`).join('') : '<p class="muted">All students are active with good accuracy. 👍</p>'}</section>
-          <section class="card"><h2>🧗 Hardest skills in the class</h2>${hard.length ? hard.map((h) => `<div class="lrow"><span class="grow"><b>${SKILLS[h.id].code} ${SKILLS[h.id].name}</b><small>Accuracy ${h.acc}% · ${h.n} students tried</small></span><button class="btn sm ghost" data-act="assign1" data-id="${h.id}">Assign</button></div>`).join('') : '<p class="muted">Not enough data yet.</p>'}</section>
-          <section class="card"><h2>🔍 Class error patterns (14 days)</h2>${tags.length ? tags.map(([t, n]) => `<div class="tagrow"><b>${TAGS[t].label}</b> <span class="pill">${n}×</span><p class="muted small">${TAGS[t].tip}</p></div>`).join('') : '<p class="muted">No clear error patterns yet.</p>'}</section>
-          <section class="card"><h2>⭐ Most diligent this week</h2>${stars.length ? stars.map((x, i) => `<a class="lrow" href="#/guru/siswa/${x.k.id}"><span class="medal">${['🥇', '🥈', '🥉'][i]}</span><span class="av sm">${avHTML(x.k.avatar)}</span><span class="grow"><b>${esc(x.k.name)}</b><small>${x.s.correct} correct answers</small></span></a>`).join('') : '<p class="muted">No activity this week yet.</p>'}</section>
-        </div></details>`);
-    }
     if (tab === 'peta') {
       return teacherShell(ctx, tab, `${gradeTabs()}<section class="card"><p class="muted small">Average SmartScore per chapter. Tap a name for details.</p><div class="tscroll"><table class="tbl heat"><thead><tr><th>Student</th>${curUnits().map((u) => `<th title="${u.name}">${u.icon}<br>${u.id}</th>`).join('')}</tr></thead><tbody>
         ${kids.map((k) => `<tr><td><a href="#/guru/siswa/${k.id}">${avHTML(k.avatar)} ${esc(k.name)}</a></td>${curUnits().map((u) => { const us = unitScore(k.id, u); return `<td class="hc ${level(us.avg)[1]}" title="${u.name}: ${us.avg}">${us.avg || ''}</td>`; }).join('')}</tr>`).join('')}
@@ -1403,7 +1409,7 @@
       <section class="card ref"><h2>📈 SmartScore and mastery levels</h2>
         <p>Like IXL, the score rises quickly at first, then more slowly near 100, and drops after a wrong answer. Students must answer correctly and consistently to complete a skill.</p>
         <div class="legend">${levels.map(([l, c]) => `<span><i class="${c}"></i>${l}</span>`).join('')}</div>
-        <p class="small muted">Parent reports list a skill under "Needs improvement" if at least 4 questions were tried and the score is under 60, or accuracy is under 70%.</p></section>
+        <p class="small muted">A student counts as needing help on a skill after at least 4 questions with accuracy below 70%, or at least 8 questions with a score still below 60.</p></section>
       <section class="card ref"><h2>🔍 Detected error patterns</h2>
         <p class="small muted">Every wrong answer is checked for a pattern. These patterns appear on the teacher dashboard and parent reports, along with practice tips.</p>
         ${Object.entries(TAGS).filter(([k]) => k !== 'konsep').map(([, t]) => `<div class="tagrow"><b>${t.label}</b><p class="small">${t.tip}</p></div>`).join('')}
@@ -1483,7 +1489,7 @@
   // Paket Sekolah belum aktif: jelaskan apa yang didapat dan cara mengaktifkannya
   function schoolUpsellHTML(ctx) {
     return `<section class="card upsell"><h2>🏫 School plan isn't active yet</h2><p>${ctx.t.schoolName ? `<b>${esc(ctx.t.schoolName)}</b> isn't subscribed to the School plan${ctx.t.schoolPlanUntil ? ` (ended ${esc(String(ctx.t.schoolPlanUntil))})` : ''}.` : 'Your school isn\'t subscribed to the School plan yet.'} You can keep using your own classes for free as usual.</p>
-      <ul><li>Dashboards and reports across classes and teachers</li><li>School admins manage teachers</li><li>Pre- and post-assessments and research data</li><li>Training and mentoring</li></ul>
+      <ul><li>Dashboards and reports across classes and teachers</li><li>School admins manage teachers</li><li>Starting assessment to place each student at the right level</li><li>Training and mentoring</li></ul>
       <div class="row-btn left"><a class="btn" href="#/harga">See plans and request a quote</a></div></section>`;
   }
   // Admin sekolah: daftar guru di sekolahnya, tambah lewat email (guru mendaftar gratis dulu), lepas dari sekolah
@@ -1501,30 +1507,28 @@
       box.innerHTML = e.status === 404 ? emptyCard('Needs SQL 020 to be run', 'Run supabase/020_paket_sekolah.sql in the Supabase SQL Editor.') : emptyCard('Can\'t open yet', e.status ? esc(e.message) : 'Can\'t connect to the server');
     }
   }
-  function schoolHTML(ctxAll, sub) {
+  function schoolHTML(ctxAll, sub, research) {
     if (cloudOn() && !session.get().demo && !ctxAll.t.isAdmin && ctxAll.t.schoolActive === false) return schoolUpsellHTML(ctxAll);
     const list = schoolsOf(ctxAll), want = ss.get('schoolSel', ctxAll.t.schoolId || (list[0] || {}).id || ''), sel = list.find((x) => x.id === want) || list[0] || { id: '' };
     const ctx = Object.assign({}, ctxAll, { classes: ctxAll.classes.filter((c) => (c.schoolId || '') === sel.id) });
     const picker = list.length > 1 ? `<label class="schoolpick">School <select data-act="schoolsel">${list.map((x) => `<option value="${x.id}" ${x.id === sel.id ? 'selected' : ''}>${esc(x.name)}${x.kind === 'homeschool' ? ' (homeschool)' : ''}</option>`).join('')}</select></label>` : '';
-    return picker + schoolBody(ctx, sub);
+    return picker + schoolBody(ctx, sub, research);
   }
-  function schoolBody(ctx, sub) {
-    sub = ['kelas', 'grafik', 'materi', 'guru', 'kelolaguru', 'asesmen', 'ulasan', 'data', 'coba'].includes(sub) ? sub : 'kelas';
-    const g = getRange();
+  function schoolBody(ctx, sub, research) {
+    const subs = research ? RESEARCH_SCHOOL : [['kelas', '🏫 Class status'], ['materi', '🧗 Hard topics'], ['kelolaguru', '🧑‍🏫 Manage teachers']];
+    if (!subs.some(([k]) => k === sub)) sub = subs[0][0];
+    // Dasbor sekolah selalu 30 hari terakhir supaya tidak perlu memilih periode; pemilih tanggal hanya untuk riset
+    const g = research ? getRange() : { from: dayStart(Date.now()) - 29 * DAY, to: Date.now() };
     const all = ctx.classes.map((c) => classSummary(c, g)).sort((a, b) => b.status - a.status || b.pBehind - a.pBehind);
     const sum = (f) => all.reduce((t, s) => t + s[f], 0);
     const kidsN = sum('n'), answered = all.reduce((t, s) => t + s.answered, 0), correct = all.reduce((t, s) => t + Math.round(s.answered * s.acc / 100), 0);
     const teachers = [...new Set(all.map((s) => s.c.teacherId))];
-    const subs = [['kelas', '🏫 By class'], ['grafik', '📊 Charts'], ['materi', '🧗 Hard topics'], ['guru', '👩‍🏫 By teacher'], ['kelolaguru', '🧑‍🏫 Manage teachers'], ['asesmen', '🧭 Pre- and post-assessment'], ['ulasan', '⭐ Reviews'], ['data', '📥 Research data'], ['coba', '🧪 Demo mode']];
     let body;
     if (sub === 'kelolaguru') body = `<div id="sg-box">${loadingHTML}</div>`;
     else if (sub === 'kelas') {
-      body = `<section class="card"><h2>Status of each class</h2><p class="muted small">Sorted from most in need of attention. "Not understood" = students for whom at least a quarter of the skills they've tried are still weak (score below 80 with many wrong answers).</p>
-        <div class="tscroll"><table class="tbl"><thead><tr><th>Grade</th><th>Teacher</th><th>Status</th><th>Student</th><th>Active</th><th>Questions/student</th><th>Accuracy</th><th>Not understood</th><th>Tasks finished</th><th>Parents opened report</th><th>Reviews</th></tr></thead><tbody>
-        ${all.map((s) => `<tr data-act="openclass" data-id="${s.c.id}"><td><b>${esc(s.c.name)}</b>${s.grade ? `<small class="muted"> · grade ${s.grade} material</small>` : ''}</td><td>${esc(s.c.teacherName || '')}</td><td>${statusPill(s.status)}</td><td>${s.n}</td><td>${s.active}/${s.n}</td><td>${s.perKid}</td><td>${accPill(s)}</td><td><span class="accb ${s.pBehind >= 50 ? 'r' : s.pBehind >= 25 ? 'y' : 'g'}">${s.behind}/${s.n}</span></td><td>${s.pDone === null ? '<span class="muted">–</span>' : s.pDone + '%'}</td><td>${s.viewed}/${s.n}</td><td>${s.fb.length ? `⭐ ${fbAvg(s.fb)} <small class="muted">(${s.fb.length})</small>` : '–'}</td></tr>`).join('')}
-        </tbody></table></div><p class="muted small">Tap a class row to open that class's dashboard.</p></section>
-        ${all.filter((s) => s.status >= 2).map((s) => `<section class="card cwarn ${STATUS[s.status][2]}"><div class="lrow"><span class="grow"><b>${STATUS[s.status][0]} ${esc(s.c.name)}</b> · ${esc(s.c.teacherName || '')}<small>${statusWhy(s)}</small></span>${openBtn(s.c)}</div>
-          ${s.hard.some((h) => h.kids.length >= 2) ? `<p class="small"><b>Material many students haven't understood:</b> ${s.hard.filter((h) => h.kids.length >= 2).slice(0, 3).map((h) => `${SKILLS[h.id].code} ${SKILLS[h.id].name} (${h.kids.length} students)`).join(' · ')}</p>` : ''}</section>`).join('')}`;
+      const line = (s) => (s.n ? `${s.active} of ${s.n} students practiced${s.answered ? `, ${s.acc}% correct` : ''}${s.behind ? `, ${s.behind} need help` : ''}` : 'No students yet');
+      body = `<section class="card"><h2>Status of each class</h2><p class="muted small">Last 30 days. Classes needing the most attention are on top. Tap a class to open it.</p>
+        ${all.map((s) => `<div class="sclass ${STATUS[s.status][2]}" data-act="openclass" data-id="${s.c.id}" role="button" tabindex="0"><span class="grow"><b>${esc(s.c.name)}</b><small>${esc(s.c.teacherName || '')}</small><span class="sline">${line(s)}</span></span>${statusPill(s.status)}</div>`).join('') || '<p class="muted">No classes yet.</p>'}</section>`;
     } else if (sub === 'materi') {
       // Gabungan seluruh sekolah per bab, lalu rincian per kelas
       const units = {};
@@ -1563,9 +1567,9 @@
           <li><b>Tasks finished</b>: average percentage of students finishing tasks.</li>
           <li>Many "not understood" students but no special tasks can be a topic to discuss with the teacher.</li></ul></section>`;
     }
-    return `<div class="kpis"><div class="kpi"><small>Classes · teachers</small><b>${all.length}<span> · ${teachers.length}</span></b></div><div class="kpi"><small>Active students</small><b>${sum('active')}<span>/${kidsN}</span></b></div><div class="kpi"><small>School accuracy</small><b>${pct(correct, answered)}%</b></div><div class="kpi"><small>Classes needing attention</small><b>${all.filter((s) => s.status === 3).length}<span> · ${all.filter((s) => s.status === 2).length}🟡</span></b></div></div>
-      ${rangeBar()}
-      <nav class="subtabs">${subs.map(([k, l]) => `<a href="#/guru/sekolah/${k}" class="${k === sub ? 'on' : ''}">${l}</a>`).join('')}</nav>
+    return `<div class="kpis"><div class="kpi"><small>Classes · teachers</small><b>${all.length}<span> · ${teachers.length}</span></b></div><div class="kpi"><small>Students practicing</small><b>${sum('active')}<span>/${kidsN}</span></b></div><div class="kpi"><small>Correct answers</small><b>${pct(correct, answered)}%</b></div><div class="kpi"><small>Classes needing attention</small><b>${all.filter((s) => s.status === 3).length}</b></div></div>
+      ${research ? rangeBar() : ''}
+      ${research ? '' : `<nav class="subtabs">${subs.map(([k, l]) => `<a href="#/guru/sekolah/${k}" class="${k === sub ? 'on' : ''}">${l}</a>`).join('')}</nav>`}
       ${body}`;
   }
 
@@ -1607,12 +1611,12 @@
 
   /* ---------- Halaman siswa (guru): NISN, keterlibatan orang tua, laporan ke BBO Digital ---------- */
   const BBO_LABEL = { diterima: '✅ Accepted by BBO', dikirim: '⏳ Sending', gagal: '⚠️ Failed to send', tanpa_nisn: 'Not sent (no NISN yet)' };
-  function studentDataHTML(k) {
+  function studentDataHTML(k, research) {
     const v = S.viewsOf(k.id).slice().sort((a, b) => a.at - b.at), v30 = v.filter((x) => x.at > Date.now() - 30 * DAY).length;
     const done = S.assignmentsFor(k.id).map((a) => ({ a, d: S.db.done.find((x) => x.aid === a.id && x.sid === k.id) })).filter((x) => x.d).sort((a, b) => b.d.at - a.d.at);
     return `<section class="card"><h2>🪪 Student data</h2>
       <form class="form nisnform" data-form="nisn" data-s="${k.id}"><label>NISN <small class="muted">(10 digits, for sending task reports to BBO Digital)</small><input name="nisn" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" value="${esc(k.nisn || '')}" placeholder="e.g. 0123456789"></label><button class="btn sm">Save NISN</button></form>
-      <p class="small">👪 Parents opened the report <b>${v30}×</b> in the last 30 days${v.length ? ` · last ${ago(v[v.length - 1].at)}` : ' · never'}.</p>
+      ${research ? `<p class="small">👪 Parents opened the report <b>${v30}×</b> in the last 30 days${v.length ? ` · last ${ago(v[v.length - 1].at)}` : ' · never'}.</p>` : ''}
       ${done.length ? `<h3 class="sub">Finished tasks and reports to BBO Digital</h3>${done.map(({ a, d }) => `<div class="lrow"><span class="grow"><b>${esc(a.note || 'Tasks')}</b><small>${ftime(d.at)} · ${d.by === 'ortu' ? 'reported by parent' : 'finished by student'}</small></span><small class="muted">${d.bbo ? BBO_LABEL[d.bbo] || d.bbo : cloudOn() ? 'Not recorded yet' : 'Sample mode'}</small></div>`).join('')}` : ''}
     </section>`;
   }
@@ -1638,7 +1642,7 @@
   const dec = (x) => String(Math.round(x * 10) / 10);
   const hhmm = (ts) => { const d = new Date(ts); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
   function exportResearch(type) {
-    const ctx = teacherCtx(); if (!ctx || !ctx.t.isAdmin) return;
+    const ctx = teacherCtx(); if (!ctx || !canResearch(ctx)) return;
     const g = getRange(), all = ctx.classes.map((c) => classSummary(c, g)), { classes, cc, tc, sc } = researchCodes(all);
     const kids = classes.flatMap((c) => S.studentsOf(c.id).map((k) => ({ k, c })));
     const tag = `${isoDay(g.from || Date.now())}_${isoDay(g.to)}`;
@@ -1715,6 +1719,7 @@
   const FAST = { '-2': 20000, '-1': 22000, 1: 8000, 2: 10000, 3: 12000, 4: 15000, 5: 18000, 6: 20000, 7: 25000, 8: 30000, 9: 35000, 10: 40000, 11: 40000, 12: 45000, 13: 50000 }, GUESS = 3000;
   let D = null;
   const diagKid = () => { const ses = session.get(); return ses.role === 'siswa' && S.student(ses.id); };
+  const isResearchNow = () => { const x = session.get(), t = x.role === 'guru' && S.teacher(x.id); return !!(t && t.isAdmin && !x.demo); };
   const isAdminNow = () => { const x = session.get(), t = x.role === 'guru' && S.teacher(x.id); return !!(t && (t.isAdmin || t.isSchoolAdmin)); };
   const DMODE = { a: { name: 'Pre-assessment', start: '#/asesmen', result: '#/asesmen/hasil' }, b: { name: 'Post-assessment', start: '#/asesmen/akhir', result: '#/asesmen/akhir/hasil' } };
   // Urutan level: TK A (−2), TK B (−1), Kelas 1–8, lalu Aljabar 1 (9), Geometri, Aljabar 2, Prakalkulus, Kalkulus (13).
@@ -1862,7 +1867,7 @@
   }
   // Ringkasan asesmen awal (dan akhir bila ada) untuk laporan guru, orang tua, dan siswa
   function diagSummaryHTML(k, audience) {
-    const dg = S.diagOf(k.id), post = S.diagOf(k.id, 'b'), pending = S.postPending(k.id), admin = audience === 'guru' && isAdminNow();
+    const dg = S.diagOf(k.id), post = S.diagOf(k.id, 'b'), pending = S.postPending(k.id), admin = audience === 'guru' && isResearchNow();
     if (!dg) return audience === 'guru' ? `<section class="card diag-sum"><h2>🧭 Pre-assessment</h2><p class="muted small">${esc(k.name)} hasn't done the pre-assessment. It appears automatically the first time ${esc(k.name)} logs in as a student.</p></section>` : '';
     const gaps = diagSkills(dg, false), good = diagSkills(dg, true), ag = ageGradeOf(dg), lag = lvGap(ag, dg.level), plag = post ? lvGap(ageGradeOf(post), post.level) : 0, pgain = post ? lvGap(post.level, dg.level) : 0;
     return `<section class="card diag-sum"><h2>🧭 Assessment ${post || pending ? 'pre and post' : 'awal'}</h2>
@@ -2188,8 +2193,8 @@
     return `<details class="card realcard"><summary><b>🚀 Ready to use with real students?</b> <span class="muted small">Tap for the steps</span></summary>
       <p class="small">Demo mode only contains a sample class on this device. For real students and parents, sign up as a teacher. It's <b>free</b> and takes about 2 minutes:</p>
       <ol class="small"><li>Tap <b>Free teacher sign-up</b>, then fill in your name, email, password, and class name.</li>
-        <li>Add student names in <b>Manage class</b>, then share the <b>class code</b> (5 letters) with students. They log in through <i>I'm a student</i> and choose their name.</li>
-        <li>Each student has a <b>parent code</b> (6 letters/digits) in Manage class. Share it with parents so they can see reports and task notifications.</li></ol>
+        <li>Add student names in the <b>Students</b> tab, then share the <b>class code</b> (5 letters) with them. Students sign in through <i>I'm a Student</i> and choose their name.</li>
+        <li>Each student has a <b>parent code</b> (6 letters/digits) on their own page. Share it with parents so they can see reports and task notifications.</li></ol>
       <p class="small muted">All real class data is stored on the server and connected across devices. Demo data doesn't carry over.</p>
       <div class="row-btn left"><button class="btn" data-act="realsignup" data-k="guru">Free teacher sign-up →</button><button class="btn ghost" data-act="realsignup" data-k="homeschool">Homeschool families →</button></div></details>`;
   }
@@ -2310,9 +2315,9 @@
     const box = document.getElementById('super-box'); if (!box) return;
     try {
       const tok = session.get().token;
-      const [ov, rq, parents, plans, quotes] = await Promise.all([Cloud.rpc('super_overview', { p_token: tok }), Cloud.rpc('super_requests', { p_token: tok }), Cloud.rpc('super_parents', { p_token: tok }).catch(() => []), Cloud.rpc('super_school_plans', { p_token: tok }).catch(() => null), Cloud.rpc('super_quotes', { p_token: tok }).catch(() => null)]);
-      SUP = { ov, rq, ctx, parents, plans, quotes };
-      if (document.getElementById('super-box')) box.innerHTML = superHTML(sub);
+      const [ov, rq, parents, plans, quotes, students] = await Promise.all([Cloud.rpc('super_overview', { p_token: tok }), Cloud.rpc('super_requests', { p_token: tok }), Cloud.rpc('super_parents', { p_token: tok }).catch(() => []), Cloud.rpc('super_school_plans', { p_token: tok }).catch(() => null), Cloud.rpc('super_quotes', { p_token: tok }).catch(() => null), Cloud.rpc('super_students', { p_token: tok }).catch(() => null)]);
+      SUP = { ov, rq, ctx, parents, plans, quotes, students };
+      if (document.getElementById('super-box')) { box.innerHTML = superHTML(sub); renderSupStudents(); }
     } catch (e) {
       box.innerHTML = e.status === 404 ? emptyCard('Needs SQL 008 to be run', 'Run supabase/006_research_feedback_bbo.sql, then 008_schools_superadmin.sql in the Supabase SQL Editor.') : emptyCard('Failed to load', e.status ? esc(e.message) : 'Can\'t connect to the server.');
     }
@@ -2335,11 +2340,11 @@
         <input name="note" maxlength="200" placeholder="Note (e.g. paid Nov 3)" value="${esc(p.note || '')}"><button class="btn sm">Save</button></form>`; }).join('')}</section>`;
   }
   function superHTML(sub) {
-    sub = ['pengajuan', 'sekolah', 'kelas', 'guru', 'ortu', 'penawaran'].includes(sub) ? sub : 'pengajuan';
+    sub = ['pengajuan', 'sekolah', 'kelas', 'siswa', 'guru', 'ortu', 'penawaran'].includes(sub) ? sub : 'pengajuan';
     const { ov, rq } = SUP, pend = rq.filter((r) => r.status === 'menunggu'), schools = ov.schools || [];
     const kpi = (l, v) => `<div class="kpi"><small>${l}</small><b>${v}</b></div>`;
     const sum = (k) => schools.reduce((t, s) => t + (s[k] || 0), 0);
-    const subs = [['pengajuan', `✋ Requests${pend.length ? ` (${pend.length})` : ''}`], ['sekolah', '🏫 Schools & families'], ['kelas', '📚 Classes'], ['guru', '👩‍🏫 Teachers'], ['ortu', '👨‍👩‍👧 Parents'], ['penawaran', `📨 Quotes${(SUP.quotes || []).filter((q) => q.status === 'baru').length ? ` (${(SUP.quotes || []).filter((q) => q.status === 'baru').length})` : ''}`]];
+    const subs = [['pengajuan', `✋ Requests${pend.length ? ` (${pend.length})` : ''}`], ['sekolah', '🏫 Schools & families'], ['kelas', '📚 Classes'], ['siswa', '🧒 Students'], ['guru', '👩‍🏫 Teachers'], ['ortu', '👨‍👩‍👧 Parents'], ['penawaran', `📨 Quotes${(SUP.quotes || []).filter((q) => q.status === 'baru').length ? ` (${(SUP.quotes || []).filter((q) => q.status === 'baru').length})` : ''}`]];
     let body = '';
     if (sub === 'pengajuan') {
       const schoolOpts = (want) => `<option value="">➕ New school (name below)</option>${schools.filter((s) => s.kind === 'sekolah').map((s) => `<option value="${s.id}" ${want && s.name.toLowerCase() === want.toLowerCase() ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}`;
@@ -2386,6 +2391,11 @@
         ${ps.length ? `<div class="tscroll"><table class="tbl"><thead><tr><th>Name</th><th>Email</th><th>Status</th><th>Children</th><th>Created</th><th></th></tr></thead><tbody>
         ${ps.map((x) => `<tr><td><b>${esc(x.name)}</b></td><td>${esc(x.email)}</td><td>${{ aktif: '✅ active', menunggu: '⏳ waiting', ditolak: '❌ rejected' }[x.status] || esc(x.status)}</td><td class="wrap">${(x.kids || []).map(esc).join(', ') || '–'}</td><td>${fdate(x.createdAt)}</td><td><button class="link small danger" data-act="superdel" data-what="parent" data-id="${x.id}">Delete</button></td></tr>`).join('')}
         </tbody></table></div>` : '<p class="muted">No parent accounts yet.</p>'}</section>`;
+    } else if (sub === 'siswa') {
+      body = SUP.students === null ? emptyCard('SQL 023 needs to be run', 'Run supabase/023_hapus_siswa.sql in the Supabase SQL Editor.')
+        : `<section class="card"><h2>All students <small class="muted">(${SUP.students.length})</small></h2>
+          <p class="small muted">Find test accounts or accounts created by mistake, then delete them. Before anything is deleted, you will be asked to retype the student's name.</p>
+          <div class="ungtools"><label class="ungq"><span aria-hidden="true">🔍</span><input id="sup-q" type="search" placeholder="Search by name, class, school, or code…" value="${esc(ss.get('supq', ''))}" autocomplete="off" aria-label="Search students"></label></div></section><div id="sup-list"></div>`;
     } else if (sub === 'kelas') {
       // semua kelas di semua sekolah, dengan pilihan guru kelasnya
       const sname = (id) => (schools.find((x) => x.id === id) || {}).name || 'No school';
@@ -2407,6 +2417,21 @@
     return `<div class="kpis">${kpi('Schools · homeschool', `${schools.filter((s) => s.kind === 'sekolah').length}<span> · ${schools.filter((s) => s.kind === 'homeschool').length}</span>`)}${kpi('Teachers · classes', `${(ov.teachers || []).length}<span> · ${sum('classes')}</span>`)}${kpi('Students · active 7 days', `${sum('students')}<span> · ${sum('active7')}</span>`)}${kpi('Parents · requests', `${ov.parents}<span> · ${ov.pending}⏳</span>`)}</div>
       <nav class="subtabs">${subs.map(([k, l]) => `<a href="#/guru/super/${k}" class="${k === sub ? 'on' : ''}">${l}</a>`).join('')}</nav>${body}`;
   }
+  // Hanya tabel yang digambar ulang saat mengetik, agar kotak pencarian tidak kehilangan kursor
+  const SUP_MAX = 50;
+  function renderSupStudents() {
+    const box = document.getElementById('sup-list'); if (!box || !SUP || !SUP.students) return;
+    const q = fold(ss.get('supq', '').trim());
+    const list = SUP.students.filter((k) => !q || [k.name, k.className, k.schoolName, k.code, k.parentCode].some((v) => fold(v).includes(q)));
+    const row = (k) => `<tr><td class="ungname"><div class="ungn"><span class="av">${avHTML(k.avatar || '🦁')}</span><span><b>${esc(k.name)}</b><small>Started ${ftime(k.createdAt)}</small></span></div></td>
+      <td class="wrap">${esc(studentPlace(k))}</td><td><b class="code">${esc(k.code || '–')}</b></td><td><b class="code">${esc(k.parentCode || '–')}</b></td><td class="num">${k.att}</td><td class="num">${k.att ? pct(k.ok, k.att) + '%' : '–'}</td><td>${ago(k.lastTs)}</td>
+      <td><button class="link small danger" data-act="superdel" data-what="student" data-id="${k.id}">Delete</button></td></tr>`;
+    box.innerHTML = !list.length ? emptyCard('Not found', q ? `No student matches "<b>${esc(ss.get('supq', '').trim())}</b>".` : 'No students yet.')
+      : `<section class="card"><p class="small muted">Showing ${Math.min(SUP_MAX, list.length)} of ${list.length} students, newest first.${list.length > SUP_MAX ? ' Type in the search box to narrow it down.' : ''}</p>
+        <div class="tscroll"><table class="tbl ungtbl"><thead><tr><th>Student</th><th>Place</th><th>Learning code</th><th>Parent code</th><th>Total questions</th><th>Accuracy</th><th>Last active</th><th></th></tr></thead>
+        <tbody>${list.slice(0, SUP_MAX).map(row).join('')}</tbody></table></div></section>`;
+  }
+  const studentPlace = (k) => (k.className ? (k.schoolName ? k.schoolName + ' · ' : '') + k.className : 'No class');
   async function superDecide(f, fd, btn) {
     const approve = !btn || btn.value !== '0';
     const kind = f.dataset.kind;
@@ -2475,12 +2500,13 @@
         <td><span class="pill ung-${ungState(k)}">${{ aktif: 'Active', jeda: 'Pause', diam: 'Inactive', belum: 'Not started' }[ungState(k)]}</span></td><td>${ago(k.lastTs)}</td><td class="num">${k.week || 0}</td><td class="num">${k.att || 0}</td><td class="num">${k.att ? pct(k.ok, k.att) + '%' : '–'}</td><td class="num">${k.mastered || 0}</td>
         <td class="wrap small">${k.lastSkill ? esc(skillWhere(k.lastSkill)) : '<span class="muted">–</span>'}</td>
         <td><b class="code">${esc(k.code || '–')}</b></td><td><b class="code">${esc(k.parentCode || '–')}</b></td><td>${k.familyCode ? `<b class="code">${esc(k.familyCode)}</b> <button class="link small" data-act="famdel" data-id="${k.id}">Unlink</button>` : '<span class="muted">–</span>'}</td>
-        <td><form data-form="assignkid" data-id="${k.id}" class="form inline"><select name="classId" required aria-label="Class for ${esc(k.name)}"><option value="">— choose a class —</option>${opts}</select><button class="btn sm">Add</button></form></td></tr>`;
+        <td><form data-form="assignkid" data-id="${k.id}" class="form inline"><select name="classId" required aria-label="Class for ${esc(k.name)}"><option value="">— choose a class —</option>${opts}</select><button class="btn sm">Add</button></form></td>
+        <td><button class="link small danger" data-act="superdel" data-what="student" data-id="${k.id}">Delete</button></td></tr>`;
       const pages = Math.max(1, Math.ceil(list.length / UNG_PER)), p = Math.min(Math.max(1, ss.get('ungp', 1)), pages), from = (p - 1) * UNG_PER;
       const nums = [...Array(pages)].map((_, i) => i + 1).filter((n) => n === 1 || n === pages || Math.abs(n - p) <= 2);
       const pager = pages < 2 ? '' : `<nav class="pager" aria-label="Page"><button class="btn sm ghost" data-act="ungp" data-p="${p - 1}" ${p === 1 ? 'disabled' : ''}>← Previous</button>${nums.map((n, i) => `${i && n - nums[i - 1] > 1 ? '<span class="muted">…</span>' : ''}<button class="btn sm ${n === p ? '' : 'ghost'}" data-act="ungp" data-p="${n}" ${n === p ? 'aria-current="page"' : ''}>${n}</button>`).join('')}<button class="btn sm ghost" data-act="ungp" data-p="${p + 1}" ${p === pages ? 'disabled' : ''}>Next →</button></nav>`;
       const table = `<section class="card"><p class="small muted">Showing ${from + 1}–${Math.min(from + UNG_PER, list.length)} of ${list.length} children · scroll the table sideways to see codes and classes · click a name for the report.</p>
-        <div class="tscroll"><table class="tbl ungtbl"><thead><tr><th>Student</th><th>Status</th><th>Last active</th><th>Questions this week</th><th>Total questions</th><th>Accuracy</th><th>Proficient</th><th>Currently at</th><th>Learning code</th><th>Parent code</th><th>Family code</th><th>Add to class</th></tr></thead>
+        <div class="tscroll"><table class="tbl ungtbl"><thead><tr><th>Student</th><th>Status</th><th>Last active</th><th>Questions this week</th><th>Total questions</th><th>Accuracy</th><th>Proficient</th><th>Currently at</th><th>Learning code</th><th>Parent code</th><th>Family code</th><th>Add to class</th><th></th></tr></thead>
         <tbody>${list.slice(from, from + UNG_PER).map(row).join('')}</tbody></table></div>${pager}</section>`;
       const filtered = f !== 'semua' || g || q;
       box.innerHTML = list.length ? table : !all.length ? emptyCard('None yet', 'All students already have a class.')
@@ -2565,19 +2591,23 @@
   }
   // Hapus sekolah, guru, atau akun orang tua (super admin); nama diketik ulang sebagai konfirmasi
   async function superDelete(what, id) {
-    const ov = SUP.ov, x = what === 'school' ? (ov.schools || []).find((v) => v.id === id) : what === 'teacher' ? (ov.teachers || []).find((v) => v.id === id) : (SUP.parents || []).find((v) => v.id === id);
+    const list = what === 'student' ? [...((SUP && SUP.students) || []), ...(UNG || [])] : what === 'school' ? SUP.ov.schools : what === 'teacher' ? SUP.ov.teachers : SUP.parents;
+    const x = (list || []).find((v) => v.id === id);
     if (!x) return;
     const warn = what === 'school' ? `School "${x.name}" will be deleted along with ${x.teachers} teachers, ${x.classes} classes, and ${x.students} students and all their data. Super admin accounts are not deleted.`
-      : what === 'teacher' ? `Teacher account "${x.name}" will be deleted along with ${x.classes} classes and all students in them.` : `Parent account "${x.name}" will be deleted. The child's learning data remains.`;
+      : what === 'teacher' ? `Teacher account "${x.name}" will be deleted along with ${x.classes} classes and all students in them.`
+      : what === 'student' ? `Student "${x.name}" (${studentPlace(x)}, learning code ${x.code || '–'}, ${x.att || 0} questions answered) will be deleted along with all their answers, scores, assignments, and reports.`
+      : `Parent account "${x.name}" will be deleted. The child's learning data remains.`;
     const typed = prompt(`${warn} This can't be undone. Type the name to confirm: ${x.name}`);
     if (typed === null) return;
     if (typed.trim().toLowerCase() !== x.name.trim().toLowerCase()) return toast('Name doesn\'t match. Nothing was deleted.');
-    const fn = { school: ['super_school_delete', 'p_school_id'], teacher: ['super_teacher_delete', 'p_teacher_id'], parent: ['super_parent_delete', 'p_parent_id'] }[what];
+    const fn = { school: ['super_school_delete', 'p_school_id'], teacher: ['super_teacher_delete', 'p_teacher_id'], parent: ['super_parent_delete', 'p_parent_id'], student: ['super_student_delete', 'p_student_id'] }[what];
     try {
       await Cloud.rpc(fn[0], { p_token: session.get().token, [fn[1]]: id, p_confirm_name: typed });
       if (what === 'school' && ss.get('schoolSel', '') === id) ss.set('schoolSel', '');
+      if (what === 'student') ungCount = { n: null, at: 0 };
       toast(`"${esc(x.name)}" deleted`); await ensure(true); route();
-    } catch (e) { toast(e.status === 404 ? 'Run supabase/011_delete_school.sql in Supabase first' : e.status ? esc(e.message) : 'Can\'t connect to the server'); }
+    } catch (e) { toast(e.status === 404 ? `Run supabase/${what === 'student' ? '023_hapus_siswa' : '011_delete_school'}.sql in Supabase first` : e.status ? esc(e.message) : 'Can\'t connect to the server'); }
   }
   async function superClassTeacher(el) {
     const c = S.cls(el.dataset.c), t = (SUP && SUP.ov.teachers || []).find((x) => x.id === el.value); if (!c || !t) return;
@@ -2888,46 +2918,64 @@
 
   // Siswa sasaran tugas (kosong = seluruh kelas)
   const asgKids = (a, kids) => (a.students && a.students.length ? kids.filter((k) => a.students.includes(k.id)) : kids);
-  function tasksHTML(ctx) {
-    const asg = S.assignmentsOf(ctx.c.id).slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-    const pre = ss.get('asgFor', ''), preSkill = ss.get('asgSkill', '');
-    const card = (a) => {
-      const kids = asgKids(a, ctx.kids), whole = !(a.students && a.students.length);
-      const d = S.doneFor(a.id).map((x) => S.student(x.sid)).filter((k) => k && kids.some((y) => y.id === k.id));
-      return `<div class="asg-t"><div class="grow"><b>${esc(a.note || 'Tasks')}</b>${a.due ? ` <span class="muted small">· until ${esc(fdue(a.due))}</span>` : ''}
-        <p class="small asg-for">${whole ? '👥 For the whole class' : `🎯 Special: ${kids.map((k) => `${avHTML(k.avatar)} ${esc(k.name)}`).join(', ') || '<span class="muted">(student removed)</span>'}`}</p>
-        <div class="small">${a.skills.filter((k) => SKILLS[k]).map((k) => `<span class="pill">${SKILLS[k].code} ${SKILLS[k].name} · ${kids.filter((kid) => S.progress(kid.id, k).score >= 80).length}/${kids.length} proficient</span>`).join(' ')}</div>
-        <p class="small asg-done">✅ Done: <b>${d.length}/${kids.length}</b> students${d.length ? ` — ${d.map((k) => esc(k.name)).join(', ')}` : ''}</p>${fbSummary(S.feedbackOf(a.id))}</div>
-        <button class="btn sm ghost" data-act="rmasg" data-id="${a.id}">Delete</button></div>`;
-    };
-    const whole = asg.filter((a) => !(a.students && a.students.length)), special = asg.filter((a) => a.students && a.students.length);
-    return `<section class="card"><h2>👥 Whole-class tasks</h2>${whole.length ? whole.map(card).join('') : '<p class="muted">No tasks for the whole class yet.</p>'}</section>
-      <section class="card"><h2>🎯 Special student tasks</h2>${special.length ? special.map(card).join('') : '<p class="muted">None yet. Give special tasks to students who need to review material or are ready for more advanced material.</p>'}</section>
-      <section class="card" id="newasg"><h2>Create a new task</h2><form data-form="assign" class="form">
-        <fieldset class="target"><legend>For whom?</legend>
-          <label class="cb"><input type="radio" name="target" value="all" ${pre ? '' : 'checked'}> 👥 Whole class (${ctx.kids.length} students)</label>
-          <label class="cb"><input type="radio" name="target" value="some" ${pre ? 'checked' : ''}> 🎯 Specific students</label>
-          <div class="kidpick">${ctx.kids.map((k) => `<label class="cb"><input type="checkbox" name="sid" value="${k.id}" ${pre === k.id ? 'checked' : ''}> ${avHTML(k.avatar)} ${esc(k.name)}</label>`).join('')}</div>
-        </fieldset>
-        <label>Note for students<input name="note" placeholder="e.g. Practice for Friday's quiz"></label>
-        <label>Due date (optional)<input name="due" type="date"></label>
-        <div class="pickskills">${UNITS.map((u) => `<fieldset><legend>${u.icon} ${gname(u.grade)} · ${u.id}. ${u.name}</legend>${u.skills.map((x) => `<label class="cb"><input type="checkbox" name="sk" value="${x.id}" ${preSkill === x.id ? 'checked' : ''}> ${x.code} ${x.name}</label>`).join('')}</fieldset>`).join('')}</div>
-        <button class="btn">Save task</button></form></section>`;
+  // Kelas (jenjang materi) yang paling banyak dikerjakan siswa di kelas ini
+  function classGrade(ctx) {
+    const c = {};
+    ctx.kids.forEach((k) => Object.keys(S.progressAll(k.id)).forEach((id) => { if (SKILLS[id]) c[SKILLS[id].grade] = (c[SKILLS[id].grade] || 0) + 1; }));
+    const top = Object.entries(c).sort((a, b) => b[1] - a[1])[0];
+    return top ? +top[0] : getGrade();
   }
-  // Halaman siswa: saran tugas khusus (mengulang yang lemah, atau materi lanjutan)
-  function specialAssignHTML(k) {
-    const prog = S.progressAll(k.id), order = UNITS.flatMap((u) => u.skills.map((x) => x.id));
-    let last = -1;
-    order.forEach((id, i) => { if ((prog[id] || {}).score >= 80) last = i; });
-    const next = order.slice(last + 1).filter((id) => !(prog[id] && prog[id].att)).slice(0, 3);
-    const weak = weaknesses(k.id).slice(0, 4);
-    const mine = S.assignmentsFor(k.id).filter((a) => a.students && a.students.includes(k.id));
-    const row = (id, why) => `<div class="lrow"><span class="grow"><b>${SKILLS[id].code} ${SKILLS[id].name}</b><small>${why}</small></span><button class="btn sm ghost" data-act="assignkid" data-id="${id}" data-s="${k.id}">Assign</button></div>`;
-    return `<section class="card"><h2>🎯 Special task for ${esc(k.name)}</h2>
-      ${mine.length ? `<p class="small">Active special tasks: ${mine.map((a) => `<span class="pill special">${esc(a.note || 'Tasks')}${S.isDone(a.id, k.id) ? ' ✅' : ''}</span>`).join(' ')}</p>` : ''}
-      ${weak.length ? `<h3 class="sub">Needs review</h3>${weak.map((w) => row(w.id, `${w.att} questions · ${w.acc}% correct · score ${w.score}`)).join('')}` : ''}
-      ${next.length ? `<h3 class="sub">Advanced material</h3>${next.map((id) => row(id, `${gname(SKILLS[id].grade)} · never tried`)).join('')}` : ''}
-      <div class="row-btn left"><button class="btn sm" data-act="asgform" data-s="${k.id}">Create another special task</button></div></section>`;
+  // Saran tugas yang tinggal dikirim: materi yang masih sulit, kelompok level, atau materi berikutnya
+  function taskSuggestions(ctx) {
+    const recent = new Set(S.assignmentsOf(ctx.c.id).filter((a) => (a.createdAt || 0) > Date.now() - 14 * DAY).flatMap((a) => a.skills));
+    const out = [], used = new Set();
+    const add = (id, kids, why) => { used.add(id); out.push({ id, kids, why }); };
+    const hard = {};
+    ctx.kids.forEach((k) => weaknesses(k.id).forEach((w) => { (hard[w.id] = hard[w.id] || []).push(k); }));
+    Object.entries(hard).filter(([id, l]) => l.length >= 2 && !recent.has(id)).sort((a, b) => b[1].length - a[1].length).slice(0, 2).forEach(([id, l]) => add(id, l, `${l.length} students still struggle: ${nameList(l)}`));
+    const need = (id, kids) => kids.filter((k) => S.progress(k.id, id).score < 80).length;
+    const pick = (ids, kids) => ids.filter((x) => SKILLS[x] && !recent.has(x) && !used.has(x)).map((x) => ({ x, n: need(x, kids) })).filter((o) => o.n > 0).sort((a, b) => b.n - a.n)[0];
+    const groups = {};
+    ctx.kids.forEach((k) => { const d = S.diagOf(k.id, 'b') || S.diagOf(k.id); if (d) (groups[d.level] = groups[d.level] || []).push(k); });
+    const levels = Object.keys(groups).map(Number).sort((a, b) => a - b);
+    if (levels.length >= 2) levels.forEach((lv) => { const p = pick([...(S.DIAG[lv] || []), ...unitsOf(lv).flatMap((u) => u.skills.map((x) => x.id))], groups[lv]); if (p) add(p.x, groups[lv], `For the ${gname(lv)} topic group: ${nameList(groups[lv])}`); });
+    if (!out.length) { const p = pick(unitsOf(classGrade(ctx)).flatMap((u) => u.skills.map((x) => x.id)), ctx.kids); if (p) add(p.x, ctx.kids, 'Next topic for the whole class'); }
+    return out.slice(0, 4);
+  }
+  function tasksHTML(ctx) {
+    if (!ctx.kids.length) return `<section class="card center"><div class="bigemoji">📌</div><h2>Add students first</h2><p class="muted">Tasks can be given once the class has students.</p><a class="btn" href="#/guru/siswa">➕ Add students</a></section>`;
+    const asg = S.assignmentsOf(ctx.c.id).slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    const pre = ss.get('asgFor', ''), preSkill = ss.get('asgSkill', ''), g0 = preSkill && SKILLS[preSkill] ? SKILLS[preSkill].grade : classGrade(ctx);
+    const prog = (a) => { const kids = asgKids(a, ctx.kids), d = S.doneFor(a.id).map((x) => x.sid).filter((id) => kids.some((k) => k.id === id)); return { kids, d, left: kids.filter((k) => !d.includes(k.id)) }; };
+    const card = (a) => {
+      const { kids, d, left } = prog(a), special = a.students && a.students.length;
+      return `<div class="taskc"><div class="grow"><b>${esc(a.note || 'Tasks')}</b>${a.due ? ` <span class="muted small">· until ${esc(fdue(a.due))}</span>` : ''}
+        <small>${special ? `For ${nameList(kids) || 'removed students'}` : 'For the whole class'} · ${a.skills.filter((k) => SKILLS[k]).map((k) => SKILLS[k].name).join(', ')}</small>
+        <div class="tbar sm"><i style="width:${pct(d.length, kids.length)}%"></i></div>
+        <small><b>${d.length} of ${kids.length}</b> done${left.length && left.length <= 6 ? `. Not yet: ${left.map((k) => esc(k.name)).join(', ')}` : ''}</small></div>
+        <button class="link small danger" data-act="rmasg" data-id="${a.id}">Delete</button></div>`;
+    };
+    const running = asg.filter((a) => prog(a).left.length), finished = asg.filter((a) => !prog(a).left.length);
+    const sug = taskSuggestions(ctx);
+    const grades = GRADES.filter((x) => unitsOf(x.id).length);
+    return `${sug.length ? `<section class="card"><h2>💡 Metiq suggestions</h2><p class="small muted">Built from student answers. Tap Send and the task goes straight to students and their parents.</p>
+        ${sug.map((x) => `<form data-form="grouptask" data-sids="${x.kids.map((k) => k.id).join(',')}" class="sugrow"><input type="hidden" name="sk" value="${x.id}"><input type="hidden" name="note" value="Latihan: ${esc(SKILLS[x.id].name)}"><input type="hidden" name="due" value=""><span class="grow"><b>${SKILLS[x.id].name}</b><small>${x.why}</small></span><button class="btn sm">Send to ${x.kids.length} students</button></form>`).join('')}</section>` : ''}
+      <details class="card newtask" id="newasg" ${pre || preSkill ? 'open' : ''}><summary><b>➕ Create your own task</b></summary>
+        <form data-form="assign" class="form">
+          <h3 class="stepn"><i>1</i> Which topic?</h3>
+          <div class="skfind"><input id="skq" type="search" placeholder="Search topics, e.g. fractions" aria-label="Search topics" autocomplete="off"><select id="skg" aria-label="Choose a grade">${grades.map((x) => `<option value="${x.id}" ${x.id === g0 ? 'selected' : ''}>${x.name}</option>`).join('')}</select></div>
+          <div class="pickskills skbox" id="skbox">${UNITS.map((u) => `<fieldset data-g="${u.grade}" ${u.grade === g0 ? '' : 'hidden'}><legend>${u.icon} ${u.name}</legend>${u.skills.map((x) => `<label class="cb" data-q="${esc(x.name.toLowerCase())}"><input type="checkbox" name="sk" value="${x.id}" ${preSkill === x.id ? 'checked' : ''}> ${x.name}</label>`).join('')}</fieldset>`).join('')}</div>
+          <h3 class="stepn"><i>2</i> For whom?</h3>
+          <fieldset class="target">
+            <label class="cb"><input type="radio" name="target" value="all" ${pre ? '' : 'checked'}> 👥 Whole class (${ctx.kids.length} students)</label>
+            <label class="cb"><input type="radio" name="target" value="some" ${pre ? 'checked' : ''}> 🎯 Specific students</label>
+            <div class="kidpick">${ctx.kids.map((k) => `<label class="cb"><input type="checkbox" name="sid" value="${k.id}" ${pre === k.id ? 'checked' : ''}> ${avHTML(k.avatar)} ${esc(k.name)}</label>`).join('')}</div>
+          </fieldset>
+          <h3 class="stepn"><i>3</i> Message and due date <small class="muted">(optional)</small></h3>
+          <div class="grow2"><label>Message for students<input name="note" maxlength="120" placeholder="e.g. Practice for Friday's quiz"></label><label>Due date<input name="due" type="date"></label></div>
+          <button class="btn" id="asgsend">📌 Send task</button></form></details>
+      <section class="card"><h2>Tasks in progress <span class="pill">${running.length}</span></h2>${running.map(card).join('') || '<p class="muted">No tasks in progress.</p>'}</section>
+      ${finished.length ? `<details class="card"><summary><b>✅ Completed tasks (${finished.length})</b></summary>${finished.map(card).join('')}</details>` : ''}`;
   }
   function settingsCard(ctx) {
     const st = settingsOf(ctx.c);
@@ -2938,7 +2986,7 @@
       <p class="small muted">Applies to this class only. If both are off, Metiq looks as usual.</p></section>`;
   }
   function manageHTML(ctx) {
-    return `<p class="small muted kelnote">⚙️ Class name, new classes, and settings. Adding students and parent codes are in the <a href="#/guru/siswa">🧒 Students</a> tab.</p>
+    return `<p class="small muted kelnote">Adding students and parent codes are in the <a href="#/guru/siswa">🧒 Students</a> tab. How topics were chosen is in the <a href="#/guru/referensi">📚 Curriculum reference</a>.</p>
     <div class="grid2">
       <section class="card"><h2>Grade</h2><form data-form="renameclass" class="form inline"><input name="name" value="${esc(ctx.c.name)}" required><button class="btn ghost">Rename</button></form>
         <form data-form="newclass" class="form inline"><input name="name" placeholder="New class name" required><button class="btn ghost">Add class</button></form>
@@ -2951,12 +2999,30 @@
 
   function viewTeacherStudent(ctx, sid) {
     const k = S.student(sid); if (!k || k.classId !== ctx.c.id) return go('#/guru/siswa');
-    const ans = S.answersOf(sid).sort((a, b) => b.ts - a.ts).slice(0, 30);
-    teacherShell(ctx, 'siswa', `<a class="back" href="#/guru/siswa">← All students</a>${reportHTML(k, 'guru')}${specialAssignHTML(k)}${studentDataHTML(k)}
-      <section class="card"><h2>All skills tried</h2><div class="tscroll"><table class="tbl"><thead><tr><th>Skills</th><th>Score</th><th>Questions</th><th>Correct</th><th>Time</th><th>Last</th></tr></thead><tbody>
-      ${skillRows(sid).sort((a, b) => a.skill.code.localeCompare(b.skill.code, undefined, { numeric: true })).map((r) => `<tr><td>${r.skill.code} ${r.skill.name}</td><td>${chip(r.score)}</td><td>${r.att}</td><td>${r.acc}%</td><td>${fmtTime(r.ms)}</td><td>${ago(r.last)}</td></tr>`).join('')}</tbody></table></div></section>
-      <section class="card"><h2>Last 30 answers</h2><div class="tscroll"><table class="tbl"><thead><tr><th></th><th>Questions</th><th>Answer</th><th>Correct</th><th>Skills</th></tr></thead><tbody>
-      ${ans.map((a) => `<tr><td>${a.ok ? '✅' : '❌'}</td><td>${esc(a.text)}</td><td>${esc(a.given)}</td><td>${esc(a.answer)}</td><td class="small">${SKILLS[a.skill] ? SKILLS[a.skill].code : ''}</td></tr>`).join('')}</tbody></table></div></section>`);
+    const x = kidState(k), good = strengths(k.id), prog = S.progressAll(k.id), order = UNITS.flatMap((u) => u.skills.map((s) => s.id));
+    let last = -1;
+    order.forEach((id, i) => { if ((prog[id] || {}).score >= 80) last = i; });
+    const next = x.all.answered ? order.slice(last + 1).filter((id) => !(prog[id] && prog[id].att)).slice(0, 2) : [];
+    const tasks = S.assignmentsFor(k.id).slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 5);
+    const nm = esc(k.name), research = canResearch(ctx);
+    const story = x.st === 'baru' ? `${nm} has never signed in. Send the class code so they can start.` : x.w.answered ? `In the last 7 days, ${nm} answered <b>${x.w.answered} questions</b> with <b>${x.w.acc}%</b> correct and has mastered <b>${good.length} topics</b>.` : `${nm} has not practiced in the last 7 days and has mastered <b>${good.length} topics</b>.`;
+    const ans = research ? S.answersOf(sid).sort((a, b) => b.ts - a.ts).slice(0, 30) : [];
+    teacherShell(ctx, 'siswa', `<a class="back" href="#/guru/siswa">← All students</a>
+      <section class="card khead ${KID_ST[x.st][2]}"><span class="av lg">${avHTML(k.avatar)}</span><div class="grow"><h1>${nm}</h1><span class="accb ${KID_ST[x.st][2]} nowrap">${KID_ST[x.st][0]} ${KID_ST[x.st][1]}</span><p>${story}</p></div></section>
+      <div class="grid2">
+        <section class="card"><h2>🆘 Needs help</h2>${x.weak.length ? x.weak.slice(0, 4).map((w) => `<div class="wrow"><div class="lrow"><span class="grow"><b>${w.skill.name}</b>${w.tag && w.tag !== 'konsep' ? `<small>${TAGS[w.tag].label}</small>` : ''}</span>${giveBtn(k.id, w.id)}</div>${w.example ? `<p class="small ex">"${esc(w.example.text)}" answered <b class="strike">${esc(w.example.given)}</b>, should be <b>${esc(w.example.answer)}</b>.</p>` : ''}</div>`).join('') : '<p class="muted">No topics are falling behind. 👍</p>'}</section>
+        <section class="card"><h2>✅ Can already do</h2>${good.length ? good.slice(0, 5).map((g) => `<div class="lrow"><span class="grow">${g.skill.name}</span></div>`).join('') + (good.length > 5 ? `<p class="small muted">and ${good.length - 5} more topics</p>` : '') : '<p class="muted">No topics mastered yet.</p>'}</section>
+      </div>
+      ${next.length ? `<section class="card"><h2>🚀 Ready for next</h2>${next.map((id) => `<div class="lrow"><span class="grow"><b>${SKILLS[id].name}</b><small>${gname(SKILLS[id].grade)}</small></span>${giveBtn(k.id, id, 'Assign a task')}</div>`).join('')}</section>` : ''}
+      <section class="card"><div class="rhead"><h2>📌 Tasks for ${nm}</h2><span class="grow"></span><button class="btn ghost sm" data-act="asgform" data-s="${k.id}">➕ Another task</button></div>${tasks.length ? tasks.map((a) => `<div class="lrow"><span class="grow"><b>${esc(a.note || 'Tasks')}</b>${a.due ? `<small>due ${esc(fdue(a.due))}</small>` : ''}</span>${S.isDone(a.id, k.id) ? '<span class="pill okp">Done</span>' : '<span class="pill">Not yet</span>'}</div>`).join('') : '<p class="muted">No tasks yet.</p>'}</section>
+      <section class="card"><h2>👨‍👩‍👧 Parents</h2><div class="lrow"><span class="grow"><b>Parent code: <span class="code">${k.parentCode || '–'}</span></b><small>${parentLinked(k) ? 'Connected' : 'Not connected'}</small></span><button class="btn sm ${parentLinked(k) ? 'ghost' : ''}" data-act="shareparent" data-id="${k.id}">📤 Send code</button></div></section>
+      <details class="card"><summary><b>More</b> <span class="muted small">Assessment results, NISN, remove student</span></summary>
+        ${diagSummaryHTML(k, 'guru')}${studentDataHTML(k, research)}<p><button class="link danger small" data-act="rmkid" data-id="${k.id}">Remove ${nm} from class</button></p></details>
+      ${research ? `<details class="card"><summary><b>🔬 Research details</b> <span class="muted small">Visible only to super admins</span></summary>${reportHTML(k, 'guru')}
+        <section class="card"><h2>All skills tried</h2><div class="tscroll"><table class="tbl"><thead><tr><th>Skills</th><th>Score</th><th>Questions</th><th>Correct</th><th>Time</th><th>Last</th></tr></thead><tbody>
+        ${skillRows(sid).sort((a, b) => a.skill.code.localeCompare(b.skill.code, undefined, { numeric: true })).map((r) => `<tr><td>${r.skill.code} ${r.skill.name}</td><td>${chip(r.score)}</td><td>${r.att}</td><td>${r.acc}%</td><td>${fmtTime(r.ms)}</td><td>${ago(r.last)}</td></tr>`).join('')}</tbody></table></div></section>
+        <section class="card"><h2>Last 30 answers</h2><div class="tscroll"><table class="tbl"><thead><tr><th></th><th>Questions</th><th>Answer</th><th>Correct</th><th>Skills</th></tr></thead><tbody>
+        ${ans.map((a) => `<tr><td>${a.ok ? '✅' : '❌'}</td><td>${esc(a.text)}</td><td>${esc(a.given)}</td><td>${esc(a.answer)}</td><td class="small">${SKILLS[a.skill] ? SKILLS[a.skill].code : ''}</td></tr>`).join('')}</tbody></table></div></section></details>` : ''}`);
   }
 
   /* ---------- Laporan (orang tua & guru) ---------- */
@@ -3019,20 +3085,49 @@
           <button class="btn">Create account</button>
         </form><p class="muted small center">After logging in, add your child with the parent code from the teacher.</p></section>`);
   }
+  // Satu kesimpulan untuk orang tua, ditulis sebagai kalimat sehari-hari
+  const DOW = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  function parentVerdict(k) {
+    const s7 = stats(k.id, 7), all = stats(k.id), days = s7.byDay.filter((d) => d.n).length, nm = esc(k.name);
+    const facts = `This week: practiced <b>${days} days</b>, answered <b>${s7.answered} questions</b>, <b>${s7.acc}%</b> correct.`;
+    let v;
+    if (!all.answered) v = ['🌱', 'y', `${nm} has not started practicing`, 'Try 10 minutes today. Metiq adjusts the questions to your child\'s ability.'];
+    else if (!s7.answered) v = ['😴', 'y', `${nm} has not practiced this week`, `Last practiced ${ago(all.last)}. Try again, 10 minutes is enough.`];
+    else if ((s7.answered >= 10 && s7.acc < 60) || kidState(k).st === 'bantu') v = ['💪', 'y', `${nm} is working hard, some topics need help`, `${facts} See Help at home.`];
+    else if (days >= 3 && s7.acc >= 70) v = ['🌟', 'g', `${nm} is diligent and understands`, facts];
+    else if (days >= 3) v = ['👍', 'g', `${nm} is practicing diligently`, facts];
+    else v = ['🙂', 'y', `${nm} has practiced, could do a bit more`, `${facts} Aim for 3 days a week.`];
+    return { s7, all, days, icon: v[0], tone: v[1], title: v[2], text: v[3] };
+  }
+  const weekDots = (s7) => `<div class="wkdots" aria-label="Days practiced this week">${s7.byDay.map((d) => `<span class="${d.n ? 'on' : ''}"><i>${d.n ? '✓' : ''}</i><small>${DOW[new Date(d.d0).getDay()]}</small></span>`).join('')}</div>`;
+  const parentTasks = (k) => S.assignmentsFor(k.id).filter((a) => !S.isDone(a.id, k.id) && !asgComplete(a, k.id));
+  function parentReportHTML(k) {
+    const v = parentVerdict(k), good = strengths(k.id), weak = weaknesses(k.id), nm = esc(k.name), c = S.cls(k.classId) || {}, tasks = parentTasks(k), dg = S.diagOf(k.id, 'b') || S.diagOf(k.id);
+    const wrong = S.answersOf(k.id).filter((a) => !a.ok).sort((a, b) => b.ts - a.ts).slice(0, 6);
+    return `<section class="card phead ${v.tone}"><div class="phead-top"><span class="av lg">${avHTML(k.avatar)}</span><div class="grow"><small>${esc(c.name || 'Learning report')}</small><h1><span aria-hidden="true">${v.icon}</span> ${v.title}</h1></div></div><p>${v.text}</p>${v.all.answered ? weekDots(v.s7) : ''}</section>
+      ${tasks.length ? `<section class="card"><div class="rhead"><h2>📌 Tasks from the teacher <span class="pill">${tasks.length}</span></h2><span class="grow"></span><a class="btn sm" href="#/notifikasi">See tasks</a></div>${tasks.slice(0, 3).map((a) => `<div class="lrow"><span class="grow"><b>${esc(a.note || 'Tasks from your teacher')}</b>${a.due ? `<small>due ${esc(fdue(a.due))}</small>` : ''}</span></div>`).join('')}</section>` : ''}
+      ${weak.length ? `<section class="card phome"><h2>🏠 Help at home</h2>${weak.slice(0, 2).map((w) => `<div class="phelp"><b>${w.skill.name}</b>${w.example ? `<p class="small ex">"${esc(w.example.text)}" answered <b class="strike">${esc(w.example.given)}</b>, should be <b>${esc(w.example.answer)}</b>.</p>` : ''}<p class="small tip">💡 ${w.tag && w.tag !== 'konsep' ? TAGS[w.tag].tip : UNITS.find((u) => u.id === w.skill.unit).tip}</p>${LESSONS[w.skill.unit] ? `<a class="btn sm ghost" href="#/pelajaran/${w.skill.unit}">📖 Learn together</a>` : ''}</div>`).join('')}</section>` : ''}
+      <section class="card good"><h2>✅ Can already do <span class="pill">${good.length} topics</span></h2>${good.length ? good.slice(0, 3).map((g) => `<div class="lrow"><span class="grow">${g.skill.name}</span></div>`).join('') + (good.length > 3 ? `<p class="small muted">and ${good.length - 3} more topics</p>` : '') : `<p class="muted">No topics mastered yet. Keep practicing!</p>`}</section>
+      ${dg ? `<p class="small muted center">Right now ${nm} is learning <b>${gname(dg.level)} material</b>, based on the assessment.</p>` : ''}
+      ${v.all.answered ? `<details class="card pmore"><summary><b>See details</b> <span class="muted small">Progress by chapter and incorrect answers</span></summary>
+        <div class="kpis"><div class="kpi"><small>Total questions</small><b>${v.all.answered}</b></div><div class="kpi"><small>Correct answers</small><b>${v.all.acc}%</b></div><div class="kpi"><small>Time learning</small><b class="sm">${fmtTime(v.all.ms)}</b></div></div>
+        <h3 class="sub">Progress by chapter</h3>${reportGrades(k.id).map((g, _, all) => (all.length > 1 ? `<p class="small"><b>${gname(g)}</b></p>` : '') + unitsOf(g).map((u) => { const us = unitScore(k.id, u); return `<div class="uprog"><span>${u.icon} ${u.name}</span><span class="ubar"><i style="width:${us.avg}%;background:${u.color}"></i></span><small>${us.prof}/${us.total}</small></div>`; }).join('')).join('')}
+        ${wrong.length ? `<h3 class="sub">Incorrect answers</h3>${wrong.map((a) => `<div class="wa"><p>${esc(a.text)}</p><small>${nm}'s answer: <b class="strike">${esc(a.given)}</b> · Correct: <b>${esc(a.answer)}</b> · ${ago(a.ts)}</small></div>`).join('')}` : ''}</details>` : ''}`;
+  }
   function viewParentHome() {
     const ses = session.get(), demoKids = ses.role === 'ortu' && ses.demo && ses.kids, codeKids = ses.role === 'ortu' && !ses.demo && ses.pcode && ses.kids;
     if (!(ses.role === 'ortu' && (ses.ptoken || demoKids || codeKids))) return go('#/ortu');
     const p = demoKids ? { name: (tryInfo() || {}).name } : codeKids ? { name: 'Ayah/Bunda' } : S.db.parent || {};
     const kids = demoKids || codeKids ? ses.kids.map((id) => S.student(id)).filter(Boolean) : S.db.students;
     app.innerHTML = shell(`
-      <section class="dhead"><div><small class="muted">${codeKids ? `Family code ${esc(ses.pcode)} · ${kids.length} children` : 'Parent accounts'}</small><h1>Hello, ${esc(p.name || '')}</h1></div></section>
-      ${kids.map((k) => { const s7 = stats(k.id, 7), all = stats(k.id); const c = S.cls(k.classId) || {};
-        return `<section class="card kidcard"><div class="report-head"><span class="av lg">${avHTML(k.avatar)}</span><div class="grow"><h2>${esc(k.name)}</h2><p class="muted small">${esc(c.name || '')}${c.teacherName ? ' · ' + esc(c.teacherName) : ''}</p></div></div>
-          <div class="kpis"><div class="kpi"><small>Questions 7 days</small><b>${s7.answered}</b></div><div class="kpi"><small>Accuracy</small><b>${all.acc}%</b></div><div class="kpi"><small>Proficient</small><b>${all.proficient}</b></div><div class="kpi"><small>Last</small><b class="sm">${ago(all.last)}</b></div></div>
-          <div class="row-btn"><a class="btn" href="#/ortu/laporan/${k.id}">View report</a>${codeKids ? '' : `<button class="btn ghost" data-act="askid" data-id="${k.id}">Learn as ${esc(k.name)}</button>`}</div>
-          ${demoKids || codeKids ? '' : `<p class="center small"><button class="link muted" data-act="punlink" data-id="${k.id}">Unlink from account</button></p>`}</section>`; }).join('') || '<section class="card center"><div class="bigemoji">🧒</div><p class="muted">No children connected yet.</p></section>'}
+      <section class="dhead"><div><small class="muted">${codeKids ? `Family code ${esc(ses.pcode)}` : 'Parent accounts'}</small><h1>Hello, ${esc(p.name || 'Ayah/Bunda')}</h1></div></section>
+      ${kids.map((k) => { const v = parentVerdict(k), c = S.cls(k.classId) || {}, t = parentTasks(k);
+        return `<section class="card phead ${v.tone}"><div class="phead-top"><span class="av lg">${avHTML(k.avatar)}</span><div class="grow"><small>${esc(c.name || '')}${c.teacherName ? ' · ' + esc(c.teacherName) : ''}</small><h2><span aria-hidden="true">${v.icon}</span> ${v.title}</h2></div></div>${v.all.answered ? weekDots(v.s7) : `<p>${v.text}</p>`}
+          ${t.length ? `<p class="small"><a href="#/notifikasi">📌 ${t.length} tasks from the teacher not finished</a></p>` : ''}
+          <div class="row-btn left"><a class="btn" href="#/ortu/laporan/${k.id}">View report</a>${codeKids ? '' : `<button class="btn ghost" data-act="askid" data-id="${k.id}">Learn as ${esc(k.name)}</button>`}</div>
+          ${demoKids || codeKids ? '' : `<p class="small kunlink"><button class="link muted" data-act="punlink" data-id="${k.id}">Unlink from account</button></p>`}</section>`; }).join('') || '<section class="card center"><div class="bigemoji">🧒</div><p class="muted">No children connected yet. Enter the code from the teacher below.</p></section>'}
       ${codeKids ? '' : demoKids ? `<section class="card"><h2>Add a child</h2><p class="muted small">In demo mode, add another child by trying as a student on this device (Log out → Try as a student → child's name), then log in again as a parent.</p></section>${realParentCard(kids[0] || {})}`
-        : `<section class="card"><h2>Add a child</h2><p class="muted small">Enter the child's parent code (from the teacher).</p>
+        : `<section class="card"><h2>Add a child</h2><p class="muted small">Enter the parent code from the teacher.</p>
         <form data-form="plink" class="form inline"><input name="code" class="codein sm" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC123" required><button class="btn">Add</button></form></section>`}
     `, { right: topRight() });
   }
@@ -3041,7 +3136,7 @@
     const k = ses.role === 'ortu' && S.student(sid || ses.id) && (!ses.kids || ses.kids.includes(sid || ses.id)) && S.student(sid || ses.id);
     if (!k) return go(ses.ptoken ? '#/ortu/anak' : '#/ortu');
     logParentView(k.id);
-    app.innerHTML = shell((ses.ptoken || (ses.kids && ses.kids.length > 1) ? '<a class="back" href="#/ortu/anak">← My children</a>' : '') + reportHTML(k, 'ortu') + `<p class="center muted small">SmartScore: 0–49 Starting · 50–79 Developing · 80–99 Proficient · 100 Complete 🏆</p>` + (ses.demo ? realParentCard(k) : ''), { right: topRight() });
+    app.innerHTML = shell((ses.ptoken || (ses.kids && ses.kids.length > 1) ? '<a class="back" href="#/ortu/anak">← My children</a>' : '') + parentReportHTML(k) + (ses.demo ? realParentCard(k) : ''), { right: topRight() });
   }
 
   /* ---------- Panduan pemakaian ---------- */
@@ -3233,7 +3328,7 @@
   function viewPreview(id) {
     const sk = SKILLS[id]; if (!sk) return go('#/guru');
     const qs = Array.from({ length: 3 }, () => sk.gen());
-    app.innerHTML = shell(`<a class="back" href="#/guru/keterampilan">← Back</a><h1>${sk.code} ${sk.name}</h1><p class="muted">Random sample question (not recorded).</p>
+    app.innerHTML = shell(`<button class="back link" data-act="back">← Back</button><h1>${sk.code} ${sk.name}</h1><p class="muted">Random sample question (not recorded).</p>
       ${qs.map((q) => `<section class="qcard"><p class="qtext">${q.text}</p>${q.vis ? `<div class="qvis">${q.vis}</div>` : ''}${q.options ? `<p class="small">Pilihan: ${q.options.join(' · ')}</p>` : ''}<div class="explain"><b>Jawaban: ${q.answer}</b><p>${q.explain}</p></div></section>`).join('')}
       <button class="btn" data-act="reload">Another question</button>`);
   }
@@ -3507,26 +3602,26 @@
       ['Reports for parents', yes, yes, yes],
       ['Classes with a class code; add students with a learning code', no, yes, yes],
       ['Assign tasks to a class, group, or single student', no, yes, yes],
-      ['Class reports: All progress, analytics, leaderboard', no, yes, yes],
+      ['Class dashboard: who needs help, hard topics, task suggestions', no, yes, yes],
       ['School dashboards and reports across classes and teachers', no, no, yes],
       ['School admins manage teachers and classes', no, no, yes],
-      ['Pre- and post-assessments and research data', no, no, yes],
+      ['Starting assessment to place each student at the right level', yes, yes, yes],
       ['Teacher training and mentoring', no, no, yes],
     ];
     const faq = [
       ['Is Metiq free for teachers?', 'Yes. Anyone who teaches math can sign up free and be active right away: create classes, add students, assign tasks, and see class reports.'],
-      ['What\'s in the School plan?', 'A school layer on top of the free app: dashboards and reports across classes, school admins who manage teachers, pre- and post-assessments to measure improvement, plus training and mentoring.'],
+      ['What\'s in the School plan?', 'A school layer on top of the free app: cross-class dashboards and reports, school admins managing teachers, plus training and support.'],
       ['How much does it cost?', 'The School plan price hasn\'t been set yet. Fill out the form below and the Metiq team will contact you.'],
       ['How do teachers join a school?', 'Teachers first sign up free. The school admin then adds them using their email in the 🏫 School tab → Manage teachers.'],
       ['How do we get started?', 'Fill out the form below. The Metiq team will contact you to discuss your school\'s needs.'],
       ['How is student data protected?', 'Metiq shows no ads and doesn\'t sell data. Other teachers can\'t see the names of students outside their class; teachers can only add students with a learning code from the child or parent.'],
     ];
     app.innerHTML = shell(`<a class="back" href="#/">← Back</a>
-      <section class="phero"><h1>One app, three ways to use it</h1><p>Metiq is free for students and math teachers. Schools with many classes can request a quote for school dashboards, teacher management, pre- and post-assessments, and mentoring.</p></section>
+      <section class="phero"><h1>One app, three ways to use it</h1><p>Metiq is free for students and math teachers. Schools with many classes can request a quote for the school dashboard, teacher management, and support.</p></section>
       <div class="plans">
         <section class="plan"><small>At home</small><h2>Families</h2><b class="price">Free</b><p>Children learn on their own at their level, and parents see their progress.</p><a class="btn ghost" href="#/siswa-baru">Start learning</a></section>
         <section class="plan hl"><small>One class</small><h2>Teacher</h2><b class="price">Free</b><p>Complete class tools for assigning tasks and monitoring progress. Active right away.</p><a class="btn" href="#/guru/daftar">Free teacher sign-up</a></section>
-        <section class="plan"><small>Many classes</small><h2>School</h2><b class="price">Contact us</b><p>School dashboards, admins manage teachers, pre- and post-assessments, training.</p><a class="btn ghost" href="#quote" data-act="quotego">Request a quote</a></section>
+        <section class="plan"><small>Many classes</small><h2>School</h2><b class="price">Contact us</b><p>School dashboard, admins manage teachers, training.</p><a class="btn ghost" href="#quote" data-act="quotego">Request a quote</a></section>
       </div>
       <section class="card"><h2>Compare</h2><div class="tscroll"><table class="tbl pcompare"><thead><tr><th></th><th>Families</th><th>Teacher</th><th>School</th></tr></thead><tbody>
         ${rows.map(([t, a, b, c]) => `<tr><td>${t}</td><td>${a}</td><td>${b}</td><td>${c}</td></tr>`).join('')}</tbody></table></div></section>
@@ -3699,7 +3794,7 @@
   /* ---------- Interaksi ---------- */
   document.addEventListener('click', (e) => {
     const el = e.target.closest('[data-act]');
-    const row = e.target.closest('tr[data-href]');
+    const row = e.target.closest('[data-href]');
     if (!el && row && !e.target.closest('a')) return go(row.dataset.href);
     if (!el) return;
     const act = el.dataset.act;
@@ -3751,7 +3846,7 @@
     if (act === 'goal') { ls.set('metiq_goal_' + session.get().id, +el.dataset.m); return route(); }
     if (act === 'soundtoggle') { const on = window.SFX.toggle(); el.querySelector('.em').textContent = on ? 'ðŸ””' : 'ðŸ”•'; el.querySelector('.t').textContent = on ? 'Sound on' : 'Sound off'; return; }
     // Mengulang asesmen awal atau membuka asesmen akhir: khusus admin (peneliti) agar data pretest terjaga
-    const adminDo = (msg, work) => { if (!isAdminNow()) return toast('Admin only'); el.disabled = true; return work().then(() => { toast(msg); route(); }).catch((e) => { el.disabled = false; toast(e.status ? e.message : 'Can\'t connect to the server'); }); };
+    const adminDo = (msg, work) => { if (!isResearchNow()) return toast('Super admins only'); el.disabled = true; return work().then(() => { toast(msg); route(); }).catch((e) => { el.disabled = false; toast(e.status ? e.message : 'Can\'t connect to the server'); }); };
     if (act === 'diagreset') {
       const k = S.student(el.dataset.s);
       if (!k || !confirm(`Redo the pre-assessment for ${k.name}? The old pre-assessment result will no longer be used (including for research data), and ${k.name} will be asked to do it at next login.`)) return;
@@ -3850,7 +3945,6 @@
     else if (act === 'shareclass') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. ${ctx.c.name} math practice is now on Metiq (free, works on phones):\n1. Open https://metiq-math.vercel.app\n2. Tap "I'm a student"\n3. Enter the class code: ${ctx.c.code}\n4. Choose your name`); }
     else if (act === 'shareparent') { const k = S.student(el.dataset.id), c = k && S.cls(k.classId); if (k) shareText(`Assalamu'alaikum, parent of ${k.name}. ${k.name}'s (${c ? c.name : ''}) math learning report can be seen on Metiq:\n1. Open https://metiq-math.vercel.app\n2. Tap "I'm a parent"\n3. Enter the parent code: ${k.parentCode}\nYou'll also be notified whenever the teacher gives a task.`); }
     else if (act === 'submitasg') { el.disabled = true; markDone(el.dataset.a, session.get().id, 'siswa').then(() => { window.SFX.task(); toast('Task turned in! Your teacher was notified 📨'); route(); }); }
-    else if (act === 'gotoform') { go('#/guru/tugas'); setTimeout(() => { const f = document.getElementById('newasg'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 350); }
     else if (act === 'superdel') superDelete(el.dataset.what, el.dataset.id);
     else if (act === 'schoolview') { ss.set('schoolSel', el.dataset.id); go('#/guru/sekolah'); }
     else if (act === 'tdays') { ss.set('tdays', +el.dataset.d); return route(); }
@@ -3893,8 +3987,9 @@
     } else if (act === 'assign1') {
       const ctx = teacherCtx(), note = 'Extra practice: ' + SKILLS[el.dataset.id].name;
       if (cloudOn()) return tAct('teacher_add_assignment', { p_class_id: ctx.c.id, p_skills: [el.dataset.id], p_note: note, p_due: '' }, 'Task created ✔');
-      S.addAssignment(ctx.c.id, [el.dataset.id], note, ''); toast('Task created ✔');
+      S.addAssignment(ctx.c.id, [el.dataset.id], note, ''); toast('Task created ✔'); route();
     }
+    else if (act === 'remind') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. Let's practice math on Metiq for 10 minutes today.\nOpen https://metiq-math.vercel.app and tap "I'm a Student". Class code: ${ctx.c.code}`); }
     else if (act === 'print') window.print();
     else if (act === 'reload') route();
     else if (act === 'export') {
@@ -3937,6 +4032,7 @@
   // Kode kelas: huruf besar otomatis, tombol Masuk aktif setelah 4 huruf, dan langsung masuk saat 5 huruf
   document.addEventListener('input', (e) => {
     const el = e.target;
+    if (el && el.id === 'sup-q') { ss.set('supq', el.value); renderSupStudents(); return; }
     if (el && el.id === 'ung-q') { ss.set('ungq', el.value); ss.set('ungp', 1); const ctx = teacherCtx(); if (ctx) renderUngList(ctx); return; }
     if (!el || el.id !== 'mqcode') return;
     el.value = el.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); el.classList.remove('bad');
@@ -3985,13 +4081,13 @@
     if (kind === 'login') { const t = S.loginTeacher(fd.get('id'), fd.get('pin')); if (!t) return toast('Wrong PIN'); session.set({ role: 'guru', id: t.id }); go('#/guru/ringkasan'); }
     const ctx = teacherCtx();
     if (!ctx) return;
-    if (kind === 'addbycode') return toast('In demo mode, add students by name (method 2).');
-    if (kind === 'addkid') { String(fd.get('name')).split(',').map((x) => x.trim()).filter(Boolean).forEach((n) => S.addStudent(ctx.c.id, n)); route(); }
+    if (kind === 'addbycode') return toast('In try-it mode, add students by typing their names.');
+    if (kind === 'addkid') { String(fd.get('name')).split(/[,\n]/).map((x) => x.trim()).filter(Boolean).forEach((n) => S.addStudent(ctx.c.id, n)); route(); }
     if (kind === 'renameclass') { S.renameClass(ctx.c.id, fd.get('name')); route(); }
     if (kind === 'classset') { S.setClassSettings(ctx.c.id, { konteks: fd.get('konteks'), adab: fd.get('adab') === '1' }); toast('Class settings saved ✔'); return route(); }
     if (kind === 'newclass') { const c = S.createClass(ctx.t.id, fd.get('name')); const s = session.get(); s.classId = c.id; session.set(s); route(); }
     if (kind === 'grouptask') { const sk = fd.getAll('sk'), sids = f.dataset.sids.split(','); if (!sk.length) return toast('Choose at least one skill'); S.addAssignment(ctx.c.id, sk, fd.get('note'), fd.get('due'), sids); toast(`Task sent to ${sids.length} students ✔`); return route(); }
-    if (kind === 'assign') { const sk = fd.getAll('sk'), sids = fd.get('target') === 'some' ? fd.getAll('sid') : []; if (!sk.length) return toast('Choose at least one skill'); if (fd.get('target') === 'some' && !sids.length) return toast('Choose at least one student'); S.addAssignment(ctx.c.id, sk, fd.get('note'), fd.get('due'), sids); ss.set('asgFor', ''); ss.set('asgSkill', ''); toast('Task saved ✔'); route(); }
+    if (kind === 'assign') { const sk = fd.getAll('sk'), sids = fd.get('target') === 'some' ? fd.getAll('sid') : []; if (!sk.length) return toast('Choose at least one skill'); if (fd.get('target') === 'some' && !sids.length) return toast('Choose at least one student'); S.addAssignment(ctx.c.id, sk, fd.get('note') || 'Latihan: ' + SKILLS[sk[0]].name, fd.get('due'), sids); ss.set('asgFor', ''); ss.set('asgSkill', ''); toast('Task saved ✔'); route(); }
   });
 
   async function cloudSubmit(f, fd, kind) {
@@ -4065,7 +4161,7 @@
         catch (e) { done(); return toast(e.status === 404 ? 'This feature needs a server update (SQL 019).' : e.status ? esc(e.message) : 'Can\'t connect to the server'); }
       }
       if (kind === 'addkid') {
-        const names = String(fd.get('name')).split(',').map((x) => x.trim()).filter(Boolean);
+        const names = String(fd.get('name')).split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
         const used = ctx.kids.map((k) => k.avatar);
         const free = S.AVATARS.filter((a) => !used.includes(a));
         const avatars = names.map((_, i) => free[i] || S.AVATARS[Math.floor(Math.random() * S.AVATARS.length)]);
@@ -4089,10 +4185,25 @@
         if (fd.get('target') === 'some' && !sids.length) { done(); return toast('Choose at least one student'); }
         ss.set('asgFor', ''); ss.set('asgSkill', '');
         // daftar siswa hanya dikirim untuk tugas khusus, agar tugas seluruh kelas tetap memakai fungsi lama
-        return tAct('teacher_add_assignment', Object.assign({ p_class_id: ctx.c.id, p_skills: sk, p_note: fd.get('note'), p_due: fd.get('due') }, sids.length ? { p_student_ids: sids } : {}), 'Task saved ✔');
+        return tAct('teacher_add_assignment', Object.assign({ p_class_id: ctx.c.id, p_skills: sk, p_note: fd.get('note') || 'Latihan: ' + SKILLS[sk[0]].name, p_due: fd.get('due') }, sids.length ? { p_student_ids: sids } : {}), 'Task saved ✔');
       }
     } catch (err) { fail(err); }
   }
+
+  // Tugas baru: cari materi, pilih kelas, dan jumlah materi yang dipilih di tombol kirim
+  function filterSkills() {
+    const box = document.getElementById('skbox'); if (!box) return;
+    const q = document.getElementById('skq').value.trim().toLowerCase(), g = document.getElementById('skg').value;
+    box.querySelectorAll('fieldset').forEach((fs) => {
+      let any = false;
+      fs.querySelectorAll('label').forEach((l) => { const hit = q ? (' ' + l.dataset.q).includes(' ' + q) : fs.dataset.g === g; l.hidden = !hit; if (hit) any = true; });
+      fs.hidden = !any;
+    });
+  }
+  document.addEventListener('input', (e) => {
+    if (e.target.id === 'skq' || e.target.id === 'skg') filterSkills();
+    if (e.target.name === 'sk' && e.target.closest('#skbox')) { const n = document.querySelectorAll('#skbox input:checked').length, b = document.getElementById('asgsend'); if (b) b.textContent = n ? `📌 Send task (${n} topics)` : '📌 Send task'; }
+  });
 
   setInterval(async () => {
     const x = session.get();

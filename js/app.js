@@ -155,7 +155,8 @@
   function strengths(sid) { return skillRows(sid).filter((r) => r.score >= 80).sort((a, b) => b.score - a.score || b.acc - a.acc); }
   function weaknesses(sid) {
     const ans = S.answersOf(sid);
-    return skillRows(sid).filter((r) => r.att >= 4 && r.score < 80 && (r.score < 60 || r.acc < 70)).sort((a, b) => a.acc - b.acc).map((r) => {
+    // Skor naik bertahap, jadi skor rendah baru berarti setelah 8 soal. Sebelum itu hanya banyaknya jawaban salah yang dihitung.
+    return skillRows(sid).filter((r) => r.att >= 4 && r.score < 80 && (r.acc < 70 || (r.att >= 8 && r.score < 60))).sort((a, b) => a.acc - b.acc).map((r) => {
       const wrong = ans.filter((a) => a.skill === r.id && !a.ok).sort((a, b) => b.ts - a.ts);
       const tc = tagCounts(wrong);
       return { ...r, tag: tc[0] && tc[0][0] !== 'konsep' ? tc[0][0] : (tc[1] ? tc[1][0] : (tc[0] || [])[0]), example: wrong[0] };
@@ -1121,15 +1122,18 @@
     const c = classes.find((x) => x.id === ses.classId) || classes[0];
     return { t, c, classes, kids: S.studentsOf(c.id) };
   }
-  // Empat tab utama berbahasa sehari-hari. Halaman lain menjadi pil di dalam tab induknya, jadi semua halaman
-  // terjangkau dalam dua ketukan tanpa menu tersembunyi. Pengaturan kelas ada di tombol ⚙️ di kepala halaman.
+  // Tiga tab saja untuk guru. Setiap halaman menjawab satu pertanyaan: apa yang perlu dilakukan, bagaimana siswa saya, tugas apa yang diberikan.
   const TAB_GROUPS = [
     ['hari', '🏠 Hari ini', [['ringkasan', 'Hari ini']]],
-    ['siswa', '🧒 Siswa', [['siswa', 'Daftar siswa'], ['kelompok', 'Kelompok level'], ['peta', 'Peta kemajuan']]],
+    ['siswa', '🧒 Siswa', [['siswa', 'Siswa']]],
     ['tugas', '📌 Tugas', [['tugas', 'Tugas']]],
-    ['laporan', '📈 Laporan', [['semua', 'Semua kemajuan'], ['analitik', 'Analitik'], ['keterampilan', 'Keterampilan'], ['peringkat', 'Peringkat'], ['referensi', 'Referensi']]],
   ];
-  const groupOf = (tab) => TAB_GROUPS.find((g) => g[2].some(([k]) => k === tab));
+  // Analitik dan data penelitian: hanya akun super admin sungguhan (bukan mode coba, bukan guru, bukan admin sekolah)
+  const canResearch = (ctx) => !!(ctx.t.isAdmin && !session.get().demo);
+  const RESEARCH_SCHOOL = [['data', '📥 Data penelitian'], ['asesmen', '🧭 Asesmen awal–akhir'], ['grafik', '📊 Grafik'], ['guru', '👩‍🏫 Per guru'], ['ulasan', '⭐ Ulasan'], ['coba', '🧪 Mode coba']];
+  const RESEARCH_GROUP = ['riset', '🔬 Riset', [['analitik', 'Analitik'], ['semua', 'Semua kemajuan'], ['peta', 'Peta kemajuan'], ['keterampilan', 'Keterampilan'], ['kelompok', 'Kelompok level'], ['peringkat', 'Peringkat'], ...RESEARCH_SCHOOL.map(([k, l]) => ['riset/' + k, l])]];
+  const RESEARCH_TABS = new Set(['riset', ...RESEARCH_GROUP[2].map(([k]) => k)]);
+  const groupOf = (tab) => [...TAB_GROUPS, RESEARCH_GROUP].find((g) => g[2].some(([k]) => k === tab));
   // Angka siswa tanpa kelas untuk admin (disimpan sebentar agar tidak memanggil server setiap pindah tab)
   let ungCount = { n: null, at: 0 };
   async function loadUngCount(ctx) {
@@ -1144,78 +1148,96 @@
     if (row && n) row.outerHTML = todoRow('🧺', `${n} siswa belum punya kelas`, 'Anak yang mulai belajar sendiri. Masukkan ke kelas yang sesuai.', '<a class="btn sm" href="#/guru/tanpa">Masukkan ke kelas</a>', 'warn');
   }
   function teacherShell(ctx, tab, inner) {
-    const admin = [...(ctx.t.isAdmin && cloudOn() && !session.get().demo ? [['tanpa', '🧺 Tanpa kelas']] : []), ...(ctx.t.isAdmin || ctx.t.isSchoolAdmin ? [['sekolah', '🏫 Sekolah']] : []), ...(ctx.t.isAdmin && !session.get().demo ? [['super', '🌐 Super admin']] : [])];
+    const admin = [...(ctx.t.isAdmin && cloudOn() && !session.get().demo ? [['tanpa', '🧺 Tanpa kelas']] : []), ...(ctx.t.isAdmin || ctx.t.isSchoolAdmin ? [['sekolah', '🏫 Sekolah']] : []), ...(canResearch(ctx) ? [['analitik', '🔬 Riset'], ['super', '🌐 Super admin']] : [])];
     const grp = groupOf(tab);
     app.innerHTML = shell(`
       <section class="dhead">
         <div class="dh-row"><a class="av avedit" href="#/avatar/guru" aria-label="Ganti avatar">${avHTML(ctx.t.avatar || 'svg:ustadzah')}<i>✏️</i></a>
-          <div class="dh-text"><div class="dh-who">${esc(ctx.t.name)}${ctx.t.isAdmin ? ' <span class="pill">Super admin</span>' : ctx.t.isSchoolAdmin ? ' <span class="pill">Admin sekolah</span>' : ''}${ctx.t.schoolName ? ` <span class="muted small">· ${esc(ctx.t.schoolName)}</span>` : ''}</div>
+          <div class="dh-text"><div class="dh-who">${esc(ctx.t.name)}${canResearch(ctx) ? ' <span class="pill">Super admin</span>' : ctx.t.isAdmin || ctx.t.isSchoolAdmin ? ' <span class="pill">Admin sekolah</span>' : ''}${ctx.t.schoolName ? ` <span class="muted small">· ${esc(ctx.t.schoolName)}</span>` : ''}</div>
             ${ctx.classes.length > 1 ? `<select class="dh-title" data-act="switchclass" aria-label="Pilih kelas">${ctx.classes.map((c) => `<option value="${c.id}" ${c.id === ctx.c.id ? 'selected' : ''}>${esc(c.name)}${(ctx.t.isAdmin || ctx.t.isSchoolAdmin) && c.teacherName ? ` · ${esc(c.teacherName)}` : ''}</option>`).join('')}</select>` : `<h1>${esc(ctx.c.name)}</h1>`}
             ${ctx.c.teacherName && ctx.c.teacherId !== ctx.t.id ? `<div class="dh-meta">Guru kelas: ${esc(ctx.c.teacherName)}</div>` : ''}</div>
           <a class="dh-gear ${tab === 'kelola' ? 'on' : ''}" href="#/guru/kelola" aria-label="Pengaturan kelas">⚙️<small>Kelas</small></a>
           <button class="dh-code" data-act="shareclass" aria-label="Bagikan kode kelas"><small>Kode kelas</small><b>${ctx.c.code}</b><small>📤 bagikan</small></button></div>
       </section>
-      <div class="tabbar"><nav class="tabs tmain">${TAB_GROUPS.map(([id, label, pages]) => `<a href="#/guru/${pages[0][0]}" class="${grp && grp[0] === id ? 'on' : ''}">${label}</a>`).join('')}${admin.length ? `<span class="tsep" aria-hidden="true"></span>${admin.map(([k, l]) => `<a href="#/guru/${k}" class="adm ${k === tab ? 'on' : ''}">${l}${k === 'tanpa' ? '<span class="tcount" data-ungc hidden></span>' : ''}</a>`).join('')}` : ''}</nav></div>
+      <div class="tabbar"><nav class="tabs tmain">${TAB_GROUPS.map(([id, label, pages]) => `<a href="#/guru/${pages[0][0]}" class="${grp && grp[0] === id ? 'on' : ''}">${label}</a>`).join('')}${admin.length ? `<span class="tsep" aria-hidden="true"></span>${admin.map(([k, l]) => `<a href="#/guru/${k}" class="adm ${k === tab || (k === 'analitik' && grp && grp[0] === 'riset') ? 'on' : ''}">${l}${k === 'tanpa' ? '<span class="tcount" data-ungc hidden></span>' : ''}</a>`).join('')}` : ''}</nav></div>
       ${grp && grp[2].length > 1 ? `<nav class="tsub" aria-label="Bagian ${grp[1]}">${grp[2].map(([k, l]) => `<a href="#/guru/${k}" class="${k === tab ? 'on' : ''}">${l}</a>`).join('')}</nav>` : ''}
-      ${session.get().demo && tab === 'ringkasan' ? realTeacherCard() : ''}
-      ${inner}`, { cls: 'wide', right: topRight() });
+      ${inner}
+      ${session.get().demo && tab === 'ringkasan' ? realTeacherCard() : ''}`, { cls: 'wide', right: topRight() });
     loadUngCount(ctx);
   }
 
   function emptyKids(ctx) {
     return `<section class="card center"><div class="bigemoji">🧑‍🤝‍🧑</div><h2>Belum ada siswa di kelas ini</h2><p class="muted">Halaman ini terisi setelah ada siswa yang belajar.</p><a class="btn" href="#/guru/siswa">➕ Tambah siswa</a></section>`;
   }
-  // Satu baris "yang perlu dilakukan": ikon, kalimat, keterangan, satu tombol
-  const todoRow = (ic, text, sub, btn, tone) => `<div class="todo ${tone || ''}"><span class="tic">${ic}</span><span class="grow"><b>${text}</b>${sub ? `<small>${sub}</small>` : ''}</span>${btn || ''}</div>`;
-  // Tiga cara menambah siswa, dari yang paling sering: anak yang sudah belajar sendiri (mayoritas) memakai kode belajarnya
+  // Menambah siswa: cara yang paling sering terlihat lebih dulu, cara lain tidak mengganggu
   function addKidsHTML(ctx, open) {
-    return `<details class="card addkids" id="addkids" ${open ? 'open' : ''}><summary><b>➕ Tambah siswa</b><small>Pilih salah satu dari 3 cara</small></summary>
-      <div class="addways">
-        <section class="way"><span class="wn">1</span><h3>Anak sudah belajar di Metiq?</h3><p>Minta <b>kode belajar</b> (6 huruf) dari anak atau orang tuanya. Kodenya ada di halaman <b>Aku</b> di HP anak. Riwayat belajarnya ikut masuk.</p>
-          <form data-form="addbycode" class="form inline"><input name="code" maxlength="6" placeholder="Kode belajar" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Kode belajar anak" required><button class="btn">Tambahkan</button></form></section>
-        <section class="way"><span class="wn">2</span><h3>Anak belum punya akun?</h3><p>Ketik namanya. Untuk banyak anak, pisahkan dengan koma.</p>
-          <form data-form="addkid" class="form inline"><input name="name" placeholder="mis. Aisyah, Umar" aria-label="Nama siswa" required><button class="btn">Tambah</button></form></section>
-        <section class="way"><span class="wn">3</span><h3>Biar anak bergabung sendiri</h3><p>Kirim kode kelas <b class="code">${ctx.c.code}</b> ke grup WhatsApp. Anak membuka Metiq → <b>Aku → Pengaturan → Metiq untuk Sekolah → Gabung kelas</b>.</p>
-          <button class="btn sm" data-act="shareclass">📤 Kirim kode kelas</button></section>
-      </div></details>`;
+    return `<details class="card addkids" id="addkids" ${open ? 'open' : ''}><summary><b>➕ Tambah siswa</b></summary>
+      <form data-form="addkid" class="form addname"><label>Ketik nama siswa. Untuk banyak siswa, pisahkan dengan koma.<textarea name="name" rows="2" placeholder="mis. Aisyah, Umar, Fatimah" required></textarea></label><button class="btn">Simpan nama</button></form>
+      <div class="addnext"><span class="grow"><b>Lalu kirim kode kelas ke siswa</b><small>Siswa membuka Metiq, ketuk Saya Siswa, masukkan kode <b class="code">${ctx.c.code}</b>, lalu pilih namanya.</small></span><button class="btn ghost sm" data-act="shareclass">📤 Kirim kode</button></div>
+      <details class="addalt"><summary>Siswa sudah punya akun Metiq sendiri?</summary><p class="small muted">Minta <b>kode belajar</b> (6 huruf) dari halaman Aku di HP anak. Riwayat belajarnya ikut masuk.</p>
+        <form data-form="addbycode" class="form inline"><input name="code" maxlength="6" placeholder="Kode belajar" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Kode belajar anak" required><button class="btn ghost">Tambahkan</button></form></details>
+    </details>`;
   }
-  // Daftar siswa: status jelas dalam kata-kata, kode orang tua bisa langsung dikirim
+  // Keadaan satu siswa dalam kata sehari-hari. Dipakai di Hari ini, Siswa, dan halaman siswa.
+  const KID_ST = { bantu: ['🆘', 'Perlu dibantu', 'r'], baru: ['📱', 'Belum mulai', 'y'], diam: ['😴', 'Tidak berlatih 7 hari', 'y'], baik: ['✅', 'Baik', 'g'] };
+  function kidState(k) {
+    const w = stats(k.id, 7), all = stats(k.id), weak = weaknesses(k.id), tried = skillRows(k.id).length;
+    const behind = weak.length >= 2 && weak.length >= tried / 4;
+    const st = !all.answered ? 'baru' : !w.answered ? 'diam' : (w.answered >= 10 && w.acc < 65) || behind ? 'bantu' : 'baik';
+    const why = st === 'baru' ? 'Belum pernah masuk ke Metiq' : st === 'diam' ? `Terakhir berlatih ${ago(all.last)}` : st === 'bantu' ? (weak[0] ? `Masih sulit: ${weak[0].skill.name}` : `Baru ${w.acc}% jawaban benar minggu ini`) : `${w.answered} soal minggu ini, ${w.acc}% benar`;
+    return { k, w, all, weak, st, why };
+  }
+  const parentLinked = (k) => (k.parents || []).length > 0 || S.viewsOf(k.id).length > 0;
+  const taskOpen = (sid, skill) => S.assignmentsFor(sid).some((a) => a.skills.includes(skill) && !S.isDone(a.id, sid));
+  const nameList = (list) => list.slice(0, 3).map((x) => esc((x.k || x).name)).join(', ') + (list.length > 3 ? `, dan ${list.length - 3} lainnya` : '');
+  const giveBtn = (sid, skill, label) => (taskOpen(sid, skill) ? '<span class="pill okp">Sudah diberi</span>' : `<button class="btn sm" data-act="assignkid" data-id="${skill}" data-s="${sid}">${label || 'Beri latihan'}</button>`);
+  // Daftar siswa: dikelompokkan menurut keadaan, yang perlu perhatian di atas
   function rosterHTML(ctx) {
-    const rows = ctx.kids.map((k) => ({ k, s: stats(k.id), w: stats(k.id, 7) })).map((r) => Object.assign(r, { need: (r.w.answered >= 10 && r.w.acc < 65) || (r.s.answered > 0 && r.w.answered === 0) || r.s.answered === 0 }))
-      .sort((a, b) => b.need - a.need || a.k.name.localeCompare(b.k.name));
-    const status = (r) => (r.s.answered === 0 ? '<span class="st0">Belum mulai</span>' : r.w.answered === 0 ? '<span class="st1">Tidak aktif 7 hari</span>' : r.w.answered >= 10 && r.w.acc < 65 ? '<span class="st1">Perlu bantuan</span>' : '<span class="st2">Aktif</span>');
-    return `<section class="card"><div class="rhead"><h2>Daftar siswa <span class="pill">${ctx.kids.length}</span></h2><span class="grow"></span><button class="btn ghost sm" data-act="print">🖨️ Cetak kartu kode</button></div>
-      <p class="small muted">Yang perlu perhatian ada di atas. Ketuk nama untuk melihat laporan dan memberi tugas khusus.</p>
-      <div class="tscroll"><table class="tbl roster"><thead><tr><th>Siswa</th><th>Keadaan</th><th>Soal (7 hari)</th><th>Ketepatan</th><th>Mahir</th><th>Kode orang tua</th><th></th></tr></thead><tbody>
-      ${rows.map((r) => `<tr data-href="#/guru/siswa/${r.k.id}"><td><span class="av sm">${avHTML(r.k.avatar)}</span> <a href="#/guru/siswa/${r.k.id}">${esc(r.k.name)}</a></td><td>${status(r)}</td><td>${r.w.answered}</td><td><span class="accb ${r.w.acc >= 80 ? 'g' : r.w.acc >= 60 ? 'y' : 'r'}">${r.w.answered ? r.w.acc + '%' : '–'}</span></td><td>${r.s.proficient}</td>
-        <td class="nowrap"><b class="code">${r.k.parentCode || '–'}</b> <button class="link small" data-act="shareparent" data-id="${r.k.id}" aria-label="Kirim kode orang tua ${esc(r.k.name)}">📤</button>${(r.k.parents || []).length || S.viewsOf(r.k.id).length ? ' <span title="Orang tua sudah terhubung">✅</span>' : ''}</td>
-        <td class="r"><button class="link small danger" data-act="rmkid" data-id="${r.k.id}" aria-label="Keluarkan ${esc(r.k.name)}">Keluarkan</button></td></tr>`).join('')}
-      </tbody></table></div></section>
+    const rows = ctx.kids.map(kidState);
+    const card = (r) => `<div class="kcard ${KID_ST[r.st][2]}" data-href="#/guru/siswa/${r.k.id}"><span class="av">${avHTML(r.k.avatar)}</span><span class="grow"><a href="#/guru/siswa/${r.k.id}"><b>${esc(r.k.name)}</b></a><small>${r.why}</small></span>${parentLinked(r.k) ? '' : `<button class="link small kpar" data-act="shareparent" data-id="${r.k.id}" aria-label="Kirim kode orang tua ${esc(r.k.name)}">📤 Orang tua</button>`}<span class="kgo" aria-hidden="true">›</span></div>`;
+    const group = (st) => { const l = rows.filter((r) => r.st === st).sort((a, b) => a.k.name.localeCompare(b.k.name, 'id')); return l.length ? `<h3 class="kgh">${KID_ST[st][0]} ${KID_ST[st][1]} <span class="pill">${l.length}</span></h3><div class="kgrid">${l.map(card).join('')}</div>` : ''; };
+    return `<section class="card"><div class="rhead"><h2>Siswa <span class="pill">${ctx.kids.length}</span></h2><span class="grow"></span><button class="btn ghost sm" data-act="print">🖨️ Cetak kartu kode</button></div>
+      <p class="small muted">Ketuk nama untuk melihat kemajuannya. 📤 Orang tua = kode untuk orang tua belum dikirim.</p>
+      ${group('bantu')}${group('baru')}${group('diam')}${group('baik')}</section>
       <div class="printcards">${ctx.kids.map((k) => `<div class="pcard"><div class="av">${avHTML(k.avatar)}</div><b>${esc(k.name)}</b><div>Kode kelas: <b>${ctx.c.code}</b></div><div>Kode orang tua: <b>${k.parentCode}</b></div><small>metiq · ${esc(ctx.c.name)}</small></div>`).join('')}</div>`;
   }
-  // "Hari ini": daftar hal yang perlu dilakukan guru, urut dari yang paling penting; satu tombol per baris
+  // Satu baris "yang perlu dilakukan": ikon, kalimat, keterangan, satu tombol
+  const todoRow = (ic, text, sub, btn, tone) => `<div class="todo ${tone || ''}"><span class="tic">${ic}</span><span class="grow"><b>${text}</b>${sub ? `<small>${sub}</small>` : ''}</span>${btn || ''}</div>`;
+  // "Hari ini": satu kalimat keadaan kelas, paling banyak tiga hal untuk dikerjakan, lalu siapa dan apa yang perlu dibantu
   function todayHTML(ctx) {
-    const kids = ctx.kids, rows = [];
-    if (ctx.t.isAdmin && cloudOn() && !session.get().demo) rows.push('<div id="todo-ung"></div>');
+    const kids = ctx.kids, h = new Date().getHours(), hello = h < 11 ? 'Selamat pagi' : h < 15 ? 'Selamat siang' : h < 18 ? 'Selamat sore' : 'Selamat malam';
+    const ung = ctx.t.isAdmin && cloudOn() && !session.get().demo ? '<div id="todo-ung"></div>' : '';
     if (!kids.length) {
-      rows.push(todoRow('🧒', 'Kelas ini belum punya siswa', 'Tambahkan dengan kode belajar anak, nama, atau minta anak bergabung sendiri.', '<a class="btn sm" href="#/guru/siswa">Tambah siswa</a>', 'warn'));
-      return `<section class="card todos"><h2>Yang perlu dilakukan</h2>${rows.join('')}</section>${addKidsHTML(ctx, true)}`;
+      return `${ung}<section class="card thero"><small>${hello}, ${esc(ctx.t.name)}</small><h1>Mulai dalam 3 langkah</h1>
+        <ol class="steps3"><li class="on"><b>Masukkan nama siswa</b><small>Di kotak di bawah ini.</small></li><li><b>Kirim kode kelas ke siswa</b><small>Lewat grup WhatsApp, cukup satu tombol.</small></li><li><b>Pilih tugas pertama</b><small>Metiq menyiapkan sarannya.</small></li></ol></section>${addKidsHTML(ctx, true)}`;
     }
-    const ids = new Set(kids.map((k) => k.id));
-    const fresh = S.db.done.filter((d) => ids.has(d.sid) && d.at > Date.now() - 3 * DAY);
-    const week = kids.map((k) => ({ k, w: stats(k.id, 7), all: stats(k.id) }));
-    const never = week.filter((x) => x.all.answered === 0), idle = week.filter((x) => x.all.answered > 0 && x.w.answered === 0), weak = week.filter((x) => x.w.answered >= 10 && x.w.acc < 65);
+    const st = kids.map(kidState), by = (x) => st.filter((s) => s.st === x);
+    const help = by('bantu'), never = by('baru'), idle = by('diam'), active = st.filter((s) => s.w.answered > 0);
+    const ids = new Set(kids.map((k) => k.id)), seen = getSeen();
+    const fresh = S.db.done.filter((d) => ids.has(d.sid) && d.at > Math.max(seen, Date.now() - 3 * DAY));
     const asgWeek = S.assignmentsOf(ctx.c.id).filter((a) => (a.createdAt || 0) > Date.now() - 7 * DAY);
-    const noParent = kids.filter((k) => !(k.parents || []).length && !S.viewsOf(k.id).length);
-    const names = (list) => list.slice(0, 3).map((x) => esc((x.k || x).name)).join(', ') + (list.length > 3 ? `, dan ${list.length - 3} lainnya` : '');
-    if (fresh.length) rows.push(todoRow('📥', `${fresh.length} tugas baru dikumpulkan`, 'Lihat hasilnya dan beri tanggapan.', '<a class="btn sm" href="#/notifikasi">Lihat</a>', 'good'));
-    if (weak.length) rows.push(todoRow('🆘', `${weak.length} siswa perlu bantuan`, `Ketepatan di bawah 65% minggu ini: ${names(weak)}.`, '<a class="btn sm" href="#/guru/siswa">Lihat siswa</a>', 'warn'));
-    if (never.length) rows.push(todoRow('📱', `${never.length} siswa belum pernah masuk`, names(never), '<button class="btn sm" data-act="shareclass">Kirim kode kelas</button>'));
-    if (idle.length) rows.push(todoRow('😴', `${idle.length} siswa tidak berlatih 7 hari`, names(idle), '<a class="btn sm ghost" href="#/guru/siswa">Lihat siswa</a>'));
-    if (!asgWeek.length) rows.push(todoRow('📌', 'Belum ada tugas minggu ini', 'Pilih keterampilan, Metiq menyarankan sesuai level setiap kelompok.', '<button class="btn sm" data-act="gotoform">Beri tugas</button>'));
-    if (noParent.length) rows.push(todoRow('👨‍👩‍👧', `${noParent.length} orang tua belum terhubung`, 'Kirim kode orang tua lewat tombol 📤 di daftar siswa.', '<a class="btn sm ghost" href="#/guru/siswa">Kirim kode</a>'));
-    if (rows.length <= 1) rows.push(todoRow('✅', 'Semua beres hari ini', 'Tidak ada yang mendesak. Lihat Laporan untuk detail kelas.', '<a class="btn sm ghost" href="#/guru/analitik">Laporan</a>', 'good'));
-    return `<section class="card todos"><h2>Yang perlu dilakukan</h2>${rows.join('')}</section>`;
+    const noParent = kids.filter((k) => !parentLinked(k));
+    const pA = pct(active.length, kids.length), mood = pA >= 75 ? 'Kelas berjalan baik.' : pA >= 40 ? 'Sebagian siswa perlu diajak berlatih.' : 'Banyak siswa belum berlatih minggu ini.';
+    const todo = [];
+    if (fresh.length) todo.push(todoRow('📥', `${fresh.length} tugas baru selesai`, 'Lihat siapa saja yang sudah mengerjakan.', '<a class="btn sm" href="#/notifikasi">Lihat</a>', 'good'));
+    if (never.length) todo.push(todoRow('📱', `${never.length} siswa belum pernah masuk`, nameList(never), '<button class="btn sm" data-act="shareclass">Kirim kode kelas</button>'));
+    if (!asgWeek.length) todo.push(todoRow('📌', 'Belum ada tugas minggu ini', 'Metiq sudah menyiapkan saran yang tinggal dikirim.', '<a class="btn sm" href="#/guru/tugas">Pilih tugas</a>'));
+    if (idle.length) todo.push(todoRow('😴', `${idle.length} siswa tidak berlatih 7 hari`, nameList(idle), '<button class="btn sm" data-act="remind">Ingatkan</button>'));
+    if (noParent.length) todo.push(todoRow('👨‍👩‍👧', `${noParent.length} orang tua belum terhubung`, 'Kirim kodenya supaya orang tua bisa melihat laporan.', '<a class="btn sm" href="#/guru/siswa">Kirim kode</a>'));
+    const hardMap = {};
+    st.forEach((s) => s.weak.forEach((w) => { (hardMap[w.id] = hardMap[w.id] || []).push(s.k); }));
+    const hard = Object.entries(hardMap).filter(([, l]) => l.length >= 2).sort((a, b) => b[1].length - a[1].length)[0];
+    const stars3Row = st.filter((s) => s.w.correct > 0).sort((a, b) => b.w.correct - a.w.correct).slice(0, 3);
+    const helpRow = (s) => `<div class="lrow"><span class="av sm">${avHTML(s.k.avatar)}</span><span class="grow"><a href="#/guru/siswa/${s.k.id}"><b>${esc(s.k.name)}</b></a><small>${s.why}</small></span>${s.weak[0] ? giveBtn(s.k.id, s.weak[0].id) : ''}</div>`;
+    return `<section class="card thero"><small>${hello}, ${esc(ctx.t.name)}</small>
+        <h1><b>${active.length} dari ${kids.length}</b> siswa berlatih minggu ini</h1><div class="tbar"><i style="width:${pA}%"></i></div><p>${mood}</p></section>
+      <section class="card todos"><h2>Yang perlu dilakukan</h2>${ung}${todo.slice(0, 3).join('') || todoRow('✅', 'Semua beres hari ini', 'Tidak ada yang mendesak.', '', 'good')}</section>
+      <div class="grid2">
+        ${help.length ? `<section class="card"><h2>🆘 Siswa yang perlu dibantu</h2>${help.slice(0, 4).map(helpRow).join('')}${help.length > 4 ? `<p class="small"><a href="#/guru/siswa">Lihat ${help.length - 4} siswa lainnya</a></p>` : ''}</section>` : ''}
+        ${hard ? `<section class="card"><h2>📖 Layak diulang bersama</h2><p><b>${SKILLS[hard[0]].name}</b></p><p class="small muted">${hard[1].length} dari ${kids.length} siswa masih kesulitan: ${nameList(hard[1])}.</p>
+          <div class="row-btn left">${LESSONS[SKILLS[hard[0]].unit] ? `<a class="btn sm ghost" href="#/pelajaran/${SKILLS[hard[0]].unit}">Buka pelajaran</a>` : ''}<button class="btn sm" data-act="assign1" data-id="${hard[0]}">Tugaskan ke kelas</button></div></section>` : ''}
+        ${stars3Row.length ? `<section class="card"><h2>⭐ Bintang minggu ini</h2><p class="small muted">Sebut namanya di kelas. Pujian kecil sangat berarti.</p>${stars3Row.map((s, i) => `<div class="lrow"><span class="medal">${['🥇', '🥈', '🥉'][i]}</span><span class="grow"><a href="#/guru/siswa/${s.k.id}"><b>${esc(s.k.name)}</b></a><small>${s.w.correct} jawaban benar</small></span></div>`).join('')}</section>` : ''}
+      </div>`;
   }
 
   function classSkillAgg(kids) {
@@ -1293,39 +1315,23 @@
   function viewTeacher(tab, arg) {
     const ctx = teacherCtx(); if (!ctx) return go('#/guru/masuk');
     const { kids } = ctx;
+    if (RESEARCH_TABS.has(tab) && !canResearch(ctx)) return go('#/guru/ringkasan');
+    if (tab === 'riset') { const sub = RESEARCH_SCHOOL.some(([k]) => k === arg) ? arg : 'data'; teacherShell(ctx, 'riset/' + sub, schoolHTML(ctx, sub, true)); if (sub === 'coba') loadTrialStats(); return; }
     if (tab === 'siswa' && arg) return viewTeacherStudent(ctx, arg);
     if (tab === 'kelola') return teacherShell(ctx, tab, manageHTML(ctx));
     if (tab === 'referensi') return teacherShell(ctx, tab, referenceHTML());
     if (tab === 'tanpa') { if (!ctx.t.isAdmin || !cloudOn() || session.get().demo) return go('#/guru/ringkasan'); teacherShell(ctx, tab, `<div id="ung-box">${loadingHTML}</div>`); if (arg) loadStudentReport(ctx, arg); else loadUngrouped(ctx); return; }
     if (tab === 'peringkat') return teacherShell(ctx, tab, rankingHTML(ctx));
-    if (tab === 'sekolah') { if (!ctx.t.isAdmin && !ctx.t.isSchoolAdmin) return go('#/guru/ringkasan'); teacherShell(ctx, tab, schoolHTML(ctx, arg)); if (arg === 'coba') loadTrialStats(); if (arg === 'kelolaguru') loadSchoolTeachers(); return; }
+    if (tab === 'sekolah') { if (!ctx.t.isAdmin && !ctx.t.isSchoolAdmin) return go('#/guru/ringkasan'); teacherShell(ctx, tab, schoolHTML(ctx, arg)); if (arg === 'kelolaguru') loadSchoolTeachers(); return; }
     if (tab === 'super') { if (!ctx.t.isAdmin || session.get().demo) return go('#/guru/ringkasan'); teacherShell(ctx, tab, `<div id="super-box">${loadingHTML}</div>`); loadSuper(ctx, arg); return; }
     if (tab === 'tugas') return teacherShell(ctx, tab, tasksHTML(ctx));
     if (tab === 'siswa') return teacherShell(ctx, tab, addKidsHTML(ctx, !kids.length) + (kids.length ? rosterHTML(ctx) : ''));
-    if (tab === 'ringkasan' && !kids.length) return teacherShell(ctx, tab, todayHTML(ctx));
+    if (tab === 'ringkasan') return teacherShell(ctx, tab, todayHTML(ctx));
     if (!kids.length) return teacherShell(ctx, tab, emptyKids(ctx));
     if (tab === 'kelompok') return teacherShell(ctx, tab, groupsHTML(ctx));
     if (tab === 'analitik') return teacherShell(ctx, tab, analyticsHTML(ctx, arg));
     if (tab === 'semua') return teacherShell(ctx, tab, allProgressHTML(ctx));
 
-    if (tab === 'ringkasan') {
-      const all = kids.map((k) => ({ k, s: stats(k.id, 7), all: stats(k.id) }));
-      const answered = all.reduce((a, x) => a + x.s.answered, 0), correct = all.reduce((a, x) => a + x.s.correct, 0);
-      const active = all.filter((x) => x.s.answered > 0).length;
-      const attention = all.filter((x) => (x.s.answered >= 10 && x.s.acc < 65) || x.s.answered === 0);
-      const agg = classSkillAgg(kids);
-      const hard = Object.entries(agg).filter(([, a]) => a.att >= 15).map(([id, a]) => ({ id, acc: pct(a.ok, a.att), n: a.n })).sort((a, b) => a.acc - b.acc).slice(0, 5);
-      const tags = tagCounts(kids.flatMap((k) => S.answersOf(k.id).filter((a) => a.ts > Date.now() - 14 * DAY))).filter(([t]) => t !== 'konsep').slice(0, 4);
-      const stars = all.slice().sort((a, b) => b.s.correct - a.s.correct).slice(0, 3).filter((x) => x.s.correct > 0);
-      return teacherShell(ctx, tab, `${todayHTML(ctx)}
-        <div class="kpis"><div class="kpi"><small>Siswa aktif (7 hari)</small><b>${active}<span>/${kids.length}</span></b></div><div class="kpi"><small>Soal dijawab (7 hari)</small><b>${answered}</b></div><div class="kpi"><small>Ketepatan (7 hari)</small><b>${pct(correct, answered)}%</b></div><div class="kpi"><small>Keterampilan tuntas</small><b>${all.reduce((a, x) => a + x.all.mastered, 0)}</b></div></div>
-        <details class="card insights"><summary><b>🔎 Wawasan kelas</b><small>Keterampilan tersulit, pola kesalahan, dan siswa paling rajin</small></summary><div class="grid2">
-          <section class="card"><h2>⚠️ Perlu perhatian</h2>${attention.length ? attention.map((x) => `<a class="lrow" href="#/guru/siswa/${x.k.id}"><span class="av sm">${avHTML(x.k.avatar)}</span><span class="grow"><b>${esc(x.k.name)}</b><small>${x.s.answered === 0 ? `Tidak berlatih 7 hari terakhir · terakhir ${ago(x.all.last)}` : `Ketepatan ${x.s.acc}% dari ${x.s.answered} soal`}</small></span>→</a>`).join('') : '<p class="muted">Semua siswa aktif dan ketepatannya baik. 👍</p>'}</section>
-          <section class="card"><h2>🧗 Keterampilan tersulit di kelas</h2>${hard.length ? hard.map((h) => `<div class="lrow"><span class="grow"><b>${SKILLS[h.id].code} ${SKILLS[h.id].name}</b><small>Ketepatan ${h.acc}% · ${h.n} siswa mencoba</small></span><button class="btn sm ghost" data-act="assign1" data-id="${h.id}">Tugaskan</button></div>`).join('') : '<p class="muted">Belum cukup data.</p>'}</section>
-          <section class="card"><h2>🔍 Pola kesalahan kelas (14 hari)</h2>${tags.length ? tags.map(([t, n]) => `<div class="tagrow"><b>${TAGS[t].label}</b> <span class="pill">${n}×</span><p class="muted small">${TAGS[t].tip}</p></div>`).join('') : '<p class="muted">Belum ada pola kesalahan yang menonjol.</p>'}</section>
-          <section class="card"><h2>⭐ Paling rajin minggu ini</h2>${stars.length ? stars.map((x, i) => `<a class="lrow" href="#/guru/siswa/${x.k.id}"><span class="medal">${['🥇', '🥈', '🥉'][i]}</span><span class="av sm">${avHTML(x.k.avatar)}</span><span class="grow"><b>${esc(x.k.name)}</b><small>${x.s.correct} jawaban benar</small></span></a>`).join('') : '<p class="muted">Belum ada aktivitas minggu ini.</p>'}</section>
-        </div></details>`);
-    }
     if (tab === 'peta') {
       return teacherShell(ctx, tab, `${gradeTabs()}<section class="card"><p class="muted small">Rata-rata SmartScore per bab. Ketuk nama untuk detail.</p><div class="tscroll"><table class="tbl heat"><thead><tr><th>Siswa</th>${curUnits().map((u) => `<th title="${u.name}">${u.icon}<br>${u.id}</th>`).join('')}</tr></thead><tbody>
         ${kids.map((k) => `<tr><td><a href="#/guru/siswa/${k.id}">${avHTML(k.avatar)} ${esc(k.name)}</a></td>${curUnits().map((u) => { const us = unitScore(k.id, u); return `<td class="hc ${level(us.avg)[1]}" title="${u.name}: ${us.avg}">${us.avg || ''}</td>`; }).join('')}</tr>`).join('')}
@@ -1405,7 +1411,7 @@
       <section class="card ref"><h2>📈 SmartScore dan tingkat penguasaan</h2>
         <p>Seperti IXL, skor naik cepat di awal lalu makin pelan mendekati 100, dan turun jika jawaban salah. Siswa harus menjawab benar secara konsisten untuk tuntas.</p>
         <div class="legend">${levels.map(([l, c]) => `<span><i class="${c}"></i>${l}</span>`).join('')}</div>
-        <p class="small muted">Laporan orang tua memasukkan keterampilan ke "Perlu ditingkatkan" jika sudah dicoba minimal 4 soal dan skornya di bawah 60, atau ketepatannya di bawah 70%.</p></section>
+        <p class="small muted">Siswa dianggap perlu dibantu pada suatu keterampilan jika sudah mencoba minimal 4 soal dengan ketepatan di bawah 70%, atau sudah mencoba minimal 8 soal dan skornya masih di bawah 60.</p></section>
       <section class="card ref"><h2>🔍 Pola kesalahan yang dideteksi</h2>
         <p class="small muted">Setiap jawaban salah diperiksa untuk mencari polanya. Pola ini muncul di dasbor guru dan laporan orang tua, bersama saran latihan.</p>
         ${Object.entries(TAGS).filter(([k]) => k !== 'konsep').map(([, t]) => `<div class="tagrow"><b>${t.label}</b><p class="small">${t.tip}</p></div>`).join('')}
@@ -1485,7 +1491,7 @@
   // Paket Sekolah belum aktif: jelaskan apa yang didapat dan cara mengaktifkannya
   function schoolUpsellHTML(ctx) {
     return `<section class="card upsell"><h2>🏫 Paket Sekolah belum aktif</h2><p>${ctx.t.schoolName ? `<b>${esc(ctx.t.schoolName)}</b> belum berlangganan paket Sekolah${ctx.t.schoolPlanUntil ? ` (berakhir ${esc(String(ctx.t.schoolPlanUntil))})` : ''}.` : 'Sekolah Anda belum berlangganan paket Sekolah.'} Kelas Anda sendiri tetap bisa dipakai gratis seperti biasa.</p>
-      <ul><li>Dasbor dan laporan lintas kelas dan guru</li><li>Admin sekolah mengelola guru</li><li>Asesmen awal–akhir dan data penelitian</li><li>Pelatihan dan pendampingan</li></ul>
+      <ul><li>Dasbor dan laporan lintas kelas dan guru</li><li>Admin sekolah mengelola guru</li><li>Asesmen awal untuk menempatkan siswa sesuai levelnya</li><li>Pelatihan dan pendampingan</li></ul>
       <div class="row-btn left"><a class="btn" href="#/harga">Lihat paket dan minta penawaran</a></div></section>`;
   }
   // Admin sekolah: daftar guru di sekolahnya, tambah lewat email (guru mendaftar gratis dulu), lepas dari sekolah
@@ -1503,30 +1509,28 @@
       box.innerHTML = e.status === 404 ? emptyCard('Perlu menjalankan SQL 020', 'Jalankan supabase/020_paket_sekolah.sql di SQL Editor Supabase.') : emptyCard('Belum bisa dibuka', e.status ? esc(e.message) : 'Tidak bisa terhubung ke server');
     }
   }
-  function schoolHTML(ctxAll, sub) {
+  function schoolHTML(ctxAll, sub, research) {
     if (cloudOn() && !session.get().demo && !ctxAll.t.isAdmin && ctxAll.t.schoolActive === false) return schoolUpsellHTML(ctxAll);
     const list = schoolsOf(ctxAll), want = ss.get('schoolSel', ctxAll.t.schoolId || (list[0] || {}).id || ''), sel = list.find((x) => x.id === want) || list[0] || { id: '' };
     const ctx = Object.assign({}, ctxAll, { classes: ctxAll.classes.filter((c) => (c.schoolId || '') === sel.id) });
     const picker = list.length > 1 ? `<label class="schoolpick">Sekolah <select data-act="schoolsel">${list.map((x) => `<option value="${x.id}" ${x.id === sel.id ? 'selected' : ''}>${esc(x.name)}${x.kind === 'homeschool' ? ' (homeschool)' : ''}</option>`).join('')}</select></label>` : '';
-    return picker + schoolBody(ctx, sub);
+    return picker + schoolBody(ctx, sub, research);
   }
-  function schoolBody(ctx, sub) {
-    sub = ['kelas', 'grafik', 'materi', 'guru', 'kelolaguru', 'asesmen', 'ulasan', 'data', 'coba'].includes(sub) ? sub : 'kelas';
-    const g = getRange();
+  function schoolBody(ctx, sub, research) {
+    const subs = research ? RESEARCH_SCHOOL : [['kelas', '🏫 Kondisi kelas'], ['materi', '🧗 Materi sulit'], ['kelolaguru', '🧑‍🏫 Kelola guru']];
+    if (!subs.some(([k]) => k === sub)) sub = subs[0][0];
+    // Dasbor sekolah selalu 30 hari terakhir supaya tidak perlu memilih periode; pemilih tanggal hanya untuk riset
+    const g = research ? getRange() : { from: dayStart(Date.now()) - 29 * DAY, to: Date.now() };
     const all = ctx.classes.map((c) => classSummary(c, g)).sort((a, b) => b.status - a.status || b.pBehind - a.pBehind);
     const sum = (f) => all.reduce((t, s) => t + s[f], 0);
     const kidsN = sum('n'), answered = all.reduce((t, s) => t + s.answered, 0), correct = all.reduce((t, s) => t + Math.round(s.answered * s.acc / 100), 0);
     const teachers = [...new Set(all.map((s) => s.c.teacherId))];
-    const subs = [['kelas', '🏫 Per kelas'], ['grafik', '📊 Grafik'], ['materi', '🧗 Materi sulit'], ['guru', '👩‍🏫 Per guru'], ['kelolaguru', '🧑‍🏫 Kelola guru'], ['asesmen', '🧭 Asesmen awal–akhir'], ['ulasan', '⭐ Ulasan'], ['data', '📥 Data penelitian'], ['coba', '🧪 Mode coba']];
     let body;
     if (sub === 'kelolaguru') body = `<div id="sg-box">${loadingHTML}</div>`;
     else if (sub === 'kelas') {
-      body = `<section class="card"><h2>Kondisi tiap kelas</h2><p class="muted small">Diurutkan dari yang paling perlu perhatian. "Belum paham" = siswa yang minimal seperempat keterampilan yang sudah dicobanya masih lemah (skor di bawah 80 dengan banyak jawaban salah).</p>
-        <div class="tscroll"><table class="tbl"><thead><tr><th>Kelas</th><th>Guru</th><th>Status</th><th>Siswa</th><th>Aktif</th><th>Soal/siswa</th><th>Ketepatan</th><th>Belum paham</th><th>Tugas selesai</th><th>Ortu buka laporan</th><th>Ulasan</th></tr></thead><tbody>
-        ${all.map((s) => `<tr data-act="openclass" data-id="${s.c.id}"><td><b>${esc(s.c.name)}</b>${s.grade ? `<small class="muted"> · materi kelas ${s.grade}</small>` : ''}</td><td>${esc(s.c.teacherName || '')}</td><td>${statusPill(s.status)}</td><td>${s.n}</td><td>${s.active}/${s.n}</td><td>${s.perKid}</td><td>${accPill(s)}</td><td><span class="accb ${s.pBehind >= 50 ? 'r' : s.pBehind >= 25 ? 'y' : 'g'}">${s.behind}/${s.n}</span></td><td>${s.pDone === null ? '<span class="muted">–</span>' : s.pDone + '%'}</td><td>${s.viewed}/${s.n}</td><td>${s.fb.length ? `⭐ ${fbAvg(s.fb)} <small class="muted">(${s.fb.length})</small>` : '–'}</td></tr>`).join('')}
-        </tbody></table></div><p class="muted small">Ketuk baris kelas untuk membuka dasbor kelas itu.</p></section>
-        ${all.filter((s) => s.status >= 2).map((s) => `<section class="card cwarn ${STATUS[s.status][2]}"><div class="lrow"><span class="grow"><b>${STATUS[s.status][0]} ${esc(s.c.name)}</b> · ${esc(s.c.teacherName || '')}<small>${statusWhy(s)}</small></span>${openBtn(s.c)}</div>
-          ${s.hard.some((h) => h.kids.length >= 2) ? `<p class="small"><b>Materi yang belum dipahami banyak siswa:</b> ${s.hard.filter((h) => h.kids.length >= 2).slice(0, 3).map((h) => `${SKILLS[h.id].code} ${SKILLS[h.id].name} (${h.kids.length} siswa)`).join(' · ')}</p>` : ''}</section>`).join('')}`;
+      const line = (s) => (s.n ? `${s.active} dari ${s.n} siswa berlatih${s.answered ? `, ${s.acc}% benar` : ''}${s.behind ? `, ${s.behind} perlu dibantu` : ''}` : 'Belum ada siswa');
+      body = `<section class="card"><h2>Kondisi tiap kelas</h2><p class="muted small">30 hari terakhir. Yang paling perlu perhatian ada di atas. Ketuk kelas untuk membukanya.</p>
+        ${all.map((s) => `<div class="sclass ${STATUS[s.status][2]}" data-act="openclass" data-id="${s.c.id}" role="button" tabindex="0"><span class="grow"><b>${esc(s.c.name)}</b><small>${esc(s.c.teacherName || '')}</small><span class="sline">${line(s)}</span></span>${statusPill(s.status)}</div>`).join('') || '<p class="muted">Belum ada kelas.</p>'}</section>`;
     } else if (sub === 'materi') {
       // Gabungan seluruh sekolah per bab, lalu rincian per kelas
       const units = {};
@@ -1565,9 +1569,9 @@
           <li><b>Tugas selesai</b>: rata-rata persentase siswa yang menyelesaikan tugas.</li>
           <li>Siswa yang banyak "belum paham" tapi tanpa tugas khusus bisa menjadi bahan diskusi dengan gurunya.</li></ul></section>`;
     }
-    return `<div class="kpis"><div class="kpi"><small>Kelas · guru</small><b>${all.length}<span> · ${teachers.length}</span></b></div><div class="kpi"><small>Siswa aktif</small><b>${sum('active')}<span>/${kidsN}</span></b></div><div class="kpi"><small>Ketepatan sekolah</small><b>${pct(correct, answered)}%</b></div><div class="kpi"><small>Kelas perlu perhatian</small><b>${all.filter((s) => s.status === 3).length}<span> · ${all.filter((s) => s.status === 2).length}🟡</span></b></div></div>
-      ${rangeBar()}
-      <nav class="subtabs">${subs.map(([k, l]) => `<a href="#/guru/sekolah/${k}" class="${k === sub ? 'on' : ''}">${l}</a>`).join('')}</nav>
+    return `<div class="kpis"><div class="kpi"><small>Kelas · guru</small><b>${all.length}<span> · ${teachers.length}</span></b></div><div class="kpi"><small>Siswa berlatih</small><b>${sum('active')}<span>/${kidsN}</span></b></div><div class="kpi"><small>Jawaban benar</small><b>${pct(correct, answered)}%</b></div><div class="kpi"><small>Kelas perlu perhatian</small><b>${all.filter((s) => s.status === 3).length}</b></div></div>
+      ${research ? rangeBar() : ''}
+      ${research ? '' : `<nav class="subtabs">${subs.map(([k, l]) => `<a href="#/guru/sekolah/${k}" class="${k === sub ? 'on' : ''}">${l}</a>`).join('')}</nav>`}
       ${body}`;
   }
 
@@ -1609,12 +1613,12 @@
 
   /* ---------- Halaman siswa (guru): NISN, keterlibatan orang tua, laporan ke BBO Digital ---------- */
   const BBO_LABEL = { diterima: '✅ Diterima BBO', dikirim: '⏳ Sedang dikirim', gagal: '⚠️ Gagal terkirim', tanpa_nisn: 'Tidak dikirim (belum ada NISN)' };
-  function studentDataHTML(k) {
+  function studentDataHTML(k, research) {
     const v = S.viewsOf(k.id).slice().sort((a, b) => a.at - b.at), v30 = v.filter((x) => x.at > Date.now() - 30 * DAY).length;
     const done = S.assignmentsFor(k.id).map((a) => ({ a, d: S.db.done.find((x) => x.aid === a.id && x.sid === k.id) })).filter((x) => x.d).sort((a, b) => b.d.at - a.d.at);
     return `<section class="card"><h2>🪪 Data siswa</h2>
       <form class="form nisnform" data-form="nisn" data-s="${k.id}"><label>NISN <small class="muted">(10 angka, untuk mengirim laporan tugas ke BBO Digital)</small><input name="nisn" inputmode="numeric" maxlength="10" pattern="[0-9]{10}" value="${esc(k.nisn || '')}" placeholder="mis. 0123456789"></label><button class="btn sm">Simpan NISN</button></form>
-      <p class="small">👪 Orang tua membuka laporan <b>${v30}×</b> dalam 30 hari terakhir${v.length ? ` · terakhir ${ago(v[v.length - 1].at)}` : ' · belum pernah'}.</p>
+      ${research ? `<p class="small">👪 Orang tua membuka laporan <b>${v30}×</b> dalam 30 hari terakhir${v.length ? ` · terakhir ${ago(v[v.length - 1].at)}` : ' · belum pernah'}.</p>` : ''}
       ${done.length ? `<h3 class="sub">Tugas selesai dan laporan ke BBO Digital</h3>${done.map(({ a, d }) => `<div class="lrow"><span class="grow"><b>${esc(a.note || 'Tugas')}</b><small>${ftime(d.at)} · ${d.by === 'ortu' ? 'dilaporkan orang tua' : 'diselesaikan siswa'}</small></span><small class="muted">${d.bbo ? BBO_LABEL[d.bbo] || d.bbo : cloudOn() ? 'Belum tercatat' : 'Mode contoh'}</small></div>`).join('')}` : ''}
     </section>`;
   }
@@ -1640,7 +1644,7 @@
   const dec = (x) => String(Math.round(x * 10) / 10).replace('.', ',');
   const hhmm = (ts) => { const d = new Date(ts); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
   function exportResearch(type) {
-    const ctx = teacherCtx(); if (!ctx || !ctx.t.isAdmin) return;
+    const ctx = teacherCtx(); if (!ctx || !canResearch(ctx)) return;
     const g = getRange(), all = ctx.classes.map((c) => classSummary(c, g)), { classes, cc, tc, sc } = researchCodes(all);
     const kids = classes.flatMap((c) => S.studentsOf(c.id).map((k) => ({ k, c })));
     const tag = `${isoDay(g.from || Date.now())}_${isoDay(g.to)}`;
@@ -1717,6 +1721,7 @@
   const FAST = { '-2': 20000, '-1': 22000, 1: 8000, 2: 10000, 3: 12000, 4: 15000, 5: 18000, 6: 20000, 7: 25000, 8: 30000, 9: 35000, 10: 40000, 11: 40000, 12: 45000, 13: 50000 }, GUESS = 3000;
   let D = null;
   const diagKid = () => { const ses = session.get(); return ses.role === 'siswa' && S.student(ses.id); };
+  const isResearchNow = () => { const x = session.get(), t = x.role === 'guru' && S.teacher(x.id); return !!(t && t.isAdmin && !x.demo); };
   const isAdminNow = () => { const x = session.get(), t = x.role === 'guru' && S.teacher(x.id); return !!(t && (t.isAdmin || t.isSchoolAdmin)); };
   const DMODE = { a: { name: 'Asesmen awal', start: '#/asesmen', result: '#/asesmen/hasil' }, b: { name: 'Asesmen akhir', start: '#/asesmen/akhir', result: '#/asesmen/akhir/hasil' } };
   // Urutan level: TK A (−2), TK B (−1), Kelas 1–8, lalu Aljabar 1 (9), Geometri, Aljabar 2, Prakalkulus, Kalkulus (13).
@@ -1864,7 +1869,7 @@
   }
   // Ringkasan asesmen awal (dan akhir bila ada) untuk laporan guru, orang tua, dan siswa
   function diagSummaryHTML(k, audience) {
-    const dg = S.diagOf(k.id), post = S.diagOf(k.id, 'b'), pending = S.postPending(k.id), admin = audience === 'guru' && isAdminNow();
+    const dg = S.diagOf(k.id), post = S.diagOf(k.id, 'b'), pending = S.postPending(k.id), admin = audience === 'guru' && isResearchNow();
     if (!dg) return audience === 'guru' ? `<section class="card diag-sum"><h2>🧭 Asesmen awal</h2><p class="muted small">${esc(k.name)} belum mengerjakan asesmen awal. Asesmen muncul otomatis saat ${esc(k.name)} pertama kali masuk sebagai siswa.</p></section>` : '';
     const gaps = diagSkills(dg, false), good = diagSkills(dg, true), ag = ageGradeOf(dg), lag = lvGap(ag, dg.level), plag = post ? lvGap(ageGradeOf(post), post.level) : 0, pgain = post ? lvGap(post.level, dg.level) : 0;
     return `<section class="card diag-sum"><h2>🧭 Asesmen ${post || pending ? 'awal dan akhir' : 'awal'}</h2>
@@ -2191,8 +2196,8 @@
     return `<details class="card realcard"><summary><b>🚀 Siap dipakai dengan murid sungguhan?</b> <span class="muted small">Ketuk untuk langkahnya</span></summary>
       <p class="small">Mode coba hanya berisi kelas contoh di perangkat ini. Untuk murid dan orang tua sungguhan, daftar sebagai guru, <b>gratis</b> dan sekitar 2 menit:</p>
       <ol class="small"><li>Ketuk <b>Daftar guru gratis</b>, isi nama, email, kata sandi, dan nama kelas.</li>
-        <li>Tambahkan nama murid di <b>Kelola kelas</b>, lalu bagikan <b>kode kelas</b> (5 huruf) ke murid. Murid masuk lewat <i>Saya Siswa</i> dan memilih namanya.</li>
-        <li>Setiap murid punya <b>kode orang tua</b> (6 huruf/angka) di Kelola kelas. Bagikan ke wali murid agar mereka bisa melihat laporan dan notifikasi tugas.</li></ol>
+        <li>Tambahkan nama murid di tab <b>Siswa</b>, lalu bagikan <b>kode kelas</b> (5 huruf) ke murid. Murid masuk lewat <i>Saya Siswa</i> dan memilih namanya.</li>
+        <li>Setiap murid punya <b>kode orang tua</b> (6 huruf/angka) di halaman tiap murid. Bagikan ke wali murid agar mereka bisa melihat laporan dan notifikasi tugas.</li></ol>
       <p class="small muted">Semua data kelas sungguhan tersimpan di server dan terhubung antar perangkat. Data mode coba tidak ikut pindah.</p>
       <div class="row-btn left"><button class="btn" data-act="realsignup" data-k="guru">Daftar guru gratis →</button><button class="btn ghost" data-act="realsignup" data-k="homeschool">Keluarga homeschool →</button></div></details>`;
   }
@@ -2315,9 +2320,9 @@
     const box = document.getElementById('super-box'); if (!box) return;
     try {
       const tok = session.get().token;
-      const [ov, rq, parents, plans, quotes] = await Promise.all([Cloud.rpc('super_overview', { p_token: tok }), Cloud.rpc('super_requests', { p_token: tok }), Cloud.rpc('super_parents', { p_token: tok }).catch(() => []), Cloud.rpc('super_school_plans', { p_token: tok }).catch(() => null), Cloud.rpc('super_quotes', { p_token: tok }).catch(() => null)]);
-      SUP = { ov, rq, ctx, parents, plans, quotes };
-      if (document.getElementById('super-box')) box.innerHTML = superHTML(sub);
+      const [ov, rq, parents, plans, quotes, students] = await Promise.all([Cloud.rpc('super_overview', { p_token: tok }), Cloud.rpc('super_requests', { p_token: tok }), Cloud.rpc('super_parents', { p_token: tok }).catch(() => []), Cloud.rpc('super_school_plans', { p_token: tok }).catch(() => null), Cloud.rpc('super_quotes', { p_token: tok }).catch(() => null), Cloud.rpc('super_students', { p_token: tok }).catch(() => null)]);
+      SUP = { ov, rq, ctx, parents, plans, quotes, students };
+      if (document.getElementById('super-box')) { box.innerHTML = superHTML(sub); renderSupStudents(); }
     } catch (e) {
       box.innerHTML = e.status === 404 ? emptyCard('Perlu menjalankan SQL 008', 'Jalankan supabase/006_research_feedback_bbo.sql lalu 008_schools_superadmin.sql di SQL Editor Supabase.') : emptyCard('Gagal memuat', e.status ? esc(e.message) : 'Tidak bisa terhubung ke server.');
     }
@@ -2340,11 +2345,11 @@
         <input name="note" maxlength="200" placeholder="Catatan (mis. lunas 3 Nov)" value="${esc(p.note || '')}"><button class="btn sm">Simpan</button></form>`; }).join('')}</section>`;
   }
   function superHTML(sub) {
-    sub = ['pengajuan', 'sekolah', 'kelas', 'guru', 'ortu', 'penawaran'].includes(sub) ? sub : 'pengajuan';
+    sub = ['pengajuan', 'sekolah', 'kelas', 'siswa', 'guru', 'ortu', 'penawaran'].includes(sub) ? sub : 'pengajuan';
     const { ov, rq } = SUP, pend = rq.filter((r) => r.status === 'menunggu'), schools = ov.schools || [];
     const kpi = (l, v) => `<div class="kpi"><small>${l}</small><b>${v}</b></div>`;
     const sum = (k) => schools.reduce((t, s) => t + (s[k] || 0), 0);
-    const subs = [['pengajuan', `✋ Pengajuan${pend.length ? ` (${pend.length})` : ''}`], ['sekolah', '🏫 Sekolah & keluarga'], ['kelas', '📚 Kelas'], ['guru', '👩‍🏫 Guru'], ['ortu', '👨‍👩‍👧 Orang tua'], ['penawaran', `📨 Penawaran${(SUP.quotes || []).filter((q) => q.status === 'baru').length ? ` (${(SUP.quotes || []).filter((q) => q.status === 'baru').length})` : ''}`]];
+    const subs = [['pengajuan', `✋ Pengajuan${pend.length ? ` (${pend.length})` : ''}`], ['sekolah', '🏫 Sekolah & keluarga'], ['kelas', '📚 Kelas'], ['siswa', '🧒 Siswa'], ['guru', '👩‍🏫 Guru'], ['ortu', '👨‍👩‍👧 Orang tua'], ['penawaran', `📨 Penawaran${(SUP.quotes || []).filter((q) => q.status === 'baru').length ? ` (${(SUP.quotes || []).filter((q) => q.status === 'baru').length})` : ''}`]];
     let body = '';
     if (sub === 'pengajuan') {
       const schoolOpts = (want) => `<option value="">➕ Sekolah baru (nama di bawah)</option>${schools.filter((s) => s.kind === 'sekolah').map((s) => `<option value="${s.id}" ${want && s.name.toLowerCase() === want.toLowerCase() ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}`;
@@ -2391,6 +2396,11 @@
         ${ps.length ? `<div class="tscroll"><table class="tbl"><thead><tr><th>Nama</th><th>Email</th><th>Status</th><th>Anak</th><th>Dibuat</th><th></th></tr></thead><tbody>
         ${ps.map((x) => `<tr><td><b>${esc(x.name)}</b></td><td>${esc(x.email)}</td><td>${{ aktif: '✅ aktif', menunggu: '⏳ menunggu', ditolak: '❌ ditolak' }[x.status] || esc(x.status)}</td><td class="wrap">${(x.kids || []).map(esc).join(', ') || '–'}</td><td>${fdate(x.createdAt)}</td><td><button class="link small danger" data-act="superdel" data-what="parent" data-id="${x.id}">Hapus</button></td></tr>`).join('')}
         </tbody></table></div>` : '<p class="muted">Belum ada akun orang tua.</p>'}</section>`;
+    } else if (sub === 'siswa') {
+      body = SUP.students === null ? emptyCard('Perlu menjalankan SQL 023', 'Jalankan supabase/023_hapus_siswa.sql di SQL Editor Supabase.')
+        : `<section class="card"><h2>Semua siswa <small class="muted">(${SUP.students.length})</small></h2>
+          <p class="small muted">Cari akun uji coba atau akun yang salah dibuat, lalu hapus. Sebelum terhapus, Anda diminta mengetik ulang nama siswanya.</p>
+          <div class="ungtools"><label class="ungq"><span aria-hidden="true">🔍</span><input id="sup-q" type="search" placeholder="Cari nama, kelas, sekolah, atau kode…" value="${esc(ss.get('supq', ''))}" autocomplete="off" aria-label="Cari siswa"></label></div></section><div id="sup-list"></div>`;
     } else if (sub === 'kelas') {
       // semua kelas di semua sekolah, dengan pilihan guru kelasnya
       const sname = (id) => (schools.find((x) => x.id === id) || {}).name || 'Tanpa sekolah';
@@ -2412,6 +2422,21 @@
     return `<div class="kpis">${kpi('Sekolah · homeschool', `${schools.filter((s) => s.kind === 'sekolah').length}<span> · ${schools.filter((s) => s.kind === 'homeschool').length}</span>`)}${kpi('Guru · kelas', `${(ov.teachers || []).length}<span> · ${sum('classes')}</span>`)}${kpi('Siswa · aktif 7 hari', `${sum('students')}<span> · ${sum('active7')}</span>`)}${kpi('Orang tua · pengajuan', `${ov.parents}<span> · ${ov.pending}⏳</span>`)}</div>
       <nav class="subtabs">${subs.map(([k, l]) => `<a href="#/guru/super/${k}" class="${k === sub ? 'on' : ''}">${l}</a>`).join('')}</nav>${body}`;
   }
+  // Hanya tabel yang digambar ulang saat mengetik, agar kotak pencarian tidak kehilangan kursor
+  const SUP_MAX = 50;
+  function renderSupStudents() {
+    const box = document.getElementById('sup-list'); if (!box || !SUP || !SUP.students) return;
+    const q = fold(ss.get('supq', '').trim());
+    const list = SUP.students.filter((k) => !q || [k.name, k.className, k.schoolName, k.code, k.parentCode].some((v) => fold(v).includes(q)));
+    const row = (k) => `<tr><td class="ungname"><div class="ungn"><span class="av">${avHTML(k.avatar || '🦁')}</span><span><b>${esc(k.name)}</b><small>Mulai ${ftime(k.createdAt)}</small></span></div></td>
+      <td class="wrap">${esc(studentPlace(k))}</td><td><b class="code">${esc(k.code || '–')}</b></td><td><b class="code">${esc(k.parentCode || '–')}</b></td><td class="num">${k.att}</td><td class="num">${k.att ? pct(k.ok, k.att) + '%' : '–'}</td><td>${ago(k.lastTs)}</td>
+      <td><button class="link small danger" data-act="superdel" data-what="student" data-id="${k.id}">Hapus</button></td></tr>`;
+    box.innerHTML = !list.length ? emptyCard('Tidak ditemukan', q ? `Tidak ada siswa yang cocok dengan "<b>${esc(ss.get('supq', '').trim())}</b>".` : 'Belum ada siswa.')
+      : `<section class="card"><p class="small muted">Menampilkan ${Math.min(SUP_MAX, list.length)} dari ${list.length} siswa, yang terbaru lebih dulu.${list.length > SUP_MAX ? ' Ketik di kotak pencarian untuk mempersempit.' : ''}</p>
+        <div class="tscroll"><table class="tbl ungtbl"><thead><tr><th>Siswa</th><th>Tempat</th><th>Kode belajar</th><th>Kode orang tua</th><th>Total soal</th><th>Ketepatan</th><th>Terakhir aktif</th><th></th></tr></thead>
+        <tbody>${list.slice(0, SUP_MAX).map(row).join('')}</tbody></table></div></section>`;
+  }
+  const studentPlace = (k) => (k.className ? (k.schoolName ? k.schoolName + ' · ' : '') + k.className : 'Tanpa kelas');
   async function superDecide(f, fd, btn) {
     const approve = !btn || btn.value !== '0';
     const kind = f.dataset.kind;
@@ -2480,12 +2505,13 @@
         <td><span class="pill ung-${ungState(k)}">${{ aktif: 'Aktif', jeda: 'Jeda', diam: 'Tidak aktif', belum: 'Belum mulai' }[ungState(k)]}</span></td><td>${ago(k.lastTs)}</td><td class="num">${k.week || 0}</td><td class="num">${k.att || 0}</td><td class="num">${k.att ? pct(k.ok, k.att) + '%' : '–'}</td><td class="num">${k.mastered || 0}</td>
         <td class="wrap small">${k.lastSkill ? esc(skillWhere(k.lastSkill)) : '<span class="muted">–</span>'}</td>
         <td><b class="code">${esc(k.code || '–')}</b></td><td><b class="code">${esc(k.parentCode || '–')}</b></td><td>${k.familyCode ? `<b class="code">${esc(k.familyCode)}</b> <button class="link small" data-act="famdel" data-id="${k.id}">Lepas</button>` : '<span class="muted">–</span>'}</td>
-        <td><form data-form="assignkid" data-id="${k.id}" class="form inline"><select name="classId" required aria-label="Kelas untuk ${esc(k.name)}"><option value="">— pilih kelas —</option>${opts}</select><button class="btn sm">Masukkan</button></form></td></tr>`;
+        <td><form data-form="assignkid" data-id="${k.id}" class="form inline"><select name="classId" required aria-label="Kelas untuk ${esc(k.name)}"><option value="">— pilih kelas —</option>${opts}</select><button class="btn sm">Masukkan</button></form></td>
+        <td><button class="link small danger" data-act="superdel" data-what="student" data-id="${k.id}">Hapus</button></td></tr>`;
       const pages = Math.max(1, Math.ceil(list.length / UNG_PER)), p = Math.min(Math.max(1, ss.get('ungp', 1)), pages), from = (p - 1) * UNG_PER;
       const nums = [...Array(pages)].map((_, i) => i + 1).filter((n) => n === 1 || n === pages || Math.abs(n - p) <= 2);
       const pager = pages < 2 ? '' : `<nav class="pager" aria-label="Halaman"><button class="btn sm ghost" data-act="ungp" data-p="${p - 1}" ${p === 1 ? 'disabled' : ''}>← Sebelumnya</button>${nums.map((n, i) => `${i && n - nums[i - 1] > 1 ? '<span class="muted">…</span>' : ''}<button class="btn sm ${n === p ? '' : 'ghost'}" data-act="ungp" data-p="${n}" ${n === p ? 'aria-current="page"' : ''}>${n}</button>`).join('')}<button class="btn sm ghost" data-act="ungp" data-p="${p + 1}" ${p === pages ? 'disabled' : ''}>Berikutnya →</button></nav>`;
       const table = `<section class="card"><p class="small muted">Menampilkan ${from + 1}–${Math.min(from + UNG_PER, list.length)} dari ${list.length} anak · geser tabel ke samping untuk melihat kode dan kelas · klik nama untuk laporan.</p>
-        <div class="tscroll"><table class="tbl ungtbl"><thead><tr><th>Siswa</th><th>Keadaan</th><th>Terakhir aktif</th><th>Soal minggu ini</th><th>Total soal</th><th>Ketepatan</th><th>Mahir</th><th>Sedang di</th><th>Kode belajar</th><th>Kode orang tua</th><th>Kode keluarga</th><th>Masukkan ke kelas</th></tr></thead>
+        <div class="tscroll"><table class="tbl ungtbl"><thead><tr><th>Siswa</th><th>Keadaan</th><th>Terakhir aktif</th><th>Soal minggu ini</th><th>Total soal</th><th>Ketepatan</th><th>Mahir</th><th>Sedang di</th><th>Kode belajar</th><th>Kode orang tua</th><th>Kode keluarga</th><th>Masukkan ke kelas</th><th></th></tr></thead>
         <tbody>${list.slice(from, from + UNG_PER).map(row).join('')}</tbody></table></div>${pager}</section>`;
       const filtered = f !== 'semua' || g || q;
       box.innerHTML = list.length ? table : !all.length ? emptyCard('Belum ada', 'Semua siswa sudah punya kelas.')
@@ -2573,22 +2599,26 @@ Ketik nama kelas untuk konfirmasi: ${c.name}`);
   }
   // Hapus sekolah, guru, atau akun orang tua (super admin); nama diketik ulang sebagai konfirmasi
   async function superDelete(what, id) {
-    const ov = SUP.ov, x = what === 'school' ? (ov.schools || []).find((v) => v.id === id) : what === 'teacher' ? (ov.teachers || []).find((v) => v.id === id) : (SUP.parents || []).find((v) => v.id === id);
+    const list = what === 'student' ? [...((SUP && SUP.students) || []), ...(UNG || [])] : what === 'school' ? SUP.ov.schools : what === 'teacher' ? SUP.ov.teachers : SUP.parents;
+    const x = (list || []).find((v) => v.id === id);
     if (!x) return;
     const warn = what === 'school' ? `Sekolah "${x.name}" akan dihapus beserta ${x.teachers} guru, ${x.classes} kelas, dan ${x.students} siswa dengan semua datanya. Akun super admin tidak ikut terhapus.`
-      : what === 'teacher' ? `Akun guru "${x.name}" akan dihapus beserta ${x.classes} kelasnya dan semua siswa di kelas itu.` : `Akun orang tua "${x.name}" akan dihapus. Data belajar anak tetap ada.`;
+      : what === 'teacher' ? `Akun guru "${x.name}" akan dihapus beserta ${x.classes} kelasnya dan semua siswa di kelas itu.`
+      : what === 'student' ? `Siswa "${x.name}" (${studentPlace(x)}, kode belajar ${x.code || '–'}, ${x.att || 0} soal dikerjakan) akan dihapus beserta semua jawaban, skor, tugas, dan laporannya.`
+      : `Akun orang tua "${x.name}" akan dihapus. Data belajar anak tetap ada.`;
     const typed = prompt(`${warn}
 Tindakan ini tidak bisa dibatalkan.
 
 Ketik nama untuk konfirmasi: ${x.name}`);
     if (typed === null) return;
     if (typed.trim().toLowerCase() !== x.name.trim().toLowerCase()) return toast('Nama tidak cocok. Tidak ada yang dihapus.');
-    const fn = { school: ['super_school_delete', 'p_school_id'], teacher: ['super_teacher_delete', 'p_teacher_id'], parent: ['super_parent_delete', 'p_parent_id'] }[what];
+    const fn = { school: ['super_school_delete', 'p_school_id'], teacher: ['super_teacher_delete', 'p_teacher_id'], parent: ['super_parent_delete', 'p_parent_id'], student: ['super_student_delete', 'p_student_id'] }[what];
     try {
       await Cloud.rpc(fn[0], { p_token: session.get().token, [fn[1]]: id, p_confirm_name: typed });
       if (what === 'school' && ss.get('schoolSel', '') === id) ss.set('schoolSel', '');
+      if (what === 'student') ungCount = { n: null, at: 0 };
       toast(`"${esc(x.name)}" dihapus`); await ensure(true); route();
-    } catch (e) { toast(e.status === 404 ? 'Jalankan supabase/011_delete_school.sql dulu di Supabase' : e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
+    } catch (e) { toast(e.status === 404 ? `Jalankan supabase/${what === 'student' ? '023_hapus_siswa' : '011_delete_school'}.sql dulu di Supabase` : e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
   }
   async function superClassTeacher(el) {
     const c = S.cls(el.dataset.c), t = (SUP && SUP.ov.teachers || []).find((x) => x.id === el.value); if (!c || !t) return;
@@ -2900,46 +2930,64 @@ Ketik nama untuk konfirmasi: ${x.name}`);
 
   // Siswa sasaran tugas (kosong = seluruh kelas)
   const asgKids = (a, kids) => (a.students && a.students.length ? kids.filter((k) => a.students.includes(k.id)) : kids);
-  function tasksHTML(ctx) {
-    const asg = S.assignmentsOf(ctx.c.id).slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-    const pre = ss.get('asgFor', ''), preSkill = ss.get('asgSkill', '');
-    const card = (a) => {
-      const kids = asgKids(a, ctx.kids), whole = !(a.students && a.students.length);
-      const d = S.doneFor(a.id).map((x) => S.student(x.sid)).filter((k) => k && kids.some((y) => y.id === k.id));
-      return `<div class="asg-t"><div class="grow"><b>${esc(a.note || 'Tugas')}</b>${a.due ? ` <span class="muted small">· sampai ${esc(fdue(a.due))}</span>` : ''}
-        <p class="small asg-for">${whole ? '👥 Untuk seluruh kelas' : `🎯 Khusus: ${kids.map((k) => `${avHTML(k.avatar)} ${esc(k.name)}`).join(', ') || '<span class="muted">(siswa sudah dihapus)</span>'}`}</p>
-        <div class="small">${a.skills.filter((k) => SKILLS[k]).map((k) => `<span class="pill">${SKILLS[k].code} ${SKILLS[k].name} · ${kids.filter((kid) => S.progress(kid.id, k).score >= 80).length}/${kids.length} mahir</span>`).join(' ')}</div>
-        <p class="small asg-done">✅ Selesai: <b>${d.length}/${kids.length}</b> siswa${d.length ? ` — ${d.map((k) => esc(k.name)).join(', ')}` : ''}</p>${fbSummary(S.feedbackOf(a.id))}</div>
-        <button class="btn sm ghost" data-act="rmasg" data-id="${a.id}">Hapus</button></div>`;
-    };
-    const whole = asg.filter((a) => !(a.students && a.students.length)), special = asg.filter((a) => a.students && a.students.length);
-    return `<section class="card"><h2>👥 Tugas seluruh kelas</h2>${whole.length ? whole.map(card).join('') : '<p class="muted">Belum ada tugas untuk seluruh kelas.</p>'}</section>
-      <section class="card"><h2>🎯 Tugas khusus siswa</h2>${special.length ? special.map(card).join('') : '<p class="muted">Belum ada. Beri tugas khusus untuk siswa yang perlu mengulang materi, atau yang sudah siap materi lanjutan.</p>'}</section>
-      <section class="card" id="newasg"><h2>Buat tugas baru</h2><form data-form="assign" class="form">
-        <fieldset class="target"><legend>Untuk siapa?</legend>
-          <label class="cb"><input type="radio" name="target" value="all" ${pre ? '' : 'checked'}> 👥 Seluruh kelas (${ctx.kids.length} siswa)</label>
-          <label class="cb"><input type="radio" name="target" value="some" ${pre ? 'checked' : ''}> 🎯 Siswa tertentu</label>
-          <div class="kidpick">${ctx.kids.map((k) => `<label class="cb"><input type="checkbox" name="sid" value="${k.id}" ${pre === k.id ? 'checked' : ''}> ${avHTML(k.avatar)} ${esc(k.name)}</label>`).join('')}</div>
-        </fieldset>
-        <label>Catatan untuk siswa<input name="note" placeholder="mis. Latihan untuk ulangan Jumat"></label>
-        <label>Tenggat (opsional)<input name="due" type="date"></label>
-        <div class="pickskills">${UNITS.map((u) => `<fieldset><legend>${u.icon} ${gname(u.grade)} · ${u.id}. ${u.name}</legend>${u.skills.map((x) => `<label class="cb"><input type="checkbox" name="sk" value="${x.id}" ${preSkill === x.id ? 'checked' : ''}> ${x.code} ${x.name}</label>`).join('')}</fieldset>`).join('')}</div>
-        <button class="btn">Simpan tugas</button></form></section>`;
+  // Kelas (jenjang materi) yang paling banyak dikerjakan siswa di kelas ini
+  function classGrade(ctx) {
+    const c = {};
+    ctx.kids.forEach((k) => Object.keys(S.progressAll(k.id)).forEach((id) => { if (SKILLS[id]) c[SKILLS[id].grade] = (c[SKILLS[id].grade] || 0) + 1; }));
+    const top = Object.entries(c).sort((a, b) => b[1] - a[1])[0];
+    return top ? +top[0] : getGrade();
   }
-  // Halaman siswa: saran tugas khusus (mengulang yang lemah, atau materi lanjutan)
-  function specialAssignHTML(k) {
-    const prog = S.progressAll(k.id), order = UNITS.flatMap((u) => u.skills.map((x) => x.id));
-    let last = -1;
-    order.forEach((id, i) => { if ((prog[id] || {}).score >= 80) last = i; });
-    const next = order.slice(last + 1).filter((id) => !(prog[id] && prog[id].att)).slice(0, 3);
-    const weak = weaknesses(k.id).slice(0, 4);
-    const mine = S.assignmentsFor(k.id).filter((a) => a.students && a.students.includes(k.id));
-    const row = (id, why) => `<div class="lrow"><span class="grow"><b>${SKILLS[id].code} ${SKILLS[id].name}</b><small>${why}</small></span><button class="btn sm ghost" data-act="assignkid" data-id="${id}" data-s="${k.id}">Tugaskan</button></div>`;
-    return `<section class="card"><h2>🎯 Tugas khusus untuk ${esc(k.name)}</h2>
-      ${mine.length ? `<p class="small">Tugas khusus aktif: ${mine.map((a) => `<span class="pill special">${esc(a.note || 'Tugas')}${S.isDone(a.id, k.id) ? ' ✅' : ''}</span>`).join(' ')}</p>` : ''}
-      ${weak.length ? `<h3 class="sub">Perlu mengulang</h3>${weak.map((w) => row(w.id, `${w.att} soal · ${w.acc}% benar · skor ${w.score}`)).join('')}` : ''}
-      ${next.length ? `<h3 class="sub">Materi lanjutan</h3>${next.map((id) => row(id, `${gname(SKILLS[id].grade)} · belum pernah dicoba`)).join('')}` : ''}
-      <div class="row-btn left"><button class="btn sm" data-act="asgform" data-s="${k.id}">Buat tugas khusus lainnya</button></div></section>`;
+  // Saran tugas yang tinggal dikirim: materi yang masih sulit, kelompok level, atau materi berikutnya
+  function taskSuggestions(ctx) {
+    const recent = new Set(S.assignmentsOf(ctx.c.id).filter((a) => (a.createdAt || 0) > Date.now() - 14 * DAY).flatMap((a) => a.skills));
+    const out = [], used = new Set();
+    const add = (id, kids, why) => { used.add(id); out.push({ id, kids, why }); };
+    const hard = {};
+    ctx.kids.forEach((k) => weaknesses(k.id).forEach((w) => { (hard[w.id] = hard[w.id] || []).push(k); }));
+    Object.entries(hard).filter(([id, l]) => l.length >= 2 && !recent.has(id)).sort((a, b) => b[1].length - a[1].length).slice(0, 2).forEach(([id, l]) => add(id, l, `${l.length} siswa masih kesulitan: ${nameList(l)}`));
+    const need = (id, kids) => kids.filter((k) => S.progress(k.id, id).score < 80).length;
+    const pick = (ids, kids) => ids.filter((x) => SKILLS[x] && !recent.has(x) && !used.has(x)).map((x) => ({ x, n: need(x, kids) })).filter((o) => o.n > 0).sort((a, b) => b.n - a.n)[0];
+    const groups = {};
+    ctx.kids.forEach((k) => { const d = S.diagOf(k.id, 'b') || S.diagOf(k.id); if (d) (groups[d.level] = groups[d.level] || []).push(k); });
+    const levels = Object.keys(groups).map(Number).sort((a, b) => a - b);
+    if (levels.length >= 2) levels.forEach((lv) => { const p = pick([...(S.DIAG[lv] || []), ...unitsOf(lv).flatMap((u) => u.skills.map((x) => x.id))], groups[lv]); if (p) add(p.x, groups[lv], `Untuk kelompok materi ${gname(lv)}: ${nameList(groups[lv])}`); });
+    if (!out.length) { const p = pick(unitsOf(classGrade(ctx)).flatMap((u) => u.skills.map((x) => x.id)), ctx.kids); if (p) add(p.x, ctx.kids, 'Materi berikutnya untuk seluruh kelas'); }
+    return out.slice(0, 4);
+  }
+  function tasksHTML(ctx) {
+    if (!ctx.kids.length) return `<section class="card center"><div class="bigemoji">📌</div><h2>Masukkan siswa dulu</h2><p class="muted">Tugas bisa diberikan setelah kelas punya siswa.</p><a class="btn" href="#/guru/siswa">➕ Tambah siswa</a></section>`;
+    const asg = S.assignmentsOf(ctx.c.id).slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+    const pre = ss.get('asgFor', ''), preSkill = ss.get('asgSkill', ''), g0 = preSkill && SKILLS[preSkill] ? SKILLS[preSkill].grade : classGrade(ctx);
+    const prog = (a) => { const kids = asgKids(a, ctx.kids), d = S.doneFor(a.id).map((x) => x.sid).filter((id) => kids.some((k) => k.id === id)); return { kids, d, left: kids.filter((k) => !d.includes(k.id)) }; };
+    const card = (a) => {
+      const { kids, d, left } = prog(a), special = a.students && a.students.length;
+      return `<div class="taskc"><div class="grow"><b>${esc(a.note || 'Tugas')}</b>${a.due ? ` <span class="muted small">· sampai ${esc(fdue(a.due))}</span>` : ''}
+        <small>${special ? `Untuk ${nameList(kids) || 'siswa yang sudah dihapus'}` : 'Untuk seluruh kelas'} · ${a.skills.filter((k) => SKILLS[k]).map((k) => SKILLS[k].name).join(', ')}</small>
+        <div class="tbar sm"><i style="width:${pct(d.length, kids.length)}%"></i></div>
+        <small><b>${d.length} dari ${kids.length}</b> selesai${left.length && left.length <= 6 ? `. Belum: ${left.map((k) => esc(k.name)).join(', ')}` : ''}</small></div>
+        <button class="link small danger" data-act="rmasg" data-id="${a.id}">Hapus</button></div>`;
+    };
+    const running = asg.filter((a) => prog(a).left.length), finished = asg.filter((a) => !prog(a).left.length);
+    const sug = taskSuggestions(ctx);
+    const grades = GRADES.filter((x) => unitsOf(x.id).length);
+    return `${sug.length ? `<section class="card"><h2>💡 Saran Metiq</h2><p class="small muted">Disusun dari jawaban siswa. Ketuk Kirim, tugas langsung sampai ke siswa dan orang tuanya.</p>
+        ${sug.map((x) => `<form data-form="grouptask" data-sids="${x.kids.map((k) => k.id).join(',')}" class="sugrow"><input type="hidden" name="sk" value="${x.id}"><input type="hidden" name="note" value="Latihan: ${esc(SKILLS[x.id].name)}"><input type="hidden" name="due" value=""><span class="grow"><b>${SKILLS[x.id].name}</b><small>${x.why}</small></span><button class="btn sm">Kirim ke ${x.kids.length} siswa</button></form>`).join('')}</section>` : ''}
+      <details class="card newtask" id="newasg" ${pre || preSkill ? 'open' : ''}><summary><b>➕ Buat tugas sendiri</b></summary>
+        <form data-form="assign" class="form">
+          <h3 class="stepn"><i>1</i> Materi apa?</h3>
+          <div class="skfind"><input id="skq" type="search" placeholder="Cari materi, mis. pecahan" aria-label="Cari materi" autocomplete="off"><select id="skg" aria-label="Pilih kelas">${grades.map((x) => `<option value="${x.id}" ${x.id === g0 ? 'selected' : ''}>${x.name}</option>`).join('')}</select></div>
+          <div class="pickskills skbox" id="skbox">${UNITS.map((u) => `<fieldset data-g="${u.grade}" ${u.grade === g0 ? '' : 'hidden'}><legend>${u.icon} ${u.name}</legend>${u.skills.map((x) => `<label class="cb" data-q="${esc(x.name.toLowerCase())}"><input type="checkbox" name="sk" value="${x.id}" ${preSkill === x.id ? 'checked' : ''}> ${x.name}</label>`).join('')}</fieldset>`).join('')}</div>
+          <h3 class="stepn"><i>2</i> Untuk siapa?</h3>
+          <fieldset class="target">
+            <label class="cb"><input type="radio" name="target" value="all" ${pre ? '' : 'checked'}> 👥 Seluruh kelas (${ctx.kids.length} siswa)</label>
+            <label class="cb"><input type="radio" name="target" value="some" ${pre ? 'checked' : ''}> 🎯 Siswa tertentu</label>
+            <div class="kidpick">${ctx.kids.map((k) => `<label class="cb"><input type="checkbox" name="sid" value="${k.id}" ${pre === k.id ? 'checked' : ''}> ${avHTML(k.avatar)} ${esc(k.name)}</label>`).join('')}</div>
+          </fieldset>
+          <h3 class="stepn"><i>3</i> Pesan dan tenggat <small class="muted">(boleh dikosongkan)</small></h3>
+          <div class="grow2"><label>Pesan untuk siswa<input name="note" maxlength="120" placeholder="mis. Latihan untuk ulangan Jumat"></label><label>Tenggat<input name="due" type="date"></label></div>
+          <button class="btn" id="asgsend">📌 Kirim tugas</button></form></details>
+      <section class="card"><h2>Tugas berjalan <span class="pill">${running.length}</span></h2>${running.map(card).join('') || '<p class="muted">Belum ada tugas yang berjalan.</p>'}</section>
+      ${finished.length ? `<details class="card"><summary><b>✅ Tugas selesai (${finished.length})</b></summary>${finished.map(card).join('')}</details>` : ''}`;
   }
   function settingsCard(ctx) {
     const st = settingsOf(ctx.c);
@@ -2950,7 +2998,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       <p class="small muted">Hanya berlaku untuk kelas ini. Jika keduanya mati, Metiq tampil seperti biasa.</p></section>`;
   }
   function manageHTML(ctx) {
-    return `<p class="small muted kelnote">⚙️ Nama kelas, kelas baru, dan pengaturan. Menambah siswa dan kode orang tua ada di tab <a href="#/guru/siswa">🧒 Siswa</a>.</p>
+    return `<p class="small muted kelnote">Menambah siswa dan kode orang tua ada di tab <a href="#/guru/siswa">🧒 Siswa</a>. Dasar penyusunan materi ada di <a href="#/guru/referensi">📚 Referensi kurikulum</a>.</p>
     <div class="grid2">
       <section class="card"><h2>Kelas</h2><form data-form="renameclass" class="form inline"><input name="name" value="${esc(ctx.c.name)}" required><button class="btn ghost">Ganti nama</button></form>
         <form data-form="newclass" class="form inline"><input name="name" placeholder="Nama kelas baru" required><button class="btn ghost">Tambah kelas</button></form>
@@ -2963,12 +3011,30 @@ Ketik nama untuk konfirmasi: ${x.name}`);
 
   function viewTeacherStudent(ctx, sid) {
     const k = S.student(sid); if (!k || k.classId !== ctx.c.id) return go('#/guru/siswa');
-    const ans = S.answersOf(sid).sort((a, b) => b.ts - a.ts).slice(0, 30);
-    teacherShell(ctx, 'siswa', `<a class="back" href="#/guru/siswa">← Semua siswa</a>${reportHTML(k, 'guru')}${specialAssignHTML(k)}${studentDataHTML(k)}
-      <section class="card"><h2>Semua keterampilan yang dicoba</h2><div class="tscroll"><table class="tbl"><thead><tr><th>Keterampilan</th><th>Skor</th><th>Soal</th><th>Benar</th><th>Waktu</th><th>Terakhir</th></tr></thead><tbody>
-      ${skillRows(sid).sort((a, b) => a.skill.code.localeCompare(b.skill.code, undefined, { numeric: true })).map((r) => `<tr><td>${r.skill.code} ${r.skill.name}</td><td>${chip(r.score)}</td><td>${r.att}</td><td>${r.acc}%</td><td>${fmtTime(r.ms)}</td><td>${ago(r.last)}</td></tr>`).join('')}</tbody></table></div></section>
-      <section class="card"><h2>30 jawaban terakhir</h2><div class="tscroll"><table class="tbl"><thead><tr><th></th><th>Soal</th><th>Jawaban</th><th>Benar</th><th>Keterampilan</th></tr></thead><tbody>
-      ${ans.map((a) => `<tr><td>${a.ok ? '✅' : '❌'}</td><td>${esc(a.text)}</td><td>${esc(a.given)}</td><td>${esc(a.answer)}</td><td class="small">${SKILLS[a.skill] ? SKILLS[a.skill].code : ''}</td></tr>`).join('')}</tbody></table></div></section>`);
+    const x = kidState(k), good = strengths(k.id), prog = S.progressAll(k.id), order = UNITS.flatMap((u) => u.skills.map((s) => s.id));
+    let last = -1;
+    order.forEach((id, i) => { if ((prog[id] || {}).score >= 80) last = i; });
+    const next = x.all.answered ? order.slice(last + 1).filter((id) => !(prog[id] && prog[id].att)).slice(0, 2) : [];
+    const tasks = S.assignmentsFor(k.id).slice().sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)).slice(0, 5);
+    const nm = esc(k.name), research = canResearch(ctx);
+    const story = x.st === 'baru' ? `${nm} belum pernah masuk. Kirim kode kelas supaya bisa mulai.` : x.w.answered ? `Dalam 7 hari terakhir, ${nm} menjawab <b>${x.w.answered} soal</b> dan <b>${x.w.acc}%</b> benar. Sudah menguasai <b>${good.length} materi</b>.` : `${nm} tidak berlatih 7 hari terakhir. Sudah menguasai <b>${good.length} materi</b>.`;
+    const ans = research ? S.answersOf(sid).sort((a, b) => b.ts - a.ts).slice(0, 30) : [];
+    teacherShell(ctx, 'siswa', `<a class="back" href="#/guru/siswa">← Semua siswa</a>
+      <section class="card khead ${KID_ST[x.st][2]}"><span class="av lg">${avHTML(k.avatar)}</span><div class="grow"><h1>${nm}</h1><span class="accb ${KID_ST[x.st][2]} nowrap">${KID_ST[x.st][0]} ${KID_ST[x.st][1]}</span><p>${story}</p></div></section>
+      <div class="grid2">
+        <section class="card"><h2>🆘 Perlu dibantu</h2>${x.weak.length ? x.weak.slice(0, 4).map((w) => `<div class="wrow"><div class="lrow"><span class="grow"><b>${w.skill.name}</b>${w.tag && w.tag !== 'konsep' ? `<small>${TAGS[w.tag].label}</small>` : ''}</span>${giveBtn(k.id, w.id)}</div>${w.example ? `<p class="small ex">"${esc(w.example.text)}" dijawab <b class="strike">${esc(w.example.given)}</b>, seharusnya <b>${esc(w.example.answer)}</b>.</p>` : ''}</div>`).join('') : '<p class="muted">Tidak ada materi yang tertinggal. 👍</p>'}</section>
+        <section class="card"><h2>✅ Sudah bisa</h2>${good.length ? good.slice(0, 5).map((g) => `<div class="lrow"><span class="grow">${g.skill.name}</span></div>`).join('') + (good.length > 5 ? `<p class="small muted">dan ${good.length - 5} materi lainnya</p>` : '') : '<p class="muted">Belum ada materi yang dikuasai.</p>'}</section>
+      </div>
+      ${next.length ? `<section class="card"><h2>🚀 Siap lanjut</h2>${next.map((id) => `<div class="lrow"><span class="grow"><b>${SKILLS[id].name}</b><small>${gname(SKILLS[id].grade)}</small></span>${giveBtn(k.id, id, 'Beri tugas')}</div>`).join('')}</section>` : ''}
+      <section class="card"><div class="rhead"><h2>📌 Tugas ${nm}</h2><span class="grow"></span><button class="btn ghost sm" data-act="asgform" data-s="${k.id}">➕ Tugas lain</button></div>${tasks.length ? tasks.map((a) => `<div class="lrow"><span class="grow"><b>${esc(a.note || 'Tugas')}</b>${a.due ? `<small>sampai ${esc(fdue(a.due))}</small>` : ''}</span>${S.isDone(a.id, k.id) ? '<span class="pill okp">Selesai</span>' : '<span class="pill">Belum</span>'}</div>`).join('') : '<p class="muted">Belum ada tugas.</p>'}</section>
+      <section class="card"><h2>👨‍👩‍👧 Orang tua</h2><div class="lrow"><span class="grow"><b>Kode orang tua: <span class="code">${k.parentCode || '–'}</span></b><small>${parentLinked(k) ? 'Sudah terhubung' : 'Belum terhubung'}</small></span><button class="btn sm ${parentLinked(k) ? 'ghost' : ''}" data-act="shareparent" data-id="${k.id}">📤 Kirim kode</button></div></section>
+      <details class="card"><summary><b>Lainnya</b> <span class="muted small">Hasil asesmen, NISN, keluarkan siswa</span></summary>
+        ${diagSummaryHTML(k, 'guru')}${studentDataHTML(k, research)}<p><button class="link danger small" data-act="rmkid" data-id="${k.id}">Keluarkan ${nm} dari kelas</button></p></details>
+      ${research ? `<details class="card"><summary><b>🔬 Rincian riset</b> <span class="muted small">Hanya terlihat oleh super admin</span></summary>${reportHTML(k, 'guru')}
+        <section class="card"><h2>Semua keterampilan yang dicoba</h2><div class="tscroll"><table class="tbl"><thead><tr><th>Keterampilan</th><th>Skor</th><th>Soal</th><th>Benar</th><th>Waktu</th><th>Terakhir</th></tr></thead><tbody>
+        ${skillRows(sid).sort((a, b) => a.skill.code.localeCompare(b.skill.code, undefined, { numeric: true })).map((r) => `<tr><td>${r.skill.code} ${r.skill.name}</td><td>${chip(r.score)}</td><td>${r.att}</td><td>${r.acc}%</td><td>${fmtTime(r.ms)}</td><td>${ago(r.last)}</td></tr>`).join('')}</tbody></table></div></section>
+        <section class="card"><h2>30 jawaban terakhir</h2><div class="tscroll"><table class="tbl"><thead><tr><th></th><th>Soal</th><th>Jawaban</th><th>Benar</th><th>Keterampilan</th></tr></thead><tbody>
+        ${ans.map((a) => `<tr><td>${a.ok ? '✅' : '❌'}</td><td>${esc(a.text)}</td><td>${esc(a.given)}</td><td>${esc(a.answer)}</td><td class="small">${SKILLS[a.skill] ? SKILLS[a.skill].code : ''}</td></tr>`).join('')}</tbody></table></div></section></details>` : ''}`);
   }
 
   /* ---------- Laporan (orang tua & guru) ---------- */
@@ -3032,20 +3098,49 @@ Ketik nama untuk konfirmasi: ${x.name}`);
           <button class="btn">Buat akun</button>
         </form><p class="muted small center">Setelah masuk, tambahkan anak dengan kode orang tua dari guru.</p></section>`);
   }
+  // Satu kesimpulan untuk orang tua, ditulis sebagai kalimat sehari-hari
+  const DOW = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+  function parentVerdict(k) {
+    const s7 = stats(k.id, 7), all = stats(k.id), days = s7.byDay.filter((d) => d.n).length, nm = esc(k.name);
+    const facts = `Minggu ini berlatih <b>${days} hari</b>, menjawab <b>${s7.answered} soal</b>, <b>${s7.acc}%</b> benar.`;
+    let v;
+    if (!all.answered) v = ['🌱', 'y', `${nm} belum mulai berlatih`, 'Ajak mencoba 10 menit hari ini. Metiq akan menyesuaikan soalnya dengan kemampuan anak.'];
+    else if (!s7.answered) v = ['😴', 'y', `${nm} belum berlatih minggu ini`, `Terakhir berlatih ${ago(all.last)}. Ajak lagi ya, 10 menit saja cukup.`];
+    else if ((s7.answered >= 10 && s7.acc < 60) || kidState(k).st === 'bantu') v = ['💪', 'y', `${nm} rajin, ada materi yang perlu dibantu`, `${facts} Lihat bagian Bantu di rumah.`];
+    else if (days >= 3 && s7.acc >= 70) v = ['🌟', 'g', `${nm} rajin dan paham`, facts];
+    else if (days >= 3) v = ['👍', 'g', `${nm} rajin berlatih`, facts];
+    else v = ['🙂', 'y', `${nm} sudah berlatih, bisa ditambah lagi`, `${facts} Usahakan 3 hari dalam seminggu.`];
+    return { s7, all, days, icon: v[0], tone: v[1], title: v[2], text: v[3] };
+  }
+  const weekDots = (s7) => `<div class="wkdots" aria-label="Hari berlatih minggu ini">${s7.byDay.map((d) => `<span class="${d.n ? 'on' : ''}"><i>${d.n ? '✓' : ''}</i><small>${DOW[new Date(d.d0).getDay()]}</small></span>`).join('')}</div>`;
+  const parentTasks = (k) => S.assignmentsFor(k.id).filter((a) => !S.isDone(a.id, k.id) && !asgComplete(a, k.id));
+  function parentReportHTML(k) {
+    const v = parentVerdict(k), good = strengths(k.id), weak = weaknesses(k.id), nm = esc(k.name), c = S.cls(k.classId) || {}, tasks = parentTasks(k), dg = S.diagOf(k.id, 'b') || S.diagOf(k.id);
+    const wrong = S.answersOf(k.id).filter((a) => !a.ok).sort((a, b) => b.ts - a.ts).slice(0, 6);
+    return `<section class="card phead ${v.tone}"><div class="phead-top"><span class="av lg">${avHTML(k.avatar)}</span><div class="grow"><small>${esc(c.name || 'Laporan belajar')}</small><h1><span aria-hidden="true">${v.icon}</span> ${v.title}</h1></div></div><p>${v.text}</p>${v.all.answered ? weekDots(v.s7) : ''}</section>
+      ${tasks.length ? `<section class="card"><div class="rhead"><h2>📌 Tugas dari guru <span class="pill">${tasks.length}</span></h2><span class="grow"></span><a class="btn sm" href="#/notifikasi">Lihat tugas</a></div>${tasks.slice(0, 3).map((a) => `<div class="lrow"><span class="grow"><b>${esc(a.note || 'Tugas dari guru')}</b>${a.due ? `<small>sampai ${esc(fdue(a.due))}</small>` : ''}</span></div>`).join('')}</section>` : ''}
+      ${weak.length ? `<section class="card phome"><h2>🏠 Bantu di rumah</h2>${weak.slice(0, 2).map((w) => `<div class="phelp"><b>${w.skill.name}</b>${w.example ? `<p class="small ex">"${esc(w.example.text)}" dijawab <b class="strike">${esc(w.example.given)}</b>, seharusnya <b>${esc(w.example.answer)}</b>.</p>` : ''}<p class="small tip">💡 ${w.tag && w.tag !== 'konsep' ? TAGS[w.tag].tip : UNITS.find((u) => u.id === w.skill.unit).tip}</p>${LESSONS[w.skill.unit] ? `<a class="btn sm ghost" href="#/pelajaran/${w.skill.unit}">📖 Pelajari bersama</a>` : ''}</div>`).join('')}</section>` : ''}
+      <section class="card good"><h2>✅ Sudah bisa <span class="pill">${good.length} materi</span></h2>${good.length ? good.slice(0, 3).map((g) => `<div class="lrow"><span class="grow">${g.skill.name}</span></div>`).join('') + (good.length > 3 ? `<p class="small muted">dan ${good.length - 3} materi lainnya</p>` : '') : `<p class="muted">Belum ada materi yang dikuasai. Terus berlatih, ya!</p>`}</section>
+      ${dg ? `<p class="small muted center">Saat ini ${nm} belajar <b>materi ${gname(dg.level)}</b>, sesuai hasil asesmen.</p>` : ''}
+      ${v.all.answered ? `<details class="card pmore"><summary><b>Lihat rincian</b> <span class="muted small">Kemajuan per bab dan jawaban yang belum tepat</span></summary>
+        <div class="kpis"><div class="kpi"><small>Total soal</small><b>${v.all.answered}</b></div><div class="kpi"><small>Jawaban benar</small><b>${v.all.acc}%</b></div><div class="kpi"><small>Waktu belajar</small><b class="sm">${fmtTime(v.all.ms)}</b></div></div>
+        <h3 class="sub">Kemajuan per bab</h3>${reportGrades(k.id).map((g, _, all) => (all.length > 1 ? `<p class="small"><b>${gname(g)}</b></p>` : '') + unitsOf(g).map((u) => { const us = unitScore(k.id, u); return `<div class="uprog"><span>${u.icon} ${u.name}</span><span class="ubar"><i style="width:${us.avg}%;background:${u.color}"></i></span><small>${us.prof}/${us.total}</small></div>`; }).join('')).join('')}
+        ${wrong.length ? `<h3 class="sub">Jawaban yang belum tepat</h3>${wrong.map((a) => `<div class="wa"><p>${esc(a.text)}</p><small>Jawaban ${nm}: <b class="strike">${esc(a.given)}</b> · Benar: <b>${esc(a.answer)}</b> · ${ago(a.ts)}</small></div>`).join('')}` : ''}</details>` : ''}`;
+  }
   function viewParentHome() {
     const ses = session.get(), demoKids = ses.role === 'ortu' && ses.demo && ses.kids, codeKids = ses.role === 'ortu' && !ses.demo && ses.pcode && ses.kids;
     if (!(ses.role === 'ortu' && (ses.ptoken || demoKids || codeKids))) return go('#/ortu');
     const p = demoKids ? { name: (tryInfo() || {}).name } : codeKids ? { name: 'Ayah/Bunda' } : S.db.parent || {};
     const kids = demoKids || codeKids ? ses.kids.map((id) => S.student(id)).filter(Boolean) : S.db.students;
     app.innerHTML = shell(`
-      <section class="dhead"><div><small class="muted">${codeKids ? `Kode keluarga ${esc(ses.pcode)} · ${kids.length} anak` : 'Akun orang tua'}</small><h1>Halo, ${esc(p.name || '')}</h1></div></section>
-      ${kids.map((k) => { const s7 = stats(k.id, 7), all = stats(k.id); const c = S.cls(k.classId) || {};
-        return `<section class="card kidcard"><div class="report-head"><span class="av lg">${avHTML(k.avatar)}</span><div class="grow"><h2>${esc(k.name)}</h2><p class="muted small">${esc(c.name || '')}${c.teacherName ? ' · ' + esc(c.teacherName) : ''}</p></div></div>
-          <div class="kpis"><div class="kpi"><small>Soal 7 hari</small><b>${s7.answered}</b></div><div class="kpi"><small>Ketepatan</small><b>${all.acc}%</b></div><div class="kpi"><small>Mahir</small><b>${all.proficient}</b></div><div class="kpi"><small>Terakhir</small><b class="sm">${ago(all.last)}</b></div></div>
-          <div class="row-btn"><a class="btn" href="#/ortu/laporan/${k.id}">Lihat laporan</a>${codeKids ? '' : `<button class="btn ghost" data-act="askid" data-id="${k.id}">Belajar sebagai ${esc(k.name)}</button>`}</div>
-          ${demoKids || codeKids ? '' : `<p class="center small"><button class="link muted" data-act="punlink" data-id="${k.id}">Lepas dari akun</button></p>`}</section>`; }).join('') || '<section class="card center"><div class="bigemoji">🧒</div><p class="muted">Belum ada anak yang terhubung.</p></section>'}
+      <section class="dhead"><div><small class="muted">${codeKids ? `Kode keluarga ${esc(ses.pcode)}` : 'Akun orang tua'}</small><h1>Halo, ${esc(p.name || 'Ayah/Bunda')}</h1></div></section>
+      ${kids.map((k) => { const v = parentVerdict(k), c = S.cls(k.classId) || {}, t = parentTasks(k);
+        return `<section class="card phead ${v.tone}"><div class="phead-top"><span class="av lg">${avHTML(k.avatar)}</span><div class="grow"><small>${esc(c.name || '')}${c.teacherName ? ' · ' + esc(c.teacherName) : ''}</small><h2><span aria-hidden="true">${v.icon}</span> ${v.title}</h2></div></div>${v.all.answered ? weekDots(v.s7) : `<p>${v.text}</p>`}
+          ${t.length ? `<p class="small"><a href="#/notifikasi">📌 ${t.length} tugas dari guru belum selesai</a></p>` : ''}
+          <div class="row-btn left"><a class="btn" href="#/ortu/laporan/${k.id}">Lihat laporan</a>${codeKids ? '' : `<button class="btn ghost" data-act="askid" data-id="${k.id}">Belajar sebagai ${esc(k.name)}</button>`}</div>
+          ${demoKids || codeKids ? '' : `<p class="small kunlink"><button class="link muted" data-act="punlink" data-id="${k.id}">Lepas dari akun</button></p>`}</section>`; }).join('') || '<section class="card center"><div class="bigemoji">🧒</div><p class="muted">Belum ada anak yang terhubung. Masukkan kode dari guru di bawah ini.</p></section>'}
       ${codeKids ? '' : demoKids ? `<section class="card"><h2>Tambah anak</h2><p class="muted small">Di mode coba, anak lain ditambahkan dengan mencoba sebagai siswa di perangkat ini (Keluar → Coba sebagai siswa → nama anak), lalu masuk lagi sebagai orang tua.</p></section>${realParentCard(kids[0] || {})}`
-        : `<section class="card"><h2>Tambah anak</h2><p class="muted small">Masukkan kode orang tua anak (dari guru).</p>
+        : `<section class="card"><h2>Tambah anak</h2><p class="muted small">Masukkan kode orang tua dari guru.</p>
         <form data-form="plink" class="form inline"><input name="code" class="codein sm" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC123" required><button class="btn">Tambah</button></form></section>`}
     `, { right: topRight() });
   }
@@ -3054,7 +3149,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const k = ses.role === 'ortu' && S.student(sid || ses.id) && (!ses.kids || ses.kids.includes(sid || ses.id)) && S.student(sid || ses.id);
     if (!k) return go(ses.ptoken ? '#/ortu/anak' : '#/ortu');
     logParentView(k.id);
-    app.innerHTML = shell((ses.ptoken || (ses.kids && ses.kids.length > 1) ? '<a class="back" href="#/ortu/anak">← Anak saya</a>' : '') + reportHTML(k, 'ortu') + `<p class="center muted small">SmartScore: 0–49 Mulai · 50–79 Berkembang · 80–99 Mahir · 100 Tuntas 🏆</p>` + (ses.demo ? realParentCard(k) : ''), { right: topRight() });
+    app.innerHTML = shell((ses.ptoken || (ses.kids && ses.kids.length > 1) ? '<a class="back" href="#/ortu/anak">← Anak saya</a>' : '') + parentReportHTML(k) + (ses.demo ? realParentCard(k) : ''), { right: topRight() });
   }
 
   /* ---------- Panduan pemakaian ---------- */
@@ -3246,7 +3341,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   function viewPreview(id) {
     const sk = SKILLS[id]; if (!sk) return go('#/guru');
     const qs = Array.from({ length: 3 }, () => sk.gen());
-    app.innerHTML = shell(`<a class="back" href="#/guru/keterampilan">← Kembali</a><h1>${sk.code} ${sk.name}</h1><p class="muted">Contoh soal acak (tidak dicatat).</p>
+    app.innerHTML = shell(`<button class="back link" data-act="back">← Kembali</button><h1>${sk.code} ${sk.name}</h1><p class="muted">Contoh soal acak (tidak dicatat).</p>
       ${qs.map((q) => `<section class="qcard"><p class="qtext">${q.text}</p>${q.vis ? `<div class="qvis">${q.vis}</div>` : ''}${q.options ? `<p class="small">Pilihan: ${q.options.join(' · ')}</p>` : ''}<div class="explain"><b>Jawaban: ${q.answer}</b><p>${q.explain}</p></div></section>`).join('')}
       <button class="btn" data-act="reload">Soal lain</button>`);
   }
@@ -3520,26 +3615,26 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       ['Laporan untuk orang tua', yes, yes, yes],
       ['Kelas dengan kode kelas, tambah siswa dengan kode belajar', no, yes, yes],
       ['Memberi tugas untuk kelas, kelompok, atau satu siswa', no, yes, yes],
-      ['Laporan kelas: Semua kemajuan, analitik, peringkat', no, yes, yes],
+      ['Dasbor kelas: siapa yang perlu dibantu, materi sulit, saran tugas', no, yes, yes],
       ['Dasbor dan laporan sekolah lintas kelas dan guru', no, no, yes],
       ['Admin sekolah mengelola guru dan kelas', no, no, yes],
-      ['Asesmen awal–akhir (pre/post) dan data penelitian', no, no, yes],
+      ['Asesmen awal untuk menempatkan siswa sesuai levelnya', yes, yes, yes],
       ['Pelatihan guru dan pendampingan', no, no, yes],
     ];
     const faq = [
       ['Apakah Metiq gratis untuk guru?', 'Ya. Siapa pun yang mengajar matematika bisa mendaftar gratis dan langsung aktif: membuat kelas, menambah siswa, memberi tugas, dan melihat laporan kelas.'],
-      ['Apa isi paket Sekolah?', 'Lapisan sekolah di atas aplikasi gratis: dasbor dan laporan lintas kelas, admin sekolah yang mengelola guru, asesmen awal–akhir untuk mengukur peningkatan, serta pelatihan dan pendampingan.'],
+      ['Apa isi paket Sekolah?', 'Lapisan sekolah di atas aplikasi gratis: dasbor dan laporan lintas kelas, admin sekolah yang mengelola guru, serta pelatihan dan pendampingan.'],
       ['Berapa biayanya?', 'Biaya paket Sekolah belum ditetapkan. Isi formulir di bawah, dan tim Metiq akan menghubungi Anda.'],
       ['Bagaimana guru masuk ke sekolah?', 'Guru mendaftar gratis dulu. Admin sekolah lalu menambahkan guru ke sekolahnya lewat email guru di tab 🏫 Sekolah → Kelola guru.'],
       ['Bagaimana cara memulai?', 'Isi formulir di bawah. Tim Metiq akan menghubungi Anda untuk membahas kebutuhan sekolah.'],
       ['Bagaimana data siswa dijaga?', 'Metiq tidak menampilkan iklan dan tidak menjual data. Guru lain tidak bisa melihat nama siswa yang belum masuk kelasnya; guru hanya bisa menambah siswa dengan kode belajar dari anak atau orang tuanya.'],
     ];
     app.innerHTML = shell(`<a class="back" href="#/">← Kembali</a>
-      <section class="phero"><h1>Satu aplikasi, tiga cara memakainya</h1><p>Metiq gratis untuk siswa dan guru matematika. Sekolah dengan banyak kelas bisa meminta penawaran untuk dasbor sekolah, pengelolaan guru, asesmen awal–akhir, dan pendampingan.</p></section>
+      <section class="phero"><h1>Satu aplikasi, tiga cara memakainya</h1><p>Metiq gratis untuk siswa dan guru matematika. Sekolah dengan banyak kelas bisa meminta penawaran untuk dasbor sekolah, pengelolaan guru, dan pendampingan.</p></section>
       <div class="plans">
         <section class="plan"><small>Di rumah</small><h2>Keluarga</h2><b class="price">Gratis</b><p>Anak belajar sendiri sesuai levelnya, orang tua melihat kemajuannya.</p><a class="btn ghost" href="#/siswa-baru">Mulai belajar</a></section>
         <section class="plan hl"><small>Satu kelas</small><h2>Guru</h2><b class="price">Gratis</b><p>Alat kelas lengkap untuk memberi tugas dan memantau kemajuan. Langsung aktif.</p><a class="btn" href="#/guru/daftar">Daftar guru gratis</a></section>
-        <section class="plan"><small>Banyak kelas</small><h2>Sekolah</h2><b class="price">Hubungi kami</b><p>Dasbor sekolah, admin mengelola guru, asesmen awal–akhir, pelatihan.</p><a class="btn ghost" href="#quote" data-act="quotego">Minta penawaran</a></section>
+        <section class="plan"><small>Banyak kelas</small><h2>Sekolah</h2><b class="price">Hubungi kami</b><p>Dasbor sekolah, admin mengelola guru, pelatihan.</p><a class="btn ghost" href="#quote" data-act="quotego">Minta penawaran</a></section>
       </div>
       <section class="card"><h2>Bandingkan</h2><div class="tscroll"><table class="tbl pcompare"><thead><tr><th></th><th>Keluarga</th><th>Guru</th><th>Sekolah</th></tr></thead><tbody>
         ${rows.map(([t, a, b, c]) => `<tr><td>${t}</td><td>${a}</td><td>${b}</td><td>${c}</td></tr>`).join('')}</tbody></table></div></section>
@@ -3712,7 +3807,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   /* ---------- Interaksi ---------- */
   document.addEventListener('click', (e) => {
     const el = e.target.closest('[data-act]');
-    const row = e.target.closest('tr[data-href]');
+    const row = e.target.closest('[data-href]');
     if (!el && row && !e.target.closest('a')) return go(row.dataset.href);
     if (!el) return;
     const act = el.dataset.act;
@@ -3764,7 +3859,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (act === 'goal') { ls.set('metiq_goal_' + session.get().id, +el.dataset.m); return route(); }
     if (act === 'soundtoggle') { const on = window.SFX.toggle(); el.querySelector('.em').textContent = on ? 'ðŸ””' : 'ðŸ”•'; el.querySelector('.t').textContent = on ? 'Suara menyala' : 'Suara mati'; return; }
     // Mengulang asesmen awal atau membuka asesmen akhir: khusus admin (peneliti) agar data pretest terjaga
-    const adminDo = (msg, work) => { if (!isAdminNow()) return toast('Khusus admin'); el.disabled = true; return work().then(() => { toast(msg); route(); }).catch((e) => { el.disabled = false; toast(e.status ? e.message : 'Tidak bisa terhubung ke server'); }); };
+    const adminDo = (msg, work) => { if (!isResearchNow()) return toast('Khusus super admin'); el.disabled = true; return work().then(() => { toast(msg); route(); }).catch((e) => { el.disabled = false; toast(e.status ? e.message : 'Tidak bisa terhubung ke server'); }); };
     if (act === 'diagreset') {
       const k = S.student(el.dataset.s);
       if (!k || !confirm(`Ulangi asesmen awal untuk ${k.name}? Hasil asesmen awal yang lama tidak dipakai lagi (termasuk untuk data penelitian), dan ${k.name} akan diminta mengerjakannya saat masuk berikutnya.`)) return;
@@ -3863,7 +3958,6 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     else if (act === 'shareclass') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. Latihan matematika ${ctx.c.name} sekarang di Metiq (gratis, bisa di HP):\n1. Buka https://metiq-math.vercel.app\n2. Ketuk "Saya Siswa"\n3. Masukkan kode kelas: ${ctx.c.code}\n4. Pilih nama kamu`); }
     else if (act === 'shareparent') { const k = S.student(el.dataset.id), c = k && S.cls(k.classId); if (k) shareText(`Assalamu'alaikum Ayah/Bunda ${k.name}. Laporan belajar matematika ${k.name} (${c ? c.name : ''}) bisa dilihat di Metiq:\n1. Buka https://metiq-math.vercel.app\n2. Ketuk "Saya Orang Tua"\n3. Masukkan kode orang tua: ${k.parentCode}\nAyah/Bunda juga akan mendapat kabar setiap ada tugas dari guru.`); }
     else if (act === 'submitasg') { el.disabled = true; markDone(el.dataset.a, session.get().id, 'siswa').then(() => { window.SFX.task(); toast('Tugas dikumpulkan! Gurumu mendapat notifikasi 📨'); route(); }); }
-    else if (act === 'gotoform') { go('#/guru/tugas'); setTimeout(() => { const f = document.getElementById('newasg'); if (f) f.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 350); }
     else if (act === 'superdel') superDelete(el.dataset.what, el.dataset.id);
     else if (act === 'schoolview') { ss.set('schoolSel', el.dataset.id); go('#/guru/sekolah'); }
     else if (act === 'tdays') { ss.set('tdays', +el.dataset.d); return route(); }
@@ -3906,8 +4000,9 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     } else if (act === 'assign1') {
       const ctx = teacherCtx(), note = 'Latihan tambahan: ' + SKILLS[el.dataset.id].name;
       if (cloudOn()) return tAct('teacher_add_assignment', { p_class_id: ctx.c.id, p_skills: [el.dataset.id], p_note: note, p_due: '' }, 'Tugas dibuat ✔');
-      S.addAssignment(ctx.c.id, [el.dataset.id], note, ''); toast('Tugas dibuat ✔');
+      S.addAssignment(ctx.c.id, [el.dataset.id], note, ''); toast('Tugas dibuat ✔'); route();
     }
+    else if (act === 'remind') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. Yuk, latihan matematika di Metiq 10 menit hari ini.\nBuka https://metiq-math.vercel.app lalu ketuk "Saya Siswa". Kode kelas: ${ctx.c.code}`); }
     else if (act === 'print') window.print();
     else if (act === 'reload') route();
     else if (act === 'export') {
@@ -3950,6 +4045,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   // Kode kelas: huruf besar otomatis, tombol Masuk aktif setelah 4 huruf, dan langsung masuk saat 5 huruf
   document.addEventListener('input', (e) => {
     const el = e.target;
+    if (el && el.id === 'sup-q') { ss.set('supq', el.value); renderSupStudents(); return; }
     if (el && el.id === 'ung-q') { ss.set('ungq', el.value); ss.set('ungp', 1); const ctx = teacherCtx(); if (ctx) renderUngList(ctx); return; }
     if (!el || el.id !== 'mqcode') return;
     el.value = el.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); el.classList.remove('bad');
@@ -3998,13 +4094,13 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (kind === 'login') { const t = S.loginTeacher(fd.get('id'), fd.get('pin')); if (!t) return toast('PIN salah'); session.set({ role: 'guru', id: t.id }); go('#/guru/ringkasan'); }
     const ctx = teacherCtx();
     if (!ctx) return;
-    if (kind === 'addbycode') return toast('Di mode coba, tambahkan siswa dengan nama (cara 2).');
-    if (kind === 'addkid') { String(fd.get('name')).split(',').map((x) => x.trim()).filter(Boolean).forEach((n) => S.addStudent(ctx.c.id, n)); route(); }
+    if (kind === 'addbycode') return toast('Di mode coba, tambahkan siswa dengan mengetik namanya.');
+    if (kind === 'addkid') { String(fd.get('name')).split(/[,\n]/).map((x) => x.trim()).filter(Boolean).forEach((n) => S.addStudent(ctx.c.id, n)); route(); }
     if (kind === 'renameclass') { S.renameClass(ctx.c.id, fd.get('name')); route(); }
     if (kind === 'classset') { S.setClassSettings(ctx.c.id, { konteks: fd.get('konteks'), adab: fd.get('adab') === '1' }); toast('Pengaturan kelas disimpan ✔'); return route(); }
     if (kind === 'newclass') { const c = S.createClass(ctx.t.id, fd.get('name')); const s = session.get(); s.classId = c.id; session.set(s); route(); }
     if (kind === 'grouptask') { const sk = fd.getAll('sk'), sids = f.dataset.sids.split(','); if (!sk.length) return toast('Pilih minimal satu keterampilan'); S.addAssignment(ctx.c.id, sk, fd.get('note'), fd.get('due'), sids); toast(`Tugas dikirim ke ${sids.length} siswa ✔`); return route(); }
-    if (kind === 'assign') { const sk = fd.getAll('sk'), sids = fd.get('target') === 'some' ? fd.getAll('sid') : []; if (!sk.length) return toast('Pilih minimal satu keterampilan'); if (fd.get('target') === 'some' && !sids.length) return toast('Pilih minimal satu siswa'); S.addAssignment(ctx.c.id, sk, fd.get('note'), fd.get('due'), sids); ss.set('asgFor', ''); ss.set('asgSkill', ''); toast('Tugas disimpan ✔'); route(); }
+    if (kind === 'assign') { const sk = fd.getAll('sk'), sids = fd.get('target') === 'some' ? fd.getAll('sid') : []; if (!sk.length) return toast('Pilih minimal satu keterampilan'); if (fd.get('target') === 'some' && !sids.length) return toast('Pilih minimal satu siswa'); S.addAssignment(ctx.c.id, sk, fd.get('note') || 'Latihan: ' + SKILLS[sk[0]].name, fd.get('due'), sids); ss.set('asgFor', ''); ss.set('asgSkill', ''); toast('Tugas disimpan ✔'); route(); }
   });
 
   async function cloudSubmit(f, fd, kind) {
@@ -4078,7 +4174,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         catch (e) { done(); return toast(e.status === 404 ? 'Fitur ini butuh pembaruan server (SQL 019).' : e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
       }
       if (kind === 'addkid') {
-        const names = String(fd.get('name')).split(',').map((x) => x.trim()).filter(Boolean);
+        const names = String(fd.get('name')).split(/[,\n]/).map((x) => x.trim()).filter(Boolean);
         const used = ctx.kids.map((k) => k.avatar);
         const free = S.AVATARS.filter((a) => !used.includes(a));
         const avatars = names.map((_, i) => free[i] || S.AVATARS[Math.floor(Math.random() * S.AVATARS.length)]);
@@ -4102,10 +4198,25 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         if (fd.get('target') === 'some' && !sids.length) { done(); return toast('Pilih minimal satu siswa'); }
         ss.set('asgFor', ''); ss.set('asgSkill', '');
         // daftar siswa hanya dikirim untuk tugas khusus, agar tugas seluruh kelas tetap memakai fungsi lama
-        return tAct('teacher_add_assignment', Object.assign({ p_class_id: ctx.c.id, p_skills: sk, p_note: fd.get('note'), p_due: fd.get('due') }, sids.length ? { p_student_ids: sids } : {}), 'Tugas disimpan ✔');
+        return tAct('teacher_add_assignment', Object.assign({ p_class_id: ctx.c.id, p_skills: sk, p_note: fd.get('note') || 'Latihan: ' + SKILLS[sk[0]].name, p_due: fd.get('due') }, sids.length ? { p_student_ids: sids } : {}), 'Tugas disimpan ✔');
       }
     } catch (err) { fail(err); }
   }
+
+  // Tugas baru: cari materi, pilih kelas, dan jumlah materi yang dipilih di tombol kirim
+  function filterSkills() {
+    const box = document.getElementById('skbox'); if (!box) return;
+    const q = document.getElementById('skq').value.trim().toLowerCase(), g = document.getElementById('skg').value;
+    box.querySelectorAll('fieldset').forEach((fs) => {
+      let any = false;
+      fs.querySelectorAll('label').forEach((l) => { const hit = q ? (' ' + l.dataset.q).includes(' ' + q) : fs.dataset.g === g; l.hidden = !hit; if (hit) any = true; });
+      fs.hidden = !any;
+    });
+  }
+  document.addEventListener('input', (e) => {
+    if (e.target.id === 'skq' || e.target.id === 'skg') filterSkills();
+    if (e.target.name === 'sk' && e.target.closest('#skbox')) { const n = document.querySelectorAll('#skbox input:checked').length, b = document.getElementById('asgsend'); if (b) b.textContent = n ? `📌 Kirim tugas (${n} materi)` : '📌 Kirim tugas'; }
+  });
 
   setInterval(async () => {
     const x = session.get();

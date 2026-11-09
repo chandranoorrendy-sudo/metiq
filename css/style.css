@@ -1093,3 +1093,43 @@ b.big { font-size: 1.3rem; display: block; }
 .pp-opt.right { background: #15a36b; box-shadow: 0 8px 0 #0a7d52; outline: 6px solid #ffc800; } .pp-opt.wrong { background: #6b7572; box-shadow: 0 8px 0 #4c5552; }
 @media (max-width: 699px) { .pp-pals span:nth-child(2) { bottom: 110px; } .pp { grid-template-columns: 1fr; grid-template-rows: 190px 1fr; height: auto; min-height: calc(100dvh - 76px); } .pp-opts { grid-auto-flow: row; grid-template-columns: 1fr 1fr; height: auto; } .pp-opt { min-height: 84px; } .pp-q { font-size: clamp(2rem, 11vw, 3.4rem); min-height: 130px; } .pp-climb { bottom: calc(10% + var(--r) * 6.6%); } .pp-climb svg { width: 48px; } .pp-pals svg { width: 36px; } }
 @media (prefers-reduced-motion: reduce) { .pp-climb { transition: none; } .pp-pals.yay span, .pp-climb.slip .m { animation: none; } }
+
+/* ---------- Dasbor guru dan orang tua yang sederhana ---------- */
+.thero { background: linear-gradient(135deg, #dcfff6 0%, #fff 70%); }
+.thero > small { display: block; color: var(--muted); font-weight: 800; }
+.thero h1 { font-size: 1.5rem; font-weight: 700; margin: 4px 0 10px; } .thero h1 b { font-weight: 900; color: var(--brand); }
+.thero p { margin: 8px 0 0; font-weight: 700; }
+.tbar { height: 12px; border-radius: 99px; background: var(--lv0); overflow: hidden; } .tbar i { display: block; height: 100%; border-radius: 99px; background: var(--tiffany-dark); transition: width .4s; }
+.tbar.sm { height: 8px; margin: 6px 0 4px; }
+.steps3 { list-style: none; counter-reset: st; margin: 10px 0 0; padding: 0; display: grid; gap: 8px; }
+.steps3 li { counter-increment: st; display: grid; grid-template-columns: 36px 1fr; column-gap: 10px; align-items: center; color: var(--muted); }
+.steps3 li::before { content: counter(st); grid-row: span 2; display: grid; place-items: center; width: 36px; height: 36px; border-radius: 50%; background: var(--lv0); font-weight: 900; }
+.steps3 li.on { color: var(--ink); } .steps3 li.on::before { background: var(--tiffany); color: var(--on-tiffany); } .steps3 small { display: block; }
+.addkids > summary, .newtask > summary, .pmore > summary { font-size: 1.05rem; }
+.addname { margin-top: 10px; } .addname textarea { width: 100%; font: inherit; padding: 10px 12px; border: 2px solid var(--line); border-radius: 12px; }
+.addnext { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); } .addnext small { display: block; color: var(--muted); }
+.addalt { margin-top: 10px; font-size: .92rem; } .addalt summary { cursor: pointer; color: var(--brand); font-weight: 800; }
+.kgh { margin: 14px 0 6px; font-size: 1rem; }
+.kgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 8px; }
+.kcard { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border: 1.5px solid var(--line); border-left: 5px solid var(--lv3); border-radius: 14px; background: #fff; cursor: pointer; min-height: 60px; }
+.kcard.r { border-left-color: var(--no); } .kcard.y { border-left-color: var(--warn); } .kcard:hover { background: #f7fffc; }
+.kcard a { color: var(--ink); text-decoration: none; } .kcard small { display: block; color: var(--muted); font-size: .84rem; } .kcard .av { flex: none; }
+.kcard .kpar { flex: none; white-space: nowrap; font-weight: 800; } .kgo { flex: none; color: var(--muted); font-size: 1.3rem; }
+.sugrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 0; border-top: 1px solid var(--line); } .sugrow:first-of-type { border-top: 0; } .sugrow small { display: block; color: var(--muted); }
+.stepn { display: flex; align-items: center; gap: 8px; margin: 14px 0 6px; font-size: 1rem; } .stepn i { display: grid; place-items: center; width: 26px; height: 26px; border-radius: 50%; background: var(--tiffany); color: var(--on-tiffany); font-style: normal; font-size: .9rem; font-weight: 900; }
+.skfind { display: grid; grid-template-columns: 1fr auto; gap: 8px; margin-bottom: 8px; } .skbox { max-height: 300px; } .skbox [hidden] { display: none !important; }
+.taskc { display: flex; align-items: flex-start; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); } .taskc:first-of-type { border-top: 0; } .taskc small { display: block; color: var(--muted); }
+.khead { display: flex; gap: 12px; align-items: flex-start; } .khead h1 { margin: 0 0 4px; } .khead p { margin: 8px 0 0; }
+.sclass { display: flex; align-items: center; gap: 10px; padding: 12px; margin-top: 8px; border: 1.5px solid var(--line); border-left: 5px solid var(--lv3); border-radius: 14px; cursor: pointer; } .sclass.r { border-left-color: var(--no); } .sclass.y { border-left-color: var(--warn); } .sclass:hover { background: #f7fffc; }
+.sclass small { display: block; color: var(--muted); } .sline { display: block; font-size: .92rem; margin-top: 2px; }
+.phead { border-top: 6px solid var(--lv3); } .phead.r { border-top-color: var(--no); } .phead.y { border-top-color: var(--warn); }
+.phead-top { display: flex; align-items: center; gap: 12px; } .phead-top small { color: var(--muted); font-weight: 700; } .phead h1 { font-size: 1.4rem; margin: 2px 0 0; } .phead h2 { font-size: 1.2rem; margin: 2px 0 0; }
+.phead > p { margin: 10px 0 0; font-size: 1.02rem; }
+.wkdots { display: flex; justify-content: space-between; gap: 4px; max-width: 380px; margin-top: 14px; } .wkdots span { display: grid; justify-items: center; gap: 2px; } .wkdots small { font-size: .74rem; color: var(--muted); font-weight: 800; }
+.wkdots i { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; background: var(--lv0); color: var(--on-tiffany); font-style: normal; font-weight: 900; } .wkdots .on i { background: var(--tiffany); }
+.phelp { padding: 10px 0; border-top: 1px solid var(--line); } .phelp:first-of-type { border-top: 0; padding-top: 0; } .phelp p { margin: 4px 0 8px; }
+.kunlink { margin: 8px 0 0; }
+.pmore .sub { margin: 14px 0 6px; }
+@media (max-width: 760px) { .sugrow .btn { margin-left: auto; } .thero h1 { font-size: 1.3rem; } }
+@media (max-width: 480px) { .demobar { flex-wrap: wrap; } .demobar .grow { flex-basis: 100%; } }
+.sclass.r, .kcard.r, .khead.r, .phead.r { text-align: left; }
