@@ -9,11 +9,11 @@
  */
 (function () {
   const BANDS = [
-    { id: 'TK', name: 'TK', grades: [-2, -1], style: 'Bantu pekerja dengan gambar dan suara' },
-    { id: 'SD 1-3', name: 'Grades 1–3', grades: [1, 2, 3], style: 'Satu tugas singkat' },
-    { id: 'SD 4-6', name: 'Grades 4–6', grades: [4, 5, 6], style: 'Tugas dua atau tiga langkah' },
-    { id: 'SMP', name: 'SMP', grades: [7, 8], style: 'Keputusan nyata di tempat kerja' },
-    { id: 'SMA', name: 'SMA', grades: [9, 10, 11, 12, 13], style: 'Masalah nyata kecil, beberapa langkah' },
+    { id: 'TK', name: 'TK', grades: [-2, -1], style: 'Help workers with pictures and sound' },
+    { id: 'SD 1-3', name: 'Grades 1–3', grades: [1, 2, 3], style: 'One short task' },
+    { id: 'SD 4-6', name: 'Grades 4–6', grades: [4, 5, 6], style: 'Tasks with two or three steps' },
+    { id: 'SMP', name: 'SMP', grades: [7, 8], style: 'Real decisions at work' },
+    { id: 'SMA', name: 'SMA', grades: [9, 10, 11, 12, 13], style: 'Small real problems, several steps' },
   ];
   const INTERESTS = { bangun: '🏗️ Building', makanan: '🍳 Food', alam: '🌾 Nature', teknologi: '💻 Technology', data: '📊 Science and data' };
   const TOPICS = { bilangan: 'Numbers and counting', ukur: 'Measurement', geometri: 'Geometry', aljabar: 'Algebra and functions', data: 'Data and probability' };

@@ -933,11 +933,11 @@
     } else if (near) {
       window.SFX.wrong();
       fb.className = 'mq-foot near';
-      fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">!</span>So close!</div><div class="mq-fbody"><p>${tag === 'meleset-satu' ? 'Almost right, it\'s only off by 1. Count carefully once more.' : 'Almost right, the digits swapped places. Check the tens and ones.'}</p><p>Jawabanmu: <b class="strike">${esc(strip(given))}</b></p><p>The correct answer:</p><div class="mq-corr">${q.answer}</div>${how}</div><button class="mq-btn warn" data-act="next">Continue</button></div>`;
+      fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">!</span>So close!</div><div class="mq-fbody"><p>${tag === 'meleset-satu' ? 'Almost right, it\'s only off by 1. Count carefully once more.' : 'Almost right, the digits swapped places. Check the tens and ones.'}</p><p>Your answer: <b class="strike">${esc(strip(given))}</b></p><p>The correct answer:</p><div class="mq-corr">${q.answer}</div>${how}</div><button class="mq-btn warn" data-act="next">Continue</button></div>`;
     } else {
       window.SFX.wrong();
       fb.className = 'mq-foot no';
-      fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${IC.x}</span>Not quite</div><div class="mq-fbody"><p>Jawabanmu: <b class="strike">${esc(strip(given))}</b></p><p>The correct answer:</p><div class="mq-corr">${q.answer}</div>${how}</div><button class="mq-btn bad" data-act="next">Continue</button></div>`;
+      fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${IC.x}</span>Not quite</div><div class="mq-fbody"><p>Your answer: <b class="strike">${esc(strip(given))}</b></p><p>The correct answer:</p><div class="mq-corr">${q.answer}</div>${how}</div><button class="mq-btn bad" data-act="next">Continue</button></div>`;
     }
     pq.style.paddingBottom = fb.offsetHeight + 24 + 'px';
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1026,7 +1026,7 @@
         ${pass && wasOpen && !gain ? '<div class="mq-unlock">You\'ve already earned this chest\'s stars. Try for a higher score to get bonus stars!</div>' : ''}
         ${!pass ? `<div class="mq-unlock" style="background:#fff3c4;color:#8a5a00">${fast ? 'Read the question slowly, then try again.' : 'You need a score of 60 to open the chest. Practice more and try the test again!'}</div>` : ''}
       </div></main>
-      <div class="mq-foot"><div class="mq-foot-in">${pass ? '<a class="mq-btn pulse" href="#/belajar">Lanjutkan</a><button class="mq-btn ghost" data-act="testagain" data-u="' + u.id + '">Retake test</button>' : '<button class="mq-btn pulse" data-act="testagain" data-u="' + u.id + '">Try again</button><a class="mq-btn ghost" href="#/belajar">Back to the map</a>'}</div></div>`;
+      <div class="mq-foot"><div class="mq-foot-in">${pass ? '<a class="mq-btn pulse" href="#/belajar">Continue</a><button class="mq-btn ghost" data-act="testagain" data-u="' + u.id + '">Retake test</button>' : '<button class="mq-btn pulse" data-act="testagain" data-u="' + u.id + '">Try again</button><a class="mq-btn ghost" href="#/belajar">Back to the map</a>'}</div></div>`;
   }
 
   // Layar akhir satu putaran latihan: bintang, tiga kartu (skor, tepat, waktu), dan satu tombol utama yang menyesuaikan
@@ -1679,7 +1679,7 @@
       }));
     } else if (type === 'ortu') {
       rows = [['kode_siswa', 'kode_kelas', 'kode_guru', 'tanggal', 'jam', 'cara_masuk']];
-      kids.forEach(({ k, c }) => S.viewsOf(k.id).filter((v) => v.at >= g.from && v.at <= g.to).sort((a, b) => a.at - b.at).forEach((v) => rows.push([sc[k.id], cc[c.id], tc[c.teacherId], isoDay(v.at), hhmm(v.at), v.via === 'akun' ? 'akun orang tua' : 'kode orang tua'])));
+      kids.forEach(({ k, c }) => S.viewsOf(k.id).filter((v) => v.at >= g.from && v.at <= g.to).sort((a, b) => a.at - b.at).forEach((v) => rows.push([sc[k.id], cc[c.id], tc[c.teacherId], isoDay(v.at), hhmm(v.at), v.via === 'akun' ? 'parent account' : 'parent code'])));
     } else if (type === 'asesmen') {
       rows = [['kode_siswa', 'kode_kelas', 'kode_guru', 'usia_awal', 'kelas_sesuai_usia_awal', 'level_awal', 'benar_awal', 'soal_awal', 'cepat_awal', 'menit_awal', 'tanggal_awal', 'usia_akhir', 'kelas_sesuai_usia_akhir', 'level_akhir', 'benar_akhir', 'soal_akhir', 'cepat_akhir', 'menit_akhir', 'tanggal_akhir', 'kenaikan_level', 'selisih_usia_awal', 'selisih_usia_akhir']];
       const part = (d) => (d ? [d.age, ageGradeOf(d), d.level, d.items.filter((x) => x.ok).length, d.items.length, d.items.filter((x) => x.fast).length, dec(d.ms / 60000), isoDay(d.at)] : ['', '', '', '', '', '', '', '']);
@@ -2079,7 +2079,7 @@
         ${sug.length ? `<form data-form="grouptask" data-sids="${g.kids.map((r) => r.k.id).join(',')}" class="form">
           <p class="small"><b>Suggested tasks for this group</b> <span class="muted">(number = members not yet proficient)</span></p>
           ${sug.map((x, i) => `<label class="cb"><input type="checkbox" name="sk" value="${x.id}" ${i < 3 ? 'checked' : ''}> ${SKILLS[x.id].code} ${SKILLS[x.id].name} <span class="pill">${x.need}/${g.kids.length}</span></label>`).join('')}
-          <div class="grow2"><label>Note<input name="note" maxlength="120" value="${esc(head)}: latihan bersama"></label><label>Due date (optional)<input name="due" type="date"></label></div>
+          <div class="grow2"><label>Note<input name="note" maxlength="120" value="${esc(head)}: practice together"></label><label>Due date (optional)<input name="due" type="date"></label></div>
           <button class="btn sm">📌 Assign a task to these ${g.kids.length} students</button></form>`
         : '<p class="small muted">All members are proficient in this level\'s key skills. Consider the next grade\'s material.</p>'}</section>`;
     };
@@ -2172,12 +2172,12 @@
       if (mine.length) {
         setTry({ role, name, child: mine.map((d) => d.name).join(', ') });
         session.set({ role: 'ortu', id: mine[0].sid, kids: mine.map((d) => d.sid), demo: true });
-        toast(`Welcome, ${esc(name || 'Ayah/Bunda')}!`);
+        toast(`Welcome, ${esc(name || 'Parent')}!`);
         return go(mine.length > 1 ? '#/ortu/anak' : '#/ortu/laporan');
       }
       const k = kids.find((x) => x.name === 'Alya') || kids[0];
       if (child) S.renameStudent(k.id, child);
-      session.set({ role: 'ortu', id: k.id, demo: true }); toast(`Welcome, ${esc(name || 'Ayah/Bunda')}!`); return go('#/ortu/laporan');
+      session.set({ role: 'ortu', id: k.id, demo: true }); toast(`Welcome, ${esc(name || 'Parent')}!`); return go('#/ortu/laporan');
     }
     // siswa: akun siswa contoh baru dengan namanya sendiri (mulai dari asesmen awal)
     // lanjut sebagai anak yang sudah ada, atau anak baru (anak dengan nama sama di perangkat ini dipakai lagi)
@@ -2351,7 +2351,7 @@
       const classOpts = SUP.ctx.classes.slice().sort((a, b) => (a.schoolName || '').localeCompare(b.schoolName || '') || a.name.localeCompare(b.name)).map((c) => `<option value="${c.id}">${esc(c.schoolName || 'No school')} · ${esc(c.name)}</option>`).join('');
       const card = (r) => {
         const k = REQ[r.kind] || {}, d = r.details || {};
-        const info = [r.email && `📧 ${esc(r.email)}`, r.contact && r.contact !== r.email && `📱 ${esc(r.contact)}`, r.schoolName && `🏫 ${esc(r.schoolName)}`, d.className && `Kelas: ${esc(d.className)}`, d.age && `Age ${esc(d.age)}`, (d.children || []).length && `Anak: ${d.children.map(esc).join(', ')}`, d.note && `“${esc(d.note)}”`].filter(Boolean);
+        const info = [r.email && `📧 ${esc(r.email)}`, r.contact && r.contact !== r.email && `📱 ${esc(r.contact)}`, r.schoolName && `🏫 ${esc(r.schoolName)}`, d.className && `Class: ${esc(d.className)}`, d.age && `Age ${esc(d.age)}`, (d.children || []).length && `Child: ${d.children.map(esc).join(', ')}`, d.note && `“${esc(d.note)}”`].filter(Boolean);
         if (r.status !== 'menunggu') {
           const res = r.result || {}, msg = r.status === 'disetujui' ? `Assalamu'alaikum ${r.name}, your Metiq account request has been approved. ${res.classCode ? `Class code: ${res.classCode}. ` : ''}${res.parentCode ? `Parent code: ${res.parentCode}. ` : ''}Open https://metiq-math.vercel.app — request code: ${r.code}` : '';
           return `<div class="reqrow"><span class="grow"><b>${k.icon || ''} ${esc(r.name)}</b> <small class="muted">${k.title || r.kind} · ${r.status === 'disetujui' ? '✅ approved' : '❌ rejected'} ${ago(r.decidedAt)}${r.decidedBy ? ` by ${esc(r.decidedBy)}` : ''}</small>
@@ -2482,7 +2482,7 @@
         <div class="tsub ungf">${UNG_F.map(([v, l]) => `<button class="${f === v ? 'on' : ''}" data-act="ungf" data-v="${v}">${l}${v === 'semua' ? '' : ` (${cnt(v)})`}</button>`).join('')}</div>
         <div class="ungtools"><label class="ungq"><span aria-hidden="true">🔍</span><input id="ung-q" type="search" placeholder="Search name, learning code, parent code…" value="${esc(ss.get('ungq', ''))}" autocomplete="off" aria-label="Search students"></label>
           <select data-act="ungsel" data-k="ungg" aria-label="Filter by level"><option value="">All levels</option>${grades.map((x) => `<option value="${x}" ${x === g ? 'selected' : ''}>${x === 'none' ? 'No questions done yet' : esc(gname(+x))} (${all.filter((k) => ungGrade(k) === x).length})</option>`).join('')}</select>
-          <select data-act="ungsel" data-k="ungs" aria-label="Sort">${UNG_SORT.map(([v, l]) => `<option value="${v}" ${v === sort ? 'selected' : ''}>Urut: ${l}</option>`).join('')}</select></div>
+          <select data-act="ungsel" data-k="ungs" aria-label="Sort">${UNG_SORT.map(([v, l]) => `<option value="${v}" ${v === sort ? 'selected' : ''}>Sort: ${l}</option>`).join('')}</select></div>
         <p class="small muted">Children who started on their own or were approved without a class. Students log in with a learning code ("I already have a code" menu); parents see reports at <b>#/ortu</b> with a parent code or family code.</p>
         <p class="small"><b>👨‍👩‍👧 Siblings?</b> Check the children, then create one family code for the parent.</p><button class="btn sm" data-act="famset">Create a family code for those checked</button></section><div id="ung-list"></div>`;
     renderUngList(ctx);
@@ -2734,7 +2734,7 @@
   function viewGames() {
     const kid = gameKid(), max = kid ? gameGradeMax(kid.id) : GRADES[GRADES.length - 1].id, g = gameGrade(max);
     const best = (id) => { const p = kid ? S.progress(kid.id, 'g:' + id) : null; return p && p.att ? p : null; };
-    const pill = (x) => { const lock = x.id > max; return `<button class="mq-gg ${x.id === g ? 'on' : ''} ${lock ? 'lock' : ''}" data-act="ggrade" data-g="${x.id}" aria-label="${gname(x.id)}${lock ? ' (terkunci)' : ''}"><b>${x.short || x.id}</b>${lock ? `<i>${IC.lock}</i>` : ''}</button>`; };
+    const pill = (x) => { const lock = x.id > max; return `<button class="mq-gg ${x.id === g ? 'on' : ''} ${lock ? 'lock' : ''}" data-act="ggrade" data-g="${x.id}" aria-label="${gname(x.id)}${lock ? ' (locked)' : ''}"><b>${x.short || x.id}</b>${lock ? `<i>${IC.lock}</i>` : ''}</button>`; };
     const tile = (x) => {
       const b = best(x.id), st = b ? G.starsFor(x, b.score) : 0, [c, bg] = G.LOOK[x.type];
       return `<a class="mq-gt" href="#/main/${x.id}" style="--c:${c};--bg:${bg}" aria-label="${esc(x.name)}, ${st} stars">${x.isNew && !b ? '<span class="new">New</span>' : ''}<span class="art">${G.art(x.type)}</span><b>${x.name}</b><span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span></a>`;
@@ -3053,7 +3053,7 @@
           ${w.tag ? `<p class="small"><b>Pattern:</b> ${TAGS[w.tag].label}.</p>` : ''}${w.example ? `<p class="small ex">Example: "${esc(w.example.text)}" — answered <b class="strike">${esc(w.example.given)}</b>, should be <b>${esc(w.example.answer)}</b>.</p>` : ''}
           <p class="small tip">💡 ${w.tag && w.tag !== 'konsep' ? TAGS[w.tag].tip : UNITS.find((u) => u.id === w.skill.unit).tip} <a href="#/pelajaran/${w.skill.unit}">📖 The lesson</a></p></div>`).join('') : `<p class="muted">No skills left behind. Awesome!</p>`}</section>
       </div>
-      ${tags.length ? `<section class="card"><h2>🔍 Error patterns from ${nm}'s answers (30 days)</h2>${tags.map(([t, n]) => `<div class="tagrow"><b>${TAGS[t].label}</b> <span class="pill">${n}×</span><p class="small">${audience === 'ortu' ? 'At home: ' : 'Saran: '}${TAGS[t].tip}</p></div>`).join('')}</section>` : ''}
+      ${tags.length ? `<section class="card"><h2>🔍 Error patterns from ${nm}'s answers (30 days)</h2>${tags.map(([t, n]) => `<div class="tagrow"><b>${TAGS[t].label}</b> <span class="pill">${n}×</span><p class="small">${audience === 'ortu' ? 'At home: ' : 'Suggestion: '}${TAGS[t].tip}</p></div>`).join('')}</section>` : ''}
       <section class="card"><h2>Progress by chapter</h2>${reportGrades(k.id).map((g, _, all) => (all.length > 1 ? `<p class="small"><b>${gname(g)}</b></p>` : '') + unitsOf(g).map((u) => { const us = unitScore(k.id, u); return `<div class="uprog"><span>${u.icon} ${u.name}</span><span class="ubar"><i style="width:${us.avg}%;background:${u.color}"></i></span><small>${us.prof}/${us.total}</small></div>`; }).join('')).join('')}</section>
       ${audience === 'ortu' && recentWrong.length ? `<section class="card"><h2>Recent answers that weren't correct</h2>${recentWrong.map((a) => `<div class="wa"><p>${esc(a.text)}</p><small>${nm}'s answer: <b class="strike">${esc(a.given)}</b> · Correct: <b>${esc(a.answer)}</b> · ${ago(a.ts)}</small></div>`).join('')}</section>` : ''}`;
   }
@@ -3117,10 +3117,10 @@
   function viewParentHome() {
     const ses = session.get(), demoKids = ses.role === 'ortu' && ses.demo && ses.kids, codeKids = ses.role === 'ortu' && !ses.demo && ses.pcode && ses.kids;
     if (!(ses.role === 'ortu' && (ses.ptoken || demoKids || codeKids))) return go('#/ortu');
-    const p = demoKids ? { name: (tryInfo() || {}).name } : codeKids ? { name: 'Ayah/Bunda' } : S.db.parent || {};
+    const p = demoKids ? { name: (tryInfo() || {}).name } : codeKids ? { name: 'Parent' } : S.db.parent || {};
     const kids = demoKids || codeKids ? ses.kids.map((id) => S.student(id)).filter(Boolean) : S.db.students;
     app.innerHTML = shell(`
-      <section class="dhead"><div><small class="muted">${codeKids ? `Family code ${esc(ses.pcode)}` : 'Parent accounts'}</small><h1>Hello, ${esc(p.name || 'Ayah/Bunda')}</h1></div></section>
+      <section class="dhead"><div><small class="muted">${codeKids ? `Family code ${esc(ses.pcode)}` : 'Parent accounts'}</small><h1>Hello, ${esc(p.name || 'Parent')}</h1></div></section>
       ${kids.map((k) => { const v = parentVerdict(k), c = S.cls(k.classId) || {}, t = parentTasks(k);
         return `<section class="card phead ${v.tone}"><div class="phead-top"><span class="av lg">${avHTML(k.avatar)}</span><div class="grow"><small>${esc(c.name || '')}${c.teacherName ? ' · ' + esc(c.teacherName) : ''}</small><h2><span aria-hidden="true">${v.icon}</span> ${v.title}</h2></div></div>${v.all.answered ? weekDots(v.s7) : `<p>${v.text}</p>`}
           ${t.length ? `<p class="small"><a href="#/notifikasi">📌 ${t.length} tasks from the teacher not finished</a></p>` : ''}
@@ -3260,7 +3260,7 @@
   function lessonExample(skillId) {
     const q = SKILLS[skillId].gen();
     return `<p class="qtext">${q.text}</p>${q.vis ? `<div class="qvis">${q.vis}</div>` : ''}${q.options ? `<div class="lopts">${q.options.map((o) => `<span>${o}</span>`).join('')}</div>` : ''}
-      <details class="lsol"><summary>See how to solve it</summary><p class="lans">Jawaban: <b>${q.unit === 'Rp' ? 'Rp' : ''}${q.answer}</b></p><p>${q.explain}</p>${kolomOf(q, SKILLS[skillId])}</details>`;
+      <details class="lsol"><summary>See how to solve it</summary><p class="lans">Answer: <b>${q.unit === 'Rp' ? 'Rp' : ''}${q.answer}</b></p><p>${q.explain}</p>${kolomOf(q, SKILLS[skillId])}</details>`;
   }
   // Isi pelajaran dipakai di halaman Pelajaran dan sebagai lembar di atas soal (inPractice), supaya soal tidak hilang saat anak membuka materi
   function lessonInner(uid, inPractice) {
@@ -3320,7 +3320,7 @@
     const adaLah = !!(d.ar || d.id);
     return `<section class="card hikmah"><h2>🌙 Wisdom: ${esc(h.tema || '')}</h2>
       ${adaLah ? `<blockquote>${d.ar ? `<p class="doa-ar" dir="rtl" lang="ar">${esc(d.ar)}</p>` : ''}${d.id ? `<p>${esc(d.id)}</p>` : ''}${d.ref ? `<cite>${esc(d.ref)}</cite>` : ''}</blockquote>` : ''}
-      ${h.ajakan ? `<p>${esc(h.ajakan)}</p>` : ''}${h.refleksi ? `<p><b>Renungkan:</b> ${esc(h.refleksi)}</p>` : ''}${h.adab ? `<p><b>Adab:</b> ${esc(h.adab)}</p>` : ''}
+      ${h.ajakan ? `<p>${esc(h.ajakan)}</p>` : ''}${h.refleksi ? `<p><b>Reflect:</b> ${esc(h.refleksi)}</p>` : ''}${h.adab ? `<p><b>Adab:</b> ${esc(h.adab)}</p>` : ''}
       ${h.verifiedAt ? `<p class="small muted">Reviewed by ${esc(h.verifiedBy || '-')} · ${esc(h.verifiedAt)}</p>` : `<p class="small muted">Verses and hadith are being reviewed by an ustadz/ustadzah, so they aren't shown here yet.</p>`}</section>`;
   }
 
@@ -3329,7 +3329,7 @@
     const sk = SKILLS[id]; if (!sk) return go('#/guru');
     const qs = Array.from({ length: 3 }, () => sk.gen());
     app.innerHTML = shell(`<button class="back link" data-act="back">← Back</button><h1>${sk.code} ${sk.name}</h1><p class="muted">Random sample question (not recorded).</p>
-      ${qs.map((q) => `<section class="qcard"><p class="qtext">${q.text}</p>${q.vis ? `<div class="qvis">${q.vis}</div>` : ''}${q.options ? `<p class="small">Pilihan: ${q.options.join(' · ')}</p>` : ''}<div class="explain"><b>Jawaban: ${q.answer}</b><p>${q.explain}</p></div></section>`).join('')}
+      ${qs.map((q) => `<section class="qcard"><p class="qtext">${q.text}</p>${q.vis ? `<div class="qvis">${q.vis}</div>` : ''}${q.options ? `<p class="small">Options: ${q.options.join(' · ')}</p>` : ''}<div class="explain"><b>Answer: ${q.answer}</b><p>${q.explain}</p></div></section>`).join('')}
       <button class="btn" data-act="reload">Another question</button>`);
   }
 
@@ -3504,7 +3504,7 @@
       if (JM.tries >= 3) {
         JM.log.push({ q: st.question, a: jAnswerText(st), ex: st.explanation, first: false });
         fb.className = 'mq-foot no';
-        fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${IC.x}</span>Let's see how</div><div class="mq-fbody"><p>Jawabannya: <b>${jAnswerText(st)}</b></p><p>${esc(st.explanation)}</p></div><button class="mq-btn" data-act="jnext">Next</button></div>`;
+        fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${IC.x}</span>Let's see how</div><div class="mq-fbody"><p>The answer: <b>${jAnswerText(st)}</b></p><p>${esc(st.explanation)}</p></div><button class="mq-btn" data-act="jnext">Next</button></div>`;
         jPlay('e' + (JM.i + 1), 300);
       } else {
         fb.className = 'mq-foot near';
@@ -3695,7 +3695,7 @@
   function olFeedback(ok) {
     const fb = document.getElementById('fb'), { t, q } = OL.cur; OL.locked = true;
     fb.className = 'mq-foot ' + (ok ? 'ok' : 'no');
-    fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${ok ? IC.ok : IC.x}</span>${ok ? 'Correct!' : 'Solution'}</div><div class="mq-fbody">${ok ? '' : `<p>Jawabannya: <b>${olAns(q)}</b></p>`}${olSol(t, q)}</div><button class="mq-btn" data-act="olnext">Next problem</button></div>`;
+    fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${ok ? IC.ok : IC.x}</span>${ok ? 'Correct!' : 'Solution'}</div><div class="mq-fbody">${ok ? '' : `<p>The answer: <b>${olAns(q)}</b></p>`}${olSol(t, q)}</div><button class="mq-btn" data-act="olnext">Next problem</button></div>`;
   }
   function olCheck() {
     if (!OL || OL.locked) return;
@@ -4087,7 +4087,7 @@
     if (kind === 'classset') { S.setClassSettings(ctx.c.id, { konteks: fd.get('konteks'), adab: fd.get('adab') === '1' }); toast('Class settings saved ✔'); return route(); }
     if (kind === 'newclass') { const c = S.createClass(ctx.t.id, fd.get('name')); const s = session.get(); s.classId = c.id; session.set(s); route(); }
     if (kind === 'grouptask') { const sk = fd.getAll('sk'), sids = f.dataset.sids.split(','); if (!sk.length) return toast('Choose at least one skill'); S.addAssignment(ctx.c.id, sk, fd.get('note'), fd.get('due'), sids); toast(`Task sent to ${sids.length} students ✔`); return route(); }
-    if (kind === 'assign') { const sk = fd.getAll('sk'), sids = fd.get('target') === 'some' ? fd.getAll('sid') : []; if (!sk.length) return toast('Choose at least one skill'); if (fd.get('target') === 'some' && !sids.length) return toast('Choose at least one student'); S.addAssignment(ctx.c.id, sk, fd.get('note') || 'Latihan: ' + SKILLS[sk[0]].name, fd.get('due'), sids); ss.set('asgFor', ''); ss.set('asgSkill', ''); toast('Task saved ✔'); route(); }
+    if (kind === 'assign') { const sk = fd.getAll('sk'), sids = fd.get('target') === 'some' ? fd.getAll('sid') : []; if (!sk.length) return toast('Choose at least one skill'); if (fd.get('target') === 'some' && !sids.length) return toast('Choose at least one student'); S.addAssignment(ctx.c.id, sk, fd.get('note') || 'Practice: ' + SKILLS[sk[0]].name, fd.get('due'), sids); ss.set('asgFor', ''); ss.set('asgSkill', ''); toast('Task saved ✔'); route(); }
   });
 
   async function cloudSubmit(f, fd, kind) {
@@ -4185,7 +4185,7 @@
         if (fd.get('target') === 'some' && !sids.length) { done(); return toast('Choose at least one student'); }
         ss.set('asgFor', ''); ss.set('asgSkill', '');
         // daftar siswa hanya dikirim untuk tugas khusus, agar tugas seluruh kelas tetap memakai fungsi lama
-        return tAct('teacher_add_assignment', Object.assign({ p_class_id: ctx.c.id, p_skills: sk, p_note: fd.get('note') || 'Latihan: ' + SKILLS[sk[0]].name, p_due: fd.get('due') }, sids.length ? { p_student_ids: sids } : {}), 'Task saved ✔');
+        return tAct('teacher_add_assignment', Object.assign({ p_class_id: ctx.c.id, p_skills: sk, p_note: fd.get('note') || 'Practice: ' + SKILLS[sk[0]].name, p_due: fd.get('due') }, sids.length ? { p_student_ids: sids } : {}), 'Task saved ✔');
       }
     } catch (err) { fail(err); }
   }

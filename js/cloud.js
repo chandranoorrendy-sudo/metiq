@@ -23,7 +23,7 @@
       const txt = await res.text();
       let data = null;
       try { data = txt ? JSON.parse(txt) : null; } catch (e) { data = txt; }
-      if (!res.ok) { const err = new Error((data && data.message) || 'Gagal terhubung ke server'); err.status = res.status; throw err; }
+      if (!res.ok) { const err = new Error((data && data.message) || (window.METIQ_LANG === 'en' ? 'Could not connect to the server' : 'Gagal terhubung ke server')); err.status = res.status; throw err; }
       return data;
     },
 

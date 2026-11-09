@@ -20,15 +20,16 @@
     'boy-peci': svg('#fff1cc', '<path d="M12 64c1.4-10 9-15 20-15s18.6 5 20 15z" fill="#4d96ff"/><path d="M27 49.5l5 5 5-5" stroke="#fff" stroke-width="2" fill="none"/>' + face(32, 32.5, 11, 12, '#f2c49b') + '<ellipse cx="21" cy="33" rx="2" ry="3" fill="#e8b48a"/><ellipse cx="43" cy="33" rx="2" ry="3" fill="#e8b48a"/><path d="M21.4 25c0-6.3 4.7-9.6 10.6-9.6s10.6 3.3 10.6 9.6v2.2H21.4z" fill="#1e2333"/><path d="M21.4 25.8h21.2" stroke="#3a4157" stroke-width="1.4"/>' + eyes(32) + cheeks(36) + smile(37.5)),
   };
 
+  const T = (id, en) => (window.METIQ_LANG === 'en' ? en : id);
   const CATALOG = [
-    ['Anak', ['svg:girl-hijab', 'svg:boy-peci', '👧', '👦', '🧒', '👩‍🎓', '👨‍🎓', '🧕']],
-    ['Guru', ['svg:ustadzah', 'svg:ustadz', '👩‍🏫', '👨‍🏫']],
-    ['Hewan', ['svg:meti', 'svg:tito', 'svg:nahla', 'svg:lumo', '🦁', '🐯', '🐼', '🐨', '🐸', '🐵', '🦊', '🐰', '🐻', '🐧', '🦄', '🐙', '🐳', '🦋', '🐞', '🐢', '🐱', '🐶', '🐮', '🐔', '🦉', '🐠']],
-    ['Tumbuhan', ['🌻', '🌵', '🌳', '🌴', '🍀', '🌷', '🌸', '🍁', '🌿', '🍄', '🌹', '🌾']],
-    ['Bentuk', ['🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⭐', '🔷', '🔶', '💠', '❤️', '🟥']],
-    ['Ikon', ['⚽', '🏀', '🚀', '🎨', '🎵', '📚', '✏️', '🌙', '☀️', '🌈', '🚲', '🎈', '🧩', '🏆']],
+    [T('Anak', 'Children'), ['svg:girl-hijab', 'svg:boy-peci', '👧', '👦', '🧒', '👩‍🎓', '👨‍🎓', '🧕']],
+    [T('Guru', 'Teachers'), ['svg:ustadzah', 'svg:ustadz', '👩‍🏫', '👨‍🏫']],
+    [T('Hewan', 'Animals'), ['svg:meti', 'svg:tito', 'svg:nahla', 'svg:lumo', '🦁', '🐯', '🐼', '🐨', '🐸', '🐵', '🦊', '🐰', '🐻', '🐧', '🦄', '🐙', '🐳', '🦋', '🐞', '🐢', '🐱', '🐶', '🐮', '🐔', '🦉', '🐠']],
+    [T('Tumbuhan', 'Plants'), ['🌻', '🌵', '🌳', '🌴', '🍀', '🌷', '🌸', '🍁', '🌿', '🍄', '🌹', '🌾']],
+    [T('Bentuk', 'Shapes'), ['🔴', '🟠', '🟡', '🟢', '🔵', '🟣', '⭐', '🔷', '🔶', '💠', '❤️', '🟥']],
+    [T('Ikon', 'Icons'), ['⚽', '🏀', '🚀', '🎨', '🎵', '📚', '✏️', '🌙', '☀️', '🌈', '🚲', '🎈', '🧩', '🏆']],
   ];
-  const NAMES = { 'svg:girl-hijab': 'Anak berhijab', 'svg:boy-peci': 'Anak berpeci', 'svg:ustadzah': 'Ustadzah', 'svg:ustadz': 'Ustadz', 'svg:meti': 'Meti si gurita', 'svg:tito': 'Tito si semut', 'svg:nahla': 'Nahla si lebah', 'svg:lumo': 'Lumo si lumba-lumba' };
+  const NAMES = { 'svg:girl-hijab': T('Anak berhijab', 'Child with hijab'), 'svg:boy-peci': T('Anak berpeci', 'Child with peci'), 'svg:ustadzah': 'Ustadzah', 'svg:ustadz': 'Ustadz', 'svg:meti': T('Meti si gurita', 'Meti the octopus'), 'svg:tito': T('Tito si semut', 'Tito the ant'), 'svg:nahla': T('Nahla si lebah', 'Nahla the bee'), 'svg:lumo': T('Lumo si lumba-lumba', 'Lumo the dolphin') };
   // Wajah maskot Metiq sebagai avatar (digambar oleh js/mascot.js saat ditampilkan)
   const MASCOT_BG = { meti: '#e6fffa', tito: '#ffe8e9', nahla: '#fff4d6', lumo: '#e3ebff' };
   const mascotAvatar = (k) => { const M = window.METIQ_MASCOT; if (!M || !(k in MASCOT_BG)) return null; const f = M.face(62, 'happy', k === 'meti' ? undefined : k).replace('<svg ', '<svg x="1" y="7" ').replace(/ role="img" aria-label="[^"]*"/, ' aria-hidden="true"'); return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="${MASCOT_BG[k]}"/>${f}</svg>`; };

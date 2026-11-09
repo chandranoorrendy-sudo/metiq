@@ -26,11 +26,11 @@
   // Versi teks satu baris untuk catatan guru dan suara
   const plain = (h) => String(h)
     .replace(/<span class="mlim"><span>lim<\/span><small>(.*?)<\/small><\/span>/g, 'lim($1) ')
-    .replace(/<span class="mint">∫<span class="mlims"><sup>(.*?)<\/sup><sub>(.*?)<\/sub><\/span><\/span>/g, '∫ dari $2 sampai $1 ')
+    .replace(/<span class="mint">∫<span class="mlims"><sup>(.*?)<\/sup><sub>(.*?)<\/sub><\/span><\/span>/g, '∫ from $2 to $1 ')
     .replace(/<span class="mfr"><b>(.*?)<\/b><b>(.*?)<\/b><\/span>/g, '($1)/($2)')
     .replace(/<sup>(.*?)<\/sup>/g, '^$1').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
   const MATH = /class="m(lim|fr|int)"/;
-  const plainExtra = (text, extra) => (MATH.test(text) ? Object.assign({ log: plain(text), speak: plain(text).replace(/\^(\w+)/g, ' pangkat $1') }, extra) : extra);
+  const plainExtra = (text, extra) => (MATH.test(text) ? Object.assign({ log: plain(text), speak: plain(text).replace(/\^(\w+)/g, ' to the power of $1') }, extra) : extra);
   // Polinomial dari koefisien (pangkat tertinggi dulu): poly([2, -3, 1]) = 2x² − 3x + 1
   function poly(cs, v = 'x') {
     const n = cs.length - 1, out = [];

@@ -203,7 +203,7 @@
       const sum = terms.reduce((x, y) => x + y, 0) + c, cin = c; c = Math.floor(sum / 10);
       s += cell(res, col(k), 'km-r', sum % 10, t + 0.3);
       if (c && k < Rs.length - 1) s += cell(5, col(k + 1), 'km-cy', c, t + 0.4);
-      const expr = [...terms.map(String), ...(cin ? [`${cin} (simpanan)`] : [])];
+      const expr = [...terms.map(String), ...(cin ? [`${cin} (carry)`] : [])];
       bits.push(`${PL[k]} ${expr.length > 1 || cin ? `${expr.join(' + ')}${expr.length > 1 ? ` = ${sum}` : ''}` : sum}${c && k < Rs.length - 1 ? `, write ${sum % 10}, carry <b class="kc-hl">${c}</b>` : ''}`);
       t += 1;
     }

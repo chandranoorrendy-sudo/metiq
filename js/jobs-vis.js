@@ -40,7 +40,7 @@
   const jars = (rows) => `<div class="jv-jars">${rows.map(([l, p, c, e], i) => `<div><span class="jar"><i style="height:${p}%;background:${c};animation-delay:${(i * 0.3).toFixed(2)}s"></i><em ${d(0.5 + i * 0.3)}>${e || '🪙'}</em></span><b>${p}%</b><small>${l}</small></div>`).join('')}</div>`;
 
   // Nota belanja: baris muncul satu per satu. rows: [nama, nilai teks]
-  const receipt = (title, rows, total) => `<div class="jv-rec"><h5>${title}</h5>${rows.map(([l, v], i) => `<p ${d(0.15 + i * 0.28)}><span>${l}</span><b>${v}</b></p>`).join('')}${total ? `<p class="tot" ${d(0.25 + rows.length * 0.28)}><span>Jumlah</span><b>${total}</b></p>` : ''}</div>`;
+  const receipt = (title, rows, total) => `<div class="jv-rec"><h5>${title}</h5>${rows.map(([l, v], i) => `<p ${d(0.15 + i * 0.28)}><span>${l}</span><b>${v}</b></p>`).join('')}${total ? `<p class="tot" ${d(0.25 + rows.length * 0.28)}><span>${window.METIQ_LANG === 'en' ? 'Total' : 'Jumlah'}</span><b>${total}</b></p>` : ''}</div>`;
 
   // Satu jumlah dibagi rata ke n orang
   const split = (total, n, who = '🧑', each = '?') => `<div class="jv-split ${n > 4 ? 'many' : ''}"><div class="pot">${total}</div><div class="lines">${[...Array(n)].map((_, i) => `<i ${d(0.3 + i * 0.1)}></i>`).join('')}</div><div class="ppl">${[...Array(n)].map((_, i) => `<span ${d(0.5 + i * 0.12)}><em>${glyphs(who)[i % glyphs(who).length]}</em><b>${each}</b></span>`).join('')}</div></div>`;

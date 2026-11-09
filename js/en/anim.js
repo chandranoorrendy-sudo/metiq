@@ -336,7 +336,7 @@
     '2L': [S(() => clock({ h: 4, m: 25 }), 'The long hand at 5: 5 × 5 = 25 minutes. It\'s 4:25.'),
       S(() => eq({ lines: ['2 in the afternoon', '= 12 + 2', '= {14:00}'] }), '24-hour time: after 12 noon, add 12.')],
     '2M': [S(() => money({ items: [20000, 10000, 5000] }), 'Rp20,000 + Rp10,000 + Rp5,000 = Rp35,000.'),
-      S(() => eq({ lines: ['Paid Rp50,000', 'Price Rp35,000', 'Kembalian:', 'Rp50,000 − Rp35,000 = {Rp15,000}'], fs: 16 }), 'Change = money paid minus price.')],
+      S(() => eq({ lines: ['Paid Rp50,000', 'Price Rp35,000', 'Change:', 'Rp50,000 − Rp35,000 = {Rp15,000}'], fs: 16 }), 'Change = money paid minus price.')],
     '2N': [S(() => chart({ bars: [['Mon', 8], ['Tue', 4], ['Wed', 6], ['Thu', 10]] }), 'Bar chart: Thursday has the most (10), Tuesday the fewest (4).'),
       S(() => eq({ lines: ['Each 🙂 = 2 children', '🙂🙂🙂 = {6 children}'] }), 'Pictograph with a scale: each picture stands for 2.')],
     '2O': [S(() => shape({ n: 5, label: 'Pentagon: 5 sides, 5 vertices' }), 'A pentagon has 5 sides and 5 vertices.'),

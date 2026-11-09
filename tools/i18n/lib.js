@@ -14,7 +14,8 @@ function parse(src) { return acorn.parse(src, { ecmaVersion: 'latest', sourceTyp
 // Kata atau kode yang bukan teks tampil
 function isCode(t) {
   if (/^ke-⟦\w+⟧/.test(t) || /^[A-Z][a-z]+\/[a-z]+$/.test(t)) return false; // bilangan urutan: ke-3; judul seperti Soal/siswa
-  const s = t.replace(/⟦\w+⟧|<[^>]+>/g, ' ').trim();
+  const s = t.replace(/⟦\w+⟧|<\/?[a-zA-Z][^<>]*>/g, ' ').trim(); // hanya tag sungguhan: "x < 3 atau x > 5" tetap teks
+  if (/^[A-ZÀ-Ý][a-zà-ÿ]+:$/.test(s) || /^\([A-Za-z]{4,}\)$/.test(s) || /^[A-Z][a-z]+\/[A-Z][a-z]+$/.test(s)) return false; // label "Jawaban:", "(Contoh)", "Ayah/Bunda"
   if (!/[A-Za-zÀ-ÿ]{2,}/.test(s)) return true;
   if (/^[A-Z0-9_]{1,6}$/.test(s)) return true; // kode singkat: TBD1, ID
   if (/^#?[\w-]+\.(js|mp3|png|svg|html|css)/.test(s)) return true;

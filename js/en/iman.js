@@ -79,7 +79,7 @@
   Object.defineProperty(window.METIQ_IMAN, '_adab', {
     enumerable: false,
     value: {
-      pujian: ['Alhamdulillah, benar!', 'Masya Allah, hebat!', 'Barakallahu fiik!', 'Alhamdulillah, exactly right!', 'Masya Allah, careful work!'],
+      pujian: ['Alhamdulillah, correct!', 'Masya Allah, great job!', 'Barakallahu fiik!', 'Alhamdulillah, exactly right!', 'Masya Allah, careful work!'],
       doa: {
         judul: 'Praying before learning',
         ajakan: 'Before learning, let\'s pray that Allah makes it easy for us to understand beneficial knowledge.',

@@ -326,7 +326,7 @@
       ];
       others.forEach(([tn, cn, g, kids]) => { const t2 = Store.createTeacher(tn, '1234'); t2.demo = true; const c2 = Store.createClass(t2.id, cn); fill(c2, g, kids); });
       // Kelas paralel B (5 jenjang × 2 kelas = 10 kelas), dengan guru yang sudah ada dan dua guru baru
-      const tOf = (name) => db.teachers.find((x) => x.name.startsWith(name)) || (() => { const x = Store.createTeacher(name + ' (Contoh)', '1234'); x.demo = true; return x; })();
+      const tOf = (name) => db.teachers.find((x) => x.name.startsWith(name)) || (() => { const x = Store.createTeacher(name + ' (Sample)', '1234'); x.demo = true; return x; })();
       [
         ['Ms. Teacher', 'Class 1B (Sample)', 1, [['Ayu', 0.92], ['Bayu', 0.85], ['Cici', 0.88], ['Doni', 0.86]]],
         ['Mr. Ahmad', 'Class 2B (Sample)', 2, [['Elsa', 0.88], ['Fajar', 0.86], ['Gina', 0.9], ['Hadi', null]]],

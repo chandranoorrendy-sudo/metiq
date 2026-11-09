@@ -35,7 +35,7 @@
     { id: '2a', grade: 2, type: 'kilat', icon: '⚡', name: 'Two-Digit Blitz', desc: 'Adding and subtracting two-digit numbers.', stars: [6, 11, 16],
       next() { if (Math.random() < 0.5) { const a = R(10, 79), b = R(10, 99 - a); return q(`${a} + ${b}`, a + b, () => a + b + pick([-10, -1, 1, 10, 2])); } const a = R(30, 99), b = R(10, a - 5); return q(`${a} − ${b}`, a - b, () => a - b + pick([-10, -1, 1, 10, 2])); } },
     { id: '2b', grade: 2, type: 'balon', icon: '🎈', name: 'Even & Odd Balloons', desc: 'Pop even or odd numbers as instructed.', stars: [8, 14, 20],
-      rule() { const ev = Math.random() < 0.5; return { label: `Pop the <b>${ev ? 'GENAP' : 'GANJIL'}</b> numbers`, make(ok) { const n = R(1, 49) * 2 - (ok === ev ? 0 : 1); return String(n); } }; } },
+      rule() { const ev = Math.random() < 0.5; return { label: `Pop the <b>${ev ? 'EVEN' : 'ODD'}</b> numbers`, make(ok) { const n = R(1, 49) * 2 - (ok === ev ? 0 : 1); return String(n); } }; } },
     { id: '2c', grade: 2, type: 'pasangan', icon: '🃏', name: 'Multiplication Pairs 2, 5, 10', desc: 'Match each multiplication with its result.',
       pairs() { const all = []; [2, 5, 10].forEach((a) => { for (let b = 1; b <= 10; b++) all.push([a, b]); }); const seen = new Set(), out = []; shuffle(all).forEach(([a, b]) => { if (out.length < 6 && !seen.has(a * b)) { seen.add(a * b); out.push([`${a} × ${b}`, String(a * b)]); } }); return out; } },
     // Kelas 3
@@ -225,7 +225,7 @@
     { id: '10a', grade: 10, type: 'kilat', icon: '⚡', name: 'Angle Blitz', desc: 'Supplementary angles, complementary angles, triangles, and polygons.', stars: [6, 11, 16],
       next() { const k = R(0, 3); if (k === 0) { const a = R(10, 170); return qn(`Supplement of ${a}°`, 180 - a, () => pick([90 - a, 180 - a + pick([-10, 10]), a])); } if (k === 1) { const a = R(5, 85); return qn(`Complement of ${a}°`, 90 - a, () => pick([180 - a, 90 - a + pick([-10, 10]), a])); } if (k === 2) { const a = R(20, 90), b = R(20, 160 - a); return qn(`Triangle: ${a}°, ${b}°, ?`, 180 - a - b, () => 180 - a - b + pick([-10, 10, 20])); } const n = R(5, 10); return qn(`Sum of interior angles of a ${n}-gon`, (n - 2) * 180, () => (n - 2 + pick([-1, 1])) * 180); } },
     { id: '10b', grade: 10, type: 'balon', icon: '🎈', name: 'Angle Type Balloons', desc: 'Pop acute, right, or obtuse angles as instructed.', stars: [6, 11, 16],
-      rule() { const want = pick(['LANCIP', 'TUMPUL']); return { label: `Pop the <b>${want}</b> angles`, make(ok) { const lancip = (want === 'LANCIP') === ok; return `${lancip ? R(5, 89) : R(91, 179)}°`; } }; } },
+      rule() { const want = pick(['ACUTE', 'OBTUSE']); return { label: `Pop the <b>${want}</b> angles`, make(ok) { const lancip = (want === 'ACUTE') === ok; return `${lancip ? R(5, 89) : R(91, 179)}°`; } }; } },
     { id: '10c', grade: 10, type: 'pasangan', icon: '🃏', name: 'Trigonometry Pairs', desc: 'Match the sin, cos, and tan values of special angles.',
       pairs() { return shuffle([['sin 30°', '½'], ['cos 60°', '½'], ['sin 90°', '1'], ['cos 0°', '1'], ['tan 45°', '1'], ['sin 45°', '½√2'], ['cos 30°', '½√3'], ['tan 60°', '√3'], ['tan 30°', '⅓√3'], ['cos 90°', '0']]).reduce((acc, p) => (acc.some((x) => x[1] === p[1]) || acc.length >= 6 ? acc : [...acc, p]), []); } },
     // Aljabar 2
@@ -239,7 +239,7 @@
     { id: '12a', grade: 12, type: 'kilat', icon: '⚡', name: 'Determinant Blitz', desc: 'Find the determinant of a 2 × 2 matrix: ad − bc.', stars: [5, 10, 15],
       next() { const a = R(-5, 5), b = R(-5, 5), c = R(-5, 5), d = R(-5, 5), v = a * d - b * c; return qn(`|${f(a)} ${f(b)} ; ${f(c)} ${f(d)}|`, v, () => pick([a * d + b * c, b * c - a * d, v + pick([-2, -1, 1, 2])])); } },
     { id: '12b', grade: 12, type: 'balon', icon: '🎈', name: 'Even & Odd Function Balloons', desc: 'Pop even or odd functions as instructed.', stars: [6, 11, 16],
-      rule() { const want = pick(['GENAP', 'GANJIL']); const E = ['x²', 'cos x', '|x|', 'x⁴ − 3x²', '5', 'x² + 1', 'x⁶'], O = ['x³', 'sin x', 'x', 'x³ − 2x', 'x⁵ + x', 'tan x', '−4x']; return { label: `Pop the <b>${want}</b> functions`, make(ok) { return pick((want === 'GENAP') === ok ? E : O); } }; } },
+      rule() { const want = pick(['EVEN', 'ODD']); const E = ['x²', 'cos x', '|x|', 'x⁴ − 3x²', '5', 'x² + 1', 'x⁶'], O = ['x³', 'sin x', 'x', 'x³ − 2x', 'x⁵ + x', 'tan x', '−4x']; return { label: `Pop the <b>${want}</b> functions`, make(ok) { return pick((want === 'EVEN') === ok ? E : O); } }; } },
     { id: '12c', grade: 12, type: 'pasangan', icon: '🃏', name: 'Identity Pairs', desc: 'Match trigonometric expressions with their identities.',
       pairs() { return shuffle([['sin²x + cos²x', '1'], ['sin 2x', '2 sin x cos x'], ['cos²x − sin²x', 'cos 2x'], ['sin x / cos x', 'tan x'], ['1 + tan²x', 'sec²x'], ['sin(−x)', '−sin x'], ['cos(−x)', 'cos x'], ['1 / cos x', 'sec x']]).slice(0, 6); } },
     // Kalkulus
@@ -1132,7 +1132,7 @@
       el.querySelector('#grc').textContent = combo >= 2 ? `COMBO x${combo}` : '';
       const last = n >= ROUND;
       foot.className = 'mq-foot ' + (ok ? 'ok' : 'no');
-      foot.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${ok ? '✓' : '✕'}</span>${ok ? pick(['Great!', 'Smart!', 'Awesome!', 'Cool!']) : 'Not quite'}</div>${note ? `<div class="mq-fbody"><p>${note}</p></div>` : ok ? '' : `<div class="mq-fbody"><p>Jawaban: <b>${right}</b></p></div>`}<button class="mq-btn ${ok ? '' : 'bad'}" id="grnext">${last ? 'Done' : 'Continue'}</button></div>`;
+      foot.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${ok ? '✓' : '✕'}</span>${ok ? pick(['Great!', 'Smart!', 'Awesome!', 'Cool!']) : 'Not quite'}</div>${note ? `<div class="mq-fbody"><p>${note}</p></div>` : ok ? '' : `<div class="mq-fbody"><p>Answer: <b>${right}</b></p></div>`}<button class="mq-btn ${ok ? '' : 'bad'}" id="grnext">${last ? 'Done' : 'Continue'}</button></div>`;
       foot.querySelector('#grnext').addEventListener('click', nextQ);
       foot.querySelector('#grnext').focus();
     }

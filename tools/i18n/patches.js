@@ -2,6 +2,18 @@
 module.exports = {
   all: [[/'id-ID'/g, "'en-US'"], [/localeCompare\(([^,()]+(?:\.[^,()]+)*), 'id'\)/g, "localeCompare($1, 'en')"], [/\.replace\('\.', ','\)/g, ''], [/keys: \[','\]/g, "keys: ['.']"], [/'(\d+),(\d+)'/g, "'$1.$2'"], [/\.replace\(\/\\.\/g, ''\)\.replace\(',', '\.'\)/g, ".replace(/,/g, '')"], [/\.replace\(',', '\.'\)/g, '']],
   exact: [
+    ['olimpiade.js', "'N', 1, 'KPK', ()", "'N', 1, 'LCM', ()"],
+    ['games.js', "'GENAP'", "'EVEN'"], ['games.js', "'GANJIL'", "'ODD'"], ['games.js', "'LANCIP'", "'ACUTE'"], ['games.js', "'TUMPUL'", "'OBTUSE'"],
+    ['kit-hs.js', "'∫ dari $2 sampai $1 '", "'∫ from $2 to $1 '"], ['kit-hs.js', "' pangkat $1'", "' to the power of $1'"],
+    ['app.js', ': latihan bersama"', ': practice together"'],
+    ['curriculum.js', 'tags[`pukul ${nx}.30`]', 'tags[`${nx}:30`]'],
+    ['jobs-real.js', "['SDM', 1]", "['HR', 1]"],
+    ['lessons-b.js', "['FPB', [", "['GCF', ["], ['lessons-b.js', "['KPK', [", "['LCM', ["],
+    ['jobs.js', "style: 'Bantu pekerja dengan gambar dan suara'", "style: 'Help workers with pictures and sound'"],
+    ['jobs.js', "style: 'Satu tugas singkat'", "style: 'One short task'"],
+    ['jobs.js', "style: 'Tugas dua atau tiga langkah'", "style: 'Tasks with two or three steps'"],
+    ['jobs.js', "style: 'Keputusan nyata di tempat kerja'", "style: 'Real decisions at work'"],
+    ['jobs.js', "style: 'Masalah nyata kecil, beberapa langkah'", "style: 'Small real problems, several steps'"],
     ['grade4.js', String.raw`kata(+x.replace(/\./g, ''))`, "kata(+x.replace(/,/g, ''))"],
     ['grade4.js', 'x = `${d[0]}${d[1]},${d[2]}${d[3]}`', 'x = `${d[0]}${d[1]}.${d[2]}${d[3]}`'],
     ['app.js', String.raw`.replace(/[.\s]/g, '');`, String.raw`.replace(/[,\s]/g, '');`],

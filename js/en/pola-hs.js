@@ -96,7 +96,7 @@
     })); });
 
   // Menyederhanakan pecahan aljabar: mencoret faktor yang sama
-  const simp = (p, q) => { const { poly, lin, pil, opt, FR, CX } = K(); const ans = lin(1, q), f = `(${lin(1, p)})`; return pil(`Sederhanakan: ${FR(poly([1, p + q, p * q]), lin(1, p))}`, opt(ans, [lin(1, -q), lin(1, p), lin(1, p + q), lin(1, p * q), lin(1, -p)]), ans, 'Factor the numerator, then cross out the common factor on top and bottom.', [['Factor the numerator', FR(`${f}(${lin(1, q)})`, f)], [`Cross out ${f} on top and bottom`, `${FR(`${CX(f)}(${lin(1, q)})`, CX(f))} = ${ans}`], ['Result', `<b>${ans}</b>`]], M); };
+  const simp = (p, q) => { const { poly, lin, pil, opt, FR, CX } = K(); const ans = lin(1, q), f = `(${lin(1, p)})`; return pil(`Simplify: ${FR(poly([1, p + q, p * q]), lin(1, p))}`, opt(ans, [lin(1, -q), lin(1, p), lin(1, p + q), lin(1, p * q), lin(1, -p)]), ans, 'Factor the numerator, then cross out the common factor on top and bottom.', [['Factor the numerator', FR(`${f}(${lin(1, q)})`, f)], [`Cross out ${f} on top and bottom`, `${FR(`${CX(f)}(${lin(1, q)})`, CX(f))} = ${ans}`], ['Result', `<b>${ans}</b>`]], M); };
   add('A1F4', () => { const { poly, lin, FR, num, N } = K(); return [1, 2, 3, -1, -2].map((p) => ({
     label: `÷ (${lin(1, p)})`, items: range(1, 6).filter((q) => q !== -p),
     show: (q) => `${FR(poly([1, p + q, p * q]), lin(1, p))} = ${lin(1, q)}`,

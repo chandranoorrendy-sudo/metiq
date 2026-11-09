@@ -95,8 +95,8 @@
     ['Dividing by two digits', ['Estimate how many times the divisor goes into the number.', 'Multiply, subtract, bring down the next digit.', 'Check with multiplication.'], '5B2'],
   ]);
   add('5C', 'The GCF and LCM help solve equal-sharing and repeating-event problems.', [
-    ['FPB', ['Write the factors of both numbers (or their prime factorizations).', 'Take the largest common factor.'], '5C1'],
-    ['KPK', ['Write the multiples of both numbers.', 'Take the smallest common multiple.'], '5C2'],
+    ['GCF', ['Write the factors of both numbers (or their prime factorizations).', 'Take the largest common factor.'], '5C1'],
+    ['LCM', ['Write the multiples of both numbers.', 'Take the smallest common multiple.'], '5C2'],
     ['Word problems', ['"Meet again", "together again" → LCM.', '"Divide equally into as many as possible" → GCF.'], '5C3'],
   ]);
   add('5D', 'An expression is a mathematical phrase. The order of operations decides which part is calculated first.', [
