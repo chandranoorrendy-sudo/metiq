@@ -578,7 +578,7 @@
     }
     const row = (href, em, t, note) => `<a href="${href}"><span class="em">${em}</span><span class="t">${t}${note ? `<small>${note}</small>` : ''}</span><span class="go">›</span></a>`;
     app.innerHTML = mqPage(`${top('Settings', '#/aku')}
-      <h2 class="mq-sethead">Account</h2><div class="mq-list">${row('#/pengaturan/preferensi', '🎛️', 'Preferences', 'Daily goal, sound, profile picture')}${row('#/pengaturan/sekolah', '🏫', 'Metiq for Schools', c ? esc(c.name) : 'Join a class with a code from your teacher')}</div>
+      <h2 class="mq-sethead">Account</h2><div class="mq-list">${row('#/pengaturan/preferensi', '🎛️', 'Preferences', 'Daily goal, sound, profile picture')}${row(`?lang=${window.METIQ_LANG === 'en' ? 'id' : 'en'}#/pengaturan`, '🌐', 'Language', 'English · switch to Indonesian')}${row('#/pengaturan/sekolah', '🏫', 'Metiq for Schools', c ? esc(c.name) : 'Join a class with a code from your teacher')}</div>
       <h2 class="mq-sethead">Support</h2><div class="mq-list">${row('#/panduan/siswa', '❓', 'Help Center')}${row('#/pengaturan/masukan', '💬', 'Send feedback')}</div>
       <div class="mq-list"><button class="danger" data-act="logout"><span class="em">🚪</span>Log out</button></div>`, 'aku');
   }
