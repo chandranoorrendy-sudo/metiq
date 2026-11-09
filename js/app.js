@@ -3427,7 +3427,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const p = J.prof(m.profession);
     JM = { m, p, i: -1, tries: 0, first: 0, input: '', sel: -1, place: {}, pick: null, t0: Date.now(), log: [] };
     app.innerHTML = `<div class="mq-top"><a class="mq-ico" href="#/profesi/${p.id}" aria-label="Keluar">${IC.x}</a><div class="mq-prog"><i id="sbar" style="width:0%"></i></div>
-        ${m.audio ? `<button class="mq-ico" data-act="jsay" aria-label="Dengarkan">🔊</button>` : `<button class="mq-ico psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button>`}</div>
+        <button class="mq-ico mq-coretbtn" id="mqcoret" data-act="coret" aria-label="Kertas coret" hidden>✏️</button>${m.audio ? `<button class="mq-ico" data-act="jsay" aria-label="Dengarkan">🔊</button>` : `<button class="mq-ico psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button>`}</div>
       <div class="jtrail" id="jtrail" style="--n:${m.steps.length};--c:${p.color}"><u></u>${m.steps.map((_, k) => `<i style="left:${(k / m.steps.length) * 100}%"></i>`).join('')}<em>🏁</em><span>${MQ.svg('happy', { size: 40, enter: false })}</span></div>
       <main class="mq-screen jt-in" id="pq"></main><div class="mq-foot" id="fb"></div>`;
     jScene();
@@ -3443,13 +3443,16 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   function jStep() {
     const { m } = JM, st = m.steps[JM.i], box = document.getElementById('pq'), fb = document.getElementById('fb');
     JM.tries = 0; JM.input = ''; JM.sel = -1; JM.place = {}; JM.pick = null;
+    // Kertas coret untuk langkah hitungan di atas jenjang TK; setiap langkah mulai dari kertas bersih
+    const canCoret = m.level !== 'TK' && st.type !== 'drag';
+    closeCoret(true); document.getElementById('mqcoret').hidden = !canCoret;
     document.getElementById('sbar').style.width = (JM.i / m.steps.length) * 100 + '%'; jTrail(JM.i);
     // Cerita misi (berisi datanya) dan jawaban langkah sebelumnya tetap terlihat di setiap langkah
     const found = JM.log.map((x, k) => `<li><small>Langkah ${k + 1}: ${esc(x.q)}</small><b>${x.a}</b></li>`).join('');
     const ctx = `<details class="jctx" ${m.level === 'TK' ? '' : 'open'}><summary>📋 Data misi</summary><p>${esc(m.scenario)}</p>${found ? `<ul class="jfound">${found}</ul>` : ''}</details>`;
     box.innerHTML = `<h2 class="mq-title jstept">Langkah ${JM.i + 1} dari ${m.steps.length}</h2>${ctx}
       <div class="mq-say jq"><div id="mqm">${MQ.svg('normal', { size: 76, enter: false })}</div><div class="mq-bubble">${m.audio ? '<button class="mq-spk aud" data-act="jsay" aria-label="Dengarkan soal">' + IC.spk + '</button>' : ''}<span>${esc(st.question)}</span>${st.hint ? `<span class="jhintw"><button class="mq-link" data-act="jhint">💡 Butuh petunjuk?</button></span><span class="jhint" id="jhint" hidden>💡 ${esc(st.hint)}</span>` : ''}</div></div>
-      ${st.vis ? `<div class="mq-vis">${st.vis}</div>` : st.type === 'drag' ? '' : `<div class="jmini" aria-hidden="true">${m.art}</div>`}<div id="jbody"></div>`;
+      ${st.vis ? `<div class="mq-vis">${st.vis}</div>` : st.type === 'drag' ? '' : `<div class="jmini" aria-hidden="true">${m.art}</div>`}${canCoret ? '<button class="mq-coretcta" data-act="coret">✏️ Kertas coret</button>' : ''}<div id="jbody"></div>`;
     jBody(); jFit();
     jPlay('q' + (JM.i + 1), 300);
   }
@@ -3489,8 +3492,12 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         ready = pool.length === 0;
       }
     }
-    fb.className = 'mq-foot' + (keys && JM.m.level !== 'TK' ? ' compact' : '');
-    fb.innerHTML = `<div class="mq-foot-in">${keys}<button class="mq-btn" id="mqcheck" data-act="jcheck" ${ready ? '' : 'disabled'}>Periksa</button></div>`;
+    // Baris tombol angka muncul saat kertas coret terbuka; keadaan terlipat atau terbuka tidak boleh hilang saat jawaban diketik
+    const krow = keys && JM.m.level !== 'TK' ? '<div class="mq-krow"><button class="mq-ktog" data-act="keystog" aria-label="Tampilkan atau sembunyikan tombol angka">🔢 <span class="ka">Tombol angka</span><span class="kb">Sembunyikan</span> <i>▲</i></button><span class="mq-mini">Jawaban: <b id="indisp2">–</b></span></div>' : '';
+    const kept = ['cor', 'kshow'].filter((c) => fb.classList.contains(c));
+    fb.className = ['mq-foot', ...(keys && JM.m.level !== 'TK' ? ['compact'] : []), ...kept].join(' ');
+    fb.innerHTML = `<div class="mq-foot-in">${krow}${keys}<button class="mq-btn" id="mqcheck" data-act="jcheck" ${ready ? '' : 'disabled'}>Periksa</button></div>`;
+    { const d2 = document.getElementById('indisp2'); if (d2) d2.textContent = JM.input || '–'; }
     document.getElementById('pq').style.paddingBottom = fb.offsetHeight + 20 + 'px';
   }
   function jCorrect(st) {
@@ -3502,6 +3509,8 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   const jAnswerText = (st) => (st.type === 'number' ? `${jFmt(st.answer)}${st.unit ? ' ' + st.unit : ''}` : st.type === 'choice' ? st.answer : st.mode === 'order' ? st.answer.map((id) => st.items.find((x) => x.id === id).html).join(' ') : st.bins.map((b) => `${b.label}: ${st.items.filter((x) => x.bin === b.id).map((x) => x.html).join(' ')}`).join(' · '));
   function jCheck() {
     const st = JM.m.steps[JM.i], ok = jCorrect(st), fb = document.getElementById('fb'), m = document.getElementById('mqm');
+    // Umpan balik butuh ruang; kertas coret disimpan dengan isinya dan kembali saat "Coba lagi"
+    { const pad = document.getElementById('coret'); JM.padBack = !!(pad && !pad.hidden); closeCoret(false); }
     if (m) { m.innerHTML = MQ.svg(ok ? 'happy' : 'oops', { size: 76, enter: false }); m.firstChild.classList.add('mq-react'); }
     if (ok) {
       if (!JM.tries) JM.first++;
@@ -3529,6 +3538,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   }
   function jFinish() {
     const { m, p } = JM, kid = gameKid(), n = m.steps.length, stars = JM.first === n ? 3 : JM.first >= n / 2 ? 2 : 1;
+    closeCoret(true); document.getElementById('mqcoret').hidden = true;
     document.getElementById('sbar').style.width = '100%'; jTrail(n);
     if (kid) {
       const before = missionStars(kid, m), res = S.recordMission(kid.id, m.key, stars, Date.now() - JM.t0);
@@ -3557,7 +3567,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if ((act === 'jitem' || act === 'jbin') && Date.now() - jDragJustEnded < 400) return;
     const st = JM.i >= 0 ? JM.m.steps[JM.i] : null;
     if (act === 'jnext') { stopClips(); return jSwap(() => { JM.i++; return JM.i < JM.m.steps.length ? jStep() : jFinish(); }); }
-    if (act === 'jretry') { const m = document.getElementById('mqm'); if (m) m.innerHTML = MQ.svg('normal', { size: 76, enter: false }); if (st.type === 'number') JM.input = ''; return jBody(); }
+    if (act === 'jretry') { const m = document.getElementById('mqm'); if (m) m.innerHTML = MQ.svg('normal', { size: 76, enter: false }); if (st.type === 'number') JM.input = ''; jBody(); if (JM.padBack) openCoret(); return; }
     if (act === 'jsay') return jPlay(JM.i < 0 ? 's' : 'q' + (JM.i + 1));
     if (act === 'jopt') { JM.sel = +el.dataset.i; window.SFX.step(); return jBody(); }
     if (act === 'jkey') {
