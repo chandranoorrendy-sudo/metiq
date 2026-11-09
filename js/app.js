@@ -1486,7 +1486,7 @@
   function schoolUpsellHTML(ctx) {
     return `<section class="card upsell"><h2>🏫 Paket Sekolah belum aktif</h2><p>${ctx.t.schoolName ? `<b>${esc(ctx.t.schoolName)}</b> belum berlangganan paket Sekolah${ctx.t.schoolPlanUntil ? ` (berakhir ${esc(String(ctx.t.schoolPlanUntil))})` : ''}.` : 'Sekolah Anda belum berlangganan paket Sekolah.'} Kelas Anda sendiri tetap bisa dipakai gratis seperti biasa.</p>
       <ul><li>Dasbor dan laporan lintas kelas dan guru</li><li>Admin sekolah mengelola guru</li><li>Asesmen awal–akhir dan data penelitian</li><li>Pelatihan dan pendampingan</li></ul>
-      <p><b>${rp(PRICE)} per siswa per tahun.</b></p><div class="row-btn left"><a class="btn" href="#/harga">Lihat paket dan minta penawaran</a></div></section>`;
+      <div class="row-btn left"><a class="btn" href="#/harga">Lihat paket dan minta penawaran</a></div></section>`;
   }
   // Admin sekolah: daftar guru di sekolahnya, tambah lewat email (guru mendaftar gratis dulu), lepas dari sekolah
   async function loadSchoolTeachers() {
@@ -2217,7 +2217,7 @@
     app.innerHTML = shell(`<a class="back" href="#/">← Kembali</a><h1>✋ Ajukan akun Metiq</h1>
       <p class="muted">Akun sungguhan menyimpan data di server dan bisa dibuka dari HP mana pun. Setiap pengajuan diperiksa admin Metiq, biasanya dalam 1–2 hari.</p>
       <div class="glist">${Object.entries(REQ).filter(([k]) => (PARENTS_ON || k !== 'ortu') && k !== 'siswa').map(([k, r]) => `<a class="card gitem" href="${k === 'guru' || k === 'homeschool' ? '#/guru/daftar' : '#/ajukan/' + k}"><span class="gicon g-pasangan">${r.icon}</span><span class="grow"><b>${r.title}</b><small>${r.desc}</small></span>→</a>`).join('')}</div>
-      <a class="card gitem" href="#/harga"><span class="gicon g-garis">🏫</span><span class="grow"><b>Sekolah (banyak kelas)</b><small>Paket Sekolah: dasbor dan laporan sekolah, admin mengelola guru, asesmen awal–akhir. Rp15.000 per siswa per tahun.</small></span>→</a>
+      <a class="card gitem" href="#/harga"><span class="gicon g-garis">🏫</span><span class="grow"><b>Sekolah (banyak kelas)</b><small>Paket Sekolah: dasbor dan laporan sekolah, admin mengelola guru, asesmen awal–akhir.</small></span>→</a>
       <a class="card gitem" href="#/siswa-baru"><span class="gicon g-garis">🧒</span><span class="grow"><b>Siswa</b><small>Tidak perlu mengajukan. Langsung mulai belajar dengan nama, lalu gabung kelas dengan kode dari guru.</small></span>→</a>
       <p class="center small"><a href="#/ajukan/status">Sudah mengajukan? Cek status →</a></p>`);
   }
@@ -3493,7 +3493,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   let jDragJustEnded = 0;
 
 
-  /* ---------- Harga: gratis untuk keluarga dan guru, berbayar untuk sekolah (model Khan Academy Kids) ---------- */
+  /* ---------- Harga: gratis untuk siswa dan guru; harga sekolah belum ditetapkan, jadi tidak ditampilkan. PRICE hanya untuk panel super admin ---------- */
   const PRICE = 15000, rp = (n) => 'Rp' + Number(n).toLocaleString('id-ID');
   function viewPricing() {
     const yes = '<span class="pyes" aria-label="Termasuk">✓</span>', no = '<span class="pno" aria-label="Tidak termasuk">–</span>';
@@ -3511,29 +3511,28 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       ['Pelatihan guru dan pendampingan', no, no, yes],
     ];
     const faq = [
-      ['Apakah Metiq gratis untuk guru?', 'Ya. Siapa pun yang mengajar matematika bisa mendaftar gratis dan langsung aktif: membuat kelas, menambah siswa, memberi tugas, dan melihat laporan kelas. Tidak ada paket berbayar untuk satu kelas.'],
-      ['Apa yang dibayar sekolah?', 'Lapisan sekolah di atas aplikasi gratis: dasbor dan laporan lintas kelas, admin sekolah yang mengelola guru, asesmen awal–akhir untuk mengukur peningkatan, serta pelatihan dan pendampingan.'],
-      ['Berapa biayanya?', `${rp(PRICE)} per siswa per tahun. Contoh: sekolah dengan 200 siswa membayar ${rp(PRICE * 200)} per tahun.`],
+      ['Apakah Metiq gratis untuk guru?', 'Ya. Siapa pun yang mengajar matematika bisa mendaftar gratis dan langsung aktif: membuat kelas, menambah siswa, memberi tugas, dan melihat laporan kelas.'],
+      ['Apa isi paket Sekolah?', 'Lapisan sekolah di atas aplikasi gratis: dasbor dan laporan lintas kelas, admin sekolah yang mengelola guru, asesmen awal–akhir untuk mengukur peningkatan, serta pelatihan dan pendampingan.'],
+      ['Berapa biayanya?', 'Biaya paket Sekolah belum ditetapkan. Isi formulir di bawah, dan tim Metiq akan menghubungi Anda.'],
       ['Bagaimana guru masuk ke sekolah?', 'Guru mendaftar gratis dulu. Admin sekolah lalu menambahkan guru ke sekolahnya lewat email guru di tab 🏫 Sekolah → Kelola guru.'],
-      ['Bagaimana cara membayar?', 'Isi formulir penawaran di bawah. Tim Metiq menghubungi Anda, mengirim rincian biaya, lalu mengaktifkan paket Sekolah setelah pembayaran.'],
+      ['Bagaimana cara memulai?', 'Isi formulir di bawah. Tim Metiq akan menghubungi Anda untuk membahas kebutuhan sekolah.'],
       ['Bagaimana data siswa dijaga?', 'Metiq tidak menampilkan iklan dan tidak menjual data. Guru lain tidak bisa melihat nama siswa yang belum masuk kelasnya; guru hanya bisa menambah siswa dengan kode belajar dari anak atau orang tuanya.'],
     ];
     app.innerHTML = shell(`<a class="back" href="#/">← Kembali</a>
-      <section class="phero"><h1>Satu aplikasi, tiga cara memakainya</h1><p>Metiq gratis untuk keluarga dan guru. Sekolah membayar <b>${rp(PRICE)} per siswa per tahun</b> untuk dasbor sekolah, pengelolaan guru, asesmen awal–akhir, dan pendampingan.</p></section>
+      <section class="phero"><h1>Satu aplikasi, tiga cara memakainya</h1><p>Metiq gratis untuk siswa dan guru matematika. Sekolah dengan banyak kelas bisa meminta penawaran untuk dasbor sekolah, pengelolaan guru, asesmen awal–akhir, dan pendampingan.</p></section>
       <div class="plans">
         <section class="plan"><small>Di rumah</small><h2>Keluarga</h2><b class="price">Gratis</b><p>Anak belajar sendiri sesuai levelnya, orang tua melihat kemajuannya.</p><a class="btn ghost" href="#/siswa-baru">Mulai belajar</a></section>
         <section class="plan hl"><small>Satu kelas</small><h2>Guru</h2><b class="price">Gratis</b><p>Alat kelas lengkap untuk memberi tugas dan memantau kemajuan. Langsung aktif.</p><a class="btn" href="#/guru/daftar">Daftar guru gratis</a></section>
-        <section class="plan"><small>Banyak kelas</small><h2>Sekolah</h2><b class="price">${rp(PRICE)}<span>/siswa/tahun</span></b><p>Dasbor sekolah, admin mengelola guru, asesmen awal–akhir, pelatihan.</p><a class="btn ghost" href="#quote" data-act="quotego">Minta penawaran</a></section>
+        <section class="plan"><small>Banyak kelas</small><h2>Sekolah</h2><b class="price">Hubungi kami</b><p>Dasbor sekolah, admin mengelola guru, asesmen awal–akhir, pelatihan.</p><a class="btn ghost" href="#quote" data-act="quotego">Minta penawaran</a></section>
       </div>
       <section class="card"><h2>Bandingkan</h2><div class="tscroll"><table class="tbl pcompare"><thead><tr><th></th><th>Keluarga</th><th>Guru</th><th>Sekolah</th></tr></thead><tbody>
         ${rows.map(([t, a, b, c]) => `<tr><td>${t}</td><td>${a}</td><td>${b}</td><td>${c}</td></tr>`).join('')}</tbody></table></div></section>
-      <section class="card"><h2>🧮 Hitung biaya sekolah</h2><label class="pcalc">Jumlah siswa <input type="number" min="1" max="100000" value="200" data-act="pcalc" inputmode="numeric"></label><p class="pcalc-out">Biaya per tahun: <b id="pcalc-v">${rp(PRICE * 200)}</b></p></section>
-      <section class="card"><h2>Mengapa sekolah membayar?</h2><p>Latihan, pelajaran, dan alat kelas tetap gratis untuk guru dan keluarga. Biaya sekolah membiayai lapisan yang dibutuhkan saat Metiq dipakai di banyak kelas: laporan lintas kelas, pengelolaan guru, asesmen untuk mengukur peningkatan, pelatihan, dan dukungan langsung.</p></section>
+      <section class="card"><h2>Kapan sekolah butuh paket ini?</h2><p>Latihan, pelajaran, dan alat kelas saat ini gratis untuk siswa dan guru matematika. Paket Sekolah menambah lapisan yang dibutuhkan saat Metiq dipakai di banyak kelas: laporan lintas kelas, pengelolaan guru, asesmen untuk mengukur peningkatan, pelatihan, dan dukungan langsung.</p></section>
       <section class="card" id="quote"><h2>📨 Minta penawaran untuk sekolah</h2>
         ${cloudOn() ? `<form data-form="quote" class="form"><label>Nama sekolah<input name="school" required minlength="2" maxlength="120"></label><label>Kota<input name="city" maxlength="80"></label>
           <label>Perkiraan jumlah siswa<input name="students" type="number" min="1" max="100000" required inputmode="numeric"></label><label>Nama Anda<input name="name" required minlength="2" maxlength="80"></label>
           <label>No. WhatsApp atau email<input name="contact" required minlength="5" maxlength="120"></label><label>Catatan <small class="muted">(opsional)</small><textarea name="note" rows="2" maxlength="500"></textarea></label>
-          <button class="btn">Kirim permintaan</button></form><p class="small muted">Tim Metiq akan menghubungi Anda untuk rincian biaya dan aktivasi.</p>` : '<p class="muted">Formulir penawaran butuh koneksi ke server Metiq.</p>'}</section>
+          <button class="btn">Kirim permintaan</button></form><p class="small muted">Tim Metiq akan menghubungi Anda untuk membahas kebutuhan sekolah.</p>` : '<p class="muted">Formulir penawaran butuh koneksi ke server Metiq.</p>'}</section>
       <section class="card"><h2>Pertanyaan yang sering diajukan</h2>${faq.map(([q, a]) => `<details class="faq"><summary>${q}</summary><p>${a}</p></details>`).join('')}</section>`);
   }
 
@@ -3935,7 +3934,6 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   document.addEventListener('input', (e) => {
     const el = e.target;
     if (el && el.id === 'ung-q') { ss.set('ungq', el.value); ss.set('ungp', 1); const ctx = teacherCtx(); if (ctx) renderUngList(ctx); return; }
-    if (el && el.dataset && el.dataset.act === 'pcalc') { const o = document.getElementById('pcalc-v'); if (o) o.textContent = rp(Math.max(0, Math.round(+el.value || 0)) * PRICE); return; }
     if (!el || el.id !== 'mqcode') return;
     el.value = el.value.toUpperCase().replace(/[^A-Z0-9]/g, ''); el.classList.remove('bad');
     const b = document.getElementById('mqgo'); if (b) b.disabled = el.value.length < 4;

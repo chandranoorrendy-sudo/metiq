@@ -903,8 +903,6 @@ ol.tahap small { color: var(--muted); font-weight: 700; font-size: .85em; displa
 .plan .price { font-size: 1.6rem; font-weight: 900; color: var(--brand); } .plan .price span { font-size: .85rem; font-weight: 700; color: var(--muted, #6b7c78); }
 .pcompare td:not(:first-child), .pcompare th:not(:first-child) { text-align: center; width: 72px; }
 .pyes { color: var(--ok); font-weight: 900; } .pno { color: #b8c4c1; }
-.pcalc { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; } .pcalc input { max-width: 140px; }
-.pcalc-out b { font-size: 1.3rem; color: var(--brand); }
 details.faq { border-top: 1px solid var(--line); padding: 10px 0; } details.faq summary { font-weight: 800; cursor: pointer; } details.faq p { margin: 8px 0 0; }
 .ok-note { background: var(--ok-bg); color: var(--ok); font-weight: 800; padding: 12px 14px; border-radius: 12px; }
 .upsell ul { margin: 8px 0 12px 18px; }
