@@ -203,7 +203,7 @@
         <div class="mq-cta">${kid
     ? '<a class="mq-btn pulse" href="#/belajar">Keep learning</a><a class="mq-btn ghost" href="#/kode">Learning code</a>'
     : '<a class="mq-btn pulse" href="#/siswa-baru">Start learning</a><a class="mq-btn ghost" href="#/kode">I already have a code</a>'}</div>
-        ${kid ? '' : '<p class="mq-land-alt"><a class="mq-link" href="#/mulai/siswa">Try it first with sample data</a></p>'}
+        ${kid ? '' : '<p class="mq-land-alt"><a class="mq-link" href="#/mulai/siswa">Try it first with sample data</a></p>'} <a class="mq-resume mq-parent" href="#/ortu"><span class="av">👨‍👩‍👧</span><span class="grow">I'm a parent<small>See your child's learning report with a code from the teacher</small></span>›</a>
       </section>
       <section class="mq-feat">
         <div style="--bg:#e6fffa"><span class="em">🎯</span>Questions at your level</div>

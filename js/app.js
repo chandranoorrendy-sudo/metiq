@@ -203,6 +203,7 @@
     ? '<a class="mq-btn pulse" href="#/belajar">Lanjut belajar</a><a class="mq-btn ghost" href="#/kode">Kode belajar</a>'
     : '<a class="mq-btn pulse" href="#/siswa-baru">Mulai belajar</a><a class="mq-btn ghost" href="#/kode">Saya sudah punya kode</a>'}</div>
         ${kid ? '' : '<p class="mq-land-alt"><a class="mq-link" href="#/mulai/siswa">Coba dulu dengan data contoh</a></p>'}
+        <a class="mq-resume mq-parent" href="#/ortu"><span class="av">👨‍👩‍👧</span><span class="grow">Saya orang tua<small>Lihat laporan belajar anak dengan kode dari guru</small></span>›</a>
       </section>
       <section class="mq-feat">
         <div style="--bg:#e6fffa"><span class="em">🎯</span>Soal pas dengan levelmu</div>
