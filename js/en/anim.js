@@ -464,32 +464,50 @@
   };
 
   /* ---------- Pemutar ---------- */
-  // Satu pemutar aktif dalam satu waktu; mengembalikan fungsi untuk menghentikannya
+  // Satu pemutar aktif dalam satu waktu; mengembalikan fungsi untuk menghentikannya.
+  // Animasi diputar sekali sampai adegan terakhir lalu berhenti (tombol ↻ atau ▶ memutar ulang).
+  // Saat animasi tidak terlihat di layar atau tab disembunyikan, animasi dan bunyinya dijeda.
   let active = null;
   function mount(el, unitId) {
     const scenes = A[unitId]; if (!el || !scenes) return null;
     if (active) active();
-    let i = 0, timer = null, playing = true;
+    let i = 0, timer = null, playing = true, done = false, running = false, seen = !('IntersectionObserver' in window);
     el.innerHTML = `<div class="an-stage"><svg viewBox="0 0 320 200" class="an-svg" role="img" aria-label="Animation"></svg></div><p class="an-say"></p>
       <div class="an-ctrl"><button class="an-btn" data-an="toggle" aria-label="Pause">⏸</button><div class="an-dots">${scenes.map((_, k) => `<button data-an="go" data-k="${k}" aria-label="Step ${k + 1}"></button>`).join('')}</div><button class="an-btn" data-an="replay" aria-label="Replay">↻</button></div>`;
     const svg = el.querySelector('svg'), say = el.querySelector('.an-say'), tbtn = el.querySelector('[data-an=toggle]');
+    const visible = () => seen && !document.hidden;
+    const setBtn = () => { const on = playing && !done; tbtn.textContent = on ? '⏸' : '▶'; tbtn.setAttribute('aria-label', on ? 'Pause' : 'Play'); };
+    const finish = () => { clearTimeout(timer); running = false; done = true; playing = false; setBtn(); };
+    // gambar adegan k; bunyi dan pergantian adegan hanya saat animasi terlihat dan sedang diputar
     const show = (k) => {
       clearTimeout(timer); i = k; maxD = 0;
       svg.innerHTML = scenes[i].v(); say.textContent = scenes[i].say;
-      svg.classList.toggle('paused', !playing);
+      const run = playing && visible();
+      svg.classList.toggle('paused', !run);
       el.querySelectorAll('.an-dots button').forEach((b, n) => b.classList.toggle('on', n === i));
-      if (playing && window.SFX && window.SFX.step) window.SFX.step();
-      const dur = Math.max(3.5, maxD + 2.6 + scenes[i].say.length / 60);
-      if (playing) timer = setTimeout(() => show((i + 1) % scenes.length), dur * 1000 + (i === scenes.length - 1 ? 1200 : 0));
+      running = run;
+      if (!run) return;
+      if (window.SFX && window.SFX.step) window.SFX.step();
+      const dur = Math.max(3.5, maxD + 2.6 + scenes[i].say.length / 60) * 1000;
+      timer = setTimeout(() => (i < scenes.length - 1 ? show(i + 1) : finish()), dur);
     };
+    const hold = () => { clearTimeout(timer); running = false; svg.classList.add('paused'); };
+    // keluar layar: jeda; kembali terlihat: lanjutkan adegan yang sama (sekali saja, walau pengamat terpicu beberapa kali)
+    const onSeen = () => { if (!visible()) { if (running) hold(); } else if (playing && !done && !running) show(i); };
+    let io = null;
+    if (!seen) { io = new IntersectionObserver((es) => { const e = es[es.length - 1]; seen = e.isIntersecting && e.intersectionRatio >= 0.35; onSeen(); }, { threshold: [0, 0.35, 0.7] }); io.observe(el); }
+    document.addEventListener('visibilitychange', onSeen);
     el.addEventListener('click', (e) => {
       const b = e.target.closest('[data-an]'); if (!b) return;
-      if (b.dataset.an === 'toggle') { playing = !playing; tbtn.textContent = playing ? '⏸' : '▶'; tbtn.setAttribute('aria-label', playing ? 'Pause' : 'Play'); if (playing) show(i); else { clearTimeout(timer); svg.classList.add('paused'); } }
-      if (b.dataset.an === 'replay') { playing = true; tbtn.textContent = '⏸'; show(0); }
-      if (b.dataset.an === 'go') show(+b.dataset.k);
+      if (b.dataset.an === 'toggle') {
+        if (done) { done = false; playing = true; setBtn(); show(0); return; }
+        playing = !playing; setBtn(); if (playing) show(i); else hold();
+      }
+      if (b.dataset.an === 'replay') { done = false; playing = true; setBtn(); show(0); }
+      if (b.dataset.an === 'go') { done = false; playing = true; setBtn(); show(+b.dataset.k); }
     });
-    show(0);
-    const stop = () => { clearTimeout(timer); if (active === stop) active = null; };
+    show(0); // adegan pertama tergambar; baru diputar (dengan bunyi) saat terlihat di layar
+    const stop = () => { clearTimeout(timer); if (io) io.disconnect(); document.removeEventListener('visibilitychange', onSeen); if (active === stop) active = null; };
     active = stop;
     return stop;
   }
