@@ -182,6 +182,30 @@
     { id: 'data', name: 'Data & Peluang', icon: '📊', desc: 'Mengumpulkan, membaca, dan menafsirkan data, serta peluang.', c: '#9b6dff', bg: '#f4efff', re: /Data/ },
   ];
   const strandUnits = (st, g) => UNITS.filter((u) => (g ? u.grade === g : true) && st.re.test(u.km || ''));
+  /* Beranda: kartu kelas per jenjang (jumlah keterampilan nyata), bagian guru dengan komentar guru sungguhan, dan tanya jawab singkat */
+  const LSTAGES = ['TK', 'SD', 'SMP', 'SMA'];
+  function landGradesHTML() {
+    const cur = ss.get('lstage', 'SD'), list = GRADES.filter((g) => (g.stage || 'SD') === cur);
+    const card = (g) => { const us = unitsOf(g.id), nsk = us.reduce((t, u) => t + u.skills.length, 0); return `<a class="mq-gcard" href="#/kurikulum/${g.id}" style="--c:${(us[0] || {}).color || '#35e0bd'}"><span class="b">${g.short || g.id}</span><span class="t"><b>${g.name}</b><small>${nsk} keterampilan</small></span><span class="go" aria-hidden="true">›</span></a>`; };
+    return `<div id="lgrades"><div class="mq-lstage" role="tablist">${LSTAGES.map((st) => `<button role="tab" aria-selected="${st === cur}" class="${st === cur ? 'on' : ''}" data-act="lstage" data-s="${st}">${st}</button>`).join('')}</div><div class="mq-gcards">${list.map(card).join('')}</div></div>`;
+  }
+  function landTeachHTML() {
+    const [who, role, text] = TESTI.find((x) => /Guru/.test(x[1])) || TESTI[0];
+    return `<section class="mq-teach"><div class="tx"><small class="kick">Untuk guru</small><h2>Gratis untuk guru matematika</h2>
+      <ul><li><span>🏫</span>Buat kelas dalam 1 menit</li><li><span>🔑</span>Siswa masuk tanpa email</li><li><span>📊</span>Lihat siapa yang perlu dibantu</li></ul>
+      <div class="cta"><a class="mq-btn" href="#/guru/daftar">Daftar guru gratis</a><button class="mq-link" data-act="trydemo" data-r="guru">Coba dulu →</button></div></div>
+      <figure class="quote"><blockquote>${esc(text)}</blockquote><figcaption><b>${esc(who)}</b>${esc(role)}</figcaption></figure></section>`;
+  }
+  function landFaqHTML() {
+    const faq = [
+      ['Apakah Metiq gratis?', 'Ya, gratis untuk siswa dan guru matematika, tanpa iklan.'],
+      ['Untuk kelas berapa?', 'TK A sampai Kalkulus SMA. Asesmen singkat di awal menyesuaikan soal dengan kemampuan anak.'],
+      ['Apakah sesuai Kurikulum Merdeka?', 'Ya. <a href="#/kurikulum">Lihat peta kurikulumnya</a>.'],
+      ['Berapa lama belajar setiap hari?', 'Cukup 5 sampai 20 menit, sesuai target yang dipilih anak.'],
+      ['Apakah data anak aman?', `Tidak ada iklan, data tidak dijual, dan anak tidak perlu email. <a href="${window.METIQ_LANG === 'en' ? 'privasi.html#en' : 'privasi.html'}">Kebijakan Privasi</a>.`],
+    ];
+    return `<section class="mq-lfaq"><h2>Pertanyaan umum</h2>${faq.map(([q, a]) => `<details><summary>${q}<span class="chev" aria-hidden="true">›</span></summary><p>${a}</p></details>`).join('')}</section>`;
+  }
   function viewHome() {
     const ses = session.get();
     // Guru yang sudah masuk langsung ke dasbornya
@@ -210,10 +234,11 @@
         <div style="--bg:#fff3c4"><span class="em">🎬</span>Pelajaran beranimasi</div>
         <div style="--bg:#ffe3ec"><span class="em">🎁</span>Kumpulkan hadiah</div>
       </section>
-      <p class="mq-gb-t">Untuk TK, SD, SMP, dan SMA: TK A sampai Kalkulus</p>
-      <div class="mq-gb">${GRADES.map((g) => `<span title="${g.name}">${g.short || g.id}</span>`).join('')}</div>
+      <section class="mq-lgr"><h2>Materi TK sampai SMA</h2>${landGradesHTML()}</section>
       <section class="mq-stats" id="landstats" hidden></section>
+      ${landTeachHTML()}
       <section class="mq-testi"><h2>Kata mereka</h2>${marquee(TESTI.map(([who, role, text]) => `<figure><blockquote>${esc(text)}</blockquote><figcaption><b>${esc(who)}</b>${esc(role)}</figcaption></figure>`).join(''))}</section>
+      ${landFaqHTML()}
       <footer class="mq-lfoot"><a href="#/permainan">Permainan</a><a href="#/profesi">Profesi</a><a href="#/olimpiade">Olimpiade</a><a href="#/harga">Harga</a><a href="#/panduan/siswa">Bantuan</a><a href="#/ajukan">Ajukan akun</a><a href="#/ajukan/status">Cek status</a><a href="privasi.html">Privasi</a><div class="mq-lsocial"><a href="https://www.instagram.com/metiq.math/" target="_blank" rel="noopener" aria-label="Instagram @metiq.math"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="2"/><circle cx="17.3" cy="6.7" r="1.2" fill="currentColor"/></svg><span>Instagram</span></a><a href="https://www.tiktok.com/@metiqapp" target="_blank" rel="noopener" aria-label="TikTok @metiqapp"><svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M16.6 5.8A4.3 4.3 0 0 1 15.5 3h-3.1v12.4a2.6 2.6 0 1 1-2.6-2.6c.3 0 .5 0 .8.1V9.7a5.7 5.7 0 1 0 4.9 5.7V9.1a7.4 7.4 0 0 0 4.3 1.4V7.4a4.3 4.3 0 0 1-3.2-1.6z"/></svg><span>TikTok</span></a></div></footer>
     </div>`;
     loadLandingStats(); gReveal();
@@ -4038,7 +4063,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     document.body.classList.toggle('mq-body', ['', undefined, 'siswa', 'siswa-baru', 'kode', 'mulai', 'belajar', 'asesmen', 'latihan', 'tugas', 'aku', 'ujian', 'permainan', 'main', 'pengaturan', 'hadiah'].includes(a));
     switch (a) {
       case '': case undefined: return viewHome();
-      case 'kurikulum': return viewCurriculum();
+      case 'kurikulum': if (b !== undefined && GRADES.some((x) => x.id === +b)) { setGrade(+b); ss.set('strand', ''); history.replaceState(null, '', '#/kurikulum'); } return viewCurriculum();
       case 'siswa': return b ? viewStudentPick(b) : viewStudentEnter();
       case 'siswa-baru': return viewStudentStart();
       case 'kode': return viewStudentCode();
@@ -4173,6 +4198,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (act === 'vizdb') { ss.set('vizdb', el.dataset.c); return route(); }
     if (act === 'openkid') { e.preventDefault(); const x = session.get(); x.classId = el.dataset.id; session.set(x); return go('#/guru/siswa/' + el.dataset.s); }
     if (act === 'openclass') { const s = session.get(); s.classId = el.dataset.id; session.set(s); return go('#/guru/ringkasan'); }
+    if (act === 'lstage') { ss.set('lstage', el.dataset.s); const w = document.getElementById('lgrades'); if (w) w.outerHTML = landGradesHTML(); return; }
     if (act === 'strand') { ss.set('strand', el.dataset.s); if (location.hash !== '#/kurikulum') { go('#/kurikulum'); return; } return route(); }
     if (act === 'dtab') {
       ss.set('dtab', el.dataset.t);
