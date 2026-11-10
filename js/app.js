@@ -2358,7 +2358,7 @@
         const k = REQ[r.kind] || {}, d = r.details || {};
         const info = [r.email && `📧 ${esc(r.email)}`, r.contact && r.contact !== r.email && `📱 ${esc(r.contact)}`, r.schoolName && `🏫 ${esc(r.schoolName)}`, d.className && `Kelas: ${esc(d.className)}`, d.age && `Usia ${esc(d.age)}`, (d.children || []).length && `Anak: ${d.children.map(esc).join(', ')}`, d.note && `“${esc(d.note)}”`].filter(Boolean);
         if (r.status !== 'menunggu') {
-          const res = r.result || {}, msg = r.status === 'disetujui' ? `Assalamu'alaikum ${r.name}, pengajuan akun Metiq Anda sudah disetujui. ${res.classCode ? `Kode kelas: ${res.classCode}. ` : ''}${res.parentCode ? `Kode orang tua: ${res.parentCode}. ` : ''}Buka https://metiq-math.vercel.app — kode pengajuan: ${r.code}` : '';
+          const res = r.result || {}, msg = r.status === 'disetujui' ? `Assalamu'alaikum ${r.name}, pengajuan akun Metiq Anda sudah disetujui. ${res.classCode ? `Kode kelas: ${res.classCode}. ` : ''}${res.parentCode ? `Kode orang tua: ${res.parentCode}. ` : ''}Buka https://metiqmath.com — kode pengajuan: ${r.code}` : '';
           return `<div class="reqrow"><span class="grow"><b>${k.icon || ''} ${esc(r.name)}</b> <small class="muted">${k.title || r.kind} · ${r.status === 'disetujui' ? '✅ disetujui' : '❌ ditolak'} ${ago(r.decidedAt)}${r.decidedBy ? ` oleh ${esc(r.decidedBy)}` : ''}</small>
             ${res.classCode ? `<small>Kode kelas <b class="code">${esc(res.classCode)}</b>${res.parentCode ? ` · kode orang tua <b class="code">${esc(res.parentCode)}</b>` : ''}${(res.children || []).length ? ` · anak: ${res.children.map((c) => `${esc(c.name)} <b class="code">${esc(c.parentCode)}</b>`).join(', ')}` : ''}</small>` : ''}</span>
             ${msg && waLink(r.contact, msg) ? `<a class="btn sm ghost" href="${waLink(r.contact, msg)}" target="_blank" rel="noopener">Kirim via WA</a>` : ''}</div>`;
@@ -2697,7 +2697,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   function trialHTML(r, days) {
     const vs = r.visitors || [], byRole = (x) => vs.filter((v) => v.role === x).length, ans = vs.reduce((t, v) => t + v.answers, 0), ok = vs.reduce((t, v) => t + v.correct, 0);
     const pills = `<div class="vzpills">${[7, 14, 30].map((d) => `<button class="${d === days ? 'on' : ''}" data-act="tdays" data-d="${d}">${d} hari</button>`).join('')}</div>`;
-    if (!vs.length) return pills + emptyCard('Belum ada penggunaan', `Belum ada yang memakai mode coba dalam ${days} hari terakhir. Bagikan tautan metiq-math.vercel.app dan minta penguji mengetuk "Coba sebagai …" di beranda.`);
+    if (!vs.length) return pills + emptyCard('Belum ada penggunaan', `Belum ada yang memakai mode coba dalam ${days} hari terakhir. Bagikan tautan metiqmath.com dan minta penguji mengetuk "Coba sebagai …" di beranda.`);
     // grafik harian: pengunjung unik per peran (batang bertumpuk, warna kategori tetap per peran)
     const dayList = [...Array(days)].map((_, i) => isoDay(Date.now() - (days - 1 - i) * DAY)), roles = ['siswa', 'ortu', 'guru'], col = { siswa: VZ.s1, ortu: VZ.s2, guru: VZ.s3 };
     const val = (d, rl) => ((r.daily || []).find((x) => x.day === d && x.role === rl) || {}).visitors || 0;
@@ -3965,8 +3965,8 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     else if (act === 'reqlogin') { const r = JSON.parse(el.dataset.r); session.set({ role: 'siswa', id: r.studentId, code: r.classCode }); go('#/belajar'); }
     else if (act === 'schooledit') superEditSchool(el.dataset.id, el.dataset.n);
     else if (act === 'delclass') deleteClass(el.dataset.id);
-    else if (act === 'shareclass') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. Latihan matematika ${ctx.c.name} sekarang di Metiq (gratis, bisa di HP):\n1. Buka https://metiq-math.vercel.app\n2. Ketuk "Saya Siswa"\n3. Masukkan kode kelas: ${ctx.c.code}\n4. Pilih nama kamu`); }
-    else if (act === 'shareparent') { const k = S.student(el.dataset.id), c = k && S.cls(k.classId); if (k) shareText(`Assalamu'alaikum Ayah/Bunda ${k.name}. Laporan belajar matematika ${k.name} (${c ? c.name : ''}) bisa dilihat di Metiq:\n1. Buka https://metiq-math.vercel.app\n2. Ketuk "Saya Orang Tua"\n3. Masukkan kode orang tua: ${k.parentCode}\nAyah/Bunda juga akan mendapat kabar setiap ada tugas dari guru.`); }
+    else if (act === 'shareclass') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. Latihan matematika ${ctx.c.name} sekarang di Metiq (gratis, bisa di HP):\n1. Buka https://metiqmath.com\n2. Ketuk "Saya Siswa"\n3. Masukkan kode kelas: ${ctx.c.code}\n4. Pilih nama kamu`); }
+    else if (act === 'shareparent') { const k = S.student(el.dataset.id), c = k && S.cls(k.classId); if (k) shareText(`Assalamu'alaikum Ayah/Bunda ${k.name}. Laporan belajar matematika ${k.name} (${c ? c.name : ''}) bisa dilihat di Metiq:\n1. Buka https://metiqmath.com\n2. Ketuk "Saya Orang Tua"\n3. Masukkan kode orang tua: ${k.parentCode}\nAyah/Bunda juga akan mendapat kabar setiap ada tugas dari guru.`); }
     else if (act === 'submitasg') { el.disabled = true; markDone(el.dataset.a, session.get().id, 'siswa').then(() => { window.SFX.task(); toast('Tugas dikumpulkan! Gurumu mendapat notifikasi 📨'); route(); }); }
     else if (act === 'superdel') superDelete(el.dataset.what, el.dataset.id);
     else if (act === 'schoolview') { ss.set('schoolSel', el.dataset.id); go('#/guru/sekolah'); }
@@ -4012,7 +4012,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       if (cloudOn()) return tAct('teacher_add_assignment', { p_class_id: ctx.c.id, p_skills: [el.dataset.id], p_note: note, p_due: '' }, 'Tugas dibuat ✔');
       S.addAssignment(ctx.c.id, [el.dataset.id], note, ''); toast('Tugas dibuat ✔'); route();
     }
-    else if (act === 'remind') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. Yuk, latihan matematika di Metiq 10 menit hari ini.\nBuka https://metiq-math.vercel.app lalu ketuk "Saya Siswa". Kode kelas: ${ctx.c.code}`); }
+    else if (act === 'remind') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. Yuk, latihan matematika di Metiq 10 menit hari ini.\nBuka https://metiqmath.com lalu ketuk "Saya Siswa". Kode kelas: ${ctx.c.code}`); }
     else if (act === 'print') window.print();
     else if (act === 'reload') route();
     else if (act === 'export') {

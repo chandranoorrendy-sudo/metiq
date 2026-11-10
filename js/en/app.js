@@ -2353,7 +2353,7 @@
         const k = REQ[r.kind] || {}, d = r.details || {};
         const info = [r.email && `📧 ${esc(r.email)}`, r.contact && r.contact !== r.email && `📱 ${esc(r.contact)}`, r.schoolName && `🏫 ${esc(r.schoolName)}`, d.className && `Class: ${esc(d.className)}`, d.age && `Age ${esc(d.age)}`, (d.children || []).length && `Child: ${d.children.map(esc).join(', ')}`, d.note && `“${esc(d.note)}”`].filter(Boolean);
         if (r.status !== 'menunggu') {
-          const res = r.result || {}, msg = r.status === 'disetujui' ? `Assalamu'alaikum ${r.name}, your Metiq account request has been approved. ${res.classCode ? `Class code: ${res.classCode}. ` : ''}${res.parentCode ? `Parent code: ${res.parentCode}. ` : ''}Open https://metiq-math.vercel.app — request code: ${r.code}` : '';
+          const res = r.result || {}, msg = r.status === 'disetujui' ? `Assalamu'alaikum ${r.name}, your Metiq account request has been approved. ${res.classCode ? `Class code: ${res.classCode}. ` : ''}${res.parentCode ? `Parent code: ${res.parentCode}. ` : ''}Open https://metiqmath.com — request code: ${r.code}` : '';
           return `<div class="reqrow"><span class="grow"><b>${k.icon || ''} ${esc(r.name)}</b> <small class="muted">${k.title || r.kind} · ${r.status === 'disetujui' ? '✅ approved' : '❌ rejected'} ${ago(r.decidedAt)}${r.decidedBy ? ` by ${esc(r.decidedBy)}` : ''}</small>
             ${res.classCode ? `<small>Class code <b class="code">${esc(res.classCode)}</b>${res.parentCode ? ` · parent code <b class="code">${esc(res.parentCode)}</b>` : ''}${(res.children || []).length ? ` · child: ${res.children.map((c) => `${esc(c.name)} <b class="code">${esc(c.parentCode)}</b>`).join(', ')}` : ''}</small>` : ''}</span>
             ${msg && waLink(r.contact, msg) ? `<a class="btn sm ghost" href="${waLink(r.contact, msg)}" target="_blank" rel="noopener">Send via WhatsApp</a>` : ''}</div>`;
@@ -2686,7 +2686,7 @@
   function trialHTML(r, days) {
     const vs = r.visitors || [], byRole = (x) => vs.filter((v) => v.role === x).length, ans = vs.reduce((t, v) => t + v.answers, 0), ok = vs.reduce((t, v) => t + v.correct, 0);
     const pills = `<div class="vzpills">${[7, 14, 30].map((d) => `<button class="${d === days ? 'on' : ''}" data-act="tdays" data-d="${d}">${d} days</button>`).join('')}</div>`;
-    if (!vs.length) return pills + emptyCard('No usage yet', `No one has used demo mode in the last ${days} days. Share the link metiq-math.vercel.app and ask testers to tap "Try as …" on the home page.`);
+    if (!vs.length) return pills + emptyCard('No usage yet', `No one has used demo mode in the last ${days} days. Share the link metiqmath.com and ask testers to tap "Try as …" on the home page.`);
     // grafik harian: pengunjung unik per peran (batang bertumpuk, warna kategori tetap per peran)
     const dayList = [...Array(days)].map((_, i) => isoDay(Date.now() - (days - 1 - i) * DAY)), roles = ['siswa', 'ortu', 'guru'], col = { siswa: VZ.s1, ortu: VZ.s2, guru: VZ.s3 };
     const val = (d, rl) => ((r.daily || []).find((x) => x.day === d && x.role === rl) || {}).visitors || 0;
@@ -3952,8 +3952,8 @@
     else if (act === 'reqlogin') { const r = JSON.parse(el.dataset.r); session.set({ role: 'siswa', id: r.studentId, code: r.classCode }); go('#/belajar'); }
     else if (act === 'schooledit') superEditSchool(el.dataset.id, el.dataset.n);
     else if (act === 'delclass') deleteClass(el.dataset.id);
-    else if (act === 'shareclass') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. ${ctx.c.name} math practice is now on Metiq (free, works on phones):\n1. Open https://metiq-math.vercel.app\n2. Tap "I'm a student"\n3. Enter the class code: ${ctx.c.code}\n4. Choose your name`); }
-    else if (act === 'shareparent') { const k = S.student(el.dataset.id), c = k && S.cls(k.classId); if (k) shareText(`Assalamu'alaikum, parent of ${k.name}. ${k.name}'s (${c ? c.name : ''}) math learning report can be seen on Metiq:\n1. Open https://metiq-math.vercel.app\n2. Tap "I'm a parent"\n3. Enter the parent code: ${k.parentCode}\nYou'll also be notified whenever the teacher gives a task.`); }
+    else if (act === 'shareclass') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. ${ctx.c.name} math practice is now on Metiq (free, works on phones):\n1. Open https://metiqmath.com\n2. Tap "I'm a student"\n3. Enter the class code: ${ctx.c.code}\n4. Choose your name`); }
+    else if (act === 'shareparent') { const k = S.student(el.dataset.id), c = k && S.cls(k.classId); if (k) shareText(`Assalamu'alaikum, parent of ${k.name}. ${k.name}'s (${c ? c.name : ''}) math learning report can be seen on Metiq:\n1. Open https://metiqmath.com\n2. Tap "I'm a parent"\n3. Enter the parent code: ${k.parentCode}\nYou'll also be notified whenever the teacher gives a task.`); }
     else if (act === 'submitasg') { el.disabled = true; markDone(el.dataset.a, session.get().id, 'siswa').then(() => { window.SFX.task(); toast('Task turned in! Your teacher was notified 📨'); route(); }); }
     else if (act === 'superdel') superDelete(el.dataset.what, el.dataset.id);
     else if (act === 'schoolview') { ss.set('schoolSel', el.dataset.id); go('#/guru/sekolah'); }
@@ -3999,7 +3999,7 @@
       if (cloudOn()) return tAct('teacher_add_assignment', { p_class_id: ctx.c.id, p_skills: [el.dataset.id], p_note: note, p_due: '' }, 'Task created ✔');
       S.addAssignment(ctx.c.id, [el.dataset.id], note, ''); toast('Task created ✔'); route();
     }
-    else if (act === 'remind') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. Let's practice math on Metiq for 10 minutes today.\nOpen https://metiq-math.vercel.app and tap "I'm a Student". Class code: ${ctx.c.code}`); }
+    else if (act === 'remind') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. Let's practice math on Metiq for 10 minutes today.\nOpen https://metiqmath.com and tap "I'm a Student". Class code: ${ctx.c.code}`); }
     else if (act === 'print') window.print();
     else if (act === 'reload') route();
     else if (act === 'export') {
