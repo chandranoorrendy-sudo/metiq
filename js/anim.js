@@ -197,6 +197,46 @@
     o += T(xn, yR, '= ' + big(a + b), { a: 'start', fs: 18, c: C.d, cls: 'a-pop', d: d0 + 1.4 + n * step });
     return bg + o;
   }
+  // Pengurangan bersusun dengan meminjam, dari satuan ke kiri. Jika angka atas lebih kecil, angka di kolom kiri dicoret
+  // dan angka barunya ditulis merah di atasnya (kolom 0 yang dilewati menjadi 9), kolom ini menjadi 10 lebih besar,
+  // catatan langkah muncul di samping, lalu angka hasil muncul satu per satu dari kanan.
+  function stackSub({ a, b, d0 = 0.5, step = 2.3 }) {
+    const A = String(a), B = String(b), R = String(a - b), n = A.length, cw = 28, xr = 150, X = (k) => xr - k * cw;
+    const top = [...A].reverse().map(Number), bot = [...B].reverse().map(Number);
+    const yA = 86, yB = 120, yL = 132, yR = 164, fs = 26, xn = 196, times = Array(n).fill(0);
+    const note = (y, s, t, c = C.ink, dur = step) => `<text x="${xn}" y="${y}" font-size="13" font-weight="800" fill="${c}" class="a-note" ${dl(t, `animation-duration:${dur}s`)}>${s}</text>`;
+    const strike = (x, y, h, t) => `<path d="M${x - h * 0.45} ${y + 2}L${x + h * 0.45} ${y - h * 0.75}" stroke="${C.r}" stroke-width="3" stroke-linecap="round" pathLength="1" class="a-draw" ${dl(t)}/>`;
+    let bg = '', o = '';
+    // angka atas kolom k diganti v: angka lama dicoret, angka baru ditulis merah di atasnya
+    const change = (k, v, t) => {
+      const y = yA - 30 - times[k] * 18;
+      o += times[k] ? strike(X(k), y + 18, 15, t) : strike(X(k), yA, fs, t);
+      o += T(X(k), y, v, { fs: 15, c: C.r, cls: 'a-pop', d: t + 0.25 });
+      times[k]++;
+    };
+    for (let k = 0; k < n; k++) o += T(X(k), yA, top[k], { fs, d: d0 });
+    for (let k = 0; k < bot.length; k++) o += T(X(k), yB, bot[k], { fs, d: d0 + 0.2 });
+    o += T(X(n - 1) - cw * 0.9, yB, '−', { fs, d: d0 + 0.2 });
+    o += `<path d="M${Math.max(6, X(n - 1) - cw * 1.4)} ${yL}H${xr + cw * 0.6}" stroke="${C.ink}" stroke-width="3" stroke-linecap="round" pathLength="1" class="a-draw" ${dl(d0 + 0.4)}/>`;
+    for (let k = 0; k < n; k++) {
+      const t = d0 + 1.2 + k * step, hb = k < bot.length, v = hb ? bot[k] : 0;
+      bg += `<rect x="${X(k) - cw / 2 + 1}" y="${yA - 66}" width="${cw - 2}" height="${yR - yA + 76}" rx="9" fill="${C.tl}" class="a-flash" ${dl(t, `animation-duration:${step}s`)}/>`;
+      if (top[k] < v) {
+        let j = k + 1; while (top[j] === 0) j++;
+        const was = top[k];
+        change(j, top[j] - 1, t + 0.3); top[j] -= 1;
+        for (let m = j - 1; m > k; m--) { change(m, 9, t + 0.6); top[m] = 9; }
+        top[k] += 10; change(k, top[k], t + 0.9);
+        o += note(yA - 10, `${was} − ${v}? pinjam 1`, t) + note(yA + 12, `${top[k]} − ${v} = ${top[k] - v}`, t + 0.9, C.d, step - 0.9);
+      } else {
+        if (hb) o += note(yA - 10, `${top[k]} − ${v} = ${top[k] - v}`, t);
+        o += note(yA + 12, `tulis ${top[k] - v}`, t, C.d);
+      }
+      if (k < R.length) o += T(X(k), yR, top[k] - v, { fs, c: C.d, cls: 'a-pop', d: t + 1.3 });
+    }
+    o += T(xn, yR, '= ' + big(a - b), { a: 'start', fs: 18, c: C.d, cls: 'a-pop', d: d0 + 1.4 + n * step });
+    return bg + o;
+  }
   // diagram batang atau garis
   function chart({ bars, max, kind = 'bar', unit = '', d0 = 0.2 }) {
     max = max || Math.max(...bars.map((b) => b[1])); const bw = Math.min(50, 240 / bars.length), gap = 260 / bars.length, base = 165, Y = (v) => base - (v / max) * 125;
@@ -342,10 +382,11 @@
       S(() => eq({ lines: ['Masuk 3 → +5 → {8}', 'Masuk 6 → +5 → {11}', 'Masuk 9 → +5 → {14}'], fs: 17 }), 'Tabel masukan dan keluaran: setiap bilangan ditambah 5.')],
     '2C': [S(() => stack({ a: 47, b: 35 }), 'Menjumlah dengan menyimpan: satuan 12, tulis 2 dan simpan 1 ke puluhan.'),
       S(() => eq({ lines: ['36 + 9', '= 36 + {10} − [1]', '= 46 − 1 = {45}'] }), 'Strategi +9: tambah 10 lalu kurangi 1.')],
-    '2D': [S(() => eq({ lines: ['52 − 27', '2 − 7? pinjam 1 puluhan', '12 − 7 = 5', '4 − 2 = 2', '= {25}'], fs: 16 }), 'Mengurangi dengan meminjam: 52 menjadi 4 puluhan dan 12 satuan.'),
+    '2D': [S(() => stackSub({ a: 52, b: 27 }), 'Mengurangi dengan meminjam: 52 menjadi 4 puluhan dan 12 satuan.'),
       S(() => line({ from: 20, to: 60, step: 5, lab: 2, start: 27, hops: [3, 20, 2] }), 'Hitung maju dari 27: +3 ke 30, +20 ke 50, +2 ke 52. Selisihnya 3 + 20 + 2 = 25.')],
     '2E': [S(() => place({ h: 3, t: 2, o: 4, x: 30 }) + place({ h: 1, x: 250, d0: 2.6 }) + eq({ lines: ['324 + 100 = {424}'], y0: 160, d0: 3.4 }), '324 + 100: cukup tambah 1 ratusan. Hasilnya 424.'),
-      S(() => stack({ a: 356, b: 278 }), 'Menjumlah tiga angka: kerjakan satuan, puluhan, lalu ratusan.')],
+      S(() => stack({ a: 356, b: 278 }), 'Menjumlah tiga angka: kerjakan satuan, puluhan, lalu ratusan.'),
+      S(() => stackSub({ a: 523, b: 175 }), 'Mengurangi tiga angka: pinjam dari puluhan, lalu dari ratusan, jika angka atas lebih kecil.')],
     '2F': [S(() => bar({ rows: [{ l: 'Ani', s: [[35, '35']] }, { l: 'Budi', s: [[35, '35'], [18, '18', C.y]] }], total: '?' }), 'Model batang: Budi punya 18 kelereng lebih banyak dari Ani. Budi = 35 + 18 = 53.'),
       S(() => bar({ rows: [{ l: 'Total', s: [[24, '24'], [36, '?', C.y]] }], total: '60' }), 'Keseluruhan 60, satu bagian 24. Bagian lain = 60 − 24 = 36.')],
     '2G': [S(() => array({ r: 3, c: 4, label: '3 × 4 = 12', s: 30, y: 45 }), '3 baris, masing-masing 4. Ditulis 3 × 4 = 12.'),
@@ -373,7 +414,8 @@
       S(() => eq({ lines: ['4.352 dan 4.325', 'ribuan sama, ratusan sama', 'puluhan: 5 > 2', 'Jadi {4.352 > 4.325}'], fs: 16 }), 'Membandingkan: mulai dari tempat yang paling besar.')],
     '3B': [S(() => line({ from: 360, to: 370, start: 368, hops: [2] }), '368 dibulatkan ke puluhan terdekat menjadi 370.'),
       S(() => line({ from: 300, to: 400, step: 10, lab: 5, mark: [368] }) + T(160, 60, '368 → 400 (ratusan terdekat)', { c: C.d, d: 1.6 }), 'Ke ratusan terdekat: 368 lebih dekat ke 400 daripada ke 300.')],
-    '3C': [S(() => stack({ a: 2468, b: 1375 }), 'Menjumlah bersusun: dari satuan ke ribuan, simpan jika lebih dari 9.')],
+    '3C': [S(() => stack({ a: 2468, b: 1375 }), 'Menjumlah bersusun: dari satuan ke ribuan, simpan jika lebih dari 9.'),
+      S(() => stackSub({ a: 5302, b: 1758 }), 'Meminjam melewati angka 0: ratusan dipinjam lebih dulu, puluhan 0 menjadi 9, dan satuan menjadi 12.')],
     '3D': [S(() => array({ r: 4, c: 3, s: 28, y: 35, label: '4 × 3 = 12' }), '4 baris berisi 3: 4 × 3 = 12.'),
       S(() => array({ r: 3, c: 4, s: 28, y: 35, label: '3 × 4 = 12' }), 'Diputar menjadi 3 baris berisi 4: hasilnya tetap 12. Urutan perkalian boleh ditukar.'),
       S(() => array({ r: 7, c: 6, s: 18, y: 25, split: 5, label: '5 × 6 + 2 × 6 = 30 + 12 = 42' }), 'Memecah perkalian: 7 × 6 = 5 × 6 + 2 × 6 = 42.')],
