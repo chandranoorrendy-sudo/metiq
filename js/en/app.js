@@ -477,57 +477,113 @@
     list.forEach((x, i) => { if (x.state !== 'new') return; if (i < last) x.state = 'next'; else x.state = after++ === 0 ? 'next' : after <= 3 ? 'fog' : 'gone'; });
     return list.filter((x) => x.state !== 'gone');
   }
-  // Bentang alam pulau menurut bidang matematika
-  const isleKind = (u) => {
-    const s = STRANDS.find((x) => x.re.test(u.km || ''));
-    if (s) return s.id;
-    const t = u.name;
-    return /bangun|bentuk|geometri|sudut|simetri|koordinat/i.test(t) ? 'geo' : /ukur|panjang|berat|waktu|jam|uang|volume|luas|keliling/i.test(t) ? 'ukur' : /data|diagram|grafik|peluang|statistik/i.test(t) ? 'data' : 'bil';
+  // Dunia setiap maskot. Bab milik maskot itu (unitBuddy) menjadi tempat di dunianya: Meti menjelajah laut,
+  // Tito gurun, Nahla pegunungan, Lumo kepulauan. Tempat ke-k milik maskot yang sama memakai gambar ke-k (berputar).
+  const WORLDS = {
+    meti: { name: 'Meti\'s Sea', icon: '🐙', bg: '#8fd3f0', places: ['Coral Reef', 'Shipwreck', 'Kelp Forest', 'Pearl Clam'] },
+    tito: { name: 'Tito\'s Desert', icon: '🐜', bg: '#fbe2b3', places: ['Sand Dunes', 'Oasis', 'Canyon Rock', 'Desert Camp'] },
+    nahla: { name: 'Nahla\'s Mountains', icon: '🐝', bg: '#d3eecf', places: ['Mountain Lake', 'Savanna', 'Mountain Peak', 'Flower Meadow'] },
+    lumo: { name: 'Lumo\'s Islands', icon: '🐬', bg: '#bdeaf6', places: ['Tropical Island', 'Volcano Island', 'Atoll', 'Lighthouse Island'] },
   };
+  const worldOf = (u) => unitBuddy(u) || 'meti';
   const ISLE_TREE = (x, y, s, c) => `<path d="M${x} ${y - 26 * s}l${11 * s} ${22 * s}h${-22 * s}z" fill="${c}"/><path d="M${x} ${y - 16 * s}l${9 * s} ${18 * s}h${-18 * s}z" fill="${c}" opacity=".85"/><rect x="${x - 2 * s}" y="${y - 4 * s}" width="${4 * s}" height="${6 * s}" fill="#8a5a3c"/>`;
-  function isleSVG(kind, ghost, u) {
-    // simbol bab (mis. +, ×, ½) di balok tengah, supaya setiap pulau bilangan berbeda
-    const lg = u && CH_LOGO.find((x) => x[0].test(u.name)), sym = lg ? lg[1] : '2', symC = lg ? lg[2] : '#4d96ff';
-    const C = ghost ? { cliff: '#d5e0e8', cliff2: '#c7d4de', grass: '#e6eef3', grass2: '#eef4f7', tree: '#d0dce5', mark: '#cbd8e2' }
-      : { cliff: '#a97c66', cliff2: '#8d6a5c', grass: '#7fd36e', grass2: '#a5e48f', tree: '#2fa66a', mark: '' };
-    const base = `<ellipse cx="120" cy="134" rx="114" ry="14" fill="${ghost ? '#dfeaf1' : '#9fdcef'}" opacity=".7"/>
-      <path d="M14 76c2 30 18 50 48 56 40 7 78 8 116 2 28-5 44-26 48-58z" fill="${C.cliff}"/>
-      <path d="M30 108c26 14 58 18 92 18s66-4 92-18c-6 14-18 22-36 25-38 7-76 7-114 0-17-3-28-12-34-25z" fill="${C.cliff2}"/>
-      <ellipse cx="120" cy="74" rx="108" ry="40" fill="${C.grass}"/><ellipse cx="112" cy="66" rx="84" ry="26" fill="${C.grass2}" opacity=".7"/>`;
-    const trees = ISLE_TREE(36, 82, 1, C.tree) + ISLE_TREE(52, 92, 0.8, C.tree) + ISLE_TREE(206, 84, 0.9, C.tree) + ISLE_TREE(190, 96, 0.7, C.tree);
-    if (ghost) {
-      const shape = { bil: '<rect x="96" y="30" width="24" height="24" rx="5"/><rect x="122" y="18" width="24" height="36" rx="5"/>', geo: '<path d="M100 56l18-36 18 36z"/><rect x="138" y="32" width="24" height="24" rx="3"/>', ukur: '<rect x="96" y="22" width="12" height="38" rx="3"/><circle cx="140" cy="38" r="16"/>', data: '<rect x="98" y="34" width="14" height="24" rx="3"/><rect x="116" y="22" width="14" height="36" rx="3"/><rect x="134" y="40" width="14" height="18" rx="3"/>' }[kind];
-      return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true">${base}${trees}<g fill="${C.mark}">${shape}</g></svg>`;
+  const PALM = (x, y, s) => `<path d="M${x} ${y}q${4 * s} ${-22 * s} ${-2 * s} ${-44 * s}" stroke="#9a6a3f" stroke-width="${5 * s}" fill="none" stroke-linecap="round"/>${[[-26, -8], [24, -10], [-14, -22], [16, -24], [2, -30]].map(([dx, r]) => `<ellipse cx="${x - 2 * s + dx * s * 0.5}" cy="${y - 46 * s}" rx="${15 * s}" ry="${5 * s}" fill="#2fa66a" transform="rotate(${r + (dx > 0 ? 20 : -20)} ${x - 2 * s} ${y - 46 * s})"/>`).join('')}<circle cx="${x - 2 * s}" cy="${y - 43 * s}" r="${3 * s}" fill="#8a5a3c"/>`;
+  const FISH = (x, y, c, f) => `<g transform="translate(${x} ${y}) scale(${f ? -1 : 1} 1)"><ellipse rx="9" ry="5.5" fill="${c}"/><path d="M8 0l8-6v12z" fill="${c}"/><circle cx="-4" cy="-1.5" r="1.4" fill="#04382e"/></g>`;
+  const BUB = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.6"/>`;
+  // Lencana simbol bab (mis. +, ×, ½) supaya setiap tempat tetap menunjukkan babnya
+  const SYMB = (u, ring) => { const lg = u && CH_LOGO.find((x) => x[0].test(u.name)); if (!lg) return ''; const t = lg[1]; return `<circle cx="28" cy="30" r="15" fill="#fff" stroke="${ring}" stroke-width="3"/><text x="28" y="${t.length > 2 ? 34 : 36}" text-anchor="middle" font-size="${t.length > 2 ? 11 : t.length > 1 ? 14 : 18}" font-weight="900" fill="${lg[2]}" font-family="Nunito,sans-serif">${esc(t)}</text>`; };
+  function placeSVG(who, v, ghost, u) {
+    v %= 4;
+    let g = '';
+    if (who === 'meti') {
+      const bed = '<path d="M6 120Q60 96 120 104t114 8q4 22-12 26H18Q2 136 6 120z" fill="#f2d79b"/><path d="M30 126q40-10 80-4t96 0" stroke="#e2c27f" stroke-width="3" fill="none" opacity=".7"/>';
+      if (ghost) return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true"><g fill="#d9e8f0">${bed.replace(/fill="[^"]+"/g, '')}<path d="M90 106c0-30 14-48 30-48s30 18 30 48z"/></g></svg>`;
+      const rays = '<path d="M60 0l20 0-40 110h-12zM150 0h14l-6 100h-10z" fill="#fff" opacity=".12"/>';
+      const scene = [
+        // terumbu karang
+        '<path d="M66 112V82M66 94L54 78M66 90l12-14M54 78v-8M78 76v-8" stroke="#ff6f91" stroke-width="7" stroke-linecap="round" fill="none"/><rect x="100" y="78" width="11" height="34" rx="5.5" fill="#ff9f43"/><rect x="113" y="70" width="11" height="42" rx="5.5" fill="#ffb86b"/><rect x="126" y="84" width="11" height="28" rx="5.5" fill="#ff9f43"/><path d="M150 112a24 24 0 0 1 48 0z" fill="#9b6dff"/><path d="M174 112l-16-20M174 112V88M174 112l16-20" stroke="#c7a8ff" stroke-width="2"/><circle cx="94" cy="110" r="7" fill="#ffd166"/>' + FISH(180, 52, '#ffad33') + FISH(96, 44, '#4d96ff', true),
+        // kapal karam
+        '<g transform="rotate(-9 120 100)"><path d="M58 88h124l-18 28H76z" fill="#8a5a3c"/><rect x="58" y="82" width="124" height="9" rx="2" fill="#6d452c"/><circle cx="86" cy="100" r="4.5" fill="#2b6f8f"/><circle cx="110" cy="100" r="4.5" fill="#2b6f8f"/><circle cx="134" cy="100" r="4.5" fill="#2b6f8f"/><rect x="117" y="34" width="6" height="50" fill="#6d452c"/><path d="M123 38l34 12-9 7 6 11-31-5z" fill="#f4ecd8" opacity=".9"/></g><path d="M192 116q-8-14 0-26t0-24" stroke="#3fae6a" stroke-width="5" fill="none" stroke-linecap="round"/><rect x="36" y="104" width="22" height="14" rx="3" fill="#c8741a"/><rect x="36" y="100" width="22" height="7" rx="3" fill="#e08a2c"/><rect x="45" y="100" width="4" height="18" fill="#ffc800"/>' + FISH(200, 48, '#ff6f91', true),
+        // hutan alga
+        [44, 76, 108, 140, 172, 204].map((x, i) => `<path d="M${x} 116q${i % 2 ? 10 : -10} -20 0 -40t0 -44" stroke="${i % 2 ? '#3fae6a' : '#5fc77a'}" stroke-width="6" fill="none" stroke-linecap="round"/><ellipse cx="${x + (i % 2 ? 7 : -7)}" cy="${78 - (i % 3) * 8}" rx="7" ry="3.5" fill="#7ad68a" transform="rotate(${i % 2 ? 30 : -30} ${x} 78)"/>`).join('') + FISH(126, 50, '#ffad33') + FISH(88, 66, '#9b6dff', true),
+        // kerang mutiara
+        '<path d="M86 108q34 14 68 0l-6-16H92z" fill="#f7b2c4"/><path d="M92 92q28-44 56 0z" fill="#ffc9d6"/><path d="M104 92q16-30 32 0M120 50v42" stroke="#f08fa8" stroke-width="2" fill="none"/><circle cx="120" cy="96" r="9" fill="#fff"/><circle cx="117" cy="93" r="3" fill="#e6f7ff"/><path d="M182 110l4-10 4 10 10 1-8 6 3 10-9-6-9 6 3-10-8-6z" fill="#ff8a3d"/><ellipse cx="56" cy="112" rx="16" ry="8" fill="#b9a68a"/><ellipse cx="70" cy="114" rx="10" ry="6" fill="#a8957a"/>' + FISH(60, 54, '#4d96ff'),
+      ][v];
+      g = rays + bed + scene + BUB(200, 30, 4) + BUB(208, 18, 2.5) + BUB(46, 66, 3) + SYMB(u, '#1c9be8');
+    } else if (who === 'tito') {
+      const dune = '<path d="M6 118Q60 72 120 92q50-28 114 22 4 16-14 20H20Q2 132 6 118z" fill="#f2c27b"/><path d="M30 112q40-34 90-18" stroke="#f9dcab" stroke-width="4" fill="none"/>';
+      if (ghost) return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true"><g fill="#e9e3d6">${dune.replace(/fill="[^"]+"/g, '').replace(/stroke="[^"]+"/, 'stroke="none"')}<path d="M100 98c0-24 10-40 20-40s20 16 20 40z"/></g></svg>`;
+      const sun = '<circle cx="206" cy="28" r="14" fill="#ffd36b"/><circle cx="206" cy="28" r="20" fill="#ffd36b" opacity=".25"/>';
+      const cactus = (x, y, s) => `<rect x="${x - 5 * s}" y="${y - 40 * s}" width="${10 * s}" height="${40 * s}" rx="${5 * s}" fill="#3fae6a"/><path d="M${x - 5 * s} ${y - 22 * s}h${-8 * s}v${-12 * s}M${x + 5 * s} ${y - 28 * s}h${8 * s}v${-10 * s}" stroke="#3fae6a" stroke-width="${7 * s}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+      const scene = [
+        '<path d="M120 92q40-34 100 8" fill="#e8ad62"/>' + cactus(70, 104, 1) + cactus(180, 102, 0.7) + '<ellipse cx="128" cy="104" rx="10" ry="4" fill="#d9a35a"/>',
+        '<ellipse cx="122" cy="104" rx="46" ry="12" fill="#5cc2e8"/><ellipse cx="114" cy="101" rx="20" ry="4" fill="#bdeaf6" opacity=".7"/>' + PALM(88, 100, 0.9) + PALM(158, 98, 0.75) + '<path d="M70 110l4-12 3 12M176 108l3-10 3 10" stroke="#3fae6a" stroke-width="3" fill="none"/>',
+        '<path d="M66 106V62q0-8 8-8h92q8 0 8 8v44z" fill="#d9774a"/><path d="M100 106V86a20 20 0 0 1 40 0v20z" fill="#f2c27b"/><path d="M66 74h108M66 90h34M140 90h34" stroke="#b85f37" stroke-width="3"/>' + cactus(196, 108, 0.6),
+        '<path d="M78 108l34-50 34 50z" fill="#ff8a3d"/><path d="M112 58l12 50h-24z" fill="#ffc06b"/><path d="M95 84l17-26 17 26" stroke="#fff" stroke-width="3" fill="none" opacity=".6"/><path d="M112 58V42l14 5-14 5" stroke="#6a7f7a" stroke-width="2" fill="#e8463a"/><path d="M168 106l8-10 8 10" fill="#ff6f3d"/><path d="M170 106l6-6 6 6" fill="#ffc800"/><rect x="162" y="104" width="28" height="4" rx="2" fill="#8a5a3c"/>',
+      ][v];
+      g = sun + dune + scene + SYMB(u, '#e0a800');
+    } else if (who === 'nahla') {
+      const hill = '<ellipse cx="120" cy="134" rx="112" ry="13" fill="#9fd7b0" opacity=".6"/><path d="M14 112q8-32 50-38 56-10 112 0 42 8 50 38-4 20-24 22H38q-22-2-24-22z" fill="#7fcd6c"/><path d="M40 92q60-22 160 0" stroke="#a5e48f" stroke-width="6" fill="none" opacity=".7"/>';
+      if (ghost) return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true"><g fill="#dde8e4"><path d="M14 112q8-32 50-38 56-10 112 0 42 8 50 38-4 20-24 22H38q-22-2-24-22z"/><path d="M90 80l30-50 30 50z"/></g></svg>`;
+      const mts = '<path d="M30 84l40-56 40 56zM100 84l44-64 46 64z" fill="#9db7c9"/><path d="M60 42l10-14 10 14-10-4zM134 34l10-14 10 14-10-4z" fill="#fff"/>';
+      const flower = (x, y, c) => `<circle cx="${x}" cy="${y}" r="4" fill="${c}"/><circle cx="${x}" cy="${y}" r="1.6" fill="#ffc800"/>`;
+      const scene = [
+        mts + hill + '<ellipse cx="120" cy="100" rx="44" ry="11" fill="#5cc2e8"/><ellipse cx="110" cy="98" rx="18" ry="3" fill="#bdeaf6" opacity=".8"/>' + ISLE_TREE(46, 106, 1, '#2fa66a') + ISLE_TREE(190, 104, 0.9, '#2fa66a') + ISLE_TREE(176, 112, 0.7, '#2fa66a'),
+        '<circle cx="200" cy="26" r="13" fill="#ffd36b"/>' + hill.replace('fill="#7fcd6c"', 'fill="#e2c25a"').replace('stroke="#a5e48f"', 'stroke="#f1d77c"') + '<path d="M120 100V66" stroke="#8a5a3c" stroke-width="6" stroke-linecap="round"/><path d="M120 74l-14-8M120 70l12-10" stroke="#8a5a3c" stroke-width="4" stroke-linecap="round"/><ellipse cx="120" cy="58" rx="40" ry="10" fill="#4f9e4a"/><ellipse cx="112" cy="54" rx="24" ry="5" fill="#6dbb5c"/>' + [56, 66, 168, 182].map((x, i) => `<path d="M${x} 104l3-12 3 12" stroke="#c9a23d" stroke-width="2.5" fill="none"/>`).join(''),
+        hill + '<path d="M66 96l54-82 54 82z" fill="#8aa1b5"/><path d="M120 14l18 28-10-4-8 8-8-8-10 4z" fill="#fff"/><path d="M120 14V-2" stroke="#6a7f7a" stroke-width="2"/><path d="M120-2l14 5-14 5z" fill="#e8463a" transform="translate(0 4)"/>' + ISLE_TREE(54, 106, 0.9, '#2fa66a') + ISLE_TREE(186, 106, 0.9, '#2fa66a'),
+        hill + '<rect x="108" y="56" width="5" height="44" fill="#8a5a3c"/><g transform="translate(110 50)"><ellipse cy="0" rx="14" ry="8" fill="#ffc63a"/><ellipse cy="10" rx="17" ry="8" fill="#ffb21c"/><ellipse cy="20" rx="14" ry="7" fill="#ffc63a"/><circle cy="14" r="4" fill="#8a5a3c"/></g>' + [[54, 100, '#ff6f91'], [70, 108, '#9b6dff'], [150, 104, '#ff6f91'], [168, 98, '#4d96ff'], [186, 108, '#ff8a3d'], [86, 96, '#fff']].map(([x, y, c]) => flower(x, y, c)).join(''),
+      ][v];
+      g = scene + SYMB(u, '#19b796');
+    } else {
+      const sea = '<ellipse cx="120" cy="118" rx="116" ry="28" fill="#7fd8ea" opacity=".55"/>';
+      if (ghost) return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true"><g fill="#dbe8ee"><ellipse cx="120" cy="110" rx="86" ry="22"/><path d="M96 98c0-26 12-42 24-42s24 16 24 42z"/></g></svg>`;
+      const beach = (c) => `<ellipse cx="120" cy="110" rx="88" ry="24" fill="#f6e3b4"/><ellipse cx="120" cy="104" rx="70" ry="18" fill="${c}"/>`;
+      const scene = [
+        beach('#7fd36e') + PALM(84, 104, 1) + PALM(160, 102, 0.8) + '<rect x="110" y="84" width="26" height="18" fill="#c8915a"/><path d="M104 86l19-16 19 16z" fill="#e0a85c"/><rect x="120" y="92" width="7" height="10" fill="#6d452c"/>',
+        beach('#9aa4ad') + '<path d="M78 104l30-56h24l30 56z" fill="#7d6a5c"/><path d="M108 48h24l-4 8h-16z" fill="#ff8a3d"/><path d="M112 50l8 16 8-16" fill="#ffc800"/><circle cx="118" cy="34" r="8" fill="#c9d1d6" opacity=".9"/><circle cx="130" cy="24" r="10" fill="#dde3e7" opacity=".85"/><circle cx="142" cy="12" r="12" fill="#eef1f3" opacity=".8"/>',
+        '<ellipse cx="120" cy="106" rx="90" ry="28" fill="#f6e3b4"/><ellipse cx="120" cy="104" rx="62" ry="16" fill="#3cc6d6"/><ellipse cx="112" cy="102" rx="28" ry="5" fill="#9eeaf2" opacity=".8"/>' + PALM(52, 106, 0.75) + PALM(194, 108, 0.65) + '<ellipse cx="120" cy="124" rx="14" ry="4" fill="#7fd36e"/>',
+        '<ellipse cx="120" cy="108" rx="80" ry="24" fill="#8f9aa3"/><ellipse cx="120" cy="102" rx="62" ry="16" fill="#b2bbc2"/><path d="M110 98l3-58h14l3 58z" fill="#fff"/><path d="M112 82h16M112.6 70h14.8M113 58h14" stroke="#e8463a" stroke-width="7"/><rect x="111" y="32" width="18" height="10" rx="2" fill="#ffd36b"/><path d="M108 32h24l-12-10z" fill="#e8463a"/><path d="M130 37l40-10v20z" fill="#ffd36b" opacity=".35"/>',
+      ][v];
+      g = sea + scene + '<path d="M20 132q10-5 20 0t20 0M180 136q10-5 20 0t20 0" stroke="#fff" stroke-width="2.5" fill="none" opacity=".8"/>' + SYMB(u, '#1c9be8');
     }
-    const block = (x, y, w, h, c, t) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${c}"/><rect x="${x}" y="${y + h - 6}" width="${w}" height="6" rx="3" fill="#000" opacity=".12"/>${t ? `<text x="${x + w / 2}" y="${y + h / 2 + 7}" text-anchor="middle" font-size="20" font-weight="900" fill="#fff" font-family="Nunito,sans-serif">${t}</text>` : ''}`;
-    const mark = {
-      bil: block(88, 34, 28, 28, '#ff8a3d', '1') + block(116, 18, 34, 44, symC, '') + `<text x="133" y="${sym.length > 1 ? 46 : 48}" text-anchor="middle" font-size="${sym.length > 2 ? 13 : sym.length > 1 ? 17 : 24}" font-weight="900" fill="#fff" font-family="Nunito,sans-serif">${esc(sym)}</text>` + block(152, 38, 26, 24, '#9b6dff', '3') + '<circle cx="174" cy="30" r="4" fill="#ffc800"/>',
-      geo: '<path d="M92 62l20-42 20 42z" fill="#9b6dff"/><path d="M112 20l20 42h-10z" fill="#7d52e0"/>' + '<path d="M134 38l14-8 14 8v18l-14 8-14-8z" fill="#4d96ff"/><path d="M148 46v18l14-8V38z" fill="#2f74d8"/><path d="M134 38l14 8 14-8-14-8z" fill="#8cbcff"/>' + '<rect x="166" y="40" width="18" height="22" fill="#ffad33"/><ellipse cx="175" cy="40" rx="9" ry="4" fill="#ffd27a"/><ellipse cx="175" cy="62" rx="9" ry="4" fill="#f08a10"/>',
-      ukur: '<g transform="rotate(-12 104 44)"><rect x="92" y="16" width="20" height="50" rx="3" fill="#ffc63a"/>' + [22, 30, 38, 46, 54].map((y, i) => `<rect x="92" y="${y}" width="${i % 2 ? 6 : 10}" height="2" fill="#a0700f"/>`).join('') + '</g><rect x="132" y="38" width="38" height="26" rx="4" fill="#f4efe6"/><path d="M128 40l23-18 23 18z" fill="#e36d4b"/><circle cx="151" cy="50" r="9" fill="#fff" stroke="#1fbf9f" stroke-width="3"/><path d="M151 44v6l4 3" stroke="#0a7d68" stroke-width="2" fill="none" stroke-linecap="round"/>',
-      data: '<rect x="96" y="36" width="18" height="26" rx="4" fill="#ff8a3d"/><rect x="118" y="20" width="18" height="42" rx="4" fill="#4d96ff"/><rect x="140" y="30" width="18" height="32" rx="4" fill="#1fbf9f"/><rect x="162" y="44" width="18" height="18" rx="4" fill="#9b6dff"/><path d="M127 20V4" stroke="#6a7f7a" stroke-width="2"/><path d="M127 4l14 5-14 5z" fill="#ffc800"/>',
-    }[kind];
-    const dock = '<path d="M176 110l30 14" stroke="#b5835a" stroke-width="10" stroke-linecap="round"/><path d="M180 108l2 6M188 112l2 6M196 116l2 6" stroke="#8a5a3c" stroke-width="2"/>';
-    return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true">${base}${trees}${mark}${dock}</svg>`;
+    return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true">${g}</svg>`;
   }
-  // Batu loncatan di antara dua pulau (kiri ke kanan atau sebaliknya)
-  const isleLink = (dir, faint) => `<div class="isle-link ${dir} ${faint ? 'faint' : ''}" aria-hidden="true"><svg viewBox="0 0 200 56" preserveAspectRatio="none">${[0.12, 0.3, 0.5, 0.7, 0.88].map((t) => { const x = dir === 'lr' ? 40 + t * 120 : 160 - t * 120, y = 6 + t * 44; return `<ellipse cx="${x}" cy="${y}" rx="11" ry="5" fill="#f6f1e4"/><ellipse cx="${x}" cy="${y + 2}" rx="11" ry="4" fill="#d9cdb4" opacity=".6"/>`; }).join('')}</svg></div>`;
+  // Jejak di antara dua tempat: gelembung di laut, jejak kaki di gurun, batu di gunung, batu loncatan di kepulauan
+  const isleLink = (dir, faint, who) => {
+    const pts = [0.12, 0.3, 0.5, 0.7, 0.88].map((t) => [dir === 'lr' ? 40 + t * 120 : 160 - t * 120, 6 + t * 44]);
+    const mark = {
+      meti: ([x, y], i) => `<circle cx="${x}" cy="${y}" r="${4 + (i % 2) * 2}" fill="none" stroke="#fff" stroke-width="2" opacity=".9"/>`,
+      tito: ([x, y], i) => `<ellipse cx="${x + (i % 2 ? 5 : -5)}" cy="${y}" rx="3.5" ry="5.5" fill="#d9a35a" opacity=".8"/>`,
+      nahla: ([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="9" ry="5" fill="#b8c2b9"/><ellipse cx="${x}" cy="${y - 1}" rx="9" ry="4" fill="#d6ddd4"/>`,
+      lumo: ([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="11" ry="5" fill="#f6f1e4"/><ellipse cx="${x}" cy="${y + 2}" rx="11" ry="4" fill="#d9cdb4" opacity=".6"/>`,
+    }[who];
+    return `<div class="isle-link ${faint ? 'faint' : ''}" aria-hidden="true"><svg viewBox="0 0 200 56" preserveAspectRatio="none">${pts.map(mark).join('')}</svg></div>`;
+  };
+  // Campuran dua warna hex, untuk perpindahan latar yang halus antardunia
+  const mixHex = (a, b, t) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, '0')).join('');
   function isleMapHTML(st, isles, fresh) {
     if (!isles.length) return '';
-    let out = '', side = 0;
-    isles.forEach((x, i) => {
-      const { u, state } = x, s = side++ % 2 ? 'r' : 'l', kind = isleKind(u), reveal = fresh && (state === 'cur' || state === 'next') ? ' reveal' : '', just = fresh === u.id ? ' just' : '';
-      if (i) out += isleLink(s === 'r' ? 'lr' : 'rl', state === 'next' || state === 'fog');
-      if (state === 'fog') { out += `<div class="isle fog ${s}" aria-hidden="true">${isleSVG(kind, true)}<span class="fogl"></span></div>`; return; }
-      if (state === 'next') {
-        out += `<button class="isle next ${s}${reveal}" data-act="tip" data-t="🌫️ This island is still covered in fog. Finish your current island to uncover it." aria-label="Next island, still covered in fog">${isleSVG(kind, false, u)}<span class="fogl"></span><span class="isle-tag"><i>${IC.lock.replace('<svg', '<svg width="16" height="16"')}</i>Next destination</span></button>`;
-        return;
+    const seen = {}, rows = isles.map((x) => { const who = worldOf(x.u), k = seen[who] = (seen[who] || 0) + 1; return { ...x, who, v: k - 1 }; });
+    const bgOf = (r) => { const c = WORLDS[r.who].bg; return r.state === 'fog' ? mixHex(c, '#e9edf0', 0.9) : r.state === 'next' ? mixHex(c, '#e6ebee', 0.75) : c; }; // belum terbuka: abu-abu berkabut
+    let out = '', prevWho = null;
+    rows.forEach((x, i) => {
+      const { u, state, who, v } = x, s = i % 2 ? 'r' : 'l', W = WORLDS[who], place = W.places[v % 4];
+      const bg = bgOf(x), top = i ? mixHex(bgOf(rows[i - 1]), bg, 0.5) : bg, bot = i < rows.length - 1 ? mixHex(bg, bgOf(rows[i + 1]), 0.5) : '#ffffff';
+      const reveal = fresh && (state === 'cur' || state === 'next') ? ' reveal' : '', just = fresh === u.id ? ' just' : '';
+      let html = i ? isleLink(s === 'r' ? 'lr' : 'rl', state === 'next' || state === 'fog', who) : '';
+      if (who !== prevWho && state !== 'fog') html += `<div class="isle-region w-${who}"><span>${W.icon}</span>${W.name}</div>`;
+      prevWho = state === 'fog' ? prevWho : who;
+      if (state === 'fog') html += `<div class="isle fog ${s}" aria-hidden="true">${placeSVG(who, v, true, u)}<span class="fogl"></span></div>`;
+      else if (state === 'next') html += `<button class="isle next ${s}${reveal}" data-act="tip" data-t="🌫️ This place is still covered in fog. Finish your current place to uncover it." aria-label="Next place, still covered in fog">${placeSVG(who, v, false, u)}<span class="fogl"></span><span class="isle-tag"><i>${IC.lock.replace('<svg', '<svg width="16" height="16"')}</i>Next destination</span></button>`;
+      else {
+        const t = S.testOf(st.id, u.id), stars = t ? '★'.repeat(chestTier(t.stars)) : '';
+        const label = state === 'done' ? `<span class="isle-tag ok"><i>${IC.ok}</i><span><b>${esc(u.name)}</b><small>${place} · Completed${stars ? ` <em>${stars}</em>` : ''}</small></span><u>›</u></span>`
+          : `<span class="isle-tag"><span><b>${esc(u.name)}</b><small>${place} · ${x.done} / ${x.total} skills</small></span><u>›</u></span>`;
+        html += `<a class="isle ${state} ${s}${reveal}${just}" href="#/bab/${u.id}" aria-label="Chapter ${u.id} ${esc(u.name)}, ${place}">${state === 'cur' ? `<span class="isle-pin" aria-hidden="true"></span><span class="isle-glow" aria-hidden="true"></span><span class="isle-buddy" aria-hidden="true">${MQ.svg('happy', { size: 62, who: who === 'meti' ? undefined : who, enter: false })}</span>` : ''}${placeSVG(who, v, false, u)}${reveal ? '<span class="fogl lift"></span>' : ''}${label}${just ? '<span class="isle-spark" aria-hidden="true">✨</span>' : ''}</a>`;
       }
-      const t = S.testOf(st.id, u.id), stars = t ? '★'.repeat(chestTier(t.stars)) : '';
-      const label = state === 'done' ? `<span class="isle-tag ok"><i>${IC.ok}</i><span><b>${esc(u.name)}</b><small>Completed${stars ? ` <em>${stars}</em>` : ''}</small></span><u>›</u></span>`
-        : `<span class="isle-tag"><span><b>${esc(u.name)}</b><small>${x.done} / ${x.total} skills</small></span><u>›</u></span>`;
-      out += `<a class="isle ${state} ${s}${reveal}${just}" href="#/bab/${u.id}" aria-label="Chapter ${u.id} ${esc(u.name)}">${state === 'cur' ? '<span class="isle-pin" aria-hidden="true"></span><span class="isle-glow" aria-hidden="true"></span>' : ''}${isleSVG(kind, false, u)}${reveal ? '<span class="fogl lift"></span>' : ''}${label}${just ? '<span class="isle-spark" aria-hidden="true">✨</span>' : ''}</a>`;
+      out += `<div class="isle-row w-${who} ${state}" style="background:linear-gradient(180deg, ${top} 0%, ${bg} 22%, ${bg} 78%, ${bot} 100%)">${html}</div>`;
     });
-    return `<section class="isles" aria-label="Learning island map">${out}<div class="isle-mist" aria-hidden="true"></div></section>`;
+    return `<section class="isles" aria-label="Learning adventure map">${out}<div class="isle-mist" aria-hidden="true"></div></section>`;
   }
   // Bagian jalur belajar satu bab (dipakai halaman bab): langkah, peti ujian, dan spanduk bab
   function pathParts(st) {
