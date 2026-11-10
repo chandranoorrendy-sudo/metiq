@@ -214,7 +214,7 @@
       <div class="mq-gb">${GRADES.map((g) => `<span title="${g.name}">${g.short || g.id}</span>`).join('')}</div>
       <section class="mq-stats" id="landstats" hidden></section>
       <section class="mq-testi"><h2>What people say</h2>${marquee(TESTI.map(([who, role, text]) => `<figure><blockquote>${esc(text)}</blockquote><figcaption><b>${esc(who)}</b>${esc(role)}</figcaption></figure>`).join(''))}</section>
-      <footer class="mq-lfoot"><a href="#/permainan">Games</a><a href="#/profesi">Careers</a><a href="#/olimpiade">Olympiad</a><a href="#/harga">Pricing</a><a href="#/panduan/siswa">Help</a><a href="#/ajukan">Request an account</a><a href="#/ajukan/status">Check status</a></footer>
+      <footer class="mq-lfoot"><a href="#/permainan">Games</a><a href="#/profesi">Careers</a><a href="#/olimpiade">Olympiad</a><a href="#/harga">Pricing</a><a href="#/panduan/siswa">Help</a><a href="#/ajukan">Request an account</a><a href="#/ajukan/status">Check status</a><a href="privasi.html">Privacy</a></footer>
     </div>`;
     loadLandingStats(); gReveal();
   }
@@ -728,7 +728,7 @@
     const row = (href, em, t, note) => `<a href="${href}"><span class="em">${em}</span><span class="t">${t}${note ? `<small>${note}</small>` : ''}</span><span class="go">›</span></a>`;
     app.innerHTML = mqPage(`${top('Settings', '#/aku')}
       <h2 class="mq-sethead">Account</h2><div class="mq-list">${row('#/pengaturan/preferensi', '🎛️', 'Preferences', 'Daily goal, sound, profile picture')}${row(`?lang=${window.METIQ_LANG === 'en' ? 'id' : 'en'}#/pengaturan`, '🌐', 'Language', 'English · switch to Indonesian')}${row('#/pengaturan/sekolah', '🏫', 'Metiq for Schools', c ? esc(c.name) : 'Join a class with a code from your teacher')}</div>
-      <h2 class="mq-sethead">Support</h2><div class="mq-list">${row('#/panduan/siswa', '❓', 'Help Center')}${row('#/pengaturan/masukan', '💬', 'Send feedback')}</div>
+      <h2 class="mq-sethead">Support</h2><div class="mq-list">${row('#/panduan/siswa', '❓', 'Help Center')}${row('#/pengaturan/masukan', '💬', 'Send feedback')}${row(window.METIQ_LANG === 'en' ? 'privasi.html#en' : 'privasi.html', '🔒', 'Privacy Policy')}</div>
       <div class="mq-list"><button class="danger" data-act="logout"><span class="em">🚪</span>Log out</button></div>`, 'aku');
   }
 

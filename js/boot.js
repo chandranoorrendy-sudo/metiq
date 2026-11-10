@@ -15,4 +15,8 @@
     if (f === 'en-fix' && !en) return;
     document.write('<script src="js/' + (en && !plain[f] ? 'en/' : '') + f + '.js?v=' + v + '"><\/script>');
   });
+  // Mode offline (sw.js): hanya di https atau localhost
+  if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
+    addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+  }
 })();
