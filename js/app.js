@@ -1311,6 +1311,7 @@
     ['hari', '🏠 Hari ini', [['ringkasan', 'Hari ini']]],
     ['siswa', '🧒 Siswa', [['siswa', 'Siswa']]],
     ['tugas', '📌 Tugas', [['tugas', 'Tugas']]],
+    ['ajar', '📺 Mengajar', [['ajar', 'Mengajar']]],
   ];
   // Analitik dan data penelitian: hanya akun super admin sungguhan (bukan mode coba, bukan guru, bukan admin sekolah)
   const canResearch = (ctx) => !!(ctx.t.isAdmin && !session.get().demo);
@@ -1419,7 +1420,7 @@
       <div class="grid2">
         ${help.length ? `<section class="card"><h2>🆘 Siswa yang perlu dibantu</h2>${help.slice(0, 4).map(helpRow).join('')}${help.length > 4 ? `<p class="small"><a href="#/guru/siswa">Lihat ${help.length - 4} siswa lainnya</a></p>` : ''}</section>` : ''}
         ${hard ? `<section class="card"><h2>📖 Layak diulang bersama</h2><p><b>${SKILLS[hard[0]].name}</b></p><p class="small muted">${hard[1].length} dari ${kids.length} siswa masih kesulitan: ${nameList(hard[1])}.</p>
-          <div class="row-btn left">${LESSONS[SKILLS[hard[0]].unit] ? `<a class="btn sm ghost" href="#/pelajaran/${SKILLS[hard[0]].unit}">Buka pelajaran</a>` : ''}<button class="btn sm" data-act="assign1" data-id="${hard[0]}">Tugaskan ke kelas</button></div></section>` : ''}
+          <div class="row-btn left">${LESSONS[SKILLS[hard[0]].unit] ? `<a class="btn sm ghost" href="#/pelajaran/${SKILLS[hard[0]].unit}">Buka pelajaran</a>` : ''}<a class="btn sm ghost" href="#/kelas/${SKILLS[hard[0]].unit}">📺 Ajarkan di layar kelas</a><button class="btn sm" data-act="assign1" data-id="${hard[0]}">Tugaskan ke kelas</button></div></section>` : ''}
         ${stars3Row.length ? `<section class="card"><h2>⭐ Bintang minggu ini</h2><p class="small muted">Sebut namanya di kelas. Pujian kecil sangat berarti.</p>${stars3Row.map((s, i) => `<div class="lrow"><span class="medal">${['🥇', '🥈', '🥉'][i]}</span><span class="grow"><a href="#/guru/siswa/${s.k.id}"><b>${esc(s.k.name)}</b></a><small>${s.w.correct} jawaban benar</small></span></div>`).join('')}</section>` : ''}
       </div>`;
   }
@@ -1509,6 +1510,7 @@
     if (tab === 'sekolah') { if (!ctx.t.isAdmin && !ctx.t.isSchoolAdmin) return go('#/guru/ringkasan'); teacherShell(ctx, tab, schoolHTML(ctx, arg)); if (arg === 'kelolaguru') loadSchoolTeachers(); return; }
     if (tab === 'super') { if (!ctx.t.isAdmin || session.get().demo) return go('#/guru/ringkasan'); teacherShell(ctx, tab, `<div id="super-box">${loadingHTML}</div>`); loadSuper(ctx, arg); return; }
     if (tab === 'tugas') return teacherShell(ctx, tab, tasksHTML(ctx));
+    if (tab === 'ajar') return teacherShell(ctx, tab, gradeTabs() + window.METIQ_KELAS.pickerHTML(getGrade()));
     if (tab === 'siswa') return teacherShell(ctx, tab, addKidsHTML(ctx, !kids.length) + (kids.length ? rosterHTML(ctx) : ''));
     if (tab === 'ringkasan') return teacherShell(ctx, tab, todayHTML(ctx));
     if (!kids.length) return teacherShell(ctx, tab, emptyKids(ctx));
@@ -2912,6 +2914,14 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   /* ---------- Permainan matematika ---------- */
   const G = window.METIQ_GAMES;
   let stopGame = null;
+  /* Mode Mengajar di layar kelas (js/kelas.js): materi, papan tulis, soal ke depan, permainan kelompok, tiket keluar */
+  let stopKelas = null;
+  function viewKelas(uid, step) {
+    const ctx = teacherCtx(); if (!ctx) return go('#/guru/masuk');
+    const u = UNITS.find((x) => x.id === uid); if (!u) return go('#/guru/ajar');
+    if (u.grade !== getGrade()) setGrade(u.grade);
+    stopKelas = window.METIQ_KELAS.mount(app, uid, step, { kids: ctx.kids, kolomOf, buddy: unitBuddy(u), gradeName: gname(u.grade), back: '#/guru/ajar' });
+  }
   const gameKid = () => { const ses = session.get(); return ses.role === 'siswa' && S.student(ses.id); };
   const gStar = (on) => `<svg class="gst ${on ? 'on' : ''}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9z"/></svg>`;
   // Permainan mengikuti belajar: terbuka sampai kelas yang sedang dipelajari anak
@@ -4041,6 +4051,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     clearInterval(timer);
     { const ov = document.getElementById('mqover'); if (ov) { ov.remove(); document.body.classList.remove('mq-noscroll'); } }
     if (stopGame) { stopGame(); stopGame = null; }
+    if (stopKelas) { stopKelas(); stopKelas = null; }
     closeCoret(true);
     window.METIQ_ANIM.stop();
     if ('speechSynthesis' in window) speechSynthesis.cancel();
@@ -4050,7 +4061,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const seq = ++routeSeq;
     S.setMode(cloudOn());
     if (session.get().demo) tlog('view', { p: a === 'guru' ? 'guru/' + (b || '') : a || 'beranda', ...(a === 'latihan' || a === 'main' || a === 'pelajaran' ? { s: b } : {}) });
-    const needsData = a === 'belajar' || a === 'asesmen' || a === 'permainan' || a === 'main' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi' || a === 'tugas' || a === 'aku' || a === 'ujian' || a === 'profesi' || a === 'misi';
+    const needsData = a === 'kelas' || a === 'belajar' || a === 'asesmen' || a === 'permainan' || a === 'main' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi' || a === 'tugas' || a === 'aku' || a === 'ujian' || a === 'profesi' || a === 'misi';
     if (needsData && !(await ensure())) return;
     if (seq !== routeSeq) return;
     // Anak tanpa kelas: Ayah/Bunda masuk dengan Gmail sekali di HP ini sebelum lanjut belajar
@@ -4087,6 +4098,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       case 'laporanku': return viewMyReport();
       case 'latihan': return viewPractice(b);
       case 'guru': if (b === 'masuk' || b === 'daftar') return viewTeacherAuth(b); if (!b) { const ses = session.get(); return ses.role === 'guru' && (cloudOn() ? ses.token : S.teacher(ses.id)) ? go('#/guru/ringkasan') : viewTeacherAuth(); } return viewTeacher(b, c);
+      case 'kelas': return viewKelas(b, c);
       case 'coba': return viewPreview(b);
       case 'pelajaran': return viewLesson(b);
       case 'avatar': return viewAvatar(b);
