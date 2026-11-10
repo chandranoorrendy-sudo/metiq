@@ -3507,7 +3507,7 @@
     const chip = (k, v, label) => `<button class="${(f[k] || '') === v ? 'on' : ''}" data-act="jfilter" data-k="${k}" data-v="${v}">${label}</button>`;
     const tile = (p) => {
       const m = inBand.find((x) => x.profession === p.id), done = m && missionDone(kid, m), st = m ? missionStars(kid, m) : 0;
-      return `<a class="mq-gt jtile" href="#/profesi/${p.id}" style="--c:${p.color};--bg:#fff" aria-label="${esc(p.name)}${done ? ', done' : ''}">${done ? '<span class="new jdone">✓</span>' : ''}<span class="art"><span class="jpeople">${p.people}</span></span><b>${esc(p.name)}</b><small>${m ? esc(m.title) : ''}</small>${done ? `<span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span>` : ''}</a>`;
+      return `<a class="mq-gt jtile" href="#/profesi/${p.id}" style="--c:${p.color};--bg:${JV.light(p.color, 0.88)}" aria-label="${esc(p.name)}${done ? ', done' : ''}">${done ? '<span class="new jdone">✓</span>' : ''}<span class="art">${JV.icon(p.id, p.color) || `<span class="jpeople">${p.people}</span>`}</span><b>${esc(p.name)}</b><small>${m ? esc(m.title) : ''}</small>${done ? `<span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span>` : ''}</a>`;
     };
     app.innerHTML = mqPage(`
       <div class="mq-ghead">${kid ? '' : `<a class="mq-ico" href="#/" aria-label="Back">${IC.back}</a>`}
