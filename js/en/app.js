@@ -585,36 +585,41 @@
     });
     return `<section class="isles" aria-label="Learning adventure map">${out}<div class="isle-mist" aria-hidden="true"></div></section>`;
   }
-  // Bagian jalur belajar satu bab (dipakai halaman bab): langkah, peti ujian, dan spanduk bab
-  function pathParts(st) {
-    let n = 0;
-    const node = (s, u, withBuddy) => {
-      const x = XS[n++ % XS.length], sk = SKILLS[s.id], done = s.state === 'done' || s.state === 'gold';
-      const badge = done ? `<span class="mq-badge">${s.state === 'gold' ? '★' : IC.ok}</span>` : s.state === 'locked' ? `<span class="mq-badge">${IC.lock}</span>` : '';
-      return `<div class="mq-row"><div class="mq-n ${s.state} ${s.state === 'cur' ? 'cur' : ''}" style="--x:${x}px">
-        ${s.state === 'cur' ? `<a class="mq-label" href="#/latihan/${s.id}">Start</a>` : ''}
-        <button class="mq-bub-node" style="--p:${s.state === 'locked' ? 0 : Math.min(100, s.sc)}" data-act="node" data-id="${s.id}" data-x="${x}" aria-label="${esc(sk.name)}"><i><span>${chLogo(u)}</span></i></button>${badge}${TASKS_ON && s.task ? '<span class="mq-badge task" title="Tasks from your teacher">📌</span>' : ''}
-        ${withBuddy ? `<div class="mq-buddy ${x > 0 ? 'l' : 'r'}">${MQ.svg('hello', { size: 104, who: unitBuddy(u) })}</div>` : ''}</div></div><div class="mq-pop-slot" id="pop-${s.id}"></div>`;
-    };
-    const banner = (u, cls, extra) => `<div class="mq-unit ${cls}"><span class="em">${chLogo(u)}</span><span class="grow"><small>Chapter ${u.id}</small><b>${u.name}</b></span>${extra || `<a class="les" href="#/pelajaran/${u.id}"><span class="em2">📖</span>Learn</a>`}</div>`;
-    const chestRow = (u) => {
-      const state = chestStateOf(st.id, u), t = S.testOf(st.id, u.id);
-      return `<div class="mq-row"><div class="mq-n chest ${state}">${state === 'ready' ? `<a class="mq-label" href="#/ujian/${u.id}">Test!</a>` : ''}<button class="mq-chest ${state}" data-act="chest" data-u="${u.id}" aria-label="Chapter ${u.id} test chest">${chestSVG(state)}</button>${state === 'open' && t ? `<span class="mq-cstars">${'★'.repeat(chestTier(t.stars))}</span>` : ''}</div></div><div class="mq-pop-slot" id="pop-ch-${u.id}"></div>`;
-    };
-    return { node, banner, chestRow };
-  }
-  // Halaman satu bab: dibuka dengan mengetuk pulau
+  // Halaman satu tempat (bab), dibuka dengan mengetuk tempat di peta. Bukan jalur bulatan:
+  // gambar besar tempat itu bersama maskotnya, lalu daftar misi (keterampilan) berupa kartu, kartu pelajaran, dan peti harta karun.
   function viewChapter(uid) {
     const ses = session.get(), st = S.student(ses.id);
     if (ses.role !== 'siswa' || !st) return go('#/siswa');
     const u = UNITS.find((x) => x.id === uid); if (!u) return go('#/belajar');
     const m = pathModel(st.id, u.grade), info = isleStates(m).find((x) => x.u.id === uid);
     if (!info || info.state === 'next' || info.state === 'fog') return go('#/belajar');
-    const P = pathParts(st), th = unitBuddy(u) ? ' th-' + unitBuddy(u) : '';
-    app.innerHTML = mqPage(`<div class="isle-top"><a class="mq-ico" href="#/belajar" aria-label="Back to the map">${IC.back}</a><span class="grow"><small>${gname(u.grade)} · Island ${u.id}</small><b>${esc(u.name)}</b></span><span class="isle-prog">${info.done}/${info.total}</span></div>
-      <section class="mq-sec${th}">${P.banner(u, info.state === 'done' ? 'done' : '')}<div class="mq-path">${info.ss.map((s) => P.node(s, u, s.state === 'cur')).join('')}${P.chestRow(u)}</div></section>`, 'belajar');
-    setTimeout(() => { const c = document.querySelector('.mq-n.cur'); if (c && c.getBoundingClientRect().bottom > innerHeight - 110) c.scrollIntoView({ block: 'center' }); }, 80);
+    const who = worldOf(u), W = WORLDS[who], v = m.units.slice(0, m.units.indexOf(u)).filter((x) => worldOf(x) === who).length, place = W.places[v % 4];
+    const pct0 = Math.round((info.done / info.total) * 100);
+    const quest = (s, i) => {
+      const sk = SKILLS[s.id], lv = level(s.sc)[0], task = TASKS_ON && s.task ? '<em class="qtask" title="Tasks from your teacher">📌</em>' : '';
+      const bar = `<span class="qbar"><i style="width:${Math.min(100, s.sc)}%"></i></span>`;
+      if (s.state === 'done' || s.state === 'gold') return `<a class="quest done" href="#/latihan/${s.id}"><i class="qn">${s.state === 'gold' ? '★' : IC.ok}</i><span class="grow"><b>${esc(sk.name)}</b><small>SmartScore ${s.sc} · ${lv}</small></span>${task}<u>Practice again</u></a>`;
+      if (s.state === 'cur') return `<a class="quest cur" href="#/latihan/${s.id}"><i class="qn">${i + 1}</i><span class="grow"><small class="qnow">Current mission</small><b>${esc(sk.name)}</b>${bar}<small>${s.att ? `SmartScore ${s.sc} · reach 80` : 'Not tried'}</small></span>${task}<u class="go">${s.att ? 'Next' : 'Start'}</u></a>`;
+      if (s.state === 'open') return `<a class="quest open" href="#/latihan/${s.id}"><i class="qn">${i + 1}</i><span class="grow"><b>${esc(sk.name)}</b>${bar}<small>${s.att ? `SmartScore ${s.sc} · ${lv}` : 'Not tried'}</small></span>${task}<u>Open</u></a>`;
+      return `<button class="quest lock" data-act="tip" data-t="🔒 Finish the previous mission first"><i class="qn">${IC.lock.replace('<svg', '<svg width="16" height="16"')}</i><span class="grow"><b>${esc(sk.name)}</b><small>Locked</small></span></button>`;
+    };
+    const cs = chestStateOf(st.id, u), t = S.testOf(st.id, u.id);
+    const chest = cs === 'locked' ? `<button class="qchest lock" data-act="tip" data-t="🔒 Finish every mission in this place to open the chest"><span class="cimg">${chestSVG('locked')}</span><span class="grow"><b>Treasure of ${esc(place)}</b><small>Finish every mission to unlock the chapter test</small></span></button>`
+      : cs === 'ready' ? `<a class="qchest ready" href="#/ujian/${u.id}"><span class="cimg">${chestSVG('ready')}</span><span class="grow"><b>The treasure chest is ready to open!</b><small>Chapter test · ${TEST_N} questions · score 60 to open</small></span><u class="go">Open</u></a>`
+      : `<a class="qchest open" href="#/ujian/${u.id}"><span class="cimg">${chestSVG('open')}</span><span class="grow"><b>Treasure found ${t ? '★'.repeat(chestTier(t.stars)) : ''}</b><small>${t ? `Best score ${t.best}%` : 'Chest already open'} · tap to try again</small></span></a>`;
+    app.innerHTML = mqPage(`<div class="isle-top"><a class="mq-ico" href="#/belajar" aria-label="Back to the map">${IC.back}</a><span class="grow"><small>${W.icon} ${W.name} · ${gname(u.grade)}</small><b>${esc(place)}</b></span><span class="isle-prog">${info.done}/${info.total}</span></div>
+      <section class="place-hero w-${who}" style="background:linear-gradient(180deg, ${W.bg}, ${mixHex(W.bg, '#ffffff', 0.55)})">
+        <div class="pscene">${placeSVG(who, v, false, u)}<span class="pbuddy">${MQ.svg(info.state === 'done' ? 'cheer' : 'hello', { size: 78, who: who === 'meti' ? undefined : who, enter: false })}</span></div>
+        <div class="pinfo"><small>Chapter ${u.id}</small><h1>${esc(u.name)}</h1>
+          <div class="pprog"><span class="qbar big"><i style="width:${pct0}%"></i></span><b>${info.done} of ${info.total} missions done</b></div></div>
+      </section>
+      <a class="qlesson" href="#/pelajaran/${u.id}"><span class="em">📖</span><span class="grow"><b>Learn first</b><small>Explanation and examples for ${esc(u.name)}</small></span><u>›</u></a>
+      <h2 class="qhead">Missions at ${esc(place)}</h2>
+      <ol class="quests">${info.ss.map((s, i) => `<li>${quest(s, i)}</li>`).join('')}</ol>
+      ${chest}`, 'belajar');
+    setTimeout(() => { const c = document.querySelector('.quest.cur'); if (c && c.getBoundingClientRect().bottom > innerHeight - 110) c.scrollIntoView({ block: 'center' }); }, 80);
   }
+
 
   /* ----- Tugas dari guru ----- */
   const skillRow = (id, p) => { const sk = SKILLS[id], sc = p ? p.score : 0; return `<a class="mq-skrow" href="#/latihan/${id}"><span class="em">${unitIcon(sk)}</span><span class="grow">${esc(sk.name)}<small>${p && p.att ? level(sc)[0] : 'Not tried'}</small></span>${chip(sc)}</a>`; };
@@ -1168,7 +1173,7 @@
         ${pass && wasOpen && !gain ? '<div class="mq-unlock">You\'ve already earned this chest\'s stars. Try for a higher score to get bonus stars!</div>' : ''}
         ${!pass ? `<div class="mq-unlock" style="background:#fff3c4;color:#8a5a00">${fast ? 'Read the question slowly, then try again.' : 'You need a score of 60 to open the chest. Practice more and try the test again!'}</div>` : ''}
       </div></main>
-      <div class="mq-foot"><div class="mq-foot-in">${pass ? '<a class="mq-btn pulse" href="#/belajar">Continue</a><button class="mq-btn ghost" data-act="testagain" data-u="' + u.id + '">Retake test</button>' : '<button class="mq-btn pulse" data-act="testagain" data-u="' + u.id + '">Try again</button><a class="mq-btn ghost" href="#/belajar">Back to the map</a>'}</div></div>`;
+      <div class="mq-foot"><div class="mq-foot-in">${pass ? `<a class="mq-btn pulse" href="#/bab/${u.id}">Continue</a>` + '<button class="mq-btn ghost" data-act="testagain" data-u="' + u.id + '">Retake test</button>' : '<button class="mq-btn pulse" data-act="testagain" data-u="' + u.id + '">Try again</button><a class="mq-btn ghost" href="#/belajar">Back to the map</a>'}</div></div>`;
   }
 
   // Layar akhir satu putaran latihan: bintang, tiga kartu (skor, tepat, waktu), dan satu tombol utama yang menyesuaikan
@@ -1192,14 +1197,14 @@
         ${up ? '<div class="mq-unlock">🔓 The next step is unlocked!</div>' : needMore && !why ? '<div class="mq-unlock" style="background:#fff3c4;color:#8a5a00">Reach a score of 80 to become Proficient ⭐</div>' : ''}
       </div></main>
       <div class="mq-foot"><div class="mq-foot-in">${needMore
-    ? '<button class="mq-btn pulse" data-act="again">Practice again</button><a class="mq-btn ghost" href="#/belajar">Back to the map</a>'
-    : '<a class="mq-btn pulse" href="#/belajar">Continue</a><button class="mq-btn ghost" data-act="again">Practice again</button>'}</div></div>`;
+    ? `<button class="mq-btn pulse" data-act="again">Practice again</button><a class="mq-btn ghost" href="#/bab/${sk.unit}">Back to missions</a>`
+    : `<a class="mq-btn pulse" href="#/bab/${sk.unit}">Continue</a><button class="mq-btn ghost" data-act="again">Practice again</button>`}</div></div>`;
   }
   function renderMastered() {
     const u = UNITS.find((x) => x.id === P.sk.unit);
     const nextSk = u && u.skills[u.skills.findIndex((s) => s.id === P.sk.id) + 1];
     app.innerHTML = `<main class="mq-screen"><div class="mq-result">${MQ.svg('cheer', { size: 180 })}<h1 class="mq-rtitle">You've completed it!</h1><p class="mq-rsub">${esc(P.sk.name)}</p></div></main>
-      <div class="mq-foot"><div class="mq-foot-in">${nextSk ? `<a class="mq-btn pulse" href="#/latihan/${nextSk.id}">Next: ${esc(nextSk.name)}</a><a class="mq-btn ghost" href="#/belajar">Back to the map</a>` : '<a class="mq-btn pulse" href="#/belajar">Back to the map</a>'}<button class="mq-link" data-act="again">Practice again</button></div></div>`;
+      <div class="mq-foot"><div class="mq-foot-in">${nextSk ? `<a class="mq-btn pulse" href="#/latihan/${nextSk.id}">Next: ${esc(nextSk.name)}</a><a class="mq-btn ghost" href="#/bab/${P.sk.unit}">Back to missions</a>` : `<a class="mq-btn pulse" href="#/bab/${P.sk.unit}">Back to missions</a>`}<button class="mq-link" data-act="again">Practice again</button></div></div>`;
   }
 
   /* ---------- Guru ---------- */
@@ -3973,7 +3978,7 @@
     if (act === 'obgoal') { OB.goal = +el.dataset.m; ls.set('metiq_goal_' + OB.sid, OB.goal); document.querySelectorAll('.mq-choice').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); return; }
     if (act === 'obnext') return obNext();
     if (act === 'obback') { if (OB && OB.step > 0) { OB.step--; return obRender(); } OB = null; return go('#/siswa'); }
-    if (act === 'quit') return go('#/belajar');
+    if (act === 'quit') return go(P && P.sk && session.get().role === 'siswa' ? '#/bab/' + P.sk.unit : '#/belajar');
     if (act === 'dquit') { if (confirm('Stop for now? The assessment will restart from the beginning.')) { D = null; P = null; go('#/'); } return; }
     if (act === 'gsheet') { const m = document.getElementById('gsheet'); if (m) m.hidden = false; return; }
     if (act === 'gclose') { if (e.target === el) { const m = document.getElementById('gsheet'); if (m) m.hidden = true; } return; }

@@ -585,36 +585,41 @@
     });
     return `<section class="isles" aria-label="Peta petualangan belajar">${out}<div class="isle-mist" aria-hidden="true"></div></section>`;
   }
-  // Bagian jalur belajar satu bab (dipakai halaman bab): langkah, peti ujian, dan spanduk bab
-  function pathParts(st) {
-    let n = 0;
-    const node = (s, u, withBuddy) => {
-      const x = XS[n++ % XS.length], sk = SKILLS[s.id], done = s.state === 'done' || s.state === 'gold';
-      const badge = done ? `<span class="mq-badge">${s.state === 'gold' ? '★' : IC.ok}</span>` : s.state === 'locked' ? `<span class="mq-badge">${IC.lock}</span>` : '';
-      return `<div class="mq-row"><div class="mq-n ${s.state} ${s.state === 'cur' ? 'cur' : ''}" style="--x:${x}px">
-        ${s.state === 'cur' ? `<a class="mq-label" href="#/latihan/${s.id}">Mulai</a>` : ''}
-        <button class="mq-bub-node" style="--p:${s.state === 'locked' ? 0 : Math.min(100, s.sc)}" data-act="node" data-id="${s.id}" data-x="${x}" aria-label="${esc(sk.name)}"><i><span>${chLogo(u)}</span></i></button>${badge}${TASKS_ON && s.task ? '<span class="mq-badge task" title="Tugas dari guru">📌</span>' : ''}
-        ${withBuddy ? `<div class="mq-buddy ${x > 0 ? 'l' : 'r'}">${MQ.svg('hello', { size: 104, who: unitBuddy(u) })}</div>` : ''}</div></div><div class="mq-pop-slot" id="pop-${s.id}"></div>`;
-    };
-    const banner = (u, cls, extra) => `<div class="mq-unit ${cls}"><span class="em">${chLogo(u)}</span><span class="grow"><small>Bab ${u.id}</small><b>${u.name}</b></span>${extra || `<a class="les" href="#/pelajaran/${u.id}"><span class="em2">📖</span>Belajar</a>`}</div>`;
-    const chestRow = (u) => {
-      const state = chestStateOf(st.id, u), t = S.testOf(st.id, u.id);
-      return `<div class="mq-row"><div class="mq-n chest ${state}">${state === 'ready' ? `<a class="mq-label" href="#/ujian/${u.id}">Ujian!</a>` : ''}<button class="mq-chest ${state}" data-act="chest" data-u="${u.id}" aria-label="Peti ujian bab ${u.id}">${chestSVG(state)}</button>${state === 'open' && t ? `<span class="mq-cstars">${'★'.repeat(chestTier(t.stars))}</span>` : ''}</div></div><div class="mq-pop-slot" id="pop-ch-${u.id}"></div>`;
-    };
-    return { node, banner, chestRow };
-  }
-  // Halaman satu bab: dibuka dengan mengetuk pulau
+  // Halaman satu tempat (bab), dibuka dengan mengetuk tempat di peta. Bukan jalur bulatan:
+  // gambar besar tempat itu bersama maskotnya, lalu daftar misi (keterampilan) berupa kartu, kartu pelajaran, dan peti harta karun.
   function viewChapter(uid) {
     const ses = session.get(), st = S.student(ses.id);
     if (ses.role !== 'siswa' || !st) return go('#/siswa');
     const u = UNITS.find((x) => x.id === uid); if (!u) return go('#/belajar');
     const m = pathModel(st.id, u.grade), info = isleStates(m).find((x) => x.u.id === uid);
     if (!info || info.state === 'next' || info.state === 'fog') return go('#/belajar');
-    const P = pathParts(st), th = unitBuddy(u) ? ' th-' + unitBuddy(u) : '';
-    app.innerHTML = mqPage(`<div class="isle-top"><a class="mq-ico" href="#/belajar" aria-label="Kembali ke peta">${IC.back}</a><span class="grow"><small>${gname(u.grade)} · Pulau ${u.id}</small><b>${esc(u.name)}</b></span><span class="isle-prog">${info.done}/${info.total}</span></div>
-      <section class="mq-sec${th}">${P.banner(u, info.state === 'done' ? 'done' : '')}<div class="mq-path">${info.ss.map((s) => P.node(s, u, s.state === 'cur')).join('')}${P.chestRow(u)}</div></section>`, 'belajar');
-    setTimeout(() => { const c = document.querySelector('.mq-n.cur'); if (c && c.getBoundingClientRect().bottom > innerHeight - 110) c.scrollIntoView({ block: 'center' }); }, 80);
+    const who = worldOf(u), W = WORLDS[who], v = m.units.slice(0, m.units.indexOf(u)).filter((x) => worldOf(x) === who).length, place = W.places[v % 4];
+    const pct0 = Math.round((info.done / info.total) * 100);
+    const quest = (s, i) => {
+      const sk = SKILLS[s.id], lv = level(s.sc)[0], task = TASKS_ON && s.task ? '<em class="qtask" title="Tugas dari guru">📌</em>' : '';
+      const bar = `<span class="qbar"><i style="width:${Math.min(100, s.sc)}%"></i></span>`;
+      if (s.state === 'done' || s.state === 'gold') return `<a class="quest done" href="#/latihan/${s.id}"><i class="qn">${s.state === 'gold' ? '★' : IC.ok}</i><span class="grow"><b>${esc(sk.name)}</b><small>SmartScore ${s.sc} · ${lv}</small></span>${task}<u>Latih lagi</u></a>`;
+      if (s.state === 'cur') return `<a class="quest cur" href="#/latihan/${s.id}"><i class="qn">${i + 1}</i><span class="grow"><small class="qnow">Misi sekarang</small><b>${esc(sk.name)}</b>${bar}<small>${s.att ? `SmartScore ${s.sc} · capai 80` : 'Belum dicoba'}</small></span>${task}<u class="go">${s.att ? 'Lanjut' : 'Mulai'}</u></a>`;
+      if (s.state === 'open') return `<a class="quest open" href="#/latihan/${s.id}"><i class="qn">${i + 1}</i><span class="grow"><b>${esc(sk.name)}</b>${bar}<small>${s.att ? `SmartScore ${s.sc} · ${lv}` : 'Belum dicoba'}</small></span>${task}<u>Buka</u></a>`;
+      return `<button class="quest lock" data-act="tip" data-t="🔒 Tuntaskan misi sebelumnya dulu ya"><i class="qn">${IC.lock.replace('<svg', '<svg width="16" height="16"')}</i><span class="grow"><b>${esc(sk.name)}</b><small>Terkunci</small></span></button>`;
+    };
+    const cs = chestStateOf(st.id, u), t = S.testOf(st.id, u.id);
+    const chest = cs === 'locked' ? `<button class="qchest lock" data-act="tip" data-t="🔒 Tuntaskan semua misi di tempat ini untuk membuka peti"><span class="cimg">${chestSVG('locked')}</span><span class="grow"><b>Harta karun ${esc(place)}</b><small>Tuntaskan semua misi untuk membuka ujian bab</small></span></button>`
+      : cs === 'ready' ? `<a class="qchest ready" href="#/ujian/${u.id}"><span class="cimg">${chestSVG('ready')}</span><span class="grow"><b>Peti harta karun siap dibuka!</b><small>Ujian bab · ${TEST_N} soal · nilai 60 untuk membuka</small></span><u class="go">Buka</u></a>`
+      : `<a class="qchest open" href="#/ujian/${u.id}"><span class="cimg">${chestSVG('open')}</span><span class="grow"><b>Harta karun didapat ${t ? '★'.repeat(chestTier(t.stars)) : ''}</b><small>${t ? `Nilai terbaik ${t.best}%` : 'Peti sudah terbuka'} · ketuk untuk mencoba lagi</small></span></a>`;
+    app.innerHTML = mqPage(`<div class="isle-top"><a class="mq-ico" href="#/belajar" aria-label="Kembali ke peta">${IC.back}</a><span class="grow"><small>${W.icon} ${W.name} · ${gname(u.grade)}</small><b>${esc(place)}</b></span><span class="isle-prog">${info.done}/${info.total}</span></div>
+      <section class="place-hero w-${who}" style="background:linear-gradient(180deg, ${W.bg}, ${mixHex(W.bg, '#ffffff', 0.55)})">
+        <div class="pscene">${placeSVG(who, v, false, u)}<span class="pbuddy">${MQ.svg(info.state === 'done' ? 'cheer' : 'hello', { size: 78, who: who === 'meti' ? undefined : who, enter: false })}</span></div>
+        <div class="pinfo"><small>Bab ${u.id}</small><h1>${esc(u.name)}</h1>
+          <div class="pprog"><span class="qbar big"><i style="width:${pct0}%"></i></span><b>${info.done} dari ${info.total} misi tuntas</b></div></div>
+      </section>
+      <a class="qlesson" href="#/pelajaran/${u.id}"><span class="em">📖</span><span class="grow"><b>Pelajari dulu</b><small>Penjelasan dan contoh untuk ${esc(u.name)}</small></span><u>›</u></a>
+      <h2 class="qhead">Misi di ${esc(place)}</h2>
+      <ol class="quests">${info.ss.map((s, i) => `<li>${quest(s, i)}</li>`).join('')}</ol>
+      ${chest}`, 'belajar');
+    setTimeout(() => { const c = document.querySelector('.quest.cur'); if (c && c.getBoundingClientRect().bottom > innerHeight - 110) c.scrollIntoView({ block: 'center' }); }, 80);
   }
+
 
   /* ----- Tugas dari guru ----- */
   const skillRow = (id, p) => { const sk = SKILLS[id], sc = p ? p.score : 0; return `<a class="mq-skrow" href="#/latihan/${id}"><span class="em">${unitIcon(sk)}</span><span class="grow">${esc(sk.name)}<small>${p && p.att ? level(sc)[0] : 'Belum dicoba'}</small></span>${chip(sc)}</a>`; };
@@ -1170,7 +1175,7 @@
         ${pass && wasOpen && !gain ? '<div class="mq-unlock">Bintang peti ini sudah kamu dapat. Coba nilai lebih tinggi untuk bintang tambahan!</div>' : ''}
         ${!pass ? `<div class="mq-unlock" style="background:#fff3c4;color:#8a5a00">${fast ? 'Baca soalnya pelan-pelan, lalu coba lagi.' : 'Butuh nilai 60 untuk membuka peti. Latih lagi lalu coba ujian lagi!'}</div>` : ''}
       </div></main>
-      <div class="mq-foot"><div class="mq-foot-in">${pass ? '<a class="mq-btn pulse" href="#/belajar">Lanjutkan</a><button class="mq-btn ghost" data-act="testagain" data-u="' + u.id + '">Ulangi ujian</button>' : '<button class="mq-btn pulse" data-act="testagain" data-u="' + u.id + '">Coba lagi</button><a class="mq-btn ghost" href="#/belajar">Kembali ke peta</a>'}</div></div>`;
+      <div class="mq-foot"><div class="mq-foot-in">${pass ? `<a class="mq-btn pulse" href="#/bab/${u.id}">Lanjutkan</a>` + '<button class="mq-btn ghost" data-act="testagain" data-u="' + u.id + '">Ulangi ujian</button>' : '<button class="mq-btn pulse" data-act="testagain" data-u="' + u.id + '">Coba lagi</button><a class="mq-btn ghost" href="#/belajar">Kembali ke peta</a>'}</div></div>`;
   }
 
   // Layar akhir satu putaran latihan: bintang, tiga kartu (skor, tepat, waktu), dan satu tombol utama yang menyesuaikan
@@ -1194,14 +1199,14 @@
         ${up ? '<div class="mq-unlock">🔓 Langkah berikutnya terbuka!</div>' : needMore && !why ? '<div class="mq-unlock" style="background:#fff3c4;color:#8a5a00">Capai skor 80 untuk naik ke Mahir ⭐</div>' : ''}
       </div></main>
       <div class="mq-foot"><div class="mq-foot-in">${needMore
-    ? '<button class="mq-btn pulse" data-act="again">Latihan lagi</button><a class="mq-btn ghost" href="#/belajar">Kembali ke peta</a>'
-    : '<a class="mq-btn pulse" href="#/belajar">Lanjutkan</a><button class="mq-btn ghost" data-act="again">Latihan lagi</button>'}</div></div>`;
+    ? `<button class="mq-btn pulse" data-act="again">Latihan lagi</button><a class="mq-btn ghost" href="#/bab/${sk.unit}">Kembali ke misi</a>`
+    : `<a class="mq-btn pulse" href="#/bab/${sk.unit}">Lanjutkan</a><button class="mq-btn ghost" data-act="again">Latihan lagi</button>`}</div></div>`;
   }
   function renderMastered() {
     const u = UNITS.find((x) => x.id === P.sk.unit);
     const nextSk = u && u.skills[u.skills.findIndex((s) => s.id === P.sk.id) + 1];
     app.innerHTML = `<main class="mq-screen"><div class="mq-result">${MQ.svg('cheer', { size: 180 })}<h1 class="mq-rtitle">Kamu sudah tuntas!</h1><p class="mq-rsub">${esc(P.sk.name)}</p></div></main>
-      <div class="mq-foot"><div class="mq-foot-in">${nextSk ? `<a class="mq-btn pulse" href="#/latihan/${nextSk.id}">Lanjut: ${esc(nextSk.name)}</a><a class="mq-btn ghost" href="#/belajar">Kembali ke peta</a>` : '<a class="mq-btn pulse" href="#/belajar">Kembali ke peta</a>'}<button class="mq-link" data-act="again">Latihan lagi</button></div></div>`;
+      <div class="mq-foot"><div class="mq-foot-in">${nextSk ? `<a class="mq-btn pulse" href="#/latihan/${nextSk.id}">Lanjut: ${esc(nextSk.name)}</a><a class="mq-btn ghost" href="#/bab/${P.sk.unit}">Kembali ke misi</a>` : `<a class="mq-btn pulse" href="#/bab/${P.sk.unit}">Kembali ke misi</a>`}<button class="mq-link" data-act="again">Latihan lagi</button></div></div>`;
   }
 
   /* ---------- Guru ---------- */
@@ -3987,7 +3992,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (act === 'obgoal') { OB.goal = +el.dataset.m; ls.set('metiq_goal_' + OB.sid, OB.goal); document.querySelectorAll('.mq-choice').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); return; }
     if (act === 'obnext') return obNext();
     if (act === 'obback') { if (OB && OB.step > 0) { OB.step--; return obRender(); } OB = null; return go('#/siswa'); }
-    if (act === 'quit') return go('#/belajar');
+    if (act === 'quit') return go(P && P.sk && session.get().role === 'siswa' ? '#/bab/' + P.sk.unit : '#/belajar');
     if (act === 'dquit') { if (confirm('Berhenti dulu? Asesmen akan diulang dari awal.')) { D = null; P = null; go('#/'); } return; }
     if (act === 'gsheet') { const m = document.getElementById('gsheet'); if (m) m.hidden = false; return; }
     if (act === 'gclose') { if (e.target === el) { const m = document.getElementById('gsheet'); if (m) m.hidden = true; } return; }

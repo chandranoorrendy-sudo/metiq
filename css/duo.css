@@ -1177,3 +1177,42 @@ body.coret-open #pq { -webkit-user-select: none; user-select: none; }
 @media (prefers-reduced-motion: reduce) { .isle-buddy { animation: none; } }
 .isle-region + .isle.cur { margin-top: 14px; }
 .isle.cur .isle-buddy { bottom: 56px; }
+
+/* ---------- Halaman tempat (bab): gambar tempat, daftar misi berupa kartu, peti harta karun ---------- */
+.place-hero { position: relative; margin: 0 0 6px; padding: 10px 14px 16px; border-radius: 0 0 28px 28px; overflow: hidden; }
+.place-hero.w-meti::before { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(circle 3px at 20% 30%, rgba(255, 255, 255, .55) 60%, transparent 72%) 0 0 / 90px 120px; }
+.pscene { position: relative; max-width: 330px; margin: 0 auto; }
+.pscene .isle-svg { display: block; width: 100%; height: auto; }
+.pbuddy { position: absolute; right: -6px; bottom: 6px; width: 78px; animation: isle-hop 2.4s ease-in-out infinite; }
+.pinfo { position: relative; margin-top: 4px; padding: 12px 14px; border-radius: 18px; background: rgba(255, 255, 255, .92); box-shadow: 0 6px 16px rgba(4, 56, 46, .1); }
+.pinfo small { font-size: .75rem; font-weight: 900; letter-spacing: .06em; text-transform: uppercase; color: #6a7f7a; }
+.pinfo h1 { margin: 2px 0 8px; font-size: 1.25rem; font-weight: 900; line-height: 1.2; color: var(--mq-ink); }
+.pprog { display: flex; align-items: center; gap: 10px; } .pprog b { flex: none; font-size: .85rem; font-weight: 800; color: #4c6460; }
+.qbar { display: block; flex: 1; height: 8px; margin: 6px 0 4px; border-radius: 99px; background: #e6eeec; overflow: hidden; }
+.qbar.big { height: 12px; margin: 0; }
+.qbar i { display: block; height: 100%; border-radius: 99px; background: linear-gradient(90deg, #35e0bd, #19b796); }
+.qlesson, .quest, .qchest { display: flex; align-items: center; gap: 12px; width: calc(100% - 24px); margin: 0 12px; padding: 12px 14px; border: 2px solid var(--mq-line); border-radius: 18px; background: #fff; font: inherit; color: var(--mq-ink); text-align: left; text-decoration: none; cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.qlesson .grow, .quest .grow, .qchest .grow { flex: 1; min-width: 0; }
+.qlesson b, .quest b, .qchest b { display: block; font-size: .98rem; font-weight: 900; line-height: 1.25; }
+.qlesson small, .quest small, .qchest small { display: block; font-size: .8rem; font-weight: 700; color: #6a7f7a; }
+.qlesson u, .quest u, .qchest u { flex: none; text-decoration: none; font-weight: 900; font-size: .85rem; color: #6a7f7a; }
+.qlesson { margin-top: 10px; background: #fff8e8; border-color: #f1dfb8; } .qlesson .em { font-size: 1.6rem; } .qlesson u { font-size: 1.4rem; }
+.qhead { margin: 18px 16px 8px; font-size: 1.05rem; font-weight: 900; color: var(--mq-ink); }
+.quests { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.qn { flex: none; display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; background: #eef3f2; font-style: normal; font-weight: 900; color: #4c6460; }
+.quest.done .qn { background: var(--mq-d); color: #fff; } .quest.done .qn svg { width: 20px; height: 20px; }
+.quest.done u { color: var(--mq-dd); }
+.quest.cur { border-color: var(--mq-d); background: #f2fffb; box-shadow: 0 8px 20px rgba(25, 183, 150, .2); padding: 14px; }
+.quest.cur .qn { background: var(--mq); color: var(--mq-ink); width: 44px; height: 44px; font-size: 1.1rem; }
+.quest.cur b { font-size: 1.05rem; }
+.qnow { color: var(--mq-dd) !important; font-weight: 900 !important; text-transform: uppercase; letter-spacing: .06em; font-size: .7rem !important; }
+.quest u.go, .qchest u.go { padding: 10px 16px; border-radius: 14px; background: var(--mq); border-bottom: 4px solid var(--mq-d); color: var(--mq-ink); font-size: .95rem; text-transform: uppercase; letter-spacing: .04em; }
+.quest.open { border-style: dashed; }
+.quest.lock { background: #f3f5f6; border-color: #e6eaec; color: #9aa7ab; cursor: default; } .quest.lock b { color: #9aa7ab; } .quest.lock .qn { background: #e3e8ea; color: #9aa7ab; }
+.qtask { flex: none; font-style: normal; }
+.qchest { margin-top: 14px; border-color: #f1dfb8; background: #fffaf0; }
+.qchest .cimg { flex: none; width: 58px; } .qchest .cimg svg { display: block; width: 100%; height: auto; }
+.qchest.lock { background: #f3f5f6; border-color: #e6eaec; } .qchest.lock b { color: #8a979b; }
+.qchest.ready { border-color: #ffc800; box-shadow: 0 8px 20px rgba(224, 168, 0, .22); }
+.quest:active, .qchest:active, .qlesson:active { transform: scale(.99); }
+@media (prefers-reduced-motion: reduce) { .pbuddy { animation: none; } }
