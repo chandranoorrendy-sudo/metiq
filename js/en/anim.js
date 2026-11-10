@@ -172,6 +172,32 @@
     const mk = (s) => s.replace(/\{([^}]*)\}/g, `<tspan fill="${C.d}">$1</tspan>`).replace(/\[([^\]]*)\]/g, `<tspan fill="${C.r}">$1</tspan>`);
     return lines.map((l, i) => `<text x="160" y="${y0 + i * gap}" text-anchor="middle" font-size="${fs}" font-weight="800" fill="${C.ink}" class="a-up" ${dl(d0 + i * step)}>${mk(l)}</text>`).join('');
   }
+  // Penjumlahan bersusun, dikerjakan dari satuan ke kiri: kolom yang sedang dihitung disorot, catatan langkahnya muncul
+  // di samping (mis. "8 + 5 = 13 / tulis 3, simpan 1"), angka simpanan muncul di atas kolom berikutnya,
+  // dan angka hasil muncul satu per satu dari kanan.
+  function stack({ a, b, d0 = 0.5, step = 2 }) {
+    const A = String(a), B = String(b), R = String(a + b), n = R.length, cw = 28, xr = 150, X = (k) => xr - k * cw;
+    const dig = (s, k) => s[s.length - 1 - k];
+    const yC = 42, yA = 78, yB = 112, yL = 124, yR = 158, fs = 26, xn = 196;
+    const note = (y, s, t, c = C.ink) => `<text x="${xn}" y="${y}" font-size="13" font-weight="800" fill="${c}" class="a-note" ${dl(t, `animation-duration:${step}s`)}>${s}</text>`;
+    let bg = '', o = '', carry = 0;
+    for (let k = 0; k < A.length; k++) o += T(X(k), yA, dig(A, k), { fs, d: d0 });
+    for (let k = 0; k < B.length; k++) o += T(X(k), yB, dig(B, k), { fs, d: d0 + 0.2 });
+    o += T(X(n - 1) - cw * 0.9, yB, '+', { fs, d: d0 + 0.2 });
+    o += `<path d="M${Math.max(6, X(n - 1) - cw * 1.4)} ${yL}H${xr + cw * 0.6}" stroke="${C.ink}" stroke-width="3" stroke-linecap="round" pathLength="1" class="a-draw" ${dl(d0 + 0.4)}/>`;
+    for (let k = 0; k < n; k++) {
+      const t = d0 + 1.2 + k * step, ha = dig(A, k) !== undefined, hb = dig(B, k) !== undefined, s = (ha ? +dig(A, k) : 0) + (hb ? +dig(B, k) : 0) + carry;
+      const parts = [carry ? '1' : null, ha ? dig(A, k) : null, hb ? dig(B, k) : null].filter((x) => x !== null);
+      bg += `<rect x="${X(k) - cw / 2 + 1}" y="${yC - 18}" width="${cw - 2}" height="${yR - yC + 28}" rx="9" fill="${C.tl}" class="a-flash" ${dl(t, `animation-duration:${step}s`)}/>`;
+      if (parts.length > 1) o += note(yA, `${parts.join(' + ')} = ${s}`, t);
+      o += note(yA + 22, s >= 10 ? `write ${s % 10}, carry 1` : `write ${s}`, t, C.d);
+      if (s >= 10) o += T(X(k + 1), yC, '1', { fs: 16, c: C.r, cls: 'a-pop', d: t + 0.7 });
+      o += T(X(k), yR, s % 10, { fs, c: C.d, cls: 'a-pop', d: t + 0.9 });
+      carry = s >= 10 ? 1 : 0;
+    }
+    o += T(xn, yR, '= ' + big(a + b), { a: 'start', fs: 18, c: C.d, cls: 'a-pop', d: d0 + 1.4 + n * step });
+    return bg + o;
+  }
   // diagram batang atau garis
   function chart({ bars, max, kind = 'bar', unit = '', d0 = 0.2 }) {
     max = max || Math.max(...bars.map((b) => b[1])); const bw = Math.min(50, 240 / bars.length), gap = 260 / bars.length, base = 165, Y = (v) => base - (v / max) * 125;
@@ -315,12 +341,12 @@
     '2B': [S(() => balance({ l: '8 + 5', r: '10 + ?' }), 'The equal sign means both sides are balanced.'),
       S(() => eq({ lines: ['8 + 5 = 13', '10 + {3} = 13', 'So ? = {3}'] }), '8 + 5 = 13, so 10 + 3 must also be 13.'),
       S(() => eq({ lines: ['In 3 → +5 → {8}', 'In 6 → +5 → {11}', 'In 9 → +5 → {14}'], fs: 17 }), 'Input and output table: each number has 5 added.')],
-    '2C': [S(() => eq({ lines: ['47 + 35', 'ones: 7 + 5 = 12 → write 2, carry [1]', 'tens: [1] + 4 + 3 = 8', '= {82}'], fs: 16 }), 'Adding with regrouping: the ones make 12, so write 2 and carry 1 to the tens.'),
+    '2C': [S(() => stack({ a: 47, b: 35 }), 'Adding with regrouping: the ones make 12, so write 2 and carry 1 to the tens.'),
       S(() => eq({ lines: ['36 + 9', '= 36 + {10} − [1]', '= 46 − 1 = {45}'] }), 'The +9 strategy: add 10, then subtract 1.')],
     '2D': [S(() => eq({ lines: ['52 − 27', '2 − 7? borrow 1 ten', '12 − 7 = 5', '4 − 2 = 2', '= {25}'], fs: 16 }), 'Subtracting with borrowing: 52 becomes 4 tens and 12 ones.'),
       S(() => line({ from: 20, to: 60, step: 5, lab: 2, start: 27, hops: [3, 20, 2] }), 'Count up from 27: +3 to 30, +20 to 50, +2 to 52. The difference is 3 + 20 + 2 = 25.')],
     '2E': [S(() => place({ h: 3, t: 2, o: 4, x: 30 }) + place({ h: 1, x: 250, d0: 2.6 }) + eq({ lines: ['324 + 100 = {424}'], y0: 160, d0: 3.4 }), '324 + 100: just add 1 hundred. The result is 424.'),
-      S(() => eq({ lines: ['356 + 278', 'ones 6 + 8 = 14 → carry 1', 'tens 1 + 5 + 7 = 13 → carry 1', 'hundreds 1 + 3 + 2 = 6', '= {634}'], fs: 15 }), 'Adding three digits: do the ones, then the tens, then the hundreds.')],
+      S(() => stack({ a: 356, b: 278 }), 'Adding three digits: do the ones, then the tens, then the hundreds.')],
     '2F': [S(() => bar({ rows: [{ l: 'Ani', s: [[35, '35']] }, { l: 'Budi', s: [[35, '35'], [18, '18', C.y]] }], total: '?' }), 'Bar model: Budi has 18 more marbles than Ani. Budi = 35 + 18 = 53.'),
       S(() => bar({ rows: [{ l: 'Total', s: [[24, '24'], [36, '?', C.y]] }], total: '60' }), 'The whole is 60 and one part is 24. The other part = 60 − 24 = 36.')],
     '2G': [S(() => array({ r: 3, c: 4, label: '3 × 4 = 12', s: 30, y: 45 }), '3 rows of 4. Written 3 × 4 = 12.'),
@@ -348,7 +374,7 @@
       S(() => eq({ lines: ['4,352 and 4,325', 'same thousands, same hundreds', 'tens: 5 > 2', 'So {4,352 > 4,325}'], fs: 16 }), 'Comparing: start from the largest place.')],
     '3B': [S(() => line({ from: 360, to: 370, start: 368, hops: [2] }), '368 rounded to the nearest ten is 370.'),
       S(() => line({ from: 300, to: 400, step: 10, lab: 5, mark: [368] }) + T(160, 60, '368 → 400 (nearest hundred)', { c: C.d, d: 1.6 }), 'To the nearest hundred: 368 is closer to 400 than to 300.')],
-    '3C': [S(() => eq({ lines: ['2.468 + 1.375', '8 + 5 = 13 → carry 1', '1 + 6 + 7 = 14 → carry 1', '1 + 4 + 3 = 8, then 2 + 1 = 3', '= {3.843}'], fs: 15 }), 'Column addition: from the ones to the thousands, carrying when more than 9.')],
+    '3C': [S(() => stack({ a: 2468, b: 1375 }), 'Column addition: from the ones to the thousands, carrying when more than 9.')],
     '3D': [S(() => array({ r: 4, c: 3, s: 28, y: 35, label: '4 × 3 = 12' }), '4 rows of 3: 4 × 3 = 12.'),
       S(() => array({ r: 3, c: 4, s: 28, y: 35, label: '3 × 4 = 12' }), 'Rotated to 3 rows of 4: still 12. The order of multiplication can be swapped.'),
       S(() => array({ r: 7, c: 6, s: 18, y: 25, split: 5, label: '5 × 6 + 2 × 6 = 30 + 12 = 42' }), 'Breaking apart multiplication: 7 × 6 = 5 × 6 + 2 × 6 = 42.')],
@@ -379,7 +405,7 @@
     // Kelas 4
     '4A': [S(() => eq({ lines: ['352.418', '3 hundred thousands, 5 ten thousands,', '2 thousands, 4 hundreds, 1 ten, 8 ones'], fs: 15 }), 'Place values of large numbers are read in groups of three digits.'),
       S(() => line({ from: 350000, to: 360000, step: 1000, lab: 5, mark: [352418] }) + T(160, 60, '352.418 ≈ 350.000', { c: C.d, d: 1.6 }), 'Rounded to the nearest ten thousand: 350,000.')],
-    '4B': [S(() => eq({ lines: ['45.678 + 23.456', 'ones → tens → hundreds', '→ thousands → ten thousands', '= {69.134}'], fs: 16 }), 'Adding five-digit numbers in columns.')],
+    '4B': [S(() => stack({ a: 45678, b: 23456, step: 1.7 }), 'Adding five-digit numbers in columns.')],
     '4C': [S(() => array({ r: 3, c: 4, s: 22, y: 40, label: '3 × 4' }), 'Rectangles from 12 objects: 3 × 4 …'),
       S(() => array({ r: 2, c: 6, s: 22, y: 50, label: '2 × 6 and 1 × 12' }), '… also 2 × 6 and 1 × 12. Factors of 12: 1, 2, 3, 4, 6, 12.'),
       S(() => line({ from: 0, to: 24, step: 4, start: 0, hops: [4, 4, 4, 4, 4, 4] }), 'Multiples of 4: 4, 8, 12, 16, 20, 24 …')],

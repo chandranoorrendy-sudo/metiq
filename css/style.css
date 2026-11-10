@@ -612,6 +612,10 @@ h2.allsk { margin: 18px 0 8px; }
 .an-svg .a-pop, .an-svg .a-fade, .an-svg .a-up, .an-svg .a-draw, .an-svg .a-growx, .an-svg .a-growy, .an-svg .a-rot, .an-svg .a-move { animation-duration: .5s; animation-fill-mode: both; animation-timing-function: ease-out; }
 .an-svg .a-pop { animation-name: an-pop; } @keyframes an-pop { from { transform: scale(0); opacity: 0; } 70% { transform: scale(1.15); } to { transform: scale(1); opacity: 1; } }
 .an-svg .a-fade { animation-name: an-fade; } @keyframes an-fade { from { opacity: 0; } }
+/* penjumlahan bersusun: sorotan kolom dan catatan langkah muncul selama kolom itu dihitung, lalu menghilang */
+.an-svg .a-flash, .an-svg .a-note { opacity: 0; animation-fill-mode: both; animation-timing-function: ease; }
+.an-svg .a-flash { animation-name: an-flash; } @keyframes an-flash { 0% { opacity: 0; } 12% { opacity: .55; } 82% { opacity: .55; } 100% { opacity: 0; } }
+.an-svg .a-note { animation-name: an-note; } @keyframes an-note { 0% { opacity: 0; } 12% { opacity: 1; } 85% { opacity: 1; } 100% { opacity: 0; } }
 .an-svg .a-up { animation-name: an-up; } @keyframes an-up { from { opacity: 0; transform: translateY(10px); } }
 .an-svg .a-draw { stroke-dasharray: 1; animation-name: an-draw; animation-duration: .8s; } @keyframes an-draw { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
 .an-svg .a-growx { transform-origin: left center; animation-name: an-gx; animation-duration: .7s; } @keyframes an-gx { from { transform: scaleX(0); } }
