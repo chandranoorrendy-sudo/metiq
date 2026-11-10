@@ -437,7 +437,7 @@
     const g = getGrade(), m = pathModel(st.id, g), goal = goalOf(st.id), mins = msToday(st.id) / 60000;
     const todo = TASKS_ON ? todoCount(st) : 0, unsent = cloudOn() ? Cloud.pendingCount(st.id) : 0, curId = m.flat[m.cur];
     const allDone = m.cur >= m.flat.length, isles = isleStates(m), cur = isles.find((x) => x.state === 'cur');
-    const buddy = cur ? worldOf(cur.u) : null, sc = curId ? m.st(curId).sc : 0;
+    const buddy = cur ? unitBuddy(cur.u) : null, sc = curId ? m.st(curId).sc : 0;
     // Kabut terangkat saat bab selesai: bandingkan bab "sekarang" dengan kunjungan sebelumnya
     const seenKey = `metiq_isle_${st.id}_${g}`; let fresh = null;
     try { const was = localStorage.getItem(seenKey), now = cur ? cur.u.id : 'all'; if (was && was !== now) fresh = was; localStorage.setItem(seenKey, now); } catch (e) {}
@@ -461,12 +461,10 @@
     setTimeout(() => { const c = document.querySelector('.isle.cur') || document.querySelector('.isle.done:last-of-type'); if (c) c.scrollIntoView({ block: 'center' }); }, 60);
   }
 
-  /* ---------- Peta belajar: kepulauan petualangan yang ceria ----------
-   * Satu pulau = satu bab. Dunia dipilih dari bidang matematikanya supaya perjalanan terasa utuh:
-   * Bilangan di Laut Meti, Pengukuran di Gurun Tito, Geometri di Pegunungan Nahla, Data di Kepulauan Lumo.
-   * Keadaan pulau dihitung dari SmartScore siswa (pathModel), bukan gambar tetap:
-   * done (berwarna, tanda hijau), cur (menonjol, bercahaya, penanda lokasi), visit (sudah dicoba),
-   * next (tujuan berikutnya di balik kabut tipis), fog (dua siluet samar), gap (sisanya diringkas). */
+  /* ---------- Peta belajar: kepulauan matematika dengan kabut penemuan ----------
+   * Satu pulau = satu bab. Keadaan pulau dihitung dari SmartScore siswa (pathModel), bukan gambar tetap:
+   * done (berwarna, tanda hijau), cur (menonjol, bercahaya, penanda lokasi), visit (sudah dicoba, belum urutannya),
+   * next (kabut tipis, siluet tanpa nama), fog (kabut tebal, siluet samar tanpa tulisan, paling banyak dua). */
   function isleStates(m) {
     const list = m.units.map((u) => {
       const ss = u.skills.map((s) => m.st(s.id)), done = ss.filter((s) => s.state === 'done' || s.state === 'gold').length;
@@ -474,154 +472,108 @@
       const state = done === ss.length ? 'done' : ss.some((s) => s.state === 'cur') ? 'cur' : started ? 'visit' : 'new';
       return { u, ss, done, total: ss.length, state };
     });
-    // Bab yang belum disentuh diringkas supaya peta tidak penuh tempat kosong:
-    // satu tujuan berikutnya, dua siluet di kabut, sisanya satu baris "n tempat lagi".
-    const out = [];
-    let gap = 0, pending = [];
-    list.forEach((x) => {
-      if (x.state === 'new') { gap++; pending.push(x); return; }
-      if (gap) { out.push({ gap, state: 'gap' }); gap = 0; pending = []; }
-      out.push(x);
-    });
-    if (gap) {
-      out.push({ ...pending[0], state: 'next' });
-      for (let i = 1; i <= 2 && i < pending.length; i++) out.push({ ...pending[i], state: 'fog' });
-      if (gap > 3) out.push({ gap: gap - 3, state: 'gap', tail: true });
-    }
-    return out;
+    // Bab yang belum disentuh di antara pulau yang sudah terlihat: kabut tipis tanpa nama.
+    // Sesudah pulau terakhir yang terlihat: satu tujuan berikutnya, lalu paling banyak dua siluet di kabut tebal.
+    let last = -1; list.forEach((x, i) => { if (x.state !== 'new') last = i; });
+    let after = 0;
+    list.forEach((x, i) => { if (x.state !== 'new') return; if (i < last) x.state = 'next'; else x.state = after++ === 0 ? 'next' : after <= 3 ? 'fog' : 'gone'; });
+    return list.filter((x) => x.state !== 'gone');
   }
-  // Dunia setiap maskot, dipilih dari bidang bab agar satu bidang terasa satu wilayah:
-  // Bilangan di Laut Meti, Pengukuran di Gurun Tito, Geometri di Pegunungan Nahla, Data di Kepulauan Lumo.
-  // Tempat ke-k di dunia yang sama memakai gambar ke-k (berputar), jadi setiap pulau tetap punya wajah sendiri.
+  // Dunia setiap maskot. Bab milik maskot itu (unitBuddy) menjadi tempat di dunianya: Meti menjelajah laut,
+  // Tito gurun, Nahla pegunungan, Lumo kepulauan. Tempat ke-k milik maskot yang sama memakai gambar ke-k (berputar).
   const WORLDS = {
-    meti: { name: 'Laut Meti', icon: '🐙', bg: '#d9f4fb', trail: '#24b7c9', places: ['Terumbu Karang', 'Kapal Karam', 'Hutan Alga', 'Kerang Mutiara'] },
-    tito: { name: 'Gurun Tito', icon: '🐜', bg: '#fdf0d2', trail: '#e0a800', places: ['Bukit Pasir', 'Oasis', 'Batu Ngarai', 'Kemah Gurun'] },
-    nahla: { name: 'Pegunungan Nahla', icon: '🐝', bg: '#e7f8dd', trail: '#3fae6a', places: ['Danau Gunung', 'Sabana', 'Puncak Gunung', 'Padang Bunga'] },
-    lumo: { name: 'Kepulauan Lumo', icon: '🐬', bg: '#dcf8f4', trail: '#1c9be8', places: ['Pulau Tropis', 'Pulau Gunung Api', 'Atol', 'Pulau Mercusuar'] },
+    meti: { name: 'Laut Meti', icon: '🐙', bg: '#8fd3f0', places: ['Terumbu Karang', 'Kapal Karam', 'Hutan Alga', 'Kerang Mutiara'] },
+    tito: { name: 'Gurun Tito', icon: '🐜', bg: '#fbe2b3', places: ['Bukit Pasir', 'Oasis', 'Batu Ngarai', 'Kemah Gurun'] },
+    nahla: { name: 'Pegunungan Nahla', icon: '🐝', bg: '#d3eecf', places: ['Danau Gunung', 'Sabana', 'Puncak Gunung', 'Padang Bunga'] },
+    lumo: { name: 'Kepulauan Lumo', icon: '🐬', bg: '#bdeaf6', places: ['Pulau Tropis', 'Pulau Gunung Api', 'Atol', 'Pulau Mercusuar'] },
   };
-  const worldOf = (u) => {
-    // Nama dan km ikut diterjemahkan di mode English, jadi cocokkan dua bahasa sekaligus.
-    const t = `${u.name} ${u.km || ''} ${u.icon || ''}`;
-    if (/geometri|bangun|bentuk|pola|sudut|simetri|koordinat|geometr|shape|pattern|angle|symmetr|coordinate/i.test(t)) return 'nahla';
-    if (/ukur|waktu|jam|kalender|uang|panjang|berat|luas|keliling|volume|measur|time|clock|calendar|money|length|weight|area|perimeter/i.test(t)) return 'tito';
-    if (/data|diagram|grafik|statistik|peluang|graph|statistic|probability|chance/i.test(t)) return 'lumo';
-    return 'meti';
-  };
-  // ---------- Gambar pulau ----------
-  // Satu bahasa gambar untuk semua dunia: garis tebal, warna pastel, dan hiasan kecil yang bergerak.
-  const ISLE_INK = '#1f5d52';
-  const isleCloud = (x, y, s, d) => `<g class="isl-cloud" style="--d:${d || 0}s"><g transform="translate(${x} ${y}) scale(${s})" fill="#fff" opacity=".94"><ellipse cx="0" cy="0" rx="17" ry="9"/><ellipse cx="14" cy="-5" rx="12" ry="8"/><ellipse cx="-14" cy="1" rx="11" ry="7"/></g></g>`;
-  const isleBird = (x, y, s, d) => `<g class="isl-bird" style="--d:${d || 0}s"><g transform="translate(${x} ${y}) scale(${s})" fill="none" stroke="${ISLE_INK}" stroke-width="2.2" stroke-linecap="round"><path d="M0 0q6-7 12 0"/><path d="M12 0q6-7 12 0"/></g></g>`;
-  const isleSun = (x, y, s) => `<g class="isl-sun" transform="translate(${x} ${y}) scale(${s})"><g class="isl-rays" fill="#ffd36b" opacity=".55">${[0, 45, 90, 135].map((a) => `<rect x="-2" y="-25" width="4" height="14" rx="2" transform="rotate(${a})"/>`).join('')}</g><circle r="11" fill="#ffd36b"/><circle r="7.5" fill="#ffe89a"/></g>`;
-  const islePalm = (x, y, s, c) => `<g transform="translate(${x} ${y}) scale(${s})"><path d="M0 0q4-20 0-38" stroke="#a8683a" stroke-width="6" fill="none" stroke-linecap="round"/><g class="isl-sway">${[[-26, -8], [24, -10], [-14, -24], [16, -26]].map(([dx, r]) => `<ellipse cx="${dx * 0.55}" cy="-44" rx="16" ry="5" fill="${c}" stroke="#2c7a3a" stroke-width="1.4" transform="rotate(${r} 0 -40)"/>`).join('')}<circle cx="0" cy="-38" r="3.4" fill="#7a4a26"/><circle cx="-5" cy="-35" r="2.6" fill="#8a5a3c"/></g></g>`;
-  const isleTree = (x, y, s, c) => `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-3" y="-16" width="6" height="18" rx="3" fill="#8a5a3c"/><path d="M0 -54 L17 -24 H-17Z" fill="${c}" stroke="#2c7a3a" stroke-width="2.4" stroke-linejoin="round"/><path d="M0 -40 L14 -14 H-14Z" fill="${c}" stroke="#2c7a3a" stroke-width="2.4" stroke-linejoin="round"/><path d="M0 -26 L10 -10 H-10Z" fill="${c}" stroke="#2c7a3a" stroke-width="2.4" stroke-linejoin="round"/></g>`;
-  const isleFlower = (x, y, c, s) => `<g transform="translate(${x} ${y}) scale(${s || 1})"><path d="M0 0v-12" stroke="#2c7a3a" stroke-width="2.4" stroke-linecap="round"/><circle cy="-14" r="4.4" fill="${c}"/><circle cy="-14" r="1.8" fill="#ffd36b"/></g>`;
-  const isleFlag = (x, y, c) => `<g transform="translate(${x} ${y})"><path d="M0 0v-28" stroke="#7a4a26" stroke-width="3" stroke-linecap="round"/><g class="isl-flag"><path d="M1 -28h23l-6 6 6 6H1z" fill="${c}" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/></g></g>`;
-  const isleShell = (x, y, c, s) => `<g transform="translate(${x} ${y}) scale(${s || 1})"><path d="M-10 0q10-17 20 0z" fill="${c}" stroke="#d97a95" stroke-width="1.5" stroke-linejoin="round"/><path d="M-4 -1l2-9M2 -1l0-10M8 -1l-2-9" stroke="#fff" stroke-width="1.3" opacity=".8"/></g>`;
-  const isleCoral = (x, y, c, s) => `<g transform="translate(${x} ${y}) scale(${s || 1})"><g class="isl-sway" stroke="${c}" stroke-width="6" stroke-linecap="round" fill="none"><path d="M0 0v-16M0 -8l-9-9M0 -12l9-9M-9 -17v-6M9 -21v-6"/></g><circle cx="-9" cy="-24" r="2.2" fill="${c}"/><circle cx="9" cy="-28" r="2" fill="${c}"/></g>`;
-  const isleFish = (x, y, c, s, flip, d) => `<g class="isl-fish" style="--d:${d || 0}s"><g transform="translate(${x} ${y}) scale(${flip ? -s : s} ${s})"><ellipse rx="8" ry="5" fill="${c}"/><path d="M7 0l8-5v10z" fill="${c}"/><circle cx="-3" cy="-1.2" r="1.3" fill="#123"/></g></g>`;
-  const isleBubble = (x, y, r, d) => `<circle class="isl-bubble" style="--d:${d || 0}s" cx="${x}" cy="${y}" r="${r}" fill="none" stroke="#fff" stroke-width="1.8" opacity=".8"/>`;
-  const isleStar = (x, y, c, s) => `<g transform="translate(${x} ${y}) scale(${s || 1})"><path d="M0 -9L2.6 -2.8 9 -2.8 4 1.4 6 8 0 4.2-6 8-4 1.4-9 -2.8-2.6 -2.8Z" fill="${c}" stroke="#d97a95" stroke-width="1.2" stroke-linejoin="round"/></g>`;
-  const isleCactus = (x, y, s) => `<g transform="translate(${x} ${y}) scale(${s})"><rect x="-5" y="-40" width="10" height="40" rx="5" fill="#3fae6a" stroke="#2c7a3a" stroke-width="2"/><path d="M-5 -22h-9v-12M5 -28h9v-10" stroke="#3fae6a" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g>`;
-  const isleBee = (x, y, s) => `<g class="isl-fish" style="--d:1s"><g transform="translate(${x} ${y}) scale(${s})"><ellipse rx="7" ry="5" fill="#ffd36b" stroke="#c98f3f" stroke-width="1.2"/><path d="M-2 -4v8M3 -3v6" stroke="#5a3b26" stroke-width="1.4"/><ellipse cx="-2" cy="-6" rx="5" ry="3" fill="#fff" opacity=".8" transform="rotate(-20 -2 -6)"/><path d="M6 -2l3-2M6 2l3 2" stroke="#5a3b26" stroke-width="1.2"/></g></g>`;
-  const isleSpark = (x, y, r, d, c) => `<path class="isl-twinkle" style="--d:${d || 0}s" d="M${x} ${y - r}L${x + r * .28} ${y - r * .28}L${x + r} ${y}L${x + r * .28} ${y + r * .28}L${x} ${y + r}L${x - r * .28} ${y + r * .28}L${x - r} ${y}L${x - r * .28} ${y - r * .28}Z" fill="${c || '#ffd36b'}"/>`;
-  // Pulau dasar yang lucu: rumput/pasir di atas, tebing berpasir di bawah, riak air di sekeliling.
-  const isleBase = (water, top, edge, sand) => `<ellipse cx="120" cy="138" rx="84" ry="7" fill="#0b4f5e" opacity=".13"/><ellipse cx="120" cy="131" rx="80" ry="9" fill="${water}" opacity=".55"/><path d="M42 107c0-7 8-13 21-16 11-13 31-21 57-21s46 8 57 21c13 3 21 9 21 16 0 12-35 22-78 22s-78-10-78-22z" fill="${sand}" stroke="${edge}" stroke-width="3" stroke-linejoin="round"/><path d="M48 101c6-6 16-10 27-12 11-10 27-16 45-16s34 6 45 16c11 2 21 6 27 12-13 9-41 15-72 15s-59-6-72-15z" fill="${top}" stroke="${edge}" stroke-width="3" stroke-linejoin="round"/><path class="isl-shimmer" d="M68 98q52 14 104 0" stroke="#fff" stroke-width="4" fill="none" stroke-linecap="round" opacity=".35"/>`;
+  const worldOf = (u) => unitBuddy(u) || 'meti';
+  const ISLE_TREE = (x, y, s, c) => `<path d="M${x} ${y - 26 * s}l${11 * s} ${22 * s}h${-22 * s}z" fill="${c}"/><path d="M${x} ${y - 16 * s}l${9 * s} ${18 * s}h${-18 * s}z" fill="${c}" opacity=".85"/><rect x="${x - 2 * s}" y="${y - 4 * s}" width="${4 * s}" height="${6 * s}" fill="#8a5a3c"/>`;
+  const PALM = (x, y, s) => `<path d="M${x} ${y}q${4 * s} ${-22 * s} ${-2 * s} ${-44 * s}" stroke="#9a6a3f" stroke-width="${5 * s}" fill="none" stroke-linecap="round"/>${[[-26, -8], [24, -10], [-14, -22], [16, -24], [2, -30]].map(([dx, r]) => `<ellipse cx="${x - 2 * s + dx * s * 0.5}" cy="${y - 46 * s}" rx="${15 * s}" ry="${5 * s}" fill="#2fa66a" transform="rotate(${r + (dx > 0 ? 20 : -20)} ${x - 2 * s} ${y - 46 * s})"/>`).join('')}<circle cx="${x - 2 * s}" cy="${y - 43 * s}" r="${3 * s}" fill="#8a5a3c"/>`;
+  const FISH = (x, y, c, f) => `<g transform="translate(${x} ${y}) scale(${f ? -1 : 1} 1)"><ellipse rx="9" ry="5.5" fill="${c}"/><path d="M8 0l8-6v12z" fill="${c}"/><circle cx="-4" cy="-1.5" r="1.4" fill="#04382e"/></g>`;
+  const BUB = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.6"/>`;
   // Lencana simbol bab (mis. +, ×, ½) supaya setiap tempat tetap menunjukkan babnya
-  const SYMB = (u, ring) => { const lg = u && CH_LOGO.find((x) => x[0].test(u.name)); if (!lg) return ''; const t = lg[1]; return `<g class="isl-badge"><circle cx="50" cy="74" r="14" fill="#fff" stroke="${ring}" stroke-width="3"/><text x="50" y="${t.length > 2 ? 78 : 80}" text-anchor="middle" font-size="${t.length > 2 ? 10 : t.length > 1 ? 13 : 16}" font-weight="900" fill="${lg[2]}" font-family="Nunito,sans-serif">${esc(t)}</text></g>`; };
-  const isleSky = (v, who) => {
-    const right = v % 2 === 0;
-    return `${isleSun(right ? 208 : 32, 26, 1)}${isleCloud(right ? 58 : 182, 24, .85, .2)}${isleCloud(120, 13, .55, 1.1)}${who === 'meti' || who === 'lumo' ? isleBird(96, 40, .75, .3) : ''}`;
-  };
-  const isleGhost = (who) => {
-    const mark = {
-      meti: '<path d="M78 100q42-32 84 0z" fill="#a9c2cc"/>',
-      tito: '<path d="M64 100q28-30 56-8 26-18 56 8z" fill="#a9c2cc"/>',
-      nahla: '<path d="M78 100l42-50 42 50z" fill="#a9c2cc"/>',
-      lumo: '<ellipse cx="120" cy="98" rx="52" ry="12" fill="#a9c2cc"/><path d="M120 98V76" stroke="#a9c2cc" stroke-width="4"/>',
-    }[who] || '';
-    return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true">${isleCloud(52, 26, .9, 0)}${isleCloud(190, 34, .7, .8)}${isleBase('#dce9ef', '#c9d9e1', '#aac1cc', '#c3d3db')}${mark}<g class="isl-hint"><circle cx="120" cy="60" r="17" fill="#fff" opacity=".95" stroke="#c5e3ef" stroke-width="2"/><text x="120" y="67" text-anchor="middle" font-size="21" font-weight="900" fill="#5e8ca3" font-family="Nunito,sans-serif">?</text></g></svg>`;
-  };
-  const metiBase = isleBase('#9beadd', '#5bd3c7', '#1c9b91', '#ffe0a3');
-  const metiScenes = [
-    // terumbu karang
-    `${isleCoral(76, 100, '#ff7aa8', 1)}${isleCoral(166, 98, '#ffb347', .8)}${isleStar(132, 106, '#ff8a3d', 1)}${isleShell(100, 108, '#ffc9d6', .9)}${isleShell(150, 106, '#fff', .7)}${isleFish(194, 84, '#ffad33', .9, false, .4)}${isleBubble(198, 70, 3, .2)}${isleBubble(206, 60, 2, .8)}${isleFlag(64, 96, '#19b796')}`,
-    // kapal karam
-    `<g transform="translate(104 92)"><path d="M-34 8h68l-10 14h-48z" fill="#a8683a" stroke="#6d452c" stroke-width="2.5" stroke-linejoin="round"/><path d="M-30 8h60" stroke="#6d452c" stroke-width="3"/><rect x="0" y="-24" width="4" height="32" fill="#6d452c"/><g class="isl-flag"><path d="M4 -24l26 8-7 5 5 8-24-4z" fill="#fff3d6" stroke="#d9c7a0" stroke-width="1.5"/></g><circle cx="-16" cy="13" r="3" fill="#2b6f8f"/><circle cx="0" cy="13" r="3" fill="#2b6f8f"/><circle cx="16" cy="13" r="3" fill="#2b6f8f"/></g>${isleCoral(72, 104, '#ff7aa8', .9)}${isleStar(150, 108, '#ff8a3d', .9)}${isleFish(186, 78, '#4d96ff', .8, true, .6)}`,
-    // hutan alga
-    `${[64, 82, 158, 176].map((x, i) => `<g transform="translate(${x} 104)"><g class="isl-sway" style="--d:${i * .3}s"><path d="M0 0q${i % 2 ? 8 : -8} -18 0 -34t0 -30" stroke="${i % 2 ? '#3fae6a' : '#5fc77a'}" stroke-width="6" fill="none" stroke-linecap="round"/><ellipse cx="${i % 2 ? 7 : -7}" cy="-44" rx="7" ry="3.4" fill="#7ad68a" transform="rotate(${i % 2 ? 28 : -28} 0 -44)"/></g></g>`).join('')}${isleFish(120, 82, '#ffad33', 1, false, .2)}${isleShell(112, 108, '#ffc9d6', .8)}${isleFish(88, 66, '#9b6dff', .8, true, .7)}`,
-    // kerang mutiara
-    `<g transform="translate(120 88)"><path d="M-32 20q32 13 64 0l-6-15h-52z" fill="#f7b2c4" stroke="#d97a95" stroke-width="2"/><path d="M-26 5q26-42 52 0z" fill="#ffc9d6" stroke="#d97a95" stroke-width="2"/><path d="M-14 5q14-28 28 0M0 -30v35" stroke="#f08fa8" stroke-width="2" fill="none"/><circle cx="0" cy="8" r="9" fill="#fff" stroke="#e6f7ff" stroke-width="2"/><circle cx="-2.5" cy="5.5" r="3" fill="#e6f7ff"/></g>${isleCoral(78, 104, '#ff9f43', .8)}${isleStar(160, 108, '#ff8a3d', .9)}${isleBubble(196, 70, 3, .4)}${isleFish(180, 80, '#4d96ff', .8, true, .9)}`,
-  ];
-  const titoBase = isleBase('#ffe6b0', '#f7cf82', '#c98f3f', '#e9b96a');
-  const titoScenes = [
-    // bukit pasir
-    `${isleCactus(78, 104, 1)}${isleCactus(168, 100, .75)}<path d="M60 100q30-30 62-8 20-18 54 6" stroke="#e0ad62" stroke-width="8" fill="none" stroke-linecap="round" opacity=".7"/>${isleFlag(150, 96, '#e0a800')}`,
-    // oasis
-    `<ellipse cx="120" cy="98" rx="42" ry="11" fill="#5cc2e8" stroke="#2b9fc9" stroke-width="2"/><ellipse cx="112" cy="95" rx="18" ry="4" fill="#bdeaf6" opacity=".7"/>${islePalm(86, 100, .9, '#2fa66a')}${islePalm(158, 98, .75, '#2fa66a')}${[70, 176].map((x) => `<path d="M${x} 106l4-12 3 12" stroke="#3fae6a" stroke-width="3" fill="none"/>`).join('')}`,
-    // batu ngarai dan rumah tanah liat
-    `<path d="M56 104V76q0-8 8-8h56q8 0 8 8v28z" fill="#d9774a" stroke="#a8542f" stroke-width="2.5" stroke-linejoin="round"/><path d="M84 104V86a16 16 0 0 1 32 0v18z" fill="#ffd9a0"/><path d="M56 82h112M56 94h30M138 94h30" stroke="#b85f37" stroke-width="3"/><path d="M150 104V68h4v36" stroke="#8a5a3c" stroke-width="2"/><rect x="154" y="70" width="22" height="8" rx="2" fill="#ffe0a3" stroke="#c98f3f" stroke-width="1.5"/><path d="M158 74h14" stroke="#c98f3f" stroke-width="2"/>`,
-    // kemah gurun dan balon udara
-    `<path d="M84 104l36-52 36 52z" fill="#ff8a3d" stroke="#d96b20" stroke-width="2.5" stroke-linejoin="round"/><path d="M120 52l12 52h-24z" fill="#ffc06b"/><path d="M102 78l18-26 18 26" stroke="#fff" stroke-width="2.5" fill="none" opacity=".6"/><rect x="154" y="96" width="26" height="4" rx="2" fill="#8a5a3c"/><path d="M167 96V82" stroke="#8a5a3c" stroke-width="3"/><g class="isl-twinkle"><path d="M167 74c-6 6-4 10 0 10s6-4 0-10z" fill="#ffb21c"/></g>${isleCactus(196, 106, .55)}<g transform="translate(190 52)"><path d="M0 -16c-12 0-18 10-18 18 0 10 10 16 18 22 8-6 18-12 18-22 0-8-6-18-18-18z" fill="#ff6f91" stroke="#d94f73" stroke-width="2"/><path d="M-18 2h36" stroke="#ffd36b" stroke-width="3"/><rect x="-6" y="26" width="12" height="8" rx="2" fill="#c98f3f"/><path d="M-10 24l-4-6M10 24l4-6" stroke="#8a5a3c" stroke-width="2"/></g>`,
-  ];
-  const nahlaBase = isleBase('#bceccf', '#7fd36e', '#3f9e4a', '#d9b56f');
-  const nahlaScenes = [
-    // danau gunung
-    `<path d="M28 88l38-56 38 56zM96 88l44-64 46 64z" fill="#9db7c9" stroke="#6f8fa8" stroke-width="2.5" stroke-linejoin="round"/><path d="M58 44l8-12 8 12-8-4zM134 34l10-14 10 14-10-4z" fill="#fff"/>${isleTree(60, 106, .8, '#2fa66a')}<ellipse cx="120" cy="100" rx="40" ry="10" fill="#5cc2e8" stroke="#2b9fc9" stroke-width="2"/><ellipse cx="110" cy="97" rx="16" ry="3" fill="#bdeaf6" opacity=".8"/>${isleTree(190, 104, .9, '#2fa66a')}${isleTree(176, 112, .65, '#2fa66a')}`,
-    // sabana dengan batu bentuk
-    `<path d="M66 104V74" stroke="#8a5a3c" stroke-width="5"/><g class="isl-sway"><ellipse cx="66" cy="68" rx="38" ry="13" fill="#4f9e4a"/><ellipse cx="58" cy="64" rx="22" ry="6" fill="#6dbb5c"/></g>${isleTree(166, 106, .8, '#2fa66a')}<path d="M84 104l14-24 14 24z" fill="#9b6dff" stroke="#7a4fd0" stroke-width="2" stroke-linejoin="round"/><rect x="118" y="88" width="22" height="16" rx="3" fill="#4d96ff" stroke="#2b6fcf" stroke-width="2"/><circle cx="154" cy="96" r="10" fill="#ff8a3d" stroke="#d96b20" stroke-width="2"/>`,
-    // puncak gunung
-    `<path d="M66 100l54-80 54 80z" fill="#8aa1b5" stroke="#5f7f96" stroke-width="2.5" stroke-linejoin="round"/><path d="M120 20l18 30-10-4-8 8-8-8-10 4z" fill="#fff"/><path d="M120 20V4" stroke="#6a7f7a" stroke-width="2"/><path d="M120 4l14 5-14 5z" fill="#e8463a"/>${isleTree(54, 106, .9, '#2fa66a')}${isleTree(186, 106, .9, '#2fa66a')}${isleSpark(188, 34, 5, .4, '#fff')}`,
-    // padang bunga
-    `${[[70, 102, '#ff6f91'], [88, 108, '#9b6dff'], [150, 104, '#ff6f91'], [164, 98, '#4d96ff'], [180, 108, '#ff8a3d'], [102, 96, '#fff']].map(([x, y, c]) => isleFlower(x, y, c, 1.2)).join('')}${isleTree(58, 104, .7, '#2fa66a')}${isleTree(188, 104, .7, '#2fa66a')}${isleBee(144, 66, 1)}${isleSpark(78, 60, 5, .2, '#fff')}`,
-  ];
-  const lumoBase = isleBase('#8fe3f5', '#ffe0a3', '#d9a35a', '#ffe0a3');
-  const lumoScenes = [
-    // pulau tropis
-    `<ellipse cx="120" cy="96" rx="52" ry="14" fill="#5cc2e8" opacity=".45"/>${islePalm(78, 104, .9, '#2fa66a')}${islePalm(166, 102, .8, '#2fa66a')}<rect x="106" y="84" width="28" height="20" fill="#c8915a" stroke="#8a5a3c" stroke-width="2"/><path d="M100 86l20-18 20 18z" fill="#e0a85c" stroke="#b87a3a" stroke-width="2" stroke-linejoin="round"/><rect x="117" y="94" width="7" height="10" fill="#6d452c"/>${isleShell(150, 108, '#fff', .7)}`,
-    // pulau gunung api
-    `<path d="M78 102l42-62 42 62z" fill="#7d6a5c" stroke="#5a4a40" stroke-width="2.5" stroke-linejoin="round"/><path d="M112 48h16l-4 8h-8z" fill="#ff8a3d"/><path d="M114 50l6 12 6-12" fill="#ffc800"/><g class="isl-cloud" style="--d:.4s"><circle cx="118" cy="30" r="8" fill="#dfe7ea"/><circle cx="130" cy="20" r="10" fill="#e8eff2"/><circle cx="144" cy="10" r="11" fill="#eef4f6"/></g>${isleFish(188, 76, '#ffad33', .8, true, .4)}`,
-    // atol
-    `<ellipse cx="120" cy="102" rx="58" ry="15" fill="#f6e3b4" stroke="#d9a35a" stroke-width="2"/><ellipse cx="120" cy="100" rx="38" ry="9" fill="#3cc6d6" stroke="#1c9be8" stroke-width="2"/><ellipse cx="112" cy="97" rx="18" ry="4" fill="#9eeaf2" opacity=".8"/>${islePalm(78, 102, .7, '#2fa66a')}${islePalm(164, 100, .65, '#2fa66a')}${isleFish(186, 74, '#ffad33', .8, true, .4)}${isleShell(142, 106, '#ffc9d6', .7)}`,
-    // pulau mercusuar
-    `<ellipse cx="120" cy="102" rx="50" ry="13" fill="#8fa4ad" opacity=".5"/><path d="M108 100l3-58h18l3 58z" fill="#fff" stroke="#c9d1d6" stroke-width="2" stroke-linejoin="round"/><path d="M111 84h18M112 70h16M113 56h14" stroke="#e8463a" stroke-width="7"/><rect x="109" y="34" width="22" height="10" rx="2" fill="#ffd36b" stroke="#c9a23d" stroke-width="2"/><path d="M106 34h28l-14-12z" fill="#e8463a"/><path d="M134 39l42-10v20z" fill="#ffd36b" opacity=".35"/>${isleSpark(172, 26, 5, .2, '#fff')}${isleSpark(194, 44, 3.5, .8, '#ffe89a')}`,
-  ];
+  const SYMB = (u, ring) => { const lg = u && CH_LOGO.find((x) => x[0].test(u.name)); if (!lg) return ''; const t = lg[1]; return `<circle cx="28" cy="30" r="15" fill="#fff" stroke="${ring}" stroke-width="3"/><text x="28" y="${t.length > 2 ? 34 : 36}" text-anchor="middle" font-size="${t.length > 2 ? 11 : t.length > 1 ? 14 : 18}" font-weight="900" fill="${lg[2]}" font-family="Nunito,sans-serif">${esc(t)}</text>`; };
   function placeSVG(who, v, ghost, u) {
     v %= 4;
-    if (ghost) return isleGhost(who);
-    const base = { meti: metiBase, tito: titoBase, nahla: nahlaBase, lumo: lumoBase }[who] || metiBase;
-    const scenes = { meti: metiScenes, tito: titoScenes, nahla: nahlaScenes, lumo: lumoScenes }[who] || metiScenes;
-    const ring = { meti: '#1c9be8', tito: '#e0a800', nahla: '#19b796', lumo: '#1c9be8' }[who] || '#19b796';
-    const scene = scenes[v] || scenes[0];
-    return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true">${isleSky(v, who)}${base}${scene}${SYMB(u, ring)}</svg>`;
+    let g = '';
+    if (who === 'meti') {
+      const bed = '<path d="M6 120Q60 96 120 104t114 8q4 22-12 26H18Q2 136 6 120z" fill="#f2d79b"/><path d="M30 126q40-10 80-4t96 0" stroke="#e2c27f" stroke-width="3" fill="none" opacity=".7"/>';
+      if (ghost) return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true"><g fill="#d9e8f0">${bed.replace(/fill="[^"]+"/g, '')}<path d="M90 106c0-30 14-48 30-48s30 18 30 48z"/></g></svg>`;
+      const rays = '<path d="M60 0l20 0-40 110h-12zM150 0h14l-6 100h-10z" fill="#fff" opacity=".12"/>';
+      const scene = [
+        // terumbu karang
+        '<path d="M66 112V82M66 94L54 78M66 90l12-14M54 78v-8M78 76v-8" stroke="#ff6f91" stroke-width="7" stroke-linecap="round" fill="none"/><rect x="100" y="78" width="11" height="34" rx="5.5" fill="#ff9f43"/><rect x="113" y="70" width="11" height="42" rx="5.5" fill="#ffb86b"/><rect x="126" y="84" width="11" height="28" rx="5.5" fill="#ff9f43"/><path d="M150 112a24 24 0 0 1 48 0z" fill="#9b6dff"/><path d="M174 112l-16-20M174 112V88M174 112l16-20" stroke="#c7a8ff" stroke-width="2"/><circle cx="94" cy="110" r="7" fill="#ffd166"/>' + FISH(180, 52, '#ffad33') + FISH(96, 44, '#4d96ff', true),
+        // kapal karam
+        '<g transform="rotate(-9 120 100)"><path d="M58 88h124l-18 28H76z" fill="#8a5a3c"/><rect x="58" y="82" width="124" height="9" rx="2" fill="#6d452c"/><circle cx="86" cy="100" r="4.5" fill="#2b6f8f"/><circle cx="110" cy="100" r="4.5" fill="#2b6f8f"/><circle cx="134" cy="100" r="4.5" fill="#2b6f8f"/><rect x="117" y="34" width="6" height="50" fill="#6d452c"/><path d="M123 38l34 12-9 7 6 11-31-5z" fill="#f4ecd8" opacity=".9"/></g><path d="M192 116q-8-14 0-26t0-24" stroke="#3fae6a" stroke-width="5" fill="none" stroke-linecap="round"/><rect x="36" y="104" width="22" height="14" rx="3" fill="#c8741a"/><rect x="36" y="100" width="22" height="7" rx="3" fill="#e08a2c"/><rect x="45" y="100" width="4" height="18" fill="#ffc800"/>' + FISH(200, 48, '#ff6f91', true),
+        // hutan alga
+        [44, 76, 108, 140, 172, 204].map((x, i) => `<path d="M${x} 116q${i % 2 ? 10 : -10} -20 0 -40t0 -44" stroke="${i % 2 ? '#3fae6a' : '#5fc77a'}" stroke-width="6" fill="none" stroke-linecap="round"/><ellipse cx="${x + (i % 2 ? 7 : -7)}" cy="${78 - (i % 3) * 8}" rx="7" ry="3.5" fill="#7ad68a" transform="rotate(${i % 2 ? 30 : -30} ${x} 78)"/>`).join('') + FISH(126, 50, '#ffad33') + FISH(88, 66, '#9b6dff', true),
+        // kerang mutiara
+        '<path d="M86 108q34 14 68 0l-6-16H92z" fill="#f7b2c4"/><path d="M92 92q28-44 56 0z" fill="#ffc9d6"/><path d="M104 92q16-30 32 0M120 50v42" stroke="#f08fa8" stroke-width="2" fill="none"/><circle cx="120" cy="96" r="9" fill="#fff"/><circle cx="117" cy="93" r="3" fill="#e6f7ff"/><path d="M182 110l4-10 4 10 10 1-8 6 3 10-9-6-9 6 3-10-8-6z" fill="#ff8a3d"/><ellipse cx="56" cy="112" rx="16" ry="8" fill="#b9a68a"/><ellipse cx="70" cy="114" rx="10" ry="6" fill="#a8957a"/>' + FISH(60, 54, '#4d96ff'),
+      ][v];
+      g = rays + bed + scene + BUB(200, 30, 4) + BUB(208, 18, 2.5) + BUB(46, 66, 3) + SYMB(u, '#1c9be8');
+    } else if (who === 'tito') {
+      const dune = '<path d="M6 118Q60 72 120 92q50-28 114 22 4 16-14 20H20Q2 132 6 118z" fill="#f2c27b"/><path d="M30 112q40-34 90-18" stroke="#f9dcab" stroke-width="4" fill="none"/>';
+      if (ghost) return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true"><g fill="#e9e3d6">${dune.replace(/fill="[^"]+"/g, '').replace(/stroke="[^"]+"/, 'stroke="none"')}<path d="M100 98c0-24 10-40 20-40s20 16 20 40z"/></g></svg>`;
+      const sun = '<circle cx="206" cy="28" r="14" fill="#ffd36b"/><circle cx="206" cy="28" r="20" fill="#ffd36b" opacity=".25"/>';
+      const cactus = (x, y, s) => `<rect x="${x - 5 * s}" y="${y - 40 * s}" width="${10 * s}" height="${40 * s}" rx="${5 * s}" fill="#3fae6a"/><path d="M${x - 5 * s} ${y - 22 * s}h${-8 * s}v${-12 * s}M${x + 5 * s} ${y - 28 * s}h${8 * s}v${-10 * s}" stroke="#3fae6a" stroke-width="${7 * s}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+      const scene = [
+        '<path d="M120 92q40-34 100 8" fill="#e8ad62"/>' + cactus(70, 104, 1) + cactus(180, 102, 0.7) + '<ellipse cx="128" cy="104" rx="10" ry="4" fill="#d9a35a"/>',
+        '<ellipse cx="122" cy="104" rx="46" ry="12" fill="#5cc2e8"/><ellipse cx="114" cy="101" rx="20" ry="4" fill="#bdeaf6" opacity=".7"/>' + PALM(88, 100, 0.9) + PALM(158, 98, 0.75) + '<path d="M70 110l4-12 3 12M176 108l3-10 3 10" stroke="#3fae6a" stroke-width="3" fill="none"/>',
+        '<path d="M66 106V62q0-8 8-8h92q8 0 8 8v44z" fill="#d9774a"/><path d="M100 106V86a20 20 0 0 1 40 0v20z" fill="#f2c27b"/><path d="M66 74h108M66 90h34M140 90h34" stroke="#b85f37" stroke-width="3"/>' + cactus(196, 108, 0.6),
+        '<path d="M78 108l34-50 34 50z" fill="#ff8a3d"/><path d="M112 58l12 50h-24z" fill="#ffc06b"/><path d="M95 84l17-26 17 26" stroke="#fff" stroke-width="3" fill="none" opacity=".6"/><path d="M112 58V42l14 5-14 5" stroke="#6a7f7a" stroke-width="2" fill="#e8463a"/><path d="M168 106l8-10 8 10" fill="#ff6f3d"/><path d="M170 106l6-6 6 6" fill="#ffc800"/><rect x="162" y="104" width="28" height="4" rx="2" fill="#8a5a3c"/>',
+      ][v];
+      g = sun + dune + scene + SYMB(u, '#e0a800');
+    } else if (who === 'nahla') {
+      const hill = '<ellipse cx="120" cy="134" rx="112" ry="13" fill="#9fd7b0" opacity=".6"/><path d="M14 112q8-32 50-38 56-10 112 0 42 8 50 38-4 20-24 22H38q-22-2-24-22z" fill="#7fcd6c"/><path d="M40 92q60-22 160 0" stroke="#a5e48f" stroke-width="6" fill="none" opacity=".7"/>';
+      if (ghost) return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true"><g fill="#dde8e4"><path d="M14 112q8-32 50-38 56-10 112 0 42 8 50 38-4 20-24 22H38q-22-2-24-22z"/><path d="M90 80l30-50 30 50z"/></g></svg>`;
+      const mts = '<path d="M30 84l40-56 40 56zM100 84l44-64 46 64z" fill="#9db7c9"/><path d="M60 42l10-14 10 14-10-4zM134 34l10-14 10 14-10-4z" fill="#fff"/>';
+      const flower = (x, y, c) => `<circle cx="${x}" cy="${y}" r="4" fill="${c}"/><circle cx="${x}" cy="${y}" r="1.6" fill="#ffc800"/>`;
+      const scene = [
+        mts + hill + '<ellipse cx="120" cy="100" rx="44" ry="11" fill="#5cc2e8"/><ellipse cx="110" cy="98" rx="18" ry="3" fill="#bdeaf6" opacity=".8"/>' + ISLE_TREE(46, 106, 1, '#2fa66a') + ISLE_TREE(190, 104, 0.9, '#2fa66a') + ISLE_TREE(176, 112, 0.7, '#2fa66a'),
+        '<circle cx="200" cy="26" r="13" fill="#ffd36b"/>' + hill.replace('fill="#7fcd6c"', 'fill="#e2c25a"').replace('stroke="#a5e48f"', 'stroke="#f1d77c"') + '<path d="M120 100V66" stroke="#8a5a3c" stroke-width="6" stroke-linecap="round"/><path d="M120 74l-14-8M120 70l12-10" stroke="#8a5a3c" stroke-width="4" stroke-linecap="round"/><ellipse cx="120" cy="58" rx="40" ry="10" fill="#4f9e4a"/><ellipse cx="112" cy="54" rx="24" ry="5" fill="#6dbb5c"/>' + [56, 66, 168, 182].map((x, i) => `<path d="M${x} 104l3-12 3 12" stroke="#c9a23d" stroke-width="2.5" fill="none"/>`).join(''),
+        hill + '<path d="M66 96l54-82 54 82z" fill="#8aa1b5"/><path d="M120 14l18 28-10-4-8 8-8-8-10 4z" fill="#fff"/><path d="M120 14V-2" stroke="#6a7f7a" stroke-width="2"/><path d="M120-2l14 5-14 5z" fill="#e8463a" transform="translate(0 4)"/>' + ISLE_TREE(54, 106, 0.9, '#2fa66a') + ISLE_TREE(186, 106, 0.9, '#2fa66a'),
+        hill + '<rect x="108" y="56" width="5" height="44" fill="#8a5a3c"/><g transform="translate(110 50)"><ellipse cy="0" rx="14" ry="8" fill="#ffc63a"/><ellipse cy="10" rx="17" ry="8" fill="#ffb21c"/><ellipse cy="20" rx="14" ry="7" fill="#ffc63a"/><circle cy="14" r="4" fill="#8a5a3c"/></g>' + [[54, 100, '#ff6f91'], [70, 108, '#9b6dff'], [150, 104, '#ff6f91'], [168, 98, '#4d96ff'], [186, 108, '#ff8a3d'], [86, 96, '#fff']].map(([x, y, c]) => flower(x, y, c)).join(''),
+      ][v];
+      g = scene + SYMB(u, '#19b796');
+    } else {
+      const sea = '<ellipse cx="120" cy="118" rx="116" ry="28" fill="#7fd8ea" opacity=".55"/>';
+      if (ghost) return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true"><g fill="#dbe8ee"><ellipse cx="120" cy="110" rx="86" ry="22"/><path d="M96 98c0-26 12-42 24-42s24 16 24 42z"/></g></svg>`;
+      const beach = (c) => `<ellipse cx="120" cy="110" rx="88" ry="24" fill="#f6e3b4"/><ellipse cx="120" cy="104" rx="70" ry="18" fill="${c}"/>`;
+      const scene = [
+        beach('#7fd36e') + PALM(84, 104, 1) + PALM(160, 102, 0.8) + '<rect x="110" y="84" width="26" height="18" fill="#c8915a"/><path d="M104 86l19-16 19 16z" fill="#e0a85c"/><rect x="120" y="92" width="7" height="10" fill="#6d452c"/>',
+        beach('#9aa4ad') + '<path d="M78 104l30-56h24l30 56z" fill="#7d6a5c"/><path d="M108 48h24l-4 8h-16z" fill="#ff8a3d"/><path d="M112 50l8 16 8-16" fill="#ffc800"/><circle cx="118" cy="34" r="8" fill="#c9d1d6" opacity=".9"/><circle cx="130" cy="24" r="10" fill="#dde3e7" opacity=".85"/><circle cx="142" cy="12" r="12" fill="#eef1f3" opacity=".8"/>',
+        '<ellipse cx="120" cy="106" rx="90" ry="28" fill="#f6e3b4"/><ellipse cx="120" cy="104" rx="62" ry="16" fill="#3cc6d6"/><ellipse cx="112" cy="102" rx="28" ry="5" fill="#9eeaf2" opacity=".8"/>' + PALM(52, 106, 0.75) + PALM(194, 108, 0.65) + '<ellipse cx="120" cy="124" rx="14" ry="4" fill="#7fd36e"/>',
+        '<ellipse cx="120" cy="108" rx="80" ry="24" fill="#8f9aa3"/><ellipse cx="120" cy="102" rx="62" ry="16" fill="#b2bbc2"/><path d="M110 98l3-58h14l3 58z" fill="#fff"/><path d="M112 82h16M112.6 70h14.8M113 58h14" stroke="#e8463a" stroke-width="7"/><rect x="111" y="32" width="18" height="10" rx="2" fill="#ffd36b"/><path d="M108 32h24l-12-10z" fill="#e8463a"/><path d="M130 37l40-10v20z" fill="#ffd36b" opacity=".35"/>',
+      ][v];
+      g = sea + scene + '<path d="M20 132q10-5 20 0t20 0M180 136q10-5 20 0t20 0" stroke="#fff" stroke-width="2.5" fill="none" opacity=".8"/>' + SYMB(u, '#1c9be8');
+    }
+    return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true">${g}</svg>`;
   }
-  // Jejak berkelok di antara dua tempat. Titik-titiknya bergerak pelan seperti jalan setapak yang hidup.
+  // Jejak di antara dua tempat: gelembung di laut, jejak kaki di gurun, batu di gunung, batu loncatan di kepulauan
   const isleLink = (dir, faint, who) => {
-    const trail = (WORLDS[who] || WORLDS.meti).trail;
-    const d = dir === 'lr' ? 'M68 0C68 24 132 34 132 62' : 'M132 0C132 24 68 34 68 62';
-    const dots = dir === 'lr' ? [[68, 5], [88, 26], [116, 44], [130, 56]] : [[132, 5], [112, 26], [84, 44], [70, 56]];
-    return `<div class="isle-link ${faint ? 'faint' : ''}" aria-hidden="true"><svg viewBox="0 0 200 64" preserveAspectRatio="none"><path class="trail-bg" d="${d}"/><path class="trail" style="stroke:${trail}" d="${d}"/>${dots.map(([x, y], i) => `<circle class="step" cx="${x}" cy="${y}" r="${i === 3 ? 4.6 : 3.2}" style="stroke:${trail}"/>`).join('')}</svg></div>`;
+    const pts = [0.12, 0.3, 0.5, 0.7, 0.88].map((t) => [dir === 'lr' ? 40 + t * 120 : 160 - t * 120, 6 + t * 44]);
+    const mark = {
+      meti: ([x, y], i) => `<circle cx="${x}" cy="${y}" r="${4 + (i % 2) * 2}" fill="none" stroke="#fff" stroke-width="2" opacity=".9"/>`,
+      tito: ([x, y], i) => `<ellipse cx="${x + (i % 2 ? 5 : -5)}" cy="${y}" rx="3.5" ry="5.5" fill="#d9a35a" opacity=".8"/>`,
+      nahla: ([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="9" ry="5" fill="#b8c2b9"/><ellipse cx="${x}" cy="${y - 1}" rx="9" ry="4" fill="#d6ddd4"/>`,
+      lumo: ([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="11" ry="5" fill="#f6f1e4"/><ellipse cx="${x}" cy="${y + 2}" rx="11" ry="4" fill="#d9cdb4" opacity=".6"/>`,
+    }[who];
+    return `<div class="isle-link ${faint ? 'faint' : ''}" aria-hidden="true"><svg viewBox="0 0 200 56" preserveAspectRatio="none">${pts.map(mark).join('')}</svg></div>`;
   };
   // Campuran dua warna hex, untuk perpindahan latar yang halus antardunia
   const mixHex = (a, b, t) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, '0')).join('');
   function isleMapHTML(st, isles, fresh) {
     if (!isles.length) return '';
-    const seen = {};
-    const rows = isles.map((x) => {
-      if (!x.u) return x;
-      const who = worldOf(x.u), v = seen[who] = (seen[who] || 0) + 1;
-      return { ...x, who, v: v - 1 };
-    });
+    const seen = {}, rows = isles.map((x) => { const who = worldOf(x.u), k = seen[who] = (seen[who] || 0) + 1; return { ...x, who, v: k - 1 }; });
+    const bgOf = (r) => { const c = WORLDS[r.who].bg; return r.state === 'fog' ? mixHex(c, '#e9edf0', 0.9) : r.state === 'next' ? mixHex(c, '#e6ebee', 0.75) : c; }; // belum terbuka: abu-abu berkabut
     let out = '', prevWho = null;
     rows.forEach((x, i) => {
-      if (x.state === 'gap') {
-        out += `<div class="isle-gap${x.tail ? ' tail' : ''}" aria-hidden="true"><span>☁️</span><b>${x.gap} tempat lagi</b></div>`;
-        return;
-      }
       const { u, state, who, v } = x, s = i % 2 ? 'r' : 'l', W = WORLDS[who], place = W.places[v % 4];
+      const bg = bgOf(x), top = i ? mixHex(bgOf(rows[i - 1]), bg, 0.5) : bg, bot = i < rows.length - 1 ? mixHex(bg, bgOf(rows[i + 1]), 0.5) : '#ffffff';
       const reveal = fresh && (state === 'cur' || state === 'next') ? ' reveal' : '', just = fresh === u.id ? ' just' : '';
       let html = i ? isleLink(s === 'r' ? 'lr' : 'rl', state === 'next' || state === 'fog', who) : '';
-      if (who !== prevWho && state !== 'fog' && state !== 'next') html += `<div class="isle-region w-${who}"><span>${W.icon}</span>${W.name}</div>`;
+      if (who !== prevWho && state !== 'fog') html += `<div class="isle-region w-${who}"><span>${W.icon}</span>${W.name}</div>`;
       prevWho = state === 'fog' ? prevWho : who;
       if (state === 'fog') html += `<div class="isle fog ${s}" aria-hidden="true">${placeSVG(who, v, true, u)}<span class="fogl"></span></div>`;
       else if (state === 'next') html += `<button class="isle next ${s}${reveal}" data-act="tip" data-t="🌫️ Tempat ini masih tertutup kabut. Tuntaskan tempat sekarang untuk membukanya." aria-label="Tempat berikutnya, masih tertutup kabut">${placeSVG(who, v, false, u)}<span class="fogl"></span><span class="isle-tag"><i>${IC.lock.replace('<svg', '<svg width="16" height="16"')}</i>Tujuan berikutnya</span></button>`;
@@ -629,11 +581,11 @@
         const t = S.testOf(st.id, u.id), stars = t ? '★'.repeat(chestTier(t.stars)) : '';
         const label = state === 'done' ? `<span class="isle-tag ok"><i>${IC.ok}</i><span><b>${esc(u.name)}</b><small>${place} · Selesai${stars ? ` <em>${stars}</em>` : ''}</small></span><u>›</u></span>`
           : `<span class="isle-tag"><span><b>${esc(u.name)}</b><small>${place} · ${x.done} / ${x.total} keterampilan</small></span><u>›</u></span>`;
-        html += `<a class="isle ${state} ${s}${reveal}${just}" href="#/bab/${u.id}" aria-label="Bab ${u.id} ${esc(u.name)}, ${place}">${state === 'cur' ? `<span class="isle-pin" aria-hidden="true"></span><span class="isle-glow" aria-hidden="true"></span><span class="isle-curlabel" aria-hidden="true">Kamu di sini</span><span class="isle-buddy" aria-hidden="true">${MQ.svg('happy', { size: 62, who: who === 'meti' ? undefined : who, enter: false })}</span>` : ''}${placeSVG(who, v, false, u)}${reveal ? '<span class="fogl lift"></span>' : ''}${label}${just ? '<span class="isle-spark" aria-hidden="true">✨</span>' : ''}</a>`;
+        html += `<a class="isle ${state} ${s}${reveal}${just}" href="#/bab/${u.id}" aria-label="Bab ${u.id} ${esc(u.name)}, ${place}">${state === 'cur' ? `<span class="isle-pin" aria-hidden="true"></span><span class="isle-glow" aria-hidden="true"></span><span class="isle-buddy" aria-hidden="true">${MQ.svg('happy', { size: 62, who: who === 'meti' ? undefined : who, enter: false })}</span>` : ''}${placeSVG(who, v, false, u)}${reveal ? '<span class="fogl lift"></span>' : ''}${label}${just ? '<span class="isle-spark" aria-hidden="true">✨</span>' : ''}</a>`;
       }
-      out += `<div class="isle-row w-${who} ${state}" style="--u:${u.color}">${html}</div>`;
+      out += `<div class="isle-row w-${who} ${state}" style="background:linear-gradient(180deg, ${top} 0%, ${bg} 22%, ${bg} 78%, ${bot} 100%)">${html}</div>`;
     });
-    return `<section class="isles" aria-label="Peta petualangan belajar">${out}</section>`;
+    return `<section class="isles" aria-label="Peta petualangan belajar">${out}<div class="isle-mist" aria-hidden="true"></div></section>`;
   }
   // Halaman satu tempat (bab), dibuka dengan mengetuk tempat di peta. Bukan jalur bulatan:
   // gambar besar tempat itu bersama maskotnya, lalu daftar misi (keterampilan) berupa kartu, kartu pelajaran, dan peti harta karun.
@@ -641,7 +593,7 @@
     const ses = session.get(), st = S.student(ses.id);
     if (ses.role !== 'siswa' || !st) return go('#/siswa');
     const u = UNITS.find((x) => x.id === uid); if (!u) return go('#/belajar');
-    const m = pathModel(st.id, u.grade), info = isleStates(m).find((x) => x.u && x.u.id === uid);
+    const m = pathModel(st.id, u.grade), info = isleStates(m).find((x) => x.u.id === uid);
     if (!info || info.state === 'next' || info.state === 'fog') return go('#/belajar');
     const who = worldOf(u), W = WORLDS[who], v = m.units.slice(0, m.units.indexOf(u)).filter((x) => worldOf(x) === who).length, place = W.places[v % 4];
     const pct0 = Math.round((info.done / info.total) * 100);
