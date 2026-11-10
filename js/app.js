@@ -212,7 +212,7 @@
     if (ses.role === 'guru' && (cloudOn() ? ses.token : S.teacher(ses.id))) return go('#/guru/ringkasan');
     const kid = ses.role === 'siswa' && S.student(ses.id);
     app.innerHTML = `<div class="mq-land">
-      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=69" alt="">Metiq<span class="alpha">Beta</span></a><span class="mq-lright"><a class="mq-tlink" href="#/guru">Saya guru</a><button class="mq-lang" data-act="lang" aria-label="Ganti bahasa">${window.METIQ_LANG === 'en' ? 'EN' : 'ID'}</button></span></header>
+      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=69" alt="">Metiq<span class="alpha">Beta</span></a><span class="mq-lright"><a class="mq-tlink" href="#/guru">Saya guru<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 1 9l11 6 9-4.9V17h2V9L12 3zm-6 9.7V16c0 1.7 2.7 3.5 6 3.5s6-1.8 6-3.5v-3.3l-6 3.3-6-3.3z"/></svg></a><button class="mq-lang" data-act="lang" aria-label="Ganti bahasa">${window.METIQ_LANG === 'en' ? 'EN' : 'ID'}<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 9h12l-6 7z"/></svg></button></span></header>
       <section class="mq-hero">
         <div class="mq-stage" aria-label="Meti dan teman-temannya"><span class="mq-sym a">+</span><span class="mq-sym b">×</span><span class="mq-sym c">=</span><span class="mq-sym d">7</span>
           <div class="st st-meti">${MQ.svg('hello', { size: 190 })}</div>
@@ -224,9 +224,9 @@
         ${installGuideHTML()}
         ${kid ? `<a class="mq-resume" href="#/belajar"><span class="av">${avHTML(kid.avatar)}</span><span class="grow">${esc(kid.name)}<small style="display:block;font-weight:700;color:#6a7f7a">Lanjutkan belajarmu</small></span>›</a>` : ''}
         <div class="mq-cta">${kid
-    ? '<a class="mq-btn pulse" href="#/belajar">Lanjut belajar</a><a class="mq-btn ghost" href="#/kode">Kode belajar</a>'
-    : '<a class="mq-btn pulse" href="#/siswa-baru">Mulai belajar</a><a class="mq-btn ghost" href="#/kode">Saya sudah punya kode</a>'}</div>
-        ${kid ? '' : '<p class="mq-land-alt"><a class="mq-link" href="#/mulai/siswa">Coba dulu dengan data contoh</a></p><p class="mq-land-alt gshow" hidden><button class="mq-link" data-act="gkids">🔑 Lanjutkan belajar dengan Gmail Ayah/Bunda</button></p>'}
+    ? '<a class="mq-btn pulse" href="#/belajar"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>Lanjut belajar</a><a class="mq-btn ghost" href="#/kode"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" d="M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5V10a2 2 0 0 0 0 4v2.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5V14a2 2 0 0 0 0-4z"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M9.5 12.5l2 2 3.5-4"/></svg>Kode belajar</a>'
+    : '<a class="mq-btn pulse" href="#/siswa-baru"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>Mulai belajar</a><a class="mq-btn ghost" href="#/kode"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" d="M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5V10a2 2 0 0 0 0 4v2.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5V14a2 2 0 0 0 0-4z"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M9.5 12.5l2 2 3.5-4"/></svg>Saya sudah punya kode</a>'}</div>
+        ${kid ? '' : '<p class="mq-land-alt"><a class="mq-link" href="#/mulai/siswa">Coba dulu dengan data contoh</a></p><p class="mq-land-alt gshow" hidden><button class="mq-link" data-act="gkids">🔑 Lanjutkan belajar dengan Gmail Ayah/Bunda<span class="chev" aria-hidden="true">›</span></button></p>'}
         <a class="mq-resume mq-parent" href="#/ortu"><span class="av">👨‍👩‍👧</span><span class="grow">Saya orang tua<small>Lihat laporan belajar anak dengan kode dari guru</small></span>›</a>
       </section>
       <section class="mq-feat">
@@ -271,7 +271,7 @@
       ['Pilih <b>Home screen</b> (Layar utama).', menu(['Bookmarks', 'Quick access', 'Home screen', 'Install as web app'], 'Home screen')],
       ['Ketuk <b>Add</b> (Tambahkan). Ikon Metiq muncul di layar HP. Ketuk ikon itu untuk membuka Metiq kapan saja.', '<div class="ig-add"><img src="icons/icon.svg?v=69" alt=""><small>Metiq</small><div><span>Cancel</span><span class="on">Add</span></div></div>'],
     ];
-    return `<details class="mq-install"><summary><span class="em">📲</span><span class="grow"><b>Pasang Metiq di layar HP</b><small>Buka Metiq dengan satu ketukan, seperti aplikasi</small></span><span class="chev">›</span></summary>
+    return `<details class="mq-install"><summary><span class="em ops" aria-hidden="true"><i>+</i><i>−</i><i>×</i><i>=</i></span><span class="grow"><b>Pasang Metiq di layar HP</b><small>Buka Metiq dengan satu ketukan, seperti aplikasi</small></span><span class="chev">›</span></summary>
       <p class="ig-note">Langkah untuk <b>Samsung Internet</b>:</p>
       <ol class="ig-steps">${steps.map(([t, pic], i) => `<li><span class="ig-n">${i + 1}</span><div class="ig-pic">${pic}</div><p>${t}</p></li>`).join('')}</ol>
       <p class="ig-note"><b>Chrome:</b> ketuk <b>⋮</b> di pojok kanan atas → <b>Tambahkan ke layar utama</b> → <b>Tambahkan</b>.<br><b>iPhone (Safari):</b> ketuk tombol Bagikan <b>⬆</b> → <b>Tambahkan ke Layar Utama</b> → <b>Tambah</b>.</p></details>`;
