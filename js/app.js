@@ -82,7 +82,7 @@
       loaded = { key, at: Date.now() };
       return true;
     } catch (e) {
-      if (e.status) { session.set({}); loaded = { key: '', at: 0 }; toast(e.message); go('#/'); return false; }
+      if (e.status) { session.set({}); loaded = { key: '', at: 0 }; toast(esc(e.message)); go('#/'); return false; }
       toast('Sedang offline. Menampilkan data terakhir.');
       return true;
     }
@@ -90,7 +90,7 @@
   // Aksi guru di server: kirim, muat ulang data kelas, lalu tampilkan ulang
   async function tAct(fn, args, msg) {
     try { await Cloud.rpc(fn, Object.assign({ p_token: session.get().token }, args)); await ensure(true); if (msg) toast(msg); route(); }
-    catch (e) { toast(e.status ? e.message : 'Tidak bisa terhubung ke server'); }
+    catch (e) { toast(e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
   }
   const toast =(msg) => { const t = document.createElement('div'); t.className = 'toast'; t.innerHTML = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2200); };
 
@@ -1085,7 +1085,7 @@
           <form data-form="register" class="form">
             <label>Nama guru<input name="name" required placeholder="mis. Bu Rina" autocomplete="name"></label>
             <label>Email<input name="email" type="email" required autocomplete="email"></label>
-            <label>Kata sandi (min. 6 karakter)<input name="pass" type="password" minlength="6" required autocomplete="new-password"></label>
+            <label>Kata sandi (min. 8 karakter)<input name="pass" type="password" minlength="8" required autocomplete="new-password"></label>
             <label>Nama kelas pertama<input name="cls" required placeholder="mis. Kelas 1A, atau Les Matematika Sore"></label>
             <details class="small"><summary>Punya kode admin Metiq?</summary><label>Kode admin<input name="admin" autocomplete="off" autocapitalize="characters"></label></details>
             <button class="btn">Buat akun gratis</button>
@@ -2245,7 +2245,7 @@
     const r = REQ[kind]; if (!r) return go('#/ajukan');
     const t = tryInfo() || {}, nm = t.name || '';
     const acct = `<label>Email<input name="email" type="email" required autocomplete="email"></label>
-      <label>Kata sandi untuk masuk nanti (min. 6 karakter)<input name="pass" type="password" minlength="6" required autocomplete="new-password"></label>
+      <label>Kata sandi untuk masuk nanti (min. 8 karakter)<input name="pass" type="password" minlength="8" required autocomplete="new-password"></label>
       <label>No. WhatsApp <small class="muted">(opsional, untuk dihubungi admin)</small><input name="contact" inputmode="tel" maxlength="20" placeholder="08…"></label>`;
     const fields = {
       guru: `<div class="kindwarn"><b>👨‍👩‍👧 Anda orang tua?</b> Akun guru hanya untuk yang mengajar kelas di sekolah atau kuttab. Pilih yang sesuai:
@@ -3106,7 +3106,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         <form data-form="pregister" class="form">
           <label>Nama<input name="name" required placeholder="mis. Ayah Bima" autocomplete="name"></label>
           <label>Email<input name="email" type="email" required autocomplete="email"></label>
-          <label>Kata sandi (min. 6 karakter)<input name="pass" type="password" minlength="6" required autocomplete="new-password"></label>
+          <label>Kata sandi (min. 8 karakter)<input name="pass" type="password" minlength="8" required autocomplete="new-password"></label>
           <button class="btn">Buat akun</button>
         </form><p class="muted small center">Setelah masuk, tambahkan anak dengan kode orang tua dari guru.</p></section>`);
   }
@@ -3265,7 +3265,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       else if (target === 'guru') { if (cloudOn()) await Cloud.rpc('teacher_set_avatar', { p_token: ses.token, p_avatar: a }); S.setTeacherAvatar(ses.id, a); }
       else { const sid = target.slice(6); if (cloudOn()) await Cloud.rpc('teacher_set_student_avatar', { p_token: ses.token, p_student_id: sid, p_avatar: a }); S.setStudentAvatar(sid, a); }
       toast('Avatar diganti ✔'); go(t.back);
-    } catch (e) { toast(e.status ? e.message : 'Tidak bisa terhubung ke server'); }
+    } catch (e) { toast(e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
   }
 
   /* ---------- Pelajaran: materi singkat + contoh "Ayo coba!" per bab ---------- */
@@ -3881,7 +3881,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (act === 'goal') { ls.set('metiq_goal_' + session.get().id, +el.dataset.m); return route(); }
     if (act === 'soundtoggle') { const on = window.SFX.toggle(); el.querySelector('.em').textContent = on ? 'ðŸ””' : 'ðŸ”•'; el.querySelector('.t').textContent = on ? 'Suara menyala' : 'Suara mati'; return; }
     // Mengulang asesmen awal atau membuka asesmen akhir: khusus admin (peneliti) agar data pretest terjaga
-    const adminDo = (msg, work) => { if (!isResearchNow()) return toast('Khusus super admin'); el.disabled = true; return work().then(() => { toast(msg); route(); }).catch((e) => { el.disabled = false; toast(e.status ? e.message : 'Tidak bisa terhubung ke server'); }); };
+    const adminDo = (msg, work) => { if (!isResearchNow()) return toast('Khusus super admin'); el.disabled = true; return work().then(() => { toast(msg); route(); }).catch((e) => { el.disabled = false; toast(e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }); };
     if (act === 'diagreset') {
       const k = S.student(el.dataset.s);
       if (!k || !confirm(`Ulangi asesmen awal untuk ${k.name}? Hasil asesmen awal yang lama tidak dipakai lagi (termasuk untuk data penelitian), dan ${k.name} akan diminta mengerjakannya saat masuk berikutnya.`)) return;
@@ -3996,7 +3996,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     } else if (act === 'punlink') {
       const k = S.student(el.dataset.id);
       if (!k || !confirm(`Lepas ${k.name} dari akun ini? Data belajar ${k.name} tidak terhapus.`)) return;
-      Cloud.rpc('parent_unlink', { p_token: session.get().ptoken, p_student_id: k.id }).then(() => ensure(true)).then(route).catch((e) => toast(e.message));
+      Cloud.rpc('parent_unlink', { p_token: session.get().ptoken, p_student_id: k.id }).then(() => ensure(true)).then(route).catch((e) => toast(esc(e.message)));
     }
     else if (act === 'logout') {
       const ses = session.get();
@@ -4097,7 +4097,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       const k = S.student(sid), c = k && S.cls(k.classId), code = session.get().code || (c && c.code);
       const btn = f.querySelector('button'); if (btn) btn.disabled = true;
       return Cloud.rpc('submit_feedback', { p_code: code, p_student_id: sid, p_assignment_id: a, p_by: by, p_rating: rating, p_comment: comment })
-        .then(finish).catch((err) => { if (btn) btn.disabled = false; toast(err.status ? err.message : 'Tidak bisa terhubung ke server'); });
+        .then(finish).catch((err) => { if (btn) btn.disabled = false; toast(err.status ? esc(err.message) : 'Tidak bisa terhubung ke server'); });
     }
     if (kind === 'nisn') {
       const sid = f.dataset.s, n = String(fd.get('nisn') || '').replace(/\D/g, '');
@@ -4129,7 +4129,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   async function cloudSubmit(f, fd, kind) {
     const btn = f.querySelector('button'); if (btn) btn.disabled = true;
     const done = () => { if (btn) btn.disabled = false; };
-    const fail = (err) => { done(); toast(err.status ? err.message : 'Tidak bisa terhubung ke server'); };
+    const fail = (err) => { done(); toast(err.status ? esc(err.message) : 'Tidak bisa terhubung ke server'); };
     try {
       if (kind === 'newkid') {
         const r = await Cloud.rpc('student_start', { p_name: String(fd.get('name') || '').trim() });
@@ -4169,7 +4169,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         const r = kind === 'pregister'
           ? await Cloud.rpc('parent_register', { p_name: fd.get('name'), p_email: fd.get('email'), p_password: fd.get('pass') })
           : await Cloud.rpc('parent_login', { p_email: fd.get('email'), p_password: fd.get('pass') });
-        if (r.error) { done(); return toast(r.error); }
+        if (r.error) { done(); return toast(esc(r.error)); }
         if (r.pending) { saveRequest(r, fd.get('name')); return go('#/ajukan/status/' + r.code); }
         session.set({ role: 'ortu', ptoken: r.token, pid: r.parentId });
         return go('#/ortu/anak');
@@ -4185,7 +4185,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         const r = kind === 'register'
           ? (adminCode ? await oldReg() : await Cloud.rpc('teacher_signup', { p_name: fd.get('name'), p_email: fd.get('email'), p_password: fd.get('pass'), p_class_name: fd.get('cls') }).catch((e) => { if (e.status === 404) return oldReg(); throw e; }))
           : await Cloud.rpc('teacher_login', { p_email: fd.get('email'), p_password: fd.get('pass') });
-        if (r.error) { done(); return toast(r.error); }
+        if (r.error) { done(); return toast(esc(r.error)); }
         if (r.pending) { saveRequest(r, fd.get('name')); return go('#/ajukan/status/' + r.code); }
         session.set({ role: 'guru', id: r.teacherId, token: r.token });
         return go('#/guru/ringkasan');

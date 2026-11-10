@@ -1,7 +1,7 @@
 // node tools/i18n/extract.js : tulis tools/i18n/todo/<berkas>.json berisi teks yang belum punya terjemahan
 const fs = require('fs'), path = require('path'), { extract } = require('./lib'), patches = require('./patches');
 process.chdir(path.join(__dirname, '..', '..'));
-const SKIP = new Set(['config.js', 'cloud.js', 'sound.js', 'avatars.js', 'mascot.js', 'jobs-vis.js']);
+const SKIP = new Set(['config.js', 'cloud.js', 'sound.js', 'avatars.js', 'mascot.js', 'jobs-vis.js', 'boot.js']);
 const dict = fs.existsSync('tools/i18n/en.json') ? JSON.parse(fs.readFileSync('tools/i18n/en.json', 'utf8')) : {};
 fs.mkdirSync('tools/i18n/todo', { recursive: true });
 const seen = new Set(); let total = 0, chars = 0; const rows = [];

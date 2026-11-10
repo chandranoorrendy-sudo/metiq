@@ -1,7 +1,7 @@
 // node tools/i18n/build.js : tulis js/en/*.js dari js/*.js + en.json + patches.js. Jalankan setiap kali sumber berubah.
 const fs = require('fs'), path = require('path'), cp = require('child_process'), { apply } = require('./lib');
 process.chdir(path.join(__dirname, '..', '..'));
-const SKIP = new Set(['config.js', 'cloud.js', 'sound.js', 'avatars.js', 'mascot.js', 'jobs-vis.js']);
+const SKIP = new Set(['config.js', 'cloud.js', 'sound.js', 'avatars.js', 'mascot.js', 'jobs-vis.js', 'boot.js']);
 const raw = JSON.parse(fs.readFileSync('tools/i18n/en.json', 'utf8')), dict = {}; for (const k in raw) if (raw[k] !== k) dict[k] = raw[k];
 const patches = require('./patches');
 fs.mkdirSync('js/en', { recursive: true });
