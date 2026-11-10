@@ -508,10 +508,21 @@
     app.innerHTML = mqPage(`
       <section class="mq-me"><a class="mq-gear" href="#/pengaturan" aria-label="Settings">${IC.gear}</a><a class="av" href="#/avatar/saya" aria-label="Change profile picture">${avHTML(st.avatar)}<span class="edit">✏️</span></a><h1>${esc(st.name)}</h1><p>${c ? esc(c.name) : 'Self-study'}</p></section>
       <div class="mq-tiles3">${tile('Streak', `🔥 ${streakOf(st.id)}`, '#ff8a00')}${tile('Stars', `⭐ ${S.starsOf(st.id)}`, '#e0a800')}${tile('Complete', `🏆 ${gold}`, '#19b796')}</div>
-      ${!st.classId && ses.code ? `<section class="mq-card"><h3>🔑 Your learning code</h3><p class="mq-bigcode">${esc(ses.code)}</p><p class="mq-hint">Save this code. On another phone, open Metiq and choose <b>I already have a code</b>.</p></section>` : ''}
+      ${!st.classId && ses.code ? `<section class="mq-card"><h3>🔑 Your learning code</h3><p class="mq-bigcode">${esc(ses.code)}</p><p class="mq-hint">Save this code. On another phone, open Metiq and choose <b>I already have a code</b>.</p></section><div id="pcodecard"></div>` : ''}
       <section class="mq-card"><h3>🏅 Chapter badges · ${gname(getGrade())}</h3><div class="mq-badges">${unitsOf(getGrade()).map((u) => { const t = S.testOf(st.id, u.id), on = t && t.best >= 60; return `<button class="mq-bd ${on ? 'on' : ''}" data-act="tip" data-t="${on ? '🏅 Chapter Badge ' + u.id + ' earned!' : '🔒 Pass the chapter test ' + u.id + ' to earn this badge'}" aria-label="Chapter badge ${u.id}"><span>${chLogo(u)}</span></button>`; }).join('')}</div></section>
       ${meCharts(st.id, goal)}
       <div class="mq-list"><a href="#/laporanku"><span class="em">📄</span>My report<span class="go">›</span></a> <a href="#/pengaturan"><span class="em">⚙️</span>Settings<span class="go">›</span></a></div>`, 'aku');
+    if (!st.classId && ses.code && cloudOn()) loadKidParentCode(st, ses);
+  }
+  // Kode orang tua anak tanpa kelas, diambil dengan kode belajar pribadinya (SQL 025); tidak tampil jika gagal atau belum dipasang
+  const KID_PC = {};
+  async function loadKidParentCode(st, ses) {
+    let r = KID_PC[st.id];
+    if (!r) { try { r = KID_PC[st.id] = await Cloud.rpc('student_parent_code', { p_code: ses.code, p_student_id: st.id }); } catch (e) { return; } }
+    const box = document.getElementById('pcodecard'); if (!box || !r || !r.parentCode) return;
+    box.innerHTML = `<section class="mq-card"><h3>👨‍👩‍👧 Code for your parents</h3><p class="mq-bigcode">${esc(r.parentCode)}</p>
+      <p class="mq-hint">Your parent opens Metiq, taps <b>I'm a parent</b>, then enters this code to see your learning report.${r.familyCode ? ` For all brothers and sisters at once, use the family code <b>${esc(r.familyCode)}</b>.` : ''}</p>
+      <button class="mq-btn ghost" data-act="sharepcode" data-c="${esc(r.familyCode || r.parentCode)}">📤 Send to your parent</button></section>`;
   }
 
   /* ---------- Grafik untuk siswa di halaman Aku ----------
@@ -3953,6 +3964,7 @@
     else if (act === 'schooledit') superEditSchool(el.dataset.id, el.dataset.n);
     else if (act === 'delclass') deleteClass(el.dataset.id);
     else if (act === 'shareclass') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. ${ctx.c.name} math practice is now on Metiq (free, works on phones):\n1. Open https://metiqmath.com\n2. Tap "I'm a student"\n3. Enter the class code: ${ctx.c.code}\n4. Choose your name`); }
+    else if (act === 'sharepcode') { const st = S.student(session.get().id); shareText(`Assalamu'alaikum. ${st ? st.name : ''}'s math learning report can be seen on Metiq:\n1. Open https://metiqmath.com\n2. Tap \"I'm a parent\"\n3. Enter the code: ${el.dataset.c}`); }
     else if (act === 'shareparent') { const k = S.student(el.dataset.id), c = k && S.cls(k.classId); if (k) shareText(`Assalamu'alaikum, parent of ${k.name}. ${k.name}'s (${c ? c.name : ''}) math learning report can be seen on Metiq:\n1. Open https://metiqmath.com\n2. Tap "I'm a parent"\n3. Enter the parent code: ${k.parentCode}\nYou'll also be notified whenever the teacher gives a task.`); }
     else if (act === 'submitasg') { el.disabled = true; markDone(el.dataset.a, session.get().id, 'siswa').then(() => { window.SFX.task(); toast('Task turned in! Your teacher was notified 📨'); route(); }); }
     else if (act === 'superdel') superDelete(el.dataset.what, el.dataset.id);

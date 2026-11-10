@@ -508,11 +508,22 @@
     app.innerHTML = mqPage(`
       <section class="mq-me"><a class="mq-gear" href="#/pengaturan" aria-label="Pengaturan">${IC.gear}</a><a class="av" href="#/avatar/saya" aria-label="Ganti gambar profil">${avHTML(st.avatar)}<span class="edit">✏️</span></a><h1>${esc(st.name)}</h1><p>${c ? esc(c.name) : 'Belajar sendiri'}</p></section>
       <div class="mq-tiles3">${tile('Beruntun', `🔥 ${streakOf(st.id)}`, '#ff8a00')}${tile('Bintang', `⭐ ${S.starsOf(st.id)}`, '#e0a800')}${tile('Tuntas', `🏆 ${gold}`, '#19b796')}</div>
-      ${!st.classId && ses.code ? `<section class="mq-card"><h3>🔑 Kode belajarmu</h3><p class="mq-bigcode">${esc(ses.code)}</p><p class="mq-hint">Simpan kode ini. Di HP lain, buka Metiq lalu pilih <b>Saya sudah punya kode</b>.</p></section>` : ''}
+      ${!st.classId && ses.code ? `<section class="mq-card"><h3>🔑 Kode belajarmu</h3><p class="mq-bigcode">${esc(ses.code)}</p><p class="mq-hint">Simpan kode ini. Di HP lain, buka Metiq lalu pilih <b>Saya sudah punya kode</b>.</p></section><div id="pcodecard"></div>` : ''}
       <section class="mq-card"><h3>🏅 Lencana bab · ${gname(getGrade())}</h3><div class="mq-badges">${unitsOf(getGrade()).map((u) => { const t = S.testOf(st.id, u.id), on = t && t.best >= 60; return `<button class="mq-bd ${on ? 'on' : ''}" data-act="tip" data-t="${on ? '🏅 Lencana Bab ' + u.id + ' didapat!' : '🔒 Lulus ujian bab ' + u.id + ' untuk mendapatkan lencana ini'}" aria-label="Lencana bab ${u.id}"><span>${chLogo(u)}</span></button>`; }).join('')}</div></section>
       ${meCharts(st.id, goal)}
       <div class="mq-list"><a href="#/laporanku"><span class="em">📄</span>Laporanku<span class="go">›</span></a>
         <a href="#/pengaturan"><span class="em">⚙️</span>Pengaturan<span class="go">›</span></a></div>`, 'aku');
+    if (!st.classId && ses.code && cloudOn()) loadKidParentCode(st, ses);
+  }
+  // Kode orang tua anak tanpa kelas, diambil dengan kode belajar pribadinya (SQL 025); tidak tampil jika gagal atau belum dipasang
+  const KID_PC = {};
+  async function loadKidParentCode(st, ses) {
+    let r = KID_PC[st.id];
+    if (!r) { try { r = KID_PC[st.id] = await Cloud.rpc('student_parent_code', { p_code: ses.code, p_student_id: st.id }); } catch (e) { return; } }
+    const box = document.getElementById('pcodecard'); if (!box || !r || !r.parentCode) return;
+    box.innerHTML = `<section class="mq-card"><h3>👨‍👩‍👧 Kode untuk Ayah/Bunda</h3><p class="mq-bigcode">${esc(r.parentCode)}</p>
+      <p class="mq-hint">Ayah/Bunda membuka Metiq, ketuk <b>Saya orang tua</b>, lalu masukkan kode ini untuk melihat laporan belajarmu.${r.familyCode ? ` Untuk semua kakak-adik sekaligus, pakai kode keluarga <b>${esc(r.familyCode)}</b>.` : ''}</p>
+      <button class="mq-btn ghost" data-act="sharepcode" data-c="${esc(r.familyCode || r.parentCode)}">📤 Kirim ke Ayah/Bunda</button></section>`;
   }
 
   /* ---------- Grafik untuk siswa di halaman Aku ----------
@@ -3967,6 +3978,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     else if (act === 'schooledit') superEditSchool(el.dataset.id, el.dataset.n);
     else if (act === 'delclass') deleteClass(el.dataset.id);
     else if (act === 'shareclass') { const ctx = teacherCtx(); if (ctx) shareText(`Assalamu'alaikum. Latihan matematika ${ctx.c.name} sekarang di Metiq (gratis, bisa di HP):\n1. Buka https://metiqmath.com\n2. Ketuk "Saya Siswa"\n3. Masukkan kode kelas: ${ctx.c.code}\n4. Pilih nama kamu`); }
+    else if (act === 'sharepcode') { const st = S.student(session.get().id); shareText(`Assalamu'alaikum Ayah/Bunda. Laporan belajar matematika ${st ? st.name : ''} bisa dilihat di Metiq:\n1. Buka https://metiqmath.com\n2. Ketuk "Saya Orang Tua"\n3. Masukkan kode: ${el.dataset.c}`); }
     else if (act === 'shareparent') { const k = S.student(el.dataset.id), c = k && S.cls(k.classId); if (k) shareText(`Assalamu'alaikum Ayah/Bunda ${k.name}. Laporan belajar matematika ${k.name} (${c ? c.name : ''}) bisa dilihat di Metiq:\n1. Buka https://metiqmath.com\n2. Ketuk "Saya Orang Tua"\n3. Masukkan kode orang tua: ${k.parentCode}\nAyah/Bunda juga akan mendapat kabar setiap ada tugas dari guru.`); }
     else if (act === 'submitasg') { el.disabled = true; markDone(el.dataset.a, session.get().id, 'siswa').then(() => { window.SFX.task(); toast('Tugas dikumpulkan! Gurumu mendapat notifikasi 📨'); route(); }); }
     else if (act === 'superdel') superDelete(el.dataset.what, el.dataset.id);
