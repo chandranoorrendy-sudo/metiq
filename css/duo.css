@@ -1229,3 +1229,6 @@ body.coret-open #pq { -webkit-user-select: none; user-select: none; }
 .gate-in .gbtn { width: 100%; }
 .mq-ob-body .gbtn { margin-top: 14px; font-size: .92rem; }
 .gkids .mq-list small { display: block; font-size: .8rem; font-weight: 700; color: #6a7f7a; }
+.gsi { display: flex; justify-content: center; width: 100%; max-width: 360px; min-height: 46px; margin: 8px auto 0; }
+.gsi-wait .loading { padding: 8px; }
+.card .gsi { margin-top: 12px; }

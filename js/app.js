@@ -3233,7 +3233,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
           <label>Kata sandi<input name="pass" type="password" required autocomplete="current-password"></label>
           <button class="btn">Masuk</button>
         </form><p class="center"><a href="#/ajukan/ortu">Belum punya akun? Ajukan akun orang tua</a> · <a href="#/ajukan/status">Cek status</a></p></section>` : ''}
-      <section class="card narrow center gshow" hidden><div class="bigemoji">👨‍👩‍👧</div><h1>Masuk dengan Google</h1><p class="muted">Lihat laporan semua anak yang tertaut ke akun Gmail Anda.</p><button class="gbtn" data-act="greport">${GLOGO}<span>Masuk dengan Google</span></button></section>
+      <section class="card narrow center gshow" hidden><div class="bigemoji">👨‍👩‍👧</div><h1>Masuk dengan Google</h1><p class="muted">Lihat laporan semua anak yang tertaut ke akun Gmail Anda.</p><div class="gsi" data-gi="report"></div></section>
       <section class="card narrow center">${cloudOn() && PARENTS_ON ? '<h2>Atau lihat laporan dengan kode</h2>' : '<div class="bigemoji">👨‍👩‍👧</div><h1>Laporan untuk orang tua</h1>'}<p class="muted">Masukkan <b>kode keluarga</b> (semua anak sekaligus) atau kode orang tua satu anak. Kode berisi 6 huruf/angka dari admin atau guru.</p>
         <form data-form="parentcode"><input name="code" class="codein" maxlength="6" autocomplete="off" autocapitalize="characters" placeholder="ABC123" required><button class="btn ghost">Lihat laporan</button></form>
         <p class="small muted trynote">Ingin mencoba dulu? Masukkan kode <b>1234</b> untuk melihat laporan anak contoh.</p></section>`);
@@ -3934,16 +3934,17 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   // Tombol Google hanya muncul bila fiturnya sudah aktif
   function gReveal() {
     if (!Cloud.enabled || !Cloud.google) return;
-    Cloud.google.enabled().then((on) => on && Cloud.google.ready()).then((ok) => { if (ok) document.querySelectorAll('.gshow').forEach((e) => { e.hidden = false; }); }).catch(() => {});
+    Cloud.google.enabled().then((on) => on && Cloud.google.ready()).then((ok) => { if (ok) { document.querySelectorAll('.gshow').forEach((e) => { e.hidden = false; }); gMount(); } }).catch(() => {});
   }
   function viewParentGate() {
     const ses = session.get(), st = S.student(ses.id), nm = st ? esc(String(st.name).trim().split(/\s+/)[0]) : 'kamu';
     app.innerHTML = `<main class="mq-screen gate"><div class="gate-in">${MQ.svg('hello', { size: 150 })}
       <h1>Panggil Ayah atau Bunda, ya!</h1>
       <p>Supaya kemajuan belajar ${nm} tersimpan aman dan bisa dilihat orang tua, Ayah atau Bunda perlu masuk dengan akun Google (Gmail) <b>sekali saja</b> di HP ini. Sesudah itu ${nm} langsung lanjut belajar dari terakhir kali.</p>
-      <button class="gbtn" data-act="glink">${GLOGO}<span>Masuk dengan Google</span></button>
+      <div class="gsi" data-gi="link"></div>
       <p class="gate-note">Metiq hanya menyimpan nama dan email Ayah atau Bunda untuk laporan belajar. Kata sandi Google tidak pernah dilihat Metiq.</p>
       <button class="mq-link" data-act="logout">Bukan ${nm}? Keluar</button></div></main>`;
+    gMount();
   }
   // Daftar anak yang tertaut ke Gmail orang tua (HP baru)
   function viewGKids() {
@@ -3961,34 +3962,45 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     try { localStorage.setItem('metiq_pok_' + k.id, '1'); sessionStorage.removeItem('metiq_gkids'); } catch (e) {}
     loaded = { key: '', at: 0 };
   }
-  // Saat aplikasi dibuka sesudah kembali dari Google: jalankan maksud yang tersimpan, lalu buang tokennya
-  async function gReturn() {
-    if (!Cloud.enabled || !Cloud.google) return false;
-    const r = await Cloud.google.finish(); if (!r) return false;
-    const to = (h) => { history.replaceState(null, '', location.pathname + location.search + h); route(); };
-    const i = r.intent || {};
-    if (r.error) { to(i.kind === 'link' ? '#/belajar' : '#/'); toast(r.error === 'offline' ? 'Tidak bisa terhubung ke server' : 'Masuk dengan Google dibatalkan atau gagal. Coba lagi ya.'); return true; }
-    try {
-      if (i.kind === 'link') {
-        const out = await Cloud.rpc('parent_google_link', { p_code: i.code, p_student_id: i.sid }, r.token);
-        try { localStorage.setItem('metiq_pok_' + i.sid, out.parentName || '1'); } catch (e) {}
-        to('#/belajar'); toast(`✔ Tersambung dengan akun ${esc(out.parentName || 'Ayah/Bunda')}. Ayo lanjut belajar!`); return true;
-      }
-      if (i.kind === 'kids') {
-        const out = await Cloud.rpc('parent_google_kids', {}, r.token);
-        if ((out.kids || []).length === 1) { gUseKid(out.kids[0]); to('#/belajar'); toast(`Halo, ${esc(out.kids[0].name)}! Ayo lanjut belajar.`); return true; }
-        try { sessionStorage.setItem('metiq_gkids', JSON.stringify(out)); } catch (e) {}
-        to('#/gmail/anak'); return true;
-      }
-      if (i.kind === 'report') {
-        const out = await Cloud.rpc('parent_google_session', {}, r.token);
-        session.set({ role: 'ortu', ptoken: out.token, pid: out.parentId }); loaded = { key: '', at: 0 };
-        to('#/ortu/anak'); return true;
-      }
-    } catch (e) { to('#/'); toast(e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); return true; }
-    to('#/'); return true;
+  // Tombol Google resmi dipasang di setiap kotak .gsi[data-gi]; maksudnya: link (anak di HP ini), kids (HP baru), report (laporan)
+  function gMount() {
+    if (!Cloud.google) return;
+    document.querySelectorAll('.gsi[data-gi]').forEach((el) => {
+      if (el.dataset.on) return; el.dataset.on = '1';
+      el.innerHTML = `<span class="gsi-wait">${loadingHTML}</span>`;
+      Cloud.google.mount(el, (tok) => gDo(el.dataset.gi, tok), (e) => toast(e.status ? esc(e.message) : 'Masuk dengan Google gagal. Coba lagi ya.'))
+        .catch(() => { el.innerHTML = '<p class="gate-note">Tidak bisa membuka Google. Periksa internet ya.</p>'; delete el.dataset.on; });
+    });
   }
-  const gStart = (el, intent) => { el.disabled = true; Cloud.google.start(intent).catch(() => { el.disabled = false; toast('Tidak bisa membuka Google. Periksa internet ya.'); }); };
+  // Sesudah orang tua masuk: jalankan maksudnya dengan token sesi sekali pakai, lalu token itu dibuang
+  async function gDo(kind, token) {
+    try {
+      if (kind === 'link') {
+        const x = session.get(), out = await Cloud.rpc('parent_google_link', { p_code: x.code, p_student_id: x.id }, token);
+        try { localStorage.setItem('metiq_pok_' + x.id, out.parentName || '1'); } catch (e) {}
+        toast(`✔ Tersambung dengan akun ${esc(out.parentName || 'Ayah/Bunda')}. Ayo lanjut belajar!`); return route();
+      }
+      if (kind === 'kids') {
+        const out = await Cloud.rpc('parent_google_kids', {}, token);
+        if ((out.kids || []).length === 1) { gUseKid(out.kids[0]); toast(`Halo, ${esc(out.kids[0].name)}! Ayo lanjut belajar.`); return go('#/belajar'); }
+        try { sessionStorage.setItem('metiq_gkids', JSON.stringify(out)); } catch (e) {}
+        return go('#/gmail/anak');
+      }
+      if (kind === 'report') {
+        const out = await Cloud.rpc('parent_google_session', {}, token);
+        session.set({ role: 'ortu', ptoken: out.token, pid: out.parentId }); loaded = { key: '', at: 0 };
+        return go('#/ortu/anak');
+      }
+    } catch (e) { toast(e.status ? esc(e.message) : 'Tidak bisa terhubung ke server'); }
+  }
+  // HP baru: orang tua masuk dengan Gmail untuk melanjutkan belajar anaknya
+  function viewGmailStart() {
+    app.innerHTML = `${mqBack('#/')}<main class="mq-screen"><div class="mq-ob-body gate-in">
+      <div class="mq-big-say"><div class="mq-bubble"><p>Ayah atau Bunda, masuk dengan <b class="hl">Gmail</b> untuk melanjutkan belajar anak.</p></div>${MQ.svg('hello', { size: 140 })}</div>
+      <div class="gsi" data-gi="kids"></div>
+      <p class="gate-note">Pakai Gmail yang dulu dipakai saat anak mulai belajar. Metiq hanya menyimpan nama dan email Ayah atau Bunda untuk laporan belajar.</p></div></main>`;
+    gMount();
+  }
 
   const GATED = new Set(['belajar', 'bab', 'latihan', 'ujian', 'asesmen', 'tugas', 'aku', 'hadiah', 'laporanku', 'permainan', 'main', 'profesi', 'misi', 'olimpiade', 'pelajaran']);
   async function route() {
@@ -4025,7 +4037,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       case 'ajukan': return b === 'status' ? viewRequestStatus(c) : b ? viewRequestForm(b) : viewRequestChooser();
       case 'belajar': return viewStudentHome();
       case 'bab': return viewChapter(b);
-      case 'gmail': return viewGKids();
+      case 'gmail': return b === 'anak' ? viewGKids() : viewGmailStart();
       case 'asesmen': return b === 'hasil' ? viewDiagResult('a') : b === 'akhir' ? (c === 'hasil' ? viewDiagResult('b') : viewDiag('b')) : viewDiag('a');
       case 'permainan': return viewGames();
       case 'harga': return viewPricing();
@@ -4229,9 +4241,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       if (!k || !confirm(`Lepas ${k.name} dari akun ini? Data belajar ${k.name} tidak terhapus.`)) return;
       Cloud.rpc('parent_unlink', { p_token: session.get().ptoken, p_student_id: k.id }).then(() => ensure(true)).then(route).catch((e) => toast(esc(e.message)));
     }
-    else if (act === 'glink') { const x = session.get(); gStart(el, { kind: 'link', sid: x.id, code: x.code }); }
-    else if (act === 'gkids') gStart(el, { kind: 'kids' });
-    else if (act === 'greport') gStart(el, { kind: 'report' });
+    else if (act === 'gkids') go('#/gmail');
     else if (act === 'gpick') { let d = null; try { d = JSON.parse(sessionStorage.getItem('metiq_gkids')); } catch (e) {} const k = d && (d.kids || []).find((x) => x.id === el.dataset.id); if (k) { gUseKid(k); go('#/belajar'); } }
     else if (act === 'logout') {
       const ses = session.get();
@@ -4485,5 +4495,5 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   }, 60000);
 
   window.addEventListener('hashchange', route);
-  gReturn().then((handled) => { if (!handled) route(); }).catch(() => route());
+  route();
 })();
