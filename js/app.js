@@ -927,6 +927,15 @@
     document.body.appendChild(pad); pad.place = place; place();
     const cv = pad.querySelector('canvas'), ctx = cv.getContext('2d');
     let pen = COLORS[0][0];
+    // Kursor spidol berwarna sesuai pensil (titik aktif di ujung spidol); penghapus: lingkaran seluas bagian yang dihapus
+    const curFor = (c) => {
+      const svg = c === 'erase'
+        ? '<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="#ffffff" fill-opacity=".55" stroke="#04382e" stroke-width="2" stroke-dasharray="3 2"/><circle cx="14" cy="14" r="1.6" fill="#04382e"/></svg>'
+        : `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32"><g transform="rotate(45 16 16)"><rect x="11.5" y="1.5" width="9" height="18" rx="2.5" fill="${c}" stroke="#04382e" stroke-width="1.5"/><rect x="11.5" y="1.5" width="9" height="5" rx="2.5" fill="#04382e" fill-opacity=".3"/><path d="M11.5 19.5h9l-2.2 6h-4.6z" fill="#f4efe6" stroke="#04382e" stroke-width="1.5" stroke-linejoin="round"/><path d="M13.7 25.5h4.6L16 30.5z" fill="${c}" stroke="#04382e" stroke-width="1.2" stroke-linejoin="round"/></g></svg>`;
+      return `url("data:image/svg+xml,${encodeURIComponent(svg)}") ${c === 'erase' ? '14 14' : '6 26'}, crosshair`;
+    };
+    const setCur = () => { cv.style.cursor = curFor(pen); };
+    setCur();
     const fit = () => {
       const r = cv.getBoundingClientRect(), dpr = window.devicePixelRatio || 1, old = cv.width ? cv.toDataURL() : null;
       cv.width = Math.round(r.width * dpr); cv.height = Math.round(r.height * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -979,7 +988,7 @@
       if (t.dataset.k === 'size') { coretTall = !coretTall; pad.classList.toggle('tall', coretTall); place(); fit(); return; }
       if (t.dataset.k === 'finger') { penSeen = false; try { localStorage.removeItem('metiq_pen'); } catch (err) { /* mode privat */ } t.classList.add('off'); toast('👆 Sekarang bisa menulis dengan jari'); return; }
       if (t.dataset.k === 'clear') { ctx.clearRect(0, 0, cv.width, cv.height); return; }
-      pen = t.dataset.c; pad.querySelectorAll('[data-c]').forEach((x) => x.classList.toggle('on', x === t));
+      pen = t.dataset.c; setCur(); pad.querySelectorAll('[data-c]').forEach((x) => x.classList.toggle('on', x === t));
     });
   }
   function viewPractice(id, again) {
