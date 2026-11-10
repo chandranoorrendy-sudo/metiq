@@ -16,9 +16,11 @@
   const Cloud = {
     enabled: !!(cfg.supabaseUrl && cfg.supabaseKey),
 
-    async rpc(fn, args = {}) {
+    // token: sesi Google orang tua (sekali pakai), untuk fungsi parent_google_* dari SQL 027
+    async rpc(fn, args = {}, token) {
       const headers = { 'Content-Type': 'application/json', apikey: cfg.supabaseKey };
-      if (cfg.supabaseKey.startsWith('eyJ')) headers.Authorization = 'Bearer ' + cfg.supabaseKey;
+      if (token) headers.Authorization = 'Bearer ' + token;
+      else if (cfg.supabaseKey.startsWith('eyJ')) headers.Authorization = 'Bearer ' + cfg.supabaseKey;
       const res = await fetch(`${cfg.supabaseUrl.replace(/\/$/, '')}/rest/v1/rpc/${fn}`, { method: 'POST', headers, body: JSON.stringify(args) });
       const txt = await res.text();
       let data = null;
@@ -91,6 +93,49 @@
         clearTimeout(flushTimer);
         flushTimer = setTimeout(Cloud.flush, 15000);
       } finally { flushing = false; saveOut(); }
+    },
+  };
+
+  /* Masuk dengan Google untuk orang tua (Supabase Auth, alur PKCE).
+   * Token Google tidak disimpan: sesudah kembali dari Google, kode ditukar menjadi token, token dipakai untuk satu
+   * permintaan (menautkan anak, daftar anak, atau sesi laporan), lalu dibuang. Jadi sesi orang tua tidak tertinggal di HP anak. */
+  const PEND = 'metiq_g_pending';
+  const b64url = (buf) => btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const base = () => cfg.supabaseUrl.replace(/\/$/, '');
+  Cloud.google = {
+    // apakah login Google sudah diaktifkan di Supabase (dibaca dari pengaturan publik, disimpan selama sesi)
+    async enabled() {
+      if (!Cloud.enabled) return false;
+      const k = 'metiq_g_on'; const c = sessionStorage.getItem(k); if (c) return c === '1';
+      try { const r = await fetch(`${base()}/auth/v1/settings`, { headers: { apikey: cfg.supabaseKey } }); const j = await r.json(); const on = !!(j.external && j.external.google); sessionStorage.setItem(k, on ? '1' : '0'); return on; } catch (e) { return false; }
+    },
+    // apakah SQL 027 sudah dijalankan (fungsi ada, tetapi menolak pemanggil tanpa sesi Google)
+    async ready() {
+      const k = 'metiq_g_sql'; const c = sessionStorage.getItem(k); if (c) return c === '1';
+      try { await Cloud.rpc('parent_google_kids'); sessionStorage.setItem(k, '1'); return true; } catch (e) { const ok = e.status === 401 || e.status === 403 || (e.status === 400 && /Google/.test(e.message)); if (e.status) sessionStorage.setItem(k, ok ? '1' : '0'); return ok; }
+    },
+    async start(intent) {
+      const raw = new Uint8Array(32); crypto.getRandomValues(raw);
+      const verifier = b64url(raw), challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
+      try { localStorage.setItem(PEND, JSON.stringify({ verifier, intent, at: Date.now(), lang: window.METIQ_LANG })); } catch (e) {}
+      const back = location.origin + location.pathname;
+      location.assign(`${base()}/auth/v1/authorize?provider=google&redirect_to=${encodeURIComponent(back)}&code_challenge=${challenge}&code_challenge_method=s256`);
+    },
+    // dipanggil saat aplikasi dibuka: jika baru kembali dari Google, kembalikan { token, user, intent } atau { error, intent }
+    async finish() {
+      const q = new URLSearchParams(location.search), code = q.get('code'), err = q.get('error_description') || q.get('error');
+      if (!code && !err) return null;
+      let p = null; try { p = JSON.parse(localStorage.getItem(PEND)); localStorage.removeItem(PEND); } catch (e) {}
+      const clean = new URLSearchParams(location.search); ['code', 'error', 'error_code', 'error_description', 'state'].forEach((x) => clean.delete(x));
+      history.replaceState(null, '', location.pathname + (clean.toString() ? '?' + clean : '') + location.hash);
+      if (!p || Date.now() - p.at > 20 * 60000) return null;
+      if (err) return { error: err, intent: p.intent };
+      try {
+        const r = await fetch(`${base()}/auth/v1/token?grant_type=pkce`, { method: 'POST', headers: { 'Content-Type': 'application/json', apikey: cfg.supabaseKey }, body: JSON.stringify({ auth_code: code, code_verifier: p.verifier }) });
+        const j = await r.json();
+        if (!r.ok || !j.access_token) return { error: j.error_description || j.msg || 'Gagal masuk dengan Google', intent: p.intent };
+        return { token: j.access_token, user: j.user || {}, intent: p.intent };
+      } catch (e) { return { error: 'offline', intent: p.intent }; }
     },
   };
 
