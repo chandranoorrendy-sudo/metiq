@@ -434,6 +434,103 @@
     syncTasks(st);
     const g = getGrade(), m = pathModel(st.id, g), goal = goalOf(st.id), mins = msToday(st.id) / 60000;
     const todo = TASKS_ON ? todoCount(st) : 0, unsent = cloudOn() ? Cloud.pendingCount(st.id) : 0, curId = m.flat[m.cur];
+    const allDone = m.cur >= m.flat.length, isles = isleStates(m), cur = isles.find((x) => x.state === 'cur');
+    const buddy = cur ? unitBuddy(cur.u) : null, sc = curId ? m.st(curId).sc : 0;
+    // Kabut terangkat saat bab selesai: bandingkan bab "sekarang" dengan kunjungan sebelumnya
+    const seenKey = `metiq_isle_${st.id}_${g}`; let fresh = null;
+    try { const was = localStorage.getItem(seenKey), now = cur ? cur.u.id : 'all'; if (was && was !== now) fresh = was; localStorage.setItem(seenKey, now); } catch (e) {}
+    const gradeSheet = `<div class="mq-modal" id="gsheet" hidden data-act="gclose"><div class="mq-sheet"><h2>Choose a grade</h2><div class="mq-grades">${GRADES.map((x) => { const sk = unitsOf(x.id).flatMap((u) => u.skills), pr = S.progressAll(st.id), dn = sk.filter((s) => ((pr[s.id] || {}).score || 0) >= 80).length; return `<button class="mq-g ${x.id === g ? 'on' : ''}" data-act="grade" data-g="${x.id}"><small>${x.stage || 'Grade'}</small><b>${x.short || x.id}</b><span class="bar"><i style="width:${pct(dn, sk.length)}%"></i></span></button>`; }).join('')}</div><button class="mq-btn ghost" style="margin-top:16px" data-act="gclose">Close</button></div></div>`;
+    app.innerHTML = mqPage(`
+      <div class="mq-bar">
+        <button class="mq-chip grade" data-act="gsheet" aria-label="Choose a grade">${gname(g)} <small>▾</small></button>
+        <button class="mq-chip" data-act="tip" data-t="🔥 ${streakOf(st.id)}-day learning streak" aria-label="Day streak"><span class="em">🔥</span>${streakOf(st.id)}</button>
+        <button class="mq-chip star" data-act="tip" data-t="⭐ Your total stars: from practice, chapter tests, and games" aria-label="Stars"><span class="em">⭐</span>${S.starsOf(st.id)}</button>
+        <button class="mq-ring ${mins >= goal ? 'done' : ''}" style="--p:${Math.min(100, (mins / goal) * 100)}" data-act="tip" data-t="🎯 Today's goal: ${Math.min(goal, Math.floor(mins))} of ${goal} minutes" aria-label="Daily goal"><span>🎯</span></button>
+      </div>
+      <section class="isle-hi"><div class="who">${MQ.svg('hello', { size: 76, who: buddy || undefined })}</div>
+        <div class="grow"><h1>${sapaan(st.name)}</h1><p>Let's continue our math adventure!</p></div>
+        ${allDone ? '' : `<button class="isle-score" data-act="tip" data-t="SmartScore for the step you're working on. Reach 80 to master it." aria-label="SmartScore ${sc}"><small>SmartScore</small><b>${sc}<i>⭐</i></b></button>`}</section>
+      ${unsent ? `<div class="mq-demo">📶 ${unsent} answers are waiting for internet to reach your teacher.</div>` : ''}
+      ${TASKS_ON && todo ? `<a class="mq-task" href="#/tugas"><span class="em">📌</span><b>${todo} tasks from your teacher</b><span>›</span></a>` : ''}
+      ${allDone ? `<div class="mq-all">${MQ.svg('cheer', { size: 120 })}<div>All ${gname(g)} chapters are complete! 🎉</div><button class="mq-btn" style="margin-top:12px" data-act="gsheet">Choose another grade</button></div>` : ''}
+      ${isleMapHTML(st, isles, fresh)}
+      ${gradeSheet}`, 'belajar');
+    // Pulau "sekarang" langsung terlihat di layar pertama
+    setTimeout(() => { const c = document.querySelector('.isle.cur') || document.querySelector('.isle.done:last-of-type'); if (c) c.scrollIntoView({ block: 'center' }); }, 60);
+  }
+
+  /* ---------- Peta belajar: kepulauan matematika dengan kabut penemuan ----------
+   * Satu pulau = satu bab. Keadaan pulau dihitung dari SmartScore siswa (pathModel), bukan gambar tetap:
+   * done (berwarna, tanda hijau), cur (menonjol, bercahaya, penanda lokasi), visit (sudah dicoba, belum urutannya),
+   * next (kabut tipis, siluet tanpa nama), fog (kabut tebal, siluet samar tanpa tulisan, paling banyak dua). */
+  function isleStates(m) {
+    const list = m.units.map((u) => {
+      const ss = u.skills.map((s) => m.st(s.id)), done = ss.filter((s) => s.state === 'done' || s.state === 'gold').length;
+      const started = done > 0 || ss.some((s) => s.state === 'open' || s.att > 0);
+      const state = done === ss.length ? 'done' : ss.some((s) => s.state === 'cur') ? 'cur' : started ? 'visit' : 'new';
+      return { u, ss, done, total: ss.length, state };
+    });
+    // Bab yang belum disentuh di antara pulau yang sudah terlihat: kabut tipis tanpa nama.
+    // Sesudah pulau terakhir yang terlihat: satu tujuan berikutnya, lalu paling banyak dua siluet di kabut tebal.
+    let last = -1; list.forEach((x, i) => { if (x.state !== 'new') last = i; });
+    let after = 0;
+    list.forEach((x, i) => { if (x.state !== 'new') return; if (i < last) x.state = 'next'; else x.state = after++ === 0 ? 'next' : after <= 3 ? 'fog' : 'gone'; });
+    return list.filter((x) => x.state !== 'gone');
+  }
+  // Bentang alam pulau menurut bidang matematika
+  const isleKind = (u) => {
+    const s = STRANDS.find((x) => x.re.test(u.km || ''));
+    if (s) return s.id;
+    const t = u.name;
+    return /bangun|bentuk|geometri|sudut|simetri|koordinat/i.test(t) ? 'geo' : /ukur|panjang|berat|waktu|jam|uang|volume|luas|keliling/i.test(t) ? 'ukur' : /data|diagram|grafik|peluang|statistik/i.test(t) ? 'data' : 'bil';
+  };
+  const ISLE_TREE = (x, y, s, c) => `<path d="M${x} ${y - 26 * s}l${11 * s} ${22 * s}h${-22 * s}z" fill="${c}"/><path d="M${x} ${y - 16 * s}l${9 * s} ${18 * s}h${-18 * s}z" fill="${c}" opacity=".85"/><rect x="${x - 2 * s}" y="${y - 4 * s}" width="${4 * s}" height="${6 * s}" fill="#8a5a3c"/>`;
+  function isleSVG(kind, ghost, u) {
+    // simbol bab (mis. +, ×, ½) di balok tengah, supaya setiap pulau bilangan berbeda
+    const lg = u && CH_LOGO.find((x) => x[0].test(u.name)), sym = lg ? lg[1] : '2', symC = lg ? lg[2] : '#4d96ff';
+    const C = ghost ? { cliff: '#d5e0e8', cliff2: '#c7d4de', grass: '#e6eef3', grass2: '#eef4f7', tree: '#d0dce5', mark: '#cbd8e2' }
+      : { cliff: '#a97c66', cliff2: '#8d6a5c', grass: '#7fd36e', grass2: '#a5e48f', tree: '#2fa66a', mark: '' };
+    const base = `<ellipse cx="120" cy="134" rx="114" ry="14" fill="${ghost ? '#dfeaf1' : '#9fdcef'}" opacity=".7"/>
+      <path d="M14 76c2 30 18 50 48 56 40 7 78 8 116 2 28-5 44-26 48-58z" fill="${C.cliff}"/>
+      <path d="M30 108c26 14 58 18 92 18s66-4 92-18c-6 14-18 22-36 25-38 7-76 7-114 0-17-3-28-12-34-25z" fill="${C.cliff2}"/>
+      <ellipse cx="120" cy="74" rx="108" ry="40" fill="${C.grass}"/><ellipse cx="112" cy="66" rx="84" ry="26" fill="${C.grass2}" opacity=".7"/>`;
+    const trees = ISLE_TREE(36, 82, 1, C.tree) + ISLE_TREE(52, 92, 0.8, C.tree) + ISLE_TREE(206, 84, 0.9, C.tree) + ISLE_TREE(190, 96, 0.7, C.tree);
+    if (ghost) {
+      const shape = { bil: '<rect x="96" y="30" width="24" height="24" rx="5"/><rect x="122" y="18" width="24" height="36" rx="5"/>', geo: '<path d="M100 56l18-36 18 36z"/><rect x="138" y="32" width="24" height="24" rx="3"/>', ukur: '<rect x="96" y="22" width="12" height="38" rx="3"/><circle cx="140" cy="38" r="16"/>', data: '<rect x="98" y="34" width="14" height="24" rx="3"/><rect x="116" y="22" width="14" height="36" rx="3"/><rect x="134" y="40" width="14" height="18" rx="3"/>' }[kind];
+      return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true">${base}${trees}<g fill="${C.mark}">${shape}</g></svg>`;
+    }
+    const block = (x, y, w, h, c, t) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="6" fill="${c}"/><rect x="${x}" y="${y + h - 6}" width="${w}" height="6" rx="3" fill="#000" opacity=".12"/>${t ? `<text x="${x + w / 2}" y="${y + h / 2 + 7}" text-anchor="middle" font-size="20" font-weight="900" fill="#fff" font-family="Nunito,sans-serif">${t}</text>` : ''}`;
+    const mark = {
+      bil: block(88, 34, 28, 28, '#ff8a3d', '1') + block(116, 18, 34, 44, symC, '') + `<text x="133" y="${sym.length > 1 ? 46 : 48}" text-anchor="middle" font-size="${sym.length > 2 ? 13 : sym.length > 1 ? 17 : 24}" font-weight="900" fill="#fff" font-family="Nunito,sans-serif">${esc(sym)}</text>` + block(152, 38, 26, 24, '#9b6dff', '3') + '<circle cx="174" cy="30" r="4" fill="#ffc800"/>',
+      geo: '<path d="M92 62l20-42 20 42z" fill="#9b6dff"/><path d="M112 20l20 42h-10z" fill="#7d52e0"/>' + '<path d="M134 38l14-8 14 8v18l-14 8-14-8z" fill="#4d96ff"/><path d="M148 46v18l14-8V38z" fill="#2f74d8"/><path d="M134 38l14 8 14-8-14-8z" fill="#8cbcff"/>' + '<rect x="166" y="40" width="18" height="22" fill="#ffad33"/><ellipse cx="175" cy="40" rx="9" ry="4" fill="#ffd27a"/><ellipse cx="175" cy="62" rx="9" ry="4" fill="#f08a10"/>',
+      ukur: '<g transform="rotate(-12 104 44)"><rect x="92" y="16" width="20" height="50" rx="3" fill="#ffc63a"/>' + [22, 30, 38, 46, 54].map((y, i) => `<rect x="92" y="${y}" width="${i % 2 ? 6 : 10}" height="2" fill="#a0700f"/>`).join('') + '</g><rect x="132" y="38" width="38" height="26" rx="4" fill="#f4efe6"/><path d="M128 40l23-18 23 18z" fill="#e36d4b"/><circle cx="151" cy="50" r="9" fill="#fff" stroke="#1fbf9f" stroke-width="3"/><path d="M151 44v6l4 3" stroke="#0a7d68" stroke-width="2" fill="none" stroke-linecap="round"/>',
+      data: '<rect x="96" y="36" width="18" height="26" rx="4" fill="#ff8a3d"/><rect x="118" y="20" width="18" height="42" rx="4" fill="#4d96ff"/><rect x="140" y="30" width="18" height="32" rx="4" fill="#1fbf9f"/><rect x="162" y="44" width="18" height="18" rx="4" fill="#9b6dff"/><path d="M127 20V4" stroke="#6a7f7a" stroke-width="2"/><path d="M127 4l14 5-14 5z" fill="#ffc800"/>',
+    }[kind];
+    const dock = '<path d="M176 110l30 14" stroke="#b5835a" stroke-width="10" stroke-linecap="round"/><path d="M180 108l2 6M188 112l2 6M196 116l2 6" stroke="#8a5a3c" stroke-width="2"/>';
+    return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true">${base}${trees}${mark}${dock}</svg>`;
+  }
+  // Batu loncatan di antara dua pulau (kiri ke kanan atau sebaliknya)
+  const isleLink = (dir, faint) => `<div class="isle-link ${dir} ${faint ? 'faint' : ''}" aria-hidden="true"><svg viewBox="0 0 200 56" preserveAspectRatio="none">${[0.12, 0.3, 0.5, 0.7, 0.88].map((t) => { const x = dir === 'lr' ? 40 + t * 120 : 160 - t * 120, y = 6 + t * 44; return `<ellipse cx="${x}" cy="${y}" rx="11" ry="5" fill="#f6f1e4"/><ellipse cx="${x}" cy="${y + 2}" rx="11" ry="4" fill="#d9cdb4" opacity=".6"/>`; }).join('')}</svg></div>`;
+  function isleMapHTML(st, isles, fresh) {
+    if (!isles.length) return '';
+    let out = '', side = 0;
+    isles.forEach((x, i) => {
+      const { u, state } = x, s = side++ % 2 ? 'r' : 'l', kind = isleKind(u), reveal = fresh && (state === 'cur' || state === 'next') ? ' reveal' : '', just = fresh === u.id ? ' just' : '';
+      if (i) out += isleLink(s === 'r' ? 'lr' : 'rl', state === 'next' || state === 'fog');
+      if (state === 'fog') { out += `<div class="isle fog ${s}" aria-hidden="true">${isleSVG(kind, true)}<span class="fogl"></span></div>`; return; }
+      if (state === 'next') {
+        out += `<button class="isle next ${s}${reveal}" data-act="tip" data-t="🌫️ This island is still covered in fog. Finish your current island to uncover it." aria-label="Next island, still covered in fog">${isleSVG(kind, false, u)}<span class="fogl"></span><span class="isle-tag"><i>${IC.lock.replace('<svg', '<svg width="16" height="16"')}</i>Next destination</span></button>`;
+        return;
+      }
+      const t = S.testOf(st.id, u.id), stars = t ? '★'.repeat(chestTier(t.stars)) : '';
+      const label = state === 'done' ? `<span class="isle-tag ok"><i>${IC.ok}</i><span><b>${esc(u.name)}</b><small>Completed${stars ? ` <em>${stars}</em>` : ''}</small></span><u>›</u></span>`
+        : `<span class="isle-tag"><span><b>${esc(u.name)}</b><small>${x.done} / ${x.total} skills</small></span><u>›</u></span>`;
+      out += `<a class="isle ${state} ${s}${reveal}${just}" href="#/bab/${u.id}" aria-label="Chapter ${u.id} ${esc(u.name)}">${state === 'cur' ? '<span class="isle-pin" aria-hidden="true"></span><span class="isle-glow" aria-hidden="true"></span>' : ''}${isleSVG(kind, false, u)}${reveal ? '<span class="fogl lift"></span>' : ''}${label}${just ? '<span class="isle-spark" aria-hidden="true">✨</span>' : ''}</a>`;
+    });
+    return `<section class="isles" aria-label="Learning island map">${out}<div class="isle-mist" aria-hidden="true"></div></section>`;
+  }
+  // Bagian jalur belajar satu bab (dipakai halaman bab): langkah, peti ujian, dan spanduk bab
+  function pathParts(st) {
     let n = 0;
     const node = (s, u, withBuddy) => {
       const x = XS[n++ % XS.length], sk = SKILLS[s.id], done = s.state === 'done' || s.state === 'gold';
@@ -448,41 +545,19 @@
       const state = chestStateOf(st.id, u), t = S.testOf(st.id, u.id);
       return `<div class="mq-row"><div class="mq-n chest ${state}">${state === 'ready' ? `<a class="mq-label" href="#/ujian/${u.id}">Test!</a>` : ''}<button class="mq-chest ${state}" data-act="chest" data-u="${u.id}" aria-label="Chapter ${u.id} test chest">${chestSVG(state)}</button>${state === 'open' && t ? `<span class="mq-cstars">${'★'.repeat(chestTier(t.stars))}</span>` : ''}</div></div><div class="mq-pop-slot" id="pop-ch-${u.id}"></div>`;
     };
-    // Seperti peta Duolingo: hanya bab yang sudah/sedang dipelajari yang tampil, ditambah satu bab berikutnya berwarna abu.
-    // Bab sesudahnya disembunyikan supaya layar tidak penuh gembok.
-    let teaser = false;
-    const blocks = m.units.map((u) => {
-      const ss = u.skills.map((s) => m.st(s.id)), started = ss.some((s) => s.state === 'cur' || s.state === 'done' || s.state === 'gold' || s.att > 0);
-      if (!started) {
-        if (teaser) return '';
-        teaser = true;
-        return `<div class="mq-next"><span class="tag">Next</span><span class="em">${chLogo(u)}</span><b>${u.name}</b><small>Chapter ${u.id} · ${u.skills.length} steps</small><button class="mq-btn ghost sm" data-act="tip" data-t="🔒 Finish the previous chapter first">${IC.lock.replace('<svg', '<svg width="18" height="18"')} Locked</button></div>`;
-      }
-      const all = ss.every((s) => s.state === 'done' || s.state === 'gold'), hasCur = ss.some((s) => s.state === 'cur'), hasOpen = ss.some((s) => s.state === 'open');
-      const reward = chestRow(u);
-      const th = unitBuddy(u) ? ' th-' + unitBuddy(u) : '';
-      if (all) return `<details class="mq-ud${th}"><summary>${banner(u, 'done', '<span class="chev">⌄</span>')}</summary><div class="mq-path">${ss.map((s) => node(s, u, false)).join('')}${reward}</div></details>`;
-      if (hasCur) return `<section class="mq-sec${th}">${banner(u, '')}<div class="mq-path">${ss.map((s) => node(s, u, s.state === 'cur')).join('')}${reward}</div></section>`;
-      if (hasOpen) return `<details class="mq-ud${th}"><summary>${banner(u, 'lock', '<span class="chev">⌄</span>')}</summary><div class="mq-path">${ss.map((s) => node(s, u, false)).join('')}</div></details>`;
-      return `<button class="mq-unit lock" data-act="tip" data-t="🔒 Finish the previous chapter first"><span class="em">${chLogo(u)}</span><span class="grow"><small>Chapter ${u.id}</small><b>${u.name}</b></span><span>${IC.lock.replace('<svg', '<svg width="24" height="24"')}</span></button>`;
-    }).join('');
-    const allDone = m.cur >= m.flat.length;
-    const gradeSheet = `<div class="mq-modal" id="gsheet" hidden data-act="gclose"><div class="mq-sheet"><h2>Choose a grade</h2><div class="mq-grades">${GRADES.map((x) => { const sk = unitsOf(x.id).flatMap((u) => u.skills), pr = S.progressAll(st.id), dn = sk.filter((s) => ((pr[s.id] || {}).score || 0) >= 80).length; return `<button class="mq-g ${x.id === g ? 'on' : ''}" data-act="grade" data-g="${x.id}"><small>${x.stage || 'Grade'}</small><b>${x.short || x.id}</b><span class="bar"><i style="width:${pct(dn, sk.length)}%"></i></span></button>`; }).join('')}</div><button class="mq-btn ghost" style="margin-top:16px" data-act="gclose">Close</button></div></div>`;
-    app.innerHTML = mqPage(`
-      <div class="mq-bar">
-        <button class="mq-chip grade" data-act="gsheet" aria-label="Choose a grade">${gname(g)} <small>▾</small></button>
-        <button class="mq-chip" data-act="tip" data-t="🔥 ${streakOf(st.id)}-day learning streak" aria-label="Day streak"><span class="em">🔥</span>${streakOf(st.id)}</button>
-        <button class="mq-chip star" data-act="tip" data-t="⭐ Your total stars: from practice, chapter tests, and games" aria-label="Stars"><span class="em">⭐</span>${S.starsOf(st.id)}</button>
-        <button class="mq-ring ${mins >= goal ? 'done' : ''}" style="--p:${Math.min(100, (mins / goal) * 100)}" data-act="tip" data-t="🎯 Today's goal: ${Math.min(goal, Math.floor(mins))} of ${goal} minutes" aria-label="Daily goal"><span>🎯</span></button>
-      </div>
-      <h1 class="mq-hello">${SAPA_IC}<span>${sapaan(st.name)}</span></h1>
-      ${unsent ? `<div class="mq-demo">📶 ${unsent} answers are waiting for internet to reach your teacher.</div>` : ''}
-      ${TASKS_ON && todo ? `<a class="mq-task" href="#/tugas"><span class="em">📌</span><b>${todo} tasks from your teacher</b><span>›</span></a>` : ''}
-      ${allDone ? `<div class="mq-all">${MQ.svg('cheer', { size: 120 })}<div>All ${gname(g)} chapters are complete! 🎉</div><button class="mq-btn" style="margin-top:12px" data-act="gsheet">Choose another grade</button></div>` : ''}
-      ${blocks}
-      ${gradeSheet}`, 'belajar');
+    return { node, banner, chestRow };
+  }
+  // Halaman satu bab: dibuka dengan mengetuk pulau
+  function viewChapter(uid) {
+    const ses = session.get(), st = S.student(ses.id);
+    if (ses.role !== 'siswa' || !st) return go('#/siswa');
+    const u = UNITS.find((x) => x.id === uid); if (!u) return go('#/belajar');
+    const m = pathModel(st.id, u.grade), info = isleStates(m).find((x) => x.u.id === uid);
+    if (!info || info.state === 'next' || info.state === 'fog') return go('#/belajar');
+    const P = pathParts(st), th = unitBuddy(u) ? ' th-' + unitBuddy(u) : '';
+    app.innerHTML = mqPage(`<div class="isle-top"><a class="mq-ico" href="#/belajar" aria-label="Back to the map">${IC.back}</a><span class="grow"><small>${gname(u.grade)} · Island ${u.id}</small><b>${esc(u.name)}</b></span><span class="isle-prog">${info.done}/${info.total}</span></div>
+      <section class="mq-sec${th}">${P.banner(u, info.state === 'done' ? 'done' : '')}<div class="mq-path">${info.ss.map((s) => P.node(s, u, s.state === 'cur')).join('')}${P.chestRow(u)}</div></section>`, 'belajar');
     setTimeout(() => { const c = document.querySelector('.mq-n.cur'); if (c && c.getBoundingClientRect().bottom > innerHeight - 110) c.scrollIntoView({ block: 'center' }); }, 80);
-    void curId;
   }
 
   /* ----- Tugas dari guru ----- */
@@ -968,11 +1043,11 @@
 
   // Logo tiap bab: lambang operasi untuk bab hitung (+ − × ÷ ½ % ...), gambar untuk bab lain
   const CH_LOGO = [
-    [/penjumlahan dan pengurangan/i, '+−', '#19b796', 's'], [/penjumlahan/i, '+', '#ff7a45'], [/pengurangan/i, '−', '#3b9cff'],
-    [/perkalian dan pembagian/i, '×÷', '#9b6bff', 's'], [/perkalian|mengalikan/i, '×', '#9b6bff'], [/pembagian|membagi/i, '÷', '#ff5f9a'],
-    [/desimal/i, '0.5', '#00a6a6', 's'], [/pecahan/i, '½', '#ff9f1c'], [/persen/i, '%', '#ef476f'], [/rasio/i, '1:2', '#2ec4b6', 's'],
-    [/bilangan bulat/i, '−3', '#5c7cfa', 's'], [/pangkat dan akar/i, '√', '#7048e8'], [/pangkat sepuluh/i, '10ⁿ', '#7048e8', 's'],
-    [/aljabar|ekspresi/i, 'x', '#e8590c'], [/persamaan|kesamaan/i, '=', '#e8590c'], [/^bilangan/i, '123', '#19b796', 's'],
+    [/penjumlahan dan pengurangan|addition and subtraction/i, '+−', '#19b796', 's'], [/penjumlahan|addition/i, '+', '#ff7a45'], [/pengurangan|subtraction/i, '−', '#3b9cff'],
+    [/perkalian dan pembagian|multiplication and division/i, '×÷', '#9b6bff', 's'], [/perkalian|mengalikan|multiplication|multiplying/i, '×', '#9b6bff'], [/pembagian|membagi|division|dividing/i, '÷', '#ff5f9a'],
+    [/desimal|decimal/i, '0.5', '#00a6a6', 's'], [/pecahan|fraction/i, '½', '#ff9f1c'], [/persen|percent/i, '%', '#ef476f'], [/rasio|ratio/i, '1:2', '#2ec4b6', 's'],
+    [/bilangan bulat|integer/i, '−3', '#5c7cfa', 's'], [/pangkat dan akar|powers and roots|exponents and roots/i, '√', '#7048e8'], [/pangkat sepuluh|powers of ten/i, '10ⁿ', '#7048e8', 's'],
+    [/aljabar|ekspresi|algebra|expression/i, 'x', '#e8590c'], [/persamaan|kesamaan|equation|equalit/i, '=', '#e8590c'], [/^bilangan|^numbers/i, '123', '#19b796', 's'],
   ];
   function chLogo(u) {
     const r = CH_LOGO.find((x) => x[0].test(u.name));
@@ -3787,6 +3862,7 @@
       case 'mulai': return viewTryStart(b);
       case 'ajukan': return b === 'status' ? viewRequestStatus(c) : b ? viewRequestForm(b) : viewRequestChooser();
       case 'belajar': return viewStudentHome();
+      case 'bab': return viewChapter(b);
       case 'asesmen': return b === 'hasil' ? viewDiagResult('a') : b === 'akhir' ? (c === 'hasil' ? viewDiagResult('b') : viewDiag('b')) : viewDiag('a');
       case 'permainan': return viewGames();
       case 'harga': return viewPricing();
@@ -3857,7 +3933,13 @@
     if (act === 'testagain') return viewTest(el.dataset.u);
     if (act === 'rkp' || act === 'rks') { ss.set(act, el.dataset.v); return route(); }
     if (act === 'rkcsv') { const ctx = teacherCtx(); if (ctx) exportRanking(ctx); return; }
-    if (act === 'tocur') { document.querySelectorAll('.mq-pop-slot').forEach((x) => { x.innerHTML = ''; }); const c = document.querySelector('.mq-n.cur'); if (c) c.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+    if (act === 'tocur') {
+      document.querySelectorAll('.mq-pop-slot').forEach((x) => { x.innerHTML = ''; });
+      const c = document.querySelector('.mq-n.cur'); if (c) { c.scrollIntoView({ behavior: 'smooth', block: 'center' }); return; }
+      // langkah sekarang ada di pulau lain
+      const st = studentNow(), m = st && pathModel(st.id, getGrade()), sk = m && SKILLS[m.flat[m.cur]];
+      return go(sk ? '#/bab/' + sk.unit : '#/belajar');
+    }
     if (act === 'node') {
       const slot = document.getElementById('pop-' + el.dataset.id); if (!slot) return;
       const had = slot.firstChild; document.querySelectorAll('.mq-pop-slot').forEach((x) => { x.innerHTML = ''; });
