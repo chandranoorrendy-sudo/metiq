@@ -2383,7 +2383,8 @@
   const TRY_CODE = '1234';
   // Formulir nama sebelum masuk mode coba (siswa, orang tua, guru)
   function viewTryStart(role) {
-    if (!['siswa', 'ortu', 'guru'].includes(role) || (role === 'ortu' && !PARENTS_ON)) return go('#/');
+    // orang tua bisa mencoba lewat kode 1234 selama masuk dengan kode orang tua aktif, walau akun orang tua dimatikan
+    if (!['siswa', 'ortu', 'guru'].includes(role) || (role === 'ortu' && !PARENTS_ON && !PARENT_CODE_ON)) return go('#/');
     if (role === 'siswa') {
       const kids = deviceKids(), t0 = tryInfo() || {};
       app.innerHTML = `<form data-form="trystart" data-r="siswa">${mqBack('#/')}<main class="mq-screen"><div class="mq-ob-body">
