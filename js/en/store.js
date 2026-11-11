@@ -335,6 +335,14 @@
         ['Ms. Nur', 'Class 4B (Sample)', 4, [['Qori', 0.62], ['Rani', 0.5], ['Sandi', 0.66], ['Tia', null]]],
         ['Ms. Rina', 'Class 5B (Sample)', 5, [['Ulfa', 0.85], ['Vino', 0.62], ['Wulan', 0.88], ['Yusuf', 0.86]]],
       ].forEach(([tn, cn, g, kids]) => fill(Store.createClass(tOf(tn).id, cn), g, kids, true));
+      // Contoh latihan Olimpiade (tab 🏅 Olimpiade di dasbor guru): [nama, {bidang: soal terpecahkan}, simulasi SD %, hari lalu]
+      [['Alya', { A: 9, N: 12, G: 4, K: 6 }, 67, 1], ['Citra', { A: 6, N: 8, G: 2, K: 3 }, 47, 2], ['Bima', { A: 3, N: 5, G: 0, K: 1 }, null, 4], ['Eka', { A: 2, N: 1, G: 0, K: 0 }, null, 9],
+        ['Salsa', { A: 14, N: 11, G: 6, K: 9 }, 73, 0], ['Umar', { A: 8, N: 9, G: 3, K: 5 }, 53, 3], ['Kirana', { A: 7, N: 10, G: 2, K: 4 }, 60, 1]].forEach(([name, per, sim, d]) => {
+        const k = db.students.find((x) => x.name === name); if (!k) return;
+        const p = db.progress[k.id] = db.progress[k.id] || {}, last = now - d * 864e5 - 3 * 3600e3;
+        Object.entries(per).forEach(([f, n]) => { if (n) p['g:oSD' + f] = { score: n, att: n, ok: 0, ms: n * 150000, last }; });
+        if (sim !== null) p['g:oSSD'] = { score: sim, att: sim > 60 ? 2 : 1, ok: 0, ms: 3000e3, last };
+      });
       // Contoh asesmen awal (60 hari lalu) dan akhir (hari ini). Siswa lain diminta asesmen awal saat masuk.
       const fake = (L) => [...(L > 1 ? Store.DIAG[L - 1].map((id) => [id, 1, 1, 0]) : []), ...Store.DIAG[L].map((id, i) => [id, i < 2 ? 1 : 0, i === 0 ? 1 : 0, 0])];
       const plan = { Alya: [7, 2, 'buka'], Farel: [7, 1, 2], Bima: [7, 1, 2], Lala: [9, 2, 3], Miko: [9, 1, 2], Nina: [9, 2, 2], Oki: [9, 2], Salsa: [11, 3, 4], Umar: [11, 2, 4], Wawan: [11, 2, 3],

@@ -1307,7 +1307,7 @@
   // Tiga tab saja untuk guru. Setiap halaman menjawab satu pertanyaan: apa yang perlu dilakukan, bagaimana siswa saya, tugas apa yang diberikan.
   const TAB_GROUPS = [
     ['hari', '🏠 Today', [['ringkasan', 'Today']]],
-    ['siswa', '🧒 Students', [['siswa', 'Student']]],
+    ['siswa', '🧒 Students', [['siswa', 'Student'], ['olimpiade', '🏅 Olympiad']]],
     ['tugas', '📌 Tasks', [['tugas', 'Tasks']]],
     ['ajar', '📺 Mengajar', [['jadwal', '📅 Jadwal'], ['ajar', 'Materi di layar'], ['sesi', '🎯 Tugas dan ujian'], ['bintang', '⭐ Bintang kelas']]],
   ];
@@ -1384,6 +1384,36 @@
       <p class="small muted">Tap a name to see their progress. 📤 Parent = the parent code has not been sent yet.</p>
       ${group('bantu')}${group('baru')}${group('diam')}${group('baik')}</section>
       <div class="printcards">${ctx.kids.map((k) => `<div class="pcard"><div class="av">${avHTML(k.avatar)}</div><b>${esc(k.name)}</b><div>Class code: <b>${ctx.c.code}</b></div><div>Parent code: <b>${k.parentCode}</b></div><small>metiq · ${esc(ctx.c.name)}</small></div>`).join('')}</div>`;
+  }
+  /* Olimpiade untuk guru pembimbing: soal terpecahkan per bidang (semua jenjang dijumlah) dan simulasi terbaik setiap siswa.
+   * Data dari latihan siswa: 'g:o<jenjang><bidang>' (score = soal terpecahkan) dan 'g:oS<jenjang>' (score = persen benar simulasi terbaik). */
+  function olympiadHTML(ctx) {
+    const OM = window.METIQ_OLIM, F = Object.entries(OM.FIELDS), LV = Object.keys(OM.LEVELS);
+    const rows = ctx.kids.map((k) => {
+      const p = S.progressAll(k.id), g = (key) => p['g:' + key], per = {};
+      let last = 0, ms = 0;
+      F.forEach(([f]) => { per[f] = 0; LV.forEach((L) => { const x = g('o' + L + f); if (x && x.att) { per[f] += x.score; last = Math.max(last, x.last || 0); ms += x.ms || 0; } }); });
+      const sims = LV.map((L) => [L, g('oS' + L)]).filter(([, x]) => x && x.att);
+      sims.forEach(([, x]) => { last = Math.max(last, x.last || 0); ms += x.ms || 0; });
+      const total = F.reduce((t, [f]) => t + per[f], 0);
+      return { k, per, total, sims, last, min: Math.round(ms / 60000) };
+    });
+    const active = rows.filter((r) => r.total || r.sims.length).sort((a, b) => b.total - a.total || a.k.name.localeCompare(b.k.name, 'en'));
+    const sum = (f) => active.reduce((t, r) => t + r.per[f], 0);
+    const low = active.length ? F.slice().sort((a, b) => sum(a[0]) - sum(b[0]))[0] : null;
+    const cell = (n) => `<td class="${n ? '' : 'muted'}">${n || '–'}</td>`;
+    const intro = `<section class="card"><h2>🏅 Olympiad</h2>
+      <p class="small">Untuk guru pembimbing olimpiade. Siswa berlatih di menu <b>Main → Olimpiade</b> (SD, SMP, SMA). Di sini terlihat berapa soal yang sudah dipecahkan setiap siswa di tiap bidang, dan skor simulasi terbaiknya.</p>
+      <p class="small muted">💡 Membina tim khusus? Buat kelas baru, misalnya "Tim Olimpiade", di <a href="#/guru/kelola">⚙️ Kelas</a>, lalu bagikan kodenya ke siswa binaan. Soal uraian dan pembuktian tetap perlu dibimbing langsung.</p>
+      <div class="row-btn left"><a class="btn ghost sm" href="#/olimpiade">Buka soal Olimpiade</a></div></section>`;
+    if (!active.length) return intro + `<section class="card center"><div class="bigemoji">🏅</div><h2>Belum ada yang berlatih</h2><p class="muted">Ajak siswa membuka <b>Main → Olimpiade</b>. Hasilnya muncul di sini.</p></section>`;
+    return intro + `<section class="card"><div class="rhead"><h2>Hasil latihan <span class="pill">${active.length} dari ${ctx.kids.length} siswa</span></h2></div>
+      ${low && active.length > 1 ? `<p class="small">Bidang yang paling jarang dipecahkan kelas ini: <b>${low[1][1]} ${low[1][0]}</b>. Bisa jadi bahan sesi pembinaan berikutnya.</p>` : ''}
+      <div class="tscroll"><table class="tbl"><thead><tr><th>Student</th>${F.map(([, [n, e]]) => `<th title="${n}">${e}<br><small>${n}</small></th>`).join('')}<th>Sum</th><th>Simulasi terbaik</th><th>Last</th></tr></thead><tbody>
+      ${active.map((r) => `<tr><td><a href="#/guru/siswa/${r.k.id}">${avHTML(r.k.avatar)} ${esc(r.k.name)}</a></td>${F.map(([f]) => cell(r.per[f])).join('')}<td><b>${r.total}</b></td>
+        <td>${r.sims.length ? r.sims.map(([L, x]) => `${L} <b>${x.score}%</b> <small class="muted">(${x.att}×)</small>`).join('<br>') : '<span class="muted">–</span>'}</td><td class="small">${ago(r.last)}${r.min ? `<br><small class="muted">${r.min} menit</small>` : ''}</td></tr>`).join('')}
+      </tbody></table></div>
+      <p class="small muted">Angka di setiap bidang = soal yang dipecahkan sendiri (tanpa membuka pembahasan), semua jenjang dijumlah. Simulasi = 15 soal dalam 60 menit.</p></section>`;
   }
   // Satu baris "yang perlu dilakukan": ikon, kalimat, keterangan, satu tombol
   const todoRow = (ic, text, sub, btn, tone) => `<div class="todo ${tone || ''}"><span class="tic">${ic}</span><span class="grow"><b>${text}</b>${sub ? `<small>${sub}</small>` : ''}</span>${btn || ''}</div>`;
@@ -1515,6 +1545,7 @@
     if (tab === 'sesi') { teacherShell(ctx, tab, '<div id="sesi-box"></div>'); return window.METIQ_SESI.teacherPage(document.getElementById('sesi-box'), ctx, arg); }
     if (tab === 'ajar') return teacherShell(ctx, tab, gradeTabs() + window.METIQ_KELAS.pickerHTML(getGrade()));
     if (tab === 'siswa') return teacherShell(ctx, tab, addKidsHTML(ctx, !kids.length) + (kids.length ? rosterHTML(ctx) : ''));
+    if (tab === 'olimpiade') return teacherShell(ctx, tab, olympiadHTML(ctx));
     if (tab === 'ringkasan') { teacherShell(ctx, tab, '<div id="meet-remind"></div>' + todayHTML(ctx)); return window.METIQ_JADWAL.remindCard(document.getElementById('meet-remind'), ctx); }
     if (!kids.length) return teacherShell(ctx, tab, emptyKids(ctx));
     if (tab === 'kelompok') return teacherShell(ctx, tab, groupsHTML(ctx));
