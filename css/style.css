@@ -1137,3 +1137,10 @@ b.big { font-size: 1.3rem; display: block; }
 @media (max-width: 760px) { .sugrow .btn { margin-left: auto; } .thero h1 { font-size: 1.3rem; } }
 @media (max-width: 480px) { .demobar { flex-wrap: wrap; } .demobar .grow { flex-basis: 100%; } }
 .sclass.r, .kcard.r, .khead.r, .phead.r { text-align: left; }
+/* Riset → Tanpa kelas: batang mendatar */
+.ugbars { display: grid; gap: 8px; margin: 8px 0; }
+.ugbar { display: grid; grid-template-columns: minmax(110px, 38%) 1fr auto; gap: 4px 10px; align-items: center; font-size: .88rem; }
+.ugbar .ugl { font-weight: 700; } .ugbar b { font-weight: 900; text-align: right; }
+.ugbar .ugt { height: 12px; background: #eef5f3; border-radius: 99px; overflow: hidden; } .ugbar .ugt i { display: block; height: 100%; background: var(--brand-2); border-radius: 99px; }
+.ugbar small { grid-column: 2 / 4; color: var(--muted); font-weight: 600; margin-top: -4px; }
+.ubars.ugh { height: 100px; }

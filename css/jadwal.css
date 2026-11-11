@@ -1,0 +1,83 @@
+/* Metiq — Jadwal pertemuan, pengingat persiapan, guru pengganti, laporan koordinator (js/jadwal.js) */
+.jd-remind { border-left: 6px solid var(--warn); }
+.jd-rrow { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-top: 1px solid var(--line); text-decoration: none; color: var(--ink); }
+.jd-rrow:first-of-type { border-top: 0; }
+.jd-rrow small { display: block; color: var(--muted); }
+.jd-when { flex: none; min-width: 64px; text-align: center; font-weight: 900; font-size: .8rem; border-radius: 999px; padding: 4px 8px; background: #fff3c4; color: #7a5200; }
+.jd-when.now { background: var(--no-bg); color: var(--no); }
+.jd-go { flex: none; font-weight: 800; color: var(--brand); font-size: .85rem; }
+@media (max-width: 520px) { .jd-go { display: none; } }
+
+.jd-today { border-left: 6px solid var(--brand-2); }
+.jd-trow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0; }
+.jd-trow small { display: block; color: var(--muted); }
+.jd-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 10px 0; }
+.jd-stats div { background: var(--bg); border-radius: 12px; padding: 8px; text-align: center; }
+.jd-stats b { display: block; font-size: 1.6rem; line-height: 1.1; }
+.jd-stats b small { font-size: .55em; color: var(--muted); }
+.jd-stats span { font-size: .75rem; color: var(--muted); font-weight: 700; }
+.jd-stats .warn { background: var(--no-bg); }
+.jd-stats .warn b { color: var(--no); }
+@media (max-width: 520px) { .jd-stats { grid-template-columns: repeat(2, 1fr); } }
+.jd-month { margin: 14px 0 4px; font-size: .95rem; color: var(--muted); text-transform: capitalize; }
+.jd-row { display: flex; align-items: center; gap: 10px; padding: 8px 4px; border-top: 1px solid var(--line); text-decoration: none; color: var(--ink); border-radius: 10px; }
+.jd-row.today { background: #eafcf6; }
+.jd-row small { display: block; color: var(--muted); }
+.jd-row .grow { min-width: 0; }
+.jd-date { flex: none; width: 44px; text-align: center; line-height: 1.1; }
+.jd-date b { display: block; font-size: 1.3rem; }
+.jd-date small { font-size: .7rem; color: var(--muted); font-weight: 800; }
+.jd-st { flex: none; font-size: .75rem; font-weight: 800; border-radius: 999px; padding: 3px 9px; background: #eef2f1; color: var(--muted); white-space: nowrap; }
+.jd-st.live { background: #ffe3e3; color: #c0262c; }
+.jd-st.done { background: var(--ok-bg); color: var(--ok); }
+.jd-st.off { background: #f1f1f1; color: #888; text-decoration: line-through; }
+.jd-st.late { background: #fff1c7; color: #8a5a00; }
+.jd-sub { color: #2f6fe0; font-weight: 700; }
+.jd-subnote { background: #eef5ff; border-radius: 10px; padding: 8px 10px; }
+.jd-empty { padding: 16px 0; }
+
+.jd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.jd-grid label, .jd-form > label, .jd-lbl { display: block; font-weight: 700; font-size: .9rem; margin: 6px 0; }
+.jd-grid input, .jd-grid select, .jd-form input, .jd-form textarea, .jd-lbl input, .jd-lbl textarea, .jd-lbl select, .jd-hand select { display: block; width: 100%; box-sizing: border-box; margin-top: 4px; font: inherit; border: 2px solid var(--line); border-radius: 10px; padding: 8px 10px; background: #fff; color: var(--ink); }
+.jd-prep { display: flex; align-items: flex-start; gap: 8px; padding: 8px 0; border-top: 1px solid var(--line); cursor: pointer; }
+.jd-prep:first-of-type { border-top: 0; }
+.jd-prep input { width: auto; flex: none; margin-top: 4px; }
+.jd-prep a { flex: none; font-weight: 800; font-size: .85rem; }
+.jd-hand { background: #f7fbff; border: 2px solid #cfe0f5; border-radius: 14px; padding: 10px 12px; margin-top: 10px; }
+.jd-hand h3 { margin: 0 0 4px; }
+
+.jd-finish h3 { margin: 4px 0 8px; }
+.jd-q { font-weight: 800; margin: 8px 0 4px; }
+.jd-tuntas { display: flex; flex-wrap: wrap; gap: 6px; }
+.jd-tuntas label { display: flex; align-items: center; gap: 6px; border: 2px solid var(--line); border-radius: 999px; padding: 6px 12px; font-weight: 800; cursor: pointer; }
+.jd-tuntas input { width: auto; margin: 0; }
+.jd-chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0; }
+.jd-chips span { background: var(--bg); border-radius: 999px; padding: 3px 10px; font-size: .8rem; font-weight: 700; }
+.jd-chips.sm span { font-size: .7rem; padding: 2px 7px; }
+.jd-over { position: absolute; inset: 0; z-index: 60; background: rgba(16, 48, 43, .45); display: grid; place-items: center; padding: 16px; font-size: 16px; }
+.jd-sheet { background: #fff; border-radius: 20px; padding: 18px 20px; width: min(560px, 100%); max-height: 90vh; overflow: auto; box-shadow: 0 20px 60px rgba(0, 0, 0, .3); }
+.kl-tbtn.fin { background: var(--ink); color: #fff; }
+@media (max-width: 700px) { .kl-tbtn.fin span { display: none; } }
+
+.jd-wz { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+.jd-wz h3 { margin: 4px 0 6px; }
+.jd-days { display: flex; flex-wrap: wrap; gap: 4px; }
+.jd-days label { border: 2px solid var(--line); border-radius: 10px; padding: 6px 10px; font-weight: 800; cursor: pointer; }
+.jd-days label.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.jd-days input { display: none; }
+.jd-warn { background: #fff1c7; border-radius: 10px; padding: 6px 10px; }
+.jd-prev { max-height: 360px; overflow: auto; border: 1px solid var(--line); border-radius: 12px; }
+.jd-prev > div { display: flex; align-items: center; gap: 8px; padding: 6px 10px; border-top: 1px solid var(--line); }
+.jd-prev > div:first-child { border-top: 0; }
+.jd-prev small { color: var(--muted); }
+.jd-n { flex: none; width: 26px; color: var(--muted); font-weight: 800; font-size: .8rem; }
+.jd-pd { flex: none; width: 104px; font-weight: 700; font-size: .85rem; }
+
+.jd-rep td { vertical-align: middle; }
+.jd-rep .ss-bar { display: inline-block; vertical-align: middle; width: 80px; }
+.jd-bad { color: var(--no); }
+.jd-detail td { background: #fafdfc; white-space: normal; }
+.jd-drow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 6px 0; border-top: 1px solid var(--line); font-size: .9rem; }
+.jd-drow .grow { min-width: 200px; }
+.jd-drow small { display: block; color: var(--muted); }
+.jd-note { color: var(--ink) !important; }

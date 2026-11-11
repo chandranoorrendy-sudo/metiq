@@ -1309,12 +1309,12 @@
     ['hari', '🏠 Today', [['ringkasan', 'Today']]],
     ['siswa', '🧒 Students', [['siswa', 'Student']]],
     ['tugas', '📌 Tasks', [['tugas', 'Tasks']]],
-    ['ajar', '📺 Mengajar', [['ajar', 'Mengajar']]],
+    ['ajar', '📺 Mengajar', [['jadwal', '📅 Jadwal'], ['ajar', 'Materi di layar'], ['sesi', '🎯 Tugas dan ujian'], ['bintang', '⭐ Bintang kelas']]],
   ];
   // Analitik dan data penelitian: hanya akun super admin sungguhan (bukan mode coba, bukan guru, bukan admin sekolah)
   const canResearch = (ctx) => !!(ctx.t.isAdmin && !session.get().demo);
   const RESEARCH_SCHOOL = [['data', '📥 Research data'], ['asesmen', '🧭 Pre- and post-assessment'], ['grafik', '📊 Charts'], ['guru', '👩‍🏫 By teacher'], ['ulasan', '⭐ Reviews'], ['coba', '🧪 Demo mode']];
-  const RESEARCH_GROUP = ['riset', '🔬 Research', [['analitik', 'Analytics'], ['semua', 'All progress'], ['peta', 'Progress map'], ['keterampilan', 'Skills'], ['kelompok', 'Level groups'], ['peringkat', 'Leaderboard'], ...RESEARCH_SCHOOL.map(([k, l]) => ['riset/' + k, l])]];
+  const RESEARCH_GROUP = ['riset', '🔬 Research', [['analitik', 'Analytics'], ['semua', 'All progress'], ['peta', 'Progress map'], ['keterampilan', 'Skills'], ['kelompok', 'Level groups'], ['peringkat', 'Leaderboard'], ['riset/tanpa', '🧺 No class'], ...RESEARCH_SCHOOL.map(([k, l]) => ['riset/' + k, l])]];
   const RESEARCH_TABS = new Set(['riset', ...RESEARCH_GROUP[2].map(([k]) => k)]);
   const groupOf = (tab) => [...TAB_GROUPS, RESEARCH_GROUP].find((g) => g[2].some(([k]) => k === tab));
   // Angka siswa tanpa kelas untuk admin (disimpan sebentar agar tidak memanggil server setiap pindah tab)
@@ -1347,6 +1347,7 @@
       ${inner}
       ${session.get().demo && tab === 'ringkasan' ? realTeacherCard() : ''}`, { cls: 'wide', right: topRight() });
     loadUngCount(ctx);
+    window.METIQ_JADWAL.refresh(ctx);
   }
 
   function emptyKids(ctx) {
@@ -1499,18 +1500,22 @@
     const ctx = teacherCtx(); if (!ctx) return go('#/guru/masuk');
     const { kids } = ctx;
     if (RESEARCH_TABS.has(tab) && !canResearch(ctx)) return go('#/guru/ringkasan');
+    if (tab === 'riset' && arg === 'tanpa') { if (!cloudOn()) return go('#/guru/analitik'); teacherShell(ctx, 'riset/tanpa', rangeBar() + `<div id="ugs-box">${loadingHTML}</div>`); return loadUngStats(); }
     if (tab === 'riset') { const sub = RESEARCH_SCHOOL.some(([k]) => k === arg) ? arg : 'data'; teacherShell(ctx, 'riset/' + sub, schoolHTML(ctx, sub, true)); if (sub === 'coba') loadTrialStats(); return; }
     if (tab === 'siswa' && arg) return viewTeacherStudent(ctx, arg);
     if (tab === 'kelola') return teacherShell(ctx, tab, manageHTML(ctx));
     if (tab === 'referensi') return teacherShell(ctx, tab, referenceHTML());
     if (tab === 'tanpa') { if (!ctx.t.isAdmin || !cloudOn() || session.get().demo) return go('#/guru/ringkasan'); teacherShell(ctx, tab, `<div id="ung-box">${loadingHTML}</div>`); if (arg) loadStudentReport(ctx, arg); else loadUngrouped(ctx); return; }
     if (tab === 'peringkat') return teacherShell(ctx, tab, rankingHTML(ctx));
-    if (tab === 'sekolah') { if (!ctx.t.isAdmin && !ctx.t.isSchoolAdmin) return go('#/guru/ringkasan'); teacherShell(ctx, tab, schoolHTML(ctx, arg)); if (arg === 'kelolaguru') loadSchoolTeachers(); return; }
+    if (tab === 'sekolah') { if (!ctx.t.isAdmin && !ctx.t.isSchoolAdmin) return go('#/guru/ringkasan'); teacherShell(ctx, tab, schoolHTML(ctx, arg)); if (arg === 'kelolaguru') loadSchoolTeachers(); if (arg === 'pertemuan') window.METIQ_JADWAL.schoolReport(document.getElementById('meet-report'), lastSchoolCtx || ctx); return; }
     if (tab === 'super') { if (!ctx.t.isAdmin || session.get().demo) return go('#/guru/ringkasan'); teacherShell(ctx, tab, `<div id="super-box">${loadingHTML}</div>`); loadSuper(ctx, arg); return; }
     if (tab === 'tugas') return teacherShell(ctx, tab, tasksHTML(ctx));
+    if (tab === 'jadwal') { teacherShell(ctx, tab, '<div id="jadwal-box"></div>'); return window.METIQ_JADWAL.teacherPage(document.getElementById('jadwal-box'), ctx, arg); }
+    if (tab === 'bintang') { teacherShell(ctx, tab, '<div id="stars-box"></div>'); return window.METIQ_SESI.starsPage(document.getElementById('stars-box'), ctx); }
+    if (tab === 'sesi') { teacherShell(ctx, tab, '<div id="sesi-box"></div>'); return window.METIQ_SESI.teacherPage(document.getElementById('sesi-box'), ctx, arg); }
     if (tab === 'ajar') return teacherShell(ctx, tab, gradeTabs() + window.METIQ_KELAS.pickerHTML(getGrade()));
     if (tab === 'siswa') return teacherShell(ctx, tab, addKidsHTML(ctx, !kids.length) + (kids.length ? rosterHTML(ctx) : ''));
-    if (tab === 'ringkasan') return teacherShell(ctx, tab, todayHTML(ctx));
+    if (tab === 'ringkasan') { teacherShell(ctx, tab, '<div id="meet-remind"></div>' + todayHTML(ctx)); return window.METIQ_JADWAL.remindCard(document.getElementById('meet-remind'), ctx); }
     if (!kids.length) return teacherShell(ctx, tab, emptyKids(ctx));
     if (tab === 'kelompok') return teacherShell(ctx, tab, groupsHTML(ctx));
     if (tab === 'analitik') return teacherShell(ctx, tab, analyticsHTML(ctx, arg));
@@ -1692,15 +1697,17 @@
       box.innerHTML = e.status === 404 ? emptyCard('Needs SQL 020 to be run', 'Run supabase/020_paket_sekolah.sql in the Supabase SQL Editor.') : emptyCard('Can\'t open yet', e.status ? esc(e.message) : 'Can\'t connect to the server');
     }
   }
+  let lastSchoolCtx = null;
   function schoolHTML(ctxAll, sub, research) {
     if (cloudOn() && !session.get().demo && !ctxAll.t.isAdmin && ctxAll.t.schoolActive === false) return schoolUpsellHTML(ctxAll);
     const list = schoolsOf(ctxAll), want = ss.get('schoolSel', ctxAll.t.schoolId || (list[0] || {}).id || ''), sel = list.find((x) => x.id === want) || list[0] || { id: '' };
     const ctx = Object.assign({}, ctxAll, { classes: ctxAll.classes.filter((c) => (c.schoolId || '') === sel.id) });
     const picker = list.length > 1 ? `<label class="schoolpick">School <select data-act="schoolsel">${list.map((x) => `<option value="${x.id}" ${x.id === sel.id ? 'selected' : ''}>${esc(x.name)}${x.kind === 'homeschool' ? ' (homeschool)' : ''}</option>`).join('')}</select></label>` : '';
+    if (!research) lastSchoolCtx = ctx;
     return picker + schoolBody(ctx, sub, research);
   }
   function schoolBody(ctx, sub, research) {
-    const subs = research ? RESEARCH_SCHOOL : [['kelas', '🏫 Class status'], ['materi', '🧗 Hard topics'], ['kelolaguru', '🧑‍🏫 Manage teachers']];
+    const subs = research ? RESEARCH_SCHOOL : [['kelas', '🏫 Class status'], ['materi', '🧗 Hard topics'], ['pertemuan', '📅 Pertemuan guru'], ['kelolaguru', '🧑‍🏫 Manage teachers']];
     if (!subs.some(([k]) => k === sub)) sub = subs[0][0];
     // Dasbor sekolah selalu 30 hari terakhir supaya tidak perlu memilih periode; pemilih tanggal hanya untuk riset
     const g = research ? getRange() : { from: dayStart(Date.now()) - 29 * DAY, to: Date.now() };
@@ -1710,6 +1717,7 @@
     const teachers = [...new Set(all.map((s) => s.c.teacherId))];
     let body;
     if (sub === 'kelolaguru') body = `<div id="sg-box">${loadingHTML}</div>`;
+    else if (sub === 'pertemuan') body = '<div id="meet-report"></div>';
     else if (sub === 'kelas') {
       const line = (s) => (s.n ? `${s.active} of ${s.n} students practiced${s.answered ? `, ${s.acc}% correct` : ''}${s.behind ? `, ${s.behind} need help` : ''}` : 'No students yet');
       body = `<section class="card"><h2>Status of each class</h2><p class="muted small">Last 30 days. Classes needing the most attention are on top. Tap a class to open it.</p>
@@ -1896,6 +1904,66 @@
         <li>Proficient/complete skills and rewards are calculated from the permanently stored SmartScore.</li>
         <li>To measure impact, use a separate pretest–posttest (not Metiq questions), then combine it with the "Summary per student" file using the student codes.</li>
         <li>Review comments may contain names. Check before quoting them in a thesis.</li></ul></section>`;
+  }
+
+  /* ---------- Riset: statistik gabungan siswa tanpa kelas (SQL 032), tanpa nama atau kode ---------- */
+  async function loadUngStats() {
+    const box = document.getElementById('ugs-box'); if (!box) return;
+    const g = getRange();
+    try {
+      const d = await Cloud.rpc('admin_ungrouped_stats', { p_token: session.get().token, p_from: Math.round(g.from), p_to: Math.round(g.to), p_off: -new Date().getTimezoneOffset() * 60000 });
+      if (!document.getElementById('ugs-box')) return;
+      box.innerHTML = ungStatsHTML(d, g);
+    } catch (e) { box.innerHTML = e.status === 404 ? emptyCard('SQL 032 needs to be run', 'Run supabase/032_riset_tanpa_kelas.sql in the Supabase SQL Editor.') : emptyCard('Can\'t load', e.status ? esc(e.message) : 'Can\'t connect to the server'); }
+  }
+  const median = (xs) => { if (!xs.length) return 0; const s = xs.slice().sort((a, b) => a - b), m = s.length >> 1; return s.length % 2 ? s[m] : Math.round((s[m - 1] + s[m]) / 2); };
+  const ugAcc = (ok, n) => (n ? `<span class="accb nowrap ${pct(ok, n) >= 80 ? 'g' : pct(ok, n) >= 60 ? 'y' : 'r'}">${pct(ok, n)}%</span>` : '–');
+  // Batang mendatar sederhana: [label, angka, keterangan]
+  const hbars = (rows) => { const max = Math.max(1, ...rows.map((r) => r[1])); return `<div class="ugbars">${rows.map(([l, n, note]) => `<div class="ugbar"><span class="ugl">${l}</span><span class="ugt"><i style="width:${Math.max(n ? 2 : 0, Math.round((n / max) * 100))}%"></i></span><b>${fmtNum(n)}</b>${note ? `<small>${note}</small>` : ''}</div>`).join('')}</div>`; };
+  function ungStatsHTML(d, g) {
+    const per = d.per || [], n = d.answers || 0;
+    if (!d.kids) return emptyCard('No students without a class yet', 'Statistics appear once a child starts learning on their own.');
+    const off = -new Date().getTimezoneOffset() * 60000;
+    // Soal per hari (atau per minggu jika periode panjang); hari kosong tetap digambar
+    const dayMap = {}; (d.daily || []).forEach((x) => { dayMap[x.d] = x; });
+    const dIdx = Object.keys(dayMap).map(Number), first = g.from ? Math.floor((g.from + off) / DAY) : (dIdx.length ? Math.min(...dIdx) : Math.floor((g.to + off) / DAY)), last = Math.floor((g.to + off) / DAY);
+    const span = last - first + 1, step = span > 45 ? 7 : 1, buckets = [];
+    for (let i = first; i <= last; i += step) { let c = 0, s = 0; for (let j = i; j < i + step; j++) if (dayMap[j]) { c += dayMap[j].n; s = Math.max(s, dayMap[j].s); } buckets.push({ t: i * DAY - off, n: c, s }); }
+    const bmax = Math.max(1, ...buckets.map((b) => b.n));
+    // Jam belajar
+    const hours = Array.from({ length: 24 }, (_, h) => ((d.hours || []).find((x) => x.h === h) || { n: 0 }).n), hmax = Math.max(1, ...hours);
+    const peak = hours.indexOf(Math.max(...hours));
+    // Sebaran kelas dari keterampilan yang dilatih
+    const grades = {}; (d.skills || []).forEach((x) => { const sk = SKILLS[x.skill]; if (sk) grades[sk.grade] = (grades[sk.grade] || 0) + x.n; });
+    const gradeRows = Object.entries(grades).sort((a, b) => +a[0] - +b[0]).map(([gr, c]) => [esc(gname(+gr)), c, `${pct(c, n)}%`]);
+    // Keterampilan paling sulit: minimal 10 soal, ketepatan terendah
+    const hard = (d.skills || []).filter((x) => SKILLS[x.skill] && x.n >= 10).sort((a, b) => a.ok / a.n - b.ok / b.n).slice(0, 10);
+    const top = (d.skills || []).filter((x) => SKILLS[x.skill]).slice(0, 10);
+    // Usaha per anak aktif
+    const nPer = per.map((x) => x[0]), daysPer = per.map((x) => x[2]), msPer = per.map((x) => x[3]);
+    const effort = [['1–9 questions', nPer.filter((x) => x < 10).length], ['10–49 questions', nPer.filter((x) => x >= 10 && x < 50).length], ['50–199 questions', nPer.filter((x) => x >= 50 && x < 200).length], ['200 questions or more', nPer.filter((x) => x >= 200).length]].map(([l, c]) => [l, c, `${pct(c, per.length)}% of children`]);
+    const tags = (d.tags || []).map((x) => [x.tag === 'konsep' ? 'Concept not understood yet (wrong with no specific pattern)' : TAGS[x.tag] ? esc(TAGS[x.tag].label) : esc(x.tag), x.n, `${pct(x.n, n - d.ok)}% of wrong answers`]);
+    const skRow = (x) => { const sk = SKILLS[x.skill]; return `<tr><td><b>${sk.code}</b> ${esc(sk.name)}<small class="muted"> · ${esc(gname(sk.grade))}</small></td><td>${fmtNum(x.n)}</td><td>${ugAcc(x.ok, x.n)}</td><td>${x.s}</td></tr>`; };
+    const skTable = (rows) => `<div class="tscroll"><table class="tbl"><thead><tr><th>Skills</th><th>Questions</th><th>Accuracy</th><th>Children</th></tr></thead><tbody>${rows.map(skRow).join('') || '<tr><td colspan="4" class="muted">No data yet.</td></tr>'}</tbody></table></div>`;
+    return `<p class="muted small">Combined data for all children learning on their own (not in a class). No names or codes, so it is safe for reports. The per-child list is in the <a href="#/guru/tanpa">🧺 No class</a> tab.</p>
+      <div class="kpis"><div class="kpi"><small>Children without a class</small><b>${fmtNum(d.kids)}</b></div><div class="kpi"><small>Started practising</small><b>${fmtNum(d.started)}<span> · ${pct(d.started, d.kids)}%</span></b></div><div class="kpi"><small>Active in period</small><b>${fmtNum(d.active)}<span>/${fmtNum(d.kids)}</span></b></div><div class="kpi"><small>Active in the last 7 days</small><b>${fmtNum(d.active7)}</b></div></div>
+      <div class="kpis"><div class="kpi"><small>Questions answered</small><b>${fmtNum(n)}</b></div><div class="kpi"><small>Accuracy</small><b>${n ? pct(d.ok, n) + '%' : '–'}</b></div><div class="kpi"><small>Learning time</small><b class="sm">${fmtTime(d.ms || 0)}</b></div><div class="kpi"><small>Skills mastered (score ≥ 80)</small><b>${fmtNum(d.mastered)}</b><span class="muted small"> · ${fmtNum(d.tuntas)} complete</span></div></div>
+      <section class="card"><h2>🪜 From sign-up to routine</h2><p class="muted small">How many children remain at each step (all children without a class).</p>
+        ${hbars([['Signed up', d.kids], ['Started practising', d.started, `${pct(d.started, d.kids)}%`], ['Active in period', d.active, `${pct(d.active, d.kids)}%`], ['Active in the last 7 days', d.active7, `${pct(d.active7, d.kids)}%`]])}
+        <p class="small">Newly signed up in this period: <b>${fmtNum(d.newKids)}</b> children, <b>${fmtNum(d.newStarted)}</b> of whom have started practising (${pct(d.newStarted, d.newKids)}%).</p></section>
+      <section class="card"><h2>Questions answered per ${step === 7 ? 'minggu' : 'hari'}</h2>${n ? `<div class="ubars">${buckets.map((b) => `<div class="ub" title="${fdate(b.t)}: ${b.n} questions${step === 1 ? `, ${b.s} children` : ''}"><span class="ubv">${b.n && buckets.length <= 31 ? b.n : ''}</span><i style="height:${Math.round((b.n / bmax) * 100)}%"></i></div>`).join('')}</div><div class="ublab"><span>${fdate(buckets[0].t)}</span><span>${fdate(buckets[buckets.length - 1].t)}</span></div>` : '<p class="muted">No practice in this period.</p>'}</section>
+      <section class="card"><h2>🕐 Learning hours</h2>${n ? `<p class="muted small">Busiest around <b>${String(peak).padStart(2, '0')}:00–${String((peak + 1) % 24).padStart(2, '0')}:00</b> (this device's time).</p><div class="ubars ugh">${hours.map((c, h) => `<div class="ub" title="${String(h).padStart(2, '0')}:00: ${c} questions"><span class="ubv"></span><i style="height:${Math.round((c / hmax) * 100)}%"></i></div>`).join('')}</div><div class="ublab"><span>00.00</span><span>06.00</span><span>12.00</span><span>18.00</span><span>23.00</span></div>` : '<p class="muted">No practice in this period.</p>'}</section>
+      <section class="card"><h2>💪 Effort per active child</h2>${per.length ? `<div class="kpis ungsum"><div class="kpi"><small>Median questions per child</small><b>${fmtNum(median(nPer))}</b></div><div class="kpi"><small>Median active days</small><b>${median(daysPer)}</b></div><div class="kpi"><small>Median learning time</small><b class="sm">${fmtTime(median(msPer))}</b></div><div class="kpi"><small>Average questions per child</small><b>${fmtNum(Math.round(n / per.length))}</b></div></div>${hbars(effort)}` : '<p class="muted">No active children in this period.</p>'}</section>
+      ${gradeRows.length ? `<section class="card"><h2>🎒 Which grade's material is practised</h2><p class="muted small">Number of questions by the skill's grade.</p>${hbars(gradeRows)}</section>` : ''}
+      <section class="card"><h2>🔥 Most practised skills</h2>${skTable(top)}</section>
+      <section class="card"><h2>🧗 Hardest skills</h2><p class="muted small">Lowest accuracy, only skills with at least 10 questions in this period.</p>${skTable(hard)}</section>
+      ${tags.length ? `<section class="card"><h2>🔍 Error patterns</h2>${hbars(tags)}</section>` : ''}
+      <section class="card"><h2>👪 Parent involvement</h2><ul class="small">
+        <li><b>${fmtNum(d.parentLinked)}</b> children (${pct(d.parentLinked, d.kids)}%) are linked to a parent account, <b>${fmtNum(d.parentGmail)}</b> via Gmail.</li>
+        <li>Child reports were opened <b>${fmtNum(d.reportViews)}×</b> for <b>${fmtNum(d.reportKids)}</b> children in this period.</li></ul></section>
+      ${(d.cohorts || []).length ? `<section class="card"><h2>📅 Groups by sign-up week</h2><p class="muted small">Last 12 weeks. "Still active" means answered a question in the last 7 days.</p><div class="tscroll"><table class="tbl"><thead><tr><th>Sign-up week</th><th>Children</th><th>Started practising</th><th>Still active</th></tr></thead><tbody>
+        ${d.cohorts.slice().reverse().map((c) => `<tr><td>${fdate(c.w)}</td><td>${fmtNum(c.n)}</td><td>${fmtNum(c.started)} <small class="muted">(${pct(c.started, c.n)}%)</small></td><td>${fmtNum(c.active7)} <small class="muted">(${pct(c.active7, c.n)}%)</small></td></tr>`).join('')}</tbody></table></div></section>` : ''}
+      <p class="muted small">Detailed answer history is kept for the last 90 days. Mastered, complete, and parent figures do not follow the period.</p>`;
   }
 
   /* ---------- Asesmen awal (sekali di awal): usia, lalu soal adaptif dari keterampilan kunci tiap kelas ---------- */
@@ -2908,7 +2976,9 @@
     const ctx = teacherCtx(); if (!ctx) return go('#/guru/masuk');
     const u = UNITS.find((x) => x.id === uid); if (!u) return go('#/guru/ajar');
     if (u.grade !== getGrade()) setGrade(u.grade);
-    stopKelas = window.METIQ_KELAS.mount(app, uid, step, { kids: ctx.kids, kolomOf, buddy: unitBuddy(u), gradeName: gname(u.grade), back: '#/guru/ajar' });
+    const meet = window.METIQ_JADWAL.active(), subMode = !!(meet && meet.classId && !ctx.classes.some((c) => c.id === meet.classId));
+    // guru pengganti: materi, soal ke depan, dan permainan; bintang dan tugas siswa tetap milik guru kelas
+    stopKelas = window.METIQ_KELAS.mount(app, uid, step, { ctx: subMode ? null : ctx, finishCtx: ctx, meeting: meet, kids: subMode ? [] : ctx.kids, avHTML, kolomOf, buddy: unitBuddy(u), gradeName: gname(u.grade), back: '#/guru/ajar' });
   }
   const gameKid = () => { const ses = session.get(); return ses.role === 'siswa' && S.student(ses.id); };
   const gStar = (on) => `<svg class="gst ${on ? 'on' : ''}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.6l2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.4l-5.8 3.1 1.1-6.5-4.7-4.6 6.5-.9z"/></svg>`;
@@ -3376,7 +3446,8 @@
     const x = session.get();
     if (x.role === 'guru') {
       return S.db.done.map((d) => ({ d, a: S.db.assignments.find((g) => g.id === d.aid), k: S.student(d.sid) }))
-        .filter((n) => n.a && n.k).map((n) => Object.assign(n, { at: n.d.at })).sort((p, q) => q.at - p.at);
+        .filter((n) => n.a && n.k).map((n) => Object.assign(n, { at: n.d.at }))
+        .concat(window.METIQ_JADWAL.reminders().map((m) => ({ meet: m, at: m.at }))).sort((p, q) => q.at - p.at);
     }
     if (x.role === 'ortu') {
       const kids = x.ptoken ? S.db.students : (x.kids || [x.id]).map((id) => S.student(id)).filter(Boolean);
@@ -3393,7 +3464,7 @@
     const seen = getSeen(), items = notifItems();
     let body;
     if (x.role === 'guru') {
-      body = items.length ? items.map((n) => `<a class="notif ${n.at > seen ? 'new' : ''}" href="#/guru/siswa/${n.k.id}"><span class="av sm">${avHTML(n.k.avatar)}</span><span class="grow"><b>${esc(n.k.name)}</b> finished the task <b>${esc(n.a.note || 'Tasks')}</b><small>${ftime(n.at)} · ${doneText(n)}</small></span>${n.at > seen ? '<i class="dot-new"></i>' : ''}</a>`).join('')
+      body = items.length ? items.map((n) => n.meet ? `<a class="notif ${n.at > seen ? 'new' : ''}" href="#/guru/jadwal/${n.meet.id}"><span class="av sm">${n.meet.sub ? '🤝' : '📅'}</span><span class="grow"><b>${n.meet.sub ? 'Menggantikan rekan' : 'Persiapan mengajar'}: ${n.meet.left <= 0 ? 'today' : n.meet.left === 1 ? 'besok' : n.meet.left + ' hari lagi'}</b> · ${esc(n.meet.className)}<small>${(n.meet.units || []).map((x) => (UNITS.find((y) => y.id === x) || {}).name).filter(Boolean).map(esc).join(', ') || esc(n.meet.title || 'Pertemuan')}${n.meet.sub ? ` · untuk ${esc(n.meet.classTeacherName)}${n.meet.subReason ? ' (' + esc(n.meet.subReason) + ')' : ''}` : ''}</small></span>${n.at > seen ? '<i class="dot-new"></i>' : ''}</a>` : `<a class="notif ${n.at > seen ? 'new' : ''}" href="#/guru/siswa/${n.k.id}"><span class="av sm">${avHTML(n.k.avatar)}</span><span class="grow"><b>${esc(n.k.name)}</b> finished the task <b>${esc(n.a.note || 'Tasks')}</b><small>${ftime(n.at)} · ${doneText(n)}</small></span>${n.at > seen ? '<i class="dot-new"></i>' : ''}</a>`).join('')
         : emptyCard('No notifications yet', 'Notifications appear when students finish tasks you assigned.');
     } else {
       body = items.length ? items.map((n) => {
@@ -4038,6 +4109,7 @@
     { const ov = document.getElementById('mqover'); if (ov) { ov.remove(); document.body.classList.remove('mq-noscroll'); } }
     if (stopGame) { stopGame(); stopGame = null; }
     if (stopKelas) { stopKelas(); stopKelas = null; }
+    window.METIQ_SESI.stopAll();
     closeCoret(true);
     window.METIQ_ANIM.stop();
     if ('speechSynthesis' in window) speechSynthesis.cancel();
@@ -4047,7 +4119,7 @@
     const seq = ++routeSeq;
     S.setMode(cloudOn());
     if (session.get().demo) tlog('view', { p: a === 'guru' ? 'guru/' + (b || '') : a || 'beranda', ...(a === 'latihan' || a === 'main' || a === 'pelajaran' ? { s: b } : {}) });
-    const needsData = a === 'kelas' || a === 'belajar' || a === 'asesmen' || a === 'permainan' || a === 'main' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi' || a === 'tugas' || a === 'aku' || a === 'ujian' || a === 'profesi' || a === 'misi';
+    const needsData = a === 'kelas' || a === 'sesi' || a === 'belajar' || a === 'asesmen' || a === 'permainan' || a === 'main' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi' || a === 'tugas' || a === 'aku' || a === 'ujian' || a === 'profesi' || a === 'misi';
     if (needsData && !(await ensure())) return;
     if (seq !== routeSeq) return;
     // Anak tanpa kelas: Ayah/Bunda masuk dengan Gmail sekali di HP ini sebelum lanjut belajar
@@ -4085,6 +4157,7 @@
       case 'latihan': return viewPractice(b);
       case 'guru': if (b === 'masuk' || b === 'daftar') return viewTeacherAuth(b); if (!b) { const ses = session.get(); return ses.role === 'guru' && (cloudOn() ? ses.token : S.teacher(ses.id)) ? go('#/guru/ringkasan') : viewTeacherAuth(); } return viewTeacher(b, c);
       case 'kelas': return viewKelas(b, c);
+      case 'sesi': return window.METIQ_SESI.studentView(app);
       case 'coba': return viewPreview(b);
       case 'pelajaran': return viewLesson(b);
       case 'avatar': return viewAvatar(b);
@@ -4527,6 +4600,10 @@
     try { const b = await Cloud.rpc(call[0], call[1]); if (b) { S.loadBundle(b); loaded.at = Date.now(); const bell = document.querySelector('.bell'); if (bell) bell.outerHTML = bellHTML(); } } catch (e) { /* coba lagi menit berikutnya */ }
   }, 60000);
 
+  // Tugas langsung dan ujian (js/sesi.js): pemberitahuan di perangkat siswa, penyusun soal dan hasil kelas di dasbor guru
+  window.METIQ_JADWAL.init({ S, Cloud, session, cloudOn, toast, go, esc, SKILLS, UNITS, unitsOf, GRADES, gname, getGrade, loadingHTML,
+    onRemind: () => { const b = document.querySelector('.bell'); if (b) b.outerHTML = bellHTML(); } });
+  window.METIQ_SESI.init({ S, Cloud, session, cloudOn, toast, go, esc, SKILLS, UNITS, unitsOf, GRADES, gname, getGrade, avHTML, kolomOf, MQ, loadingHTML });
   window.addEventListener('hashchange', route);
   route();
 })();

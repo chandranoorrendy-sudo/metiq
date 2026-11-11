@@ -144,7 +144,7 @@ begin
       'completed_at', new.done_at,
       'done_by', new.done_by,
       'skills', coalesce(new.summary, '[]'::jsonb),
-      'link', 'https://metiq-math.vercel.app/');
+      'link', 'https://metiqmath.com/');
     rid := net.http_post(
       url := rtrim(cfg.url, '/') || '/rest/v1/rpc/metiq_ingest',
       body := jsonb_build_object('p_secret', cfg.secret, 'p_report', rep),

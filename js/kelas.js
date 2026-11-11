@@ -16,7 +16,7 @@
   const norm = (x) => strip(x).toLowerCase().replace(/[−–]/g, '-').replace(/[.\s]/g, '').replace(/^rp/, '');
   const mascot = (pose, size, who) => (MQ ? MQ.svg(pose, { size, who: who || undefined, enter: false }) : '🐙');
 
-  const STEPS = [['buka', '🎬', 'Pembuka'], ['materi', '📖', 'Materi'], ['maju', '🙋', 'Soal ke depan'], ['main', '🎲', 'Permainan'], ['tiket', '🎟️', 'Tiket keluar']];
+  const STEPS = [['buka', '🎬', 'Pembuka'], ['materi', '📖', 'Materi'], ['maju', '🙋', 'Soal ke depan'], ['main', '🎲', 'Permainan'], ['tugas', '📲', 'Tugas siswa'], ['tiket', '🎟️', 'Tiket keluar']];
   const GROUP = [
     ['tambang', '🪢', 'Tarik Tambang', 'Kelas dibagi dua tim. Satu anak dari setiap tim maju ke layar dan menjawab bergantian. Jawaban benar menarik tali ke arah timnya. 90 detik.'],
     ['pinang', '🧗', 'Panjat Pinang', 'Satu kelas bekerja sama. Anak bergiliran maju menjawab. Benar: Meti naik. Salah: Meti melorot. Tanpa batas waktu.'],
@@ -143,6 +143,9 @@
       close() { el.hidden = true; document.body.classList.remove('kl-boarding'); },
       isOpen: () => !el.hidden,
       wipe() { strokes = []; if (!el.hidden) fit(); },
+      // tulisan per soal (kertas coret siswa): simpan lalu muat lagi saat kembali ke soal itu
+      save: () => strokes.slice(),
+      load(arr) { strokes = (arr || []).slice(); if (!el.hidden) fit(); },
       destroy() { removeEventListener('resize', onResize); document.body.classList.remove('kl-boarding'); el.remove(); },
     };
     return api;
@@ -151,33 +154,36 @@
   /* ---------- Layar Mengajar ---------- */
   function mount(root, uid, step, opts = {}) {
     const u = UNITS.find((x) => x.id === uid); if (!u) return null;
-    const les = LES[uid], ids = unitSkills(u), kids = (opts.kids || []).map((k) => k.name);
+    const les = LES[uid], ids = unitSkills(u), kids = opts.kids || [], avHTML = opts.avHTML || (() => '🙂');
     const who = opts.buddy || null, kolomOf = opts.kolomOf || (() => '');
     if (!STEPS.some(([k]) => k === step)) step = 'buka';
     let stopGame = null, alive = true;
     document.body.classList.add('kl-on');
     root.innerHTML = `<div class="kl" style="--c:${u.color || '#2fd9b4'}">
       <header class="kl-top"><a class="kl-x" href="${opts.back || '#/guru/ajar'}" aria-label="Keluar dari mode mengajar">✕</a>
-        <div class="kl-title"><small>${esc(opts.gradeName || '')} · Bab ${esc(u.id)}</small><b>${u.icon} ${esc(u.name)}</b></div>
+        <div class="kl-title"><small>${opts.meeting ? (opts.meeting.sub ? '🤝 Menggantikan · ' : '📅 Terjadwal · ') + esc(opts.meeting.className || '') : esc(opts.gradeName || '')} · Bab ${esc(u.id)}</small><b>${u.icon} ${esc(u.name)}</b></div>
         <nav class="kl-steps">${STEPS.map(([k, e, l], i) => `<button data-kl="step" data-s="${k}"><i>${i + 1}</i><span class="e">${e}</span><span class="l">${l}</span></button>`).join('')}</nav>
-        <div class="kl-tools"><button class="kl-tbtn board" data-kl="board">✏️<span> Papan tulis</span></button><button class="kl-tbtn" data-kl="fs" aria-label="Layar penuh">⛶</button></div></header>
+        <div class="kl-tools"><button class="kl-tbtn board" data-kl="board">✏️<span> Papan tulis</span></button><button class="kl-tbtn" data-kl="fs" aria-label="Layar penuh">⛶</button>${window.METIQ_JADWAL && opts.finishCtx ? '<button class="kl-tbtn fin" data-kl="finish">⏹<span> Selesai</span></button>' : ''}</div></header>
       <main class="kl-main" id="klm"></main></div>`;
     const main = root.querySelector('#klm');
     const board = makeBoard(root.querySelector('.kl'));
 
     // keadaan setiap langkah tetap tersimpan saat guru berpindah langkah
     const M = { p: 0, k: 0, ex: null, exShow: false };
-    const Q = { sid: '', q: null, input: '', done: false, shown: false, n: 0, ok: 0, name: '', used: [] };
+    const Q = { sid: '', q: null, input: '', done: false, shown: false, n: 0, ok: 0, kid: null, used: [], tries: 0, star: null, picking: false };
     const T = { qs: null, show: false };
     const H = { q: null, show: false };
 
-    const stopAll = () => { if (AN) AN.stop(); if (stopGame) { stopGame(); stopGame = null; } };
+    let stopTask = null;
+    // Catatan pertemuan untuk tombol Selesai (js/jadwal.js): langkah yang dipakai, materi, soal ke depan, bintang, permainan
+    const LOG = { t0: (opts.meeting && opts.meeting.at) || Date.now(), steps: new Set(), maxPart: 0, front: 0, games: [], stars: 0 };
+    const stopAll = () => { if (AN) AN.stop(); if (stopGame) { stopGame(); stopGame = null; } if (stopTask) { stopTask(); stopTask = null; } };
     function go(s) {
-      stopAll(); step = s; board.close();
+      stopAll(); step = s; board.close(); LOG.steps.add(s);
       try { history.replaceState(history.state, '', `#/kelas/${uid}/${s}`); } catch (e) { /* tidak wajib */ }
       root.querySelectorAll('[data-kl=step]').forEach((b) => b.classList.toggle('on', b.dataset.s === s));
       main.className = 'kl-main s-' + s; main.scrollTop = 0;
-      ({ buka, materi, maju, main: games, tiket })[s]();
+      ({ buka, materi, maju, main: games, tugas, tiket })[s]();
     }
     const nextBtn = (s, label) => `<button class="kl-btn" data-kl="step" data-s="${s}">${label} ▶</button>`;
     const qBlock = (q, big) => `<div class="kl-qtext ${big ? 'big' : ''}">${q.text}</div>${q.vis ? `<div class="kl-qvis qvis">${q.vis}</div>` : ''}`;
@@ -199,6 +205,7 @@
 
     /* 2. Materi: satu subbab per layar, langkahnya dibuka satu per satu */
     function materi() {
+      LOG.maxPart = Math.max(LOG.maxPart, M.p);
       if (!les) {
         main.innerHTML = `<section class="kl-panel center"><div class="kl-say">${mascot('think', 110, who)}<div class="kl-bubble"><p>Materi tertulis untuk bab ini belum ada. Ajak siswa langsung mencoba soal di depan kelas.</p></div></div>
           <ul class="kl-sklist">${u.skills.map((s) => `<li><b>${esc(s.code)}</b> ${esc(s.name)}</li>`).join('')}</ul><div class="kl-row">${nextBtn('maju', 'Soal ke depan')}</div></section>`;
@@ -230,7 +237,7 @@
     function newQ() {
       const pool = Q.sid ? [Q.sid] : ids; let q = null;
       for (let i = 0; i < 6 && !q; i++) q = gen(pick(pool));
-      Object.assign(Q, { q, input: '', done: false, shown: false, wrong: [] });
+      Object.assign(Q, { q, input: '', done: false, shown: false, wrong: [], tries: 0, star: null, counted: false });
       board.wipe();
     }
     function maju() {
@@ -241,7 +248,7 @@
       const keys = ['1', '2', '3', '4', '5', '6', '7', '8', '9', ...(q.keys || (/[,]/.test(q.answer) ? [','] : /\//.test(q.answer) ? ['/'] : /[−-]/.test(q.answer) ? ['−'] : [])), '0'];
       main.innerHTML = `<div class="kl-front">
         <div class="kl-fbar"><select data-kl="sksel" aria-label="Jenis soal"><option value="">🎲 Acak dari bab ini</option>${u.skills.filter((s) => SKILLS[s.id]).map((s) => `<option value="${s.id}" ${Q.sid === s.id ? 'selected' : ''}>${esc(s.code)} ${esc(s.name)}</option>`).join('')}</select>
-          ${kids.length ? `<button class="kl-btn ghost sm" data-kl="who">🎯 Pilih siswa acak</button>` : ''}<span class="kl-who" id="klwho">${Q.name ? `🙋 <b>${esc(Q.name)}</b>, ayo maju!` : ''}</span>
+          ${kids.length ? `<button class="kl-btn ${Q.kid ? 'ghost' : ''} sm" data-kl="pick">🙋 ${Q.kid ? 'Ganti siswa' : 'Siapa yang maju?'}</button>` : ''}<span class="kl-who" id="klwho">${Q.kid ? `<span class="av sm">${avHTML(Q.kid.avatar)}</span> <b>${esc(Q.kid.name)}</b>, ayo jawab!` : kids.length && opts.ctx ? '<small class="muted">Pilih namamu dulu supaya dapat bintang ⭐</small>' : ''}</span>
           <span class="grow"></span><span class="kl-tally">Soal ${Q.n + 1} · ✅ ${Q.ok}</span></div>
         <section class="kl-panel kl-qcard ${Q.done ? 'ok' : ''}">
           <div class="kl-qmain">${qBlock(q, true)}
@@ -249,28 +256,55 @@
     : numeric ? `<div class="kl-inrow"><div class="kl-disp ${Q.done ? 'right' : ''}" id="kldisp">${Q.input || '&nbsp;'}</div>${q.unit ? `<span class="kl-unitlbl">${q.unit}</span>` : ''}</div>
               ${Q.done ? '' : `<div class="kl-keys">${keys.map((k) => `<button data-kl="key" data-k="${k}">${k}</button>`).join('')}<button data-kl="key" data-k="del" aria-label="Hapus">⌫</button><button class="chk" data-kl="check">Periksa</button></div>`}`
       : '<p class="kl-note">Siswa menulis jawabannya di papan tulis, lalu guru menunjukkan jawabannya.</p>'}
-            ${Q.done ? `<div class="kl-cheer">${mascot('cheer', 96, who)}<b>Benar! Beri tepuk tangan 👏</b></div>` : ''}
+            ${Q.done ? `<div class="kl-cheer">${mascot('cheer', 96, who)}<b>Benar! Beri tepuk tangan 👏</b>${starNote()}</div>` : ''}
             ${Q.shown ? solution(q) : ''}</div></section>
+        ${Q.picking ? pickerHTML2() : ''}
         <div class="kl-row"><button class="kl-btn ghost" data-kl="qboard">✏️ Coret di soal</button>${Q.shown ? '' : '<button class="kl-btn ghost" data-kl="qshow">Tunjukkan jawaban</button>'}<button class="kl-btn" data-kl="qnext">Soal berikutnya ▶</button></div></div>`;
+    }
+    // Bintang kelas: siswa yang memilih namanya dan benar di percobaan pertama (sebelum jawaban ditunjukkan) mendapat 1 bintang.
+    // Jumlah bintang tidak ditampilkan di layar kelas; guru melihatnya di 📺 Mengajar → ⭐ Bintang kelas.
+    const SES = () => window.METIQ_SESI;
+    function starNote() {
+      const st = Q.star;
+      if (!st) return Q.kid && opts.ctx && (Q.tries || Q.shown) ? '<small class="kl-snote">Bintang hanya untuk jawaban benar di percobaan pertama. Coba lagi di soal berikutnya!</small>' : '';
+      if (st === 'wait') return '<span class="kl-star">⭐ …</span>';
+      if (st.err) return `<small class="kl-snote">${esc(st.err)}</small>`;
+      return `<span class="kl-star pop">+1 ⭐ untuk ${esc(st.name)}</span><button class="kl-undo" data-kl="sundo">Batalkan</button>`;
+    }
+    async function award() {
+      if (!Q.kid || !opts.ctx || !SES() || Q.tries || Q.shown || Q.star) return;
+      const kid = Q.kid, q = Q.q; Q.star = 'wait';
+      try {
+        const id = await SES().stars.add(opts.ctx.c.id, kid.id, 1, uid, q.sid, strip(q.text).slice(0, 120));
+        if (Q.q !== q) return;
+        Q.star = { id, name: kid.name }; LOG.stars++; if (window.SFX && window.SFX.levelUp) window.SFX.levelUp();
+      } catch (e) { if (Q.q !== q) return; Q.star = { err: SES().starsMissing(e) }; }
+      if (step === 'maju') maju();
+    }
+    function pickerHTML2() {
+      return `<div class="kl-picker" role="dialog" aria-label="Pilih nama siswa"><div class="kl-pkhead"><h3>🙋 Siapa yang maju? Ketuk namamu</h3><button class="kl-btn ghost sm" data-kl="who">🎲 Acak</button><button class="kl-btn ghost sm" data-kl="pclose">Tutup</button></div>
+        <div class="kl-pkgrid">${kids.map((k) => `<button data-kl="pkid" data-id="${esc(k.id)}" class="${Q.kid && Q.kid.id === k.id ? 'on' : ''}"><span class="av">${avHTML(k.avatar)}</span><b>${esc(k.name)}</b></button>`).join('')}</div></div>`;
     }
     function judge(given, btn) {
       const q = Q.q; if (!q || Q.done) return;
+      if (!Q.counted) { Q.counted = true; LOG.front++; }
       if (norm(given) === norm(q.answer)) {
-        Q.done = true; Q.ok++; sfx().correct(); maju();
+        Q.done = true; Q.ok++; sfx().correct(); maju(); award();
       } else {
-        sfx().wrong();
+        Q.tries++; sfx().wrong();
         if (btn) { Q.wrong = [...(Q.wrong || []), +btn.dataset.i]; btn.classList.add('wrong'); }
         else { const d = main.querySelector('#kldisp'); if (d) { d.classList.remove('shake'); void d.offsetWidth; d.classList.add('shake'); } }
       }
     }
+    function setKid(k) { Q.kid = k; Q.picking = false; if (k && !Q.used.includes(k.id)) Q.used.push(k.id); maju(); if (Q.done) award(); }
     function pickName() {
       if (!kids.length) return;
       if (Q.used.length >= kids.length) Q.used = [];
-      const left = kids.filter((n) => !Q.used.includes(n)), n = pick(left);
-      Q.used.push(n); Q.name = n; sfx().step && sfx().step();
-      const el = main.querySelector('#klwho'); if (!el) return;
+      const n = pick(kids.filter((k) => !Q.used.includes(k.id)));
+      Q.picking = false; maju(); sfx().step && sfx().step();
+      const el = main.querySelector('#klwho'); if (!el) return setKid(n);
       // efek undian singkat sebelum nama terpilih muncul
-      let t = 0; const iv = setInterval(() => { if (!alive) return clearInterval(iv); el.innerHTML = `🎲 <b>${esc(pick(kids))}</b>`; if (++t > 10) { clearInterval(iv); el.innerHTML = `🙋 <b>${esc(n)}</b>, ayo maju!`; } }, 70);
+      let t = 0; const iv = setInterval(() => { if (!alive) return clearInterval(iv); el.innerHTML = `🎲 <b>${esc(pick(kids).name)}</b>`; if (++t > 10) { clearInterval(iv); setKid(n); } }, 70);
     }
 
     /* 4. Permainan kelompok dengan soal dari bab ini */
@@ -285,14 +319,21 @@
       main.innerHTML = `<main class="mq-screen mq-gplay kl-game" id="klg" style="--c:${look[0]};--bg:${look[1]}"></main>`;
       const area = main.querySelector('#klg');
       stopGame = G.start(area, g, ({ winner, title, note }) => {
-        stopGame = null;
+        stopGame = null; LOG.games.push(`${g.name}${winner ? ': ' + winner : ''}`);
         if (window.SFX && window.SFX.mastered) window.SFX.mastered();
         area.innerHTML = `<div class="mq-gend kl-gend">${mascot('cheer', 160, who)}<h2>${title || (winner === 'Seri' ? '🤝 Seri! Dua tim sama kuat' : winner ? `🏆 ${winner} menang!` : 'Selesai!')}</h2>${note ? `<p class="mq-note">${esc(note)}</p>` : ''}
-          <div class="kl-row"><button class="kl-btn" data-kl="gstart" data-g="${type}">Main lagi</button><button class="kl-btn ghost" data-kl="step" data-s="main">Permainan lain</button>${nextBtn('tiket', 'Tiket keluar')}</div></div>`;
+          <div class="kl-row"><button class="kl-btn" data-kl="gstart" data-g="${type}">Main lagi</button><button class="kl-btn ghost" data-kl="step" data-s="main">Permainan lain</button>${nextBtn('tugas', 'Tugas siswa')}</div></div>`;
       });
     }
 
-    /* 5. Tiket keluar: 3 soal pendek dari bagian bab yang berbeda, dikerjakan di buku */
+    /* 5. Tugas siswa: soal bab ini dikirim ke perangkat siswa, hasilnya tampil langsung di layar kelas (js/sesi.js) */
+    function tugas() {
+      if (!window.METIQ_SESI || !opts.ctx) { main.innerHTML = `<section class="kl-panel center"><p>${opts.meeting && opts.meeting.sub ? 'Tugas ke perangkat siswa hanya bisa dikirim guru kelas. Sebagai guru pengganti, pakai Soal ke depan, Permainan, atau Tiket keluar.' : 'Masuk sebagai guru kelas untuk mengirim tugas ke siswa.'}</p></section>`; return; }
+      main.innerHTML = '<div class="kl-task" id="kltask"></div>';
+      stopTask = window.METIQ_SESI.quickTask(main.querySelector('#kltask'), opts.ctx, u);
+    }
+
+    /* 6. Tiket keluar: 3 soal pendek dari bagian bab yang berbeda, dikerjakan di buku */
     function tiket() {
       if (!T.qs) { T.qs = shuffle(ids.slice()).slice(0, 3).map(gen).filter(Boolean); T.show = false; }
       main.innerHTML = `<div class="kl-ticket"><div class="kl-thead"><h2>🎟️ Tiket keluar</h2><p>Tulis jawabannya di buku. Tunjukkan ke guru sebelum istirahat.</p></div>
@@ -307,6 +348,12 @@
       const k = b.dataset.kl;
       if (k === 'step') return go(b.dataset.s);
       if (k === 'board') return board.isOpen() ? board.close() : board.open(false);
+      if (k === 'finish') {
+        const auto = { unit: uid, mins: Math.max(1, Math.round((Date.now() - LOG.t0) / 60000)), steps: STEPS.map(([x]) => x).filter((x) => LOG.steps.has(x)),
+          parts: les ? `${Math.min(les.parts.length, LOG.maxPart + 1)}/${les.parts.length}` : '', front: LOG.front ? { n: LOG.front, ok: Q.ok } : null, stars: LOG.stars, games: LOG.games.slice(0, 6) };
+        if (stopGame) { stopGame(); stopGame = null; }
+        return window.METIQ_JADWAL.finishFromClass(root.querySelector('.kl'), opts.finishCtx, uid, auto, (id) => { location.hash = '#/guru/jadwal/' + id; });
+      }
       if (k === 'fs') { if (document.fullscreenElement) document.exitFullscreen(); else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {}); return; }
       if (k === 'hookshow') { H.show = true; return buka(); }
       if (k === 'mnext') return mStep(1);
@@ -316,6 +363,14 @@
       if (k === 'exnew') { M.ex = null; board.wipe(); return materi(); }
       if (k === 'exboard' || k === 'qboard') return board.open(true);
       if (k === 'who') return pickName();
+      if (k === 'pick') { Q.picking = !Q.picking; return maju(); }
+      if (k === 'pclose') { Q.picking = false; return maju(); }
+      if (k === 'pkid') { sfx().step && sfx().step(); return setKid(kids.find((x) => x.id === b.dataset.id) || null); }
+      if (k === 'sundo') {
+        const st = Q.star; if (!st || !st.id) return;
+        Q.star = null; LOG.stars = Math.max(0, LOG.stars - 1); maju();
+        return SES().stars.undo(st.id).catch((e) => { Q.star = st; maju(); alert(SES().starsMissing(e)); });
+      }
       if (k === 'opt') return judge(Q.q.options[+b.dataset.i], b);
       if (k === 'key') {
         if (Q.done) return;
@@ -325,7 +380,7 @@
       }
       if (k === 'check') { if (Q.input) judge(Q.input); return; }
       if (k === 'qshow') { Q.shown = true; return maju(); }
-      if (k === 'qnext') { Q.n++; Q.name = ''; newQ(); return maju(); }
+      if (k === 'qnext') { Q.n++; Q.kid = null; Q.picking = false; newQ(); return maju(); }
       if (k === 'gstart') return startGame(b.dataset.g);
       if (k === 'tnew') { T.qs = null; return tiket(); }
       if (k === 'tshow') { T.show = !T.show; return tiket(); }
@@ -356,5 +411,5 @@
     };
   }
 
-  window.METIQ_KELAS = { pickerHTML, mount, STEPS, _toMC: toMC, _mcNext: mcNext };
+  window.METIQ_KELAS = { pickerHTML, mount, makeBoard, STEPS, _toMC: toMC, _mcNext: mcNext };
 })();

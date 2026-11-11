@@ -33,6 +33,7 @@ body.kl-on { background: #f6fbf9; overflow: hidden; }
 .kl-tools { display: flex; gap: .3em; flex: none; }
 .kl-tbtn { border: 0; border-radius: 999px; padding: .45em .8em; font: inherit; font-size: .8em; font-weight: 900; cursor: pointer; background: var(--bg); color: var(--ink); }
 .kl-tbtn.board { background: #ffe9a8; }
+@media (max-width: 1600px) { .kl-steps button:not(.on) .l { display: none; } .kl-steps button:not(.on) { padding: .3em .5em .3em .3em; } }
 @media (max-width: 1100px) { .kl-steps .l { display: none; } .kl-steps button { padding: .3em .5em .3em .3em; } }
 @media (max-width: 700px) { .kl-title { display: none; } .kl-tbtn.board span { display: none; } .kl-steps .e { display: none; } }
 
@@ -165,3 +166,21 @@ body.kl-on { background: #f6fbf9; overflow: hidden; }
 .kl-btools button.on { border-color: var(--ink); background: var(--bg); }
 .kl-btools .close { background: var(--ink); color: #fff; }
 .kl-btools .sep { width: 2px; height: 1.6em; background: var(--line); flex: none; }
+
+/* Soal ke depan: siswa memilih namanya, bintang kelas */
+.kl-front { position: relative; }
+.kl-who .av.sm { display: inline-grid; width: 1.6em; height: 1.6em; vertical-align: middle; }
+.kl-picker { position: absolute; inset: 3em 0 auto; z-index: 30; background: #fff; border-radius: 1em; box-shadow: 0 12px 40px rgba(16, 48, 43, .3); border: 3px solid var(--c); padding: .8em 1em 1em; max-height: 70vh; overflow: auto; }
+.kl-pkhead { display: flex; align-items: center; gap: .5em; margin-bottom: .6em; }
+.kl-pkhead h3 { margin: 0; flex: 1; }
+.kl-pkgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5em, 1fr)); gap: .5em; }
+.kl-pkgrid button { display: flex; flex-direction: column; align-items: center; gap: .2em; font: inherit; font-size: .9em; border: 3px solid var(--line); background: #fff; border-radius: .9em; padding: .5em .3em; cursor: pointer; color: var(--ink); }
+.kl-pkgrid button.on { border-color: var(--c); background: var(--bg); }
+.kl-pkgrid .av { width: 3em; height: 3em; font-size: 1.1em; display: grid; place-items: center; }
+.kl-pkgrid b { font-size: .85em; text-align: center; overflow-wrap: anywhere; }
+.kl-cheer { flex-wrap: wrap; }
+.kl-star { background: #fff3c4; color: #7a5200; border: 3px solid #f5c542; border-radius: 999px; padding: .1em .7em; font-weight: 900; }
+.kl-star.pop { animation: kl-star .6s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes kl-star { from { transform: scale(.3) rotate(-15deg); opacity: 0; } to { transform: none; opacity: 1; } }
+.kl-undo { border: 0; background: none; color: var(--muted); text-decoration: underline; font: inherit; font-size: .55em; cursor: pointer; }
+.kl-snote { display: block; width: 100%; color: var(--muted); font-size: .6em; font-weight: 700; }
