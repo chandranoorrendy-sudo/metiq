@@ -329,7 +329,8 @@ h2 .uicon { width: 32px; height: 32px; font-size: 1.05rem; vertical-align: middl
 .b10.stackrows { flex-direction: column; align-items: center; gap: 8px; }
 
 /* Kelas 3–6 */
-.gtabs { overflow-x: auto; scrollbar-width: none; }
+/* Semua kelas terlihat (TK sampai Kalkulus): tombol turun ke baris berikutnya, tidak perlu digeser */
+.gtabs { flex-wrap: wrap; }
 .gtabs button { flex: 1 0 auto; min-width: 74px; white-space: nowrap; }
 .grade-sum { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; margin: 10px 0 14px; }
 .grade-sum a { display: grid; background: #e8fbf5; border-radius: 12px; padding: 10px 12px; text-decoration: none; color: var(--ink); }
