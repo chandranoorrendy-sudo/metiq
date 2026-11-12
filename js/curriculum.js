@@ -406,7 +406,24 @@
   const GRADES = [
     { id: 1, name: 'Kelas 1', ixl: 'https://www.ixl.com/math/grade-1/skills', sg: 'Primary Mathematics / Dimensions Math 1A dan 1B' },
   ];
-  const unitsOf = (g) => UNITS.filter((u) => u.grade === g);
+  /* Kelas 9–12 versi Kurikulum Merdeka: bukan materi baru, tetapi bab yang sudah ada (dari Kelas 8 dan kursus Aljabar 1, Geometri,
+   * Aljabar 2, Prakalkulus, Kalkulus) disusun ulang per kelas. Id 109–112 agar tidak bentrok dengan id kursus 9–13.
+   * like = kelas nyata yang setara (untuk jenjang misi Profesi dan batas permainan). Kemajuan tetap per keterampilan, jadi sama di kedua tampilan. */
+  const KM_GRADES = [
+    { id: 109, name: 'Kelas 9', short: '9', stage: 'SMP', km: true, like: 8, sg: 'Kurikulum Merdeka Fase D (kelas 9)', ixl: 'https://www.ixl.com/math/grade-8',
+      units: ['8A', '8B', 'A1E', 'A1F', 'A1H', 'A1G', '8G', 'GC', '8H'] },
+    { id: 110, name: 'Kelas 10', short: '10', stage: 'SMA', km: true, like: 9, sg: 'Kurikulum Merdeka Fase E (kelas 10)', ixl: 'https://www.ixl.com/math/algebra-1',
+      units: ['A2D', 'A2E', 'PKF', 'GE', 'A1D', 'A1B', 'A1C', 'A1I', 'A2H'] },
+    { id: 111, name: 'Kelas 11', short: '11', stage: 'SMA', km: true, like: 11, sg: 'Kurikulum Merdeka Fase F (kelas 11)', ixl: 'https://www.ixl.com/math/algebra-2',
+      units: ['A2C', 'GF', 'GG', 'A2B', 'PKE', 'A2A', 'PKA', 'PKB', 'A2G'] },
+    { id: 112, name: 'Kelas 12', short: '12', stage: 'SMA', km: true, like: 12, sg: 'Kurikulum Merdeka Fase F (kelas 12)', ixl: 'https://www.ixl.com/math/precalculus',
+      units: ['A2F', 'PKD', 'PKG', 'GH', 'KA', 'KC', 'KD', 'KF', 'KH', 'KI'] },
+  ];
+  const kmGrade = (g) => KM_GRADES.find((x) => x.id === g);
+  const unitsOf = (g) => { const k = kmGrade(g); return k ? k.units.map((id) => UNITS.find((u) => u.id === id)).filter(Boolean) : UNITS.filter((u) => u.grade === g); };
+  // Urutan di menu: TK, SD, Kelas 7–8, Kelas 9–12 (Kurikulum Merdeka), lalu kursus Aljabar 1 sampai Kalkulus
+  const menuGrades = () => { const i = GRADES.findIndex((x) => x.id === 8) + 1; return i ? [...GRADES.slice(0, i), ...KM_GRADES, ...GRADES.slice(i)] : GRADES.slice(); };
+  const anyGrade = (g) => GRADES.find((x) => x.id === g) || kmGrade(g);
 
   // Menebak pola kesalahan dari jawaban anak
   function classify(q, given) {
@@ -434,7 +451,7 @@
   }
 
   window.METIQ_CURRICULUM = {
-    UNITS, SKILLS, TAGS, GRADES, unitsOf, classify, rp, register, setKonteks, konteks: () => konteks,
+    UNITS, SKILLS, TAGS, GRADES, KM_GRADES, menuGrades, anyGrade, kmGrade, unitsOf, classify, rp, register, setKonteks, konteks: () => konteks,
     imanUnits: IMAN_UNITS,
     // perangkat pembuat soal untuk file kelas lain
     kit: { r, pick, shuffle, range, rp, numOpts, kata, V, inp, ch, compareQ, BENDA, NAMA, HARI, BULAN, two },

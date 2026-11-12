@@ -1,6 +1,6 @@
 /* Metiq — aplikasi utama: rute, tampilan siswa, guru, dan orang tua. */
 (function () {
-  const { UNITS, SKILLS, TAGS, GRADES, unitsOf, classify } = window.METIQ_CURRICULUM;
+  const { UNITS, SKILLS, TAGS, GRADES, unitsOf, classify, menuGrades, anyGrade, kmGrade } = window.METIQ_CURRICULUM;
   const S = window.Store;
   const app = document.getElementById('app');
   const DAY = 864e5;
@@ -23,13 +23,13 @@
   const ago = (ts) => { if (!ts) return 'belum pernah'; const d = Math.floor((Date.now() - ts) / DAY); return d <= 0 ? 'hari ini' : d === 1 ? 'kemarin' : `${d} hari lalu`; };
   const level = (s) => (s >= 100 ? ['Tuntas', 'lv4'] : s >= 80 ? ['Mahir', 'lv3'] : s >= 50 ? ['Berkembang', 'lv2'] : s > 0 ? ['Mulai', 'lv1'] : ['Belum', 'lv0']);
   // Kelas yang sedang dipilih (seperti IXL, siswa boleh membuka kelas mana pun)
-  const getGrade = () => { let g = 1; try { g = +localStorage.getItem('metiq_grade') || 1; } catch (e) {} return GRADES.some((x) => x.id === g) ? g : 1; };
+  const getGrade = () => { let g = 1; try { g = +localStorage.getItem('metiq_grade') || 1; } catch (e) {} return anyGrade(g) ? g : 1; };
   const setGrade = (g) => { try { localStorage.setItem('metiq_grade', g); } catch (e) {} };
-  const gradeTabs = () => `<div class="gtabs" role="tablist">${GRADES.map((g) => `<button role="tab" class="${g.id === getGrade() ? 'on' : ''}" data-act="grade" data-g="${g.id}">${g.name}</button>`).join('')}</div>`;
+  const gradeTabs = () => `<div class="gtabs" role="tablist">${menuGrades().map((g) => `<button role="tab" class="${g.id === getGrade() ? 'on' : ''}" data-act="grade" data-g="${g.id}">${g.name}</button>`).join('')}</div>`;
   const curUnits = () => unitsOf(getGrade());
   // Nama jenjang untuk label (kelas 9 ke atas memakai nama mata pelajaran SMA, seperti IXL)
-  const gname = (g) => (GRADES.find((x) => x.id === g) || {}).name || 'Kelas ' + g;
-  const gshort = (g) => (GRADES.find((x) => x.id === g) || {}).short || String(g);
+  const gname = (g) => (anyGrade(g) || {}).name || 'Kelas ' + g;
+  const gshort = (g) => (anyGrade(g) || {}).short || String(g);
   const chip = (s) => { const [l, c] = level(s); return `<span class="chip ${c}" title="${l}">${s >= 100 ? '🏆' : s}</span>`; };
   const session = { get() { try { return JSON.parse(localStorage.getItem('metiq_session')) || {}; } catch (e) { return {}; } }, set(v) { try { localStorage.setItem('metiq_session', JSON.stringify(v)); } catch (e) {} } };
   const go = (h) => { location.hash = h; };
@@ -185,7 +185,7 @@
   /* Beranda: kartu kelas per jenjang (jumlah keterampilan nyata), bagian guru dengan komentar guru sungguhan, dan tanya jawab singkat */
   const LSTAGES = ['TK', 'SD', 'SMP', 'SMA'];
   function landGradesHTML() {
-    const cur = ss.get('lstage', 'SD'), list = GRADES.filter((g) => (g.stage || 'SD') === cur);
+    const cur = ss.get('lstage', 'SD'), list = menuGrades().filter((g) => (g.stage || 'SD') === cur);
     const card = (g) => { const us = unitsOf(g.id), nsk = us.reduce((t, u) => t + u.skills.length, 0); return `<a class="mq-gcard" href="#/kurikulum/${g.id}" style="--c:${(us[0] || {}).color || '#35e0bd'}"><span class="b">${g.short || g.id}</span><span class="t"><b>${g.name}</b><small>${nsk} keterampilan</small></span><span class="go" aria-hidden="true">›</span></a>`; };
     return `<div id="lgrades"><div class="mq-lstage" role="tablist">${LSTAGES.map((st) => `<button role="tab" aria-selected="${st === cur}" class="${st === cur ? 'on' : ''}" data-act="lstage" data-s="${st}">${st}</button>`).join('')}</div><div class="mq-gcards">${list.map(card).join('')}</div></div>`;
   }
@@ -466,7 +466,7 @@
     // Kabut terangkat saat bab selesai: bandingkan bab "sekarang" dengan kunjungan sebelumnya
     const seenKey = `metiq_isle_${st.id}_${g}`; let fresh = null;
     try { const was = localStorage.getItem(seenKey), now = cur ? cur.u.id : 'all'; if (was && was !== now) fresh = was; localStorage.setItem(seenKey, now); } catch (e) {}
-    const gradeSheet = `<div class="mq-modal" id="gsheet" hidden data-act="gclose"><div class="mq-sheet"><h2>Pilih kelas</h2><div class="mq-grades">${GRADES.map((x) => { const sk = unitsOf(x.id).flatMap((u) => u.skills), pr = S.progressAll(st.id), dn = sk.filter((s) => ((pr[s.id] || {}).score || 0) >= 80).length; return `<button class="mq-g ${x.id === g ? 'on' : ''}" data-act="grade" data-g="${x.id}"><small>${x.stage || 'Kelas'}</small><b>${x.short || x.id}</b><span class="bar"><i style="width:${pct(dn, sk.length)}%"></i></span></button>`; }).join('')}</div><button class="mq-btn ghost" style="margin-top:16px" data-act="gclose">Tutup</button></div></div>`;
+    const gradeSheet = `<div class="mq-modal" id="gsheet" hidden data-act="gclose"><div class="mq-sheet"><h2>Pilih kelas</h2><div class="mq-grades">${menuGrades().map((x) => { const sk = unitsOf(x.id).flatMap((u) => u.skills), pr = S.progressAll(st.id), dn = sk.filter((s) => ((pr[s.id] || {}).score || 0) >= 80).length; return `<button class="mq-g ${x.id === g ? 'on' : ''}" data-act="grade" data-g="${x.id}"><small>${x.stage || 'Kelas'}</small><b>${x.short || x.id}</b><span class="bar"><i style="width:${pct(dn, sk.length)}%"></i></span></button>`; }).join('')}</div><button class="mq-btn ghost" style="margin-top:16px" data-act="gclose">Tutup</button></div></div>`;
     app.innerHTML = mqPage(`
       <div class="mq-bar">
         <button class="mq-chip grade" data-act="gsheet" aria-label="Pilih kelas">${gname(g)} <small>▾</small></button>
@@ -1619,7 +1619,7 @@
           <div><h3>Perkalian sebagai kelompok</h3><p>Kelompok sama banyak, susunan baris–kolom, lalu tabel perkalian 2, 3, 4, 5, dan 10.</p></div>
         </div>
       </section>
-      ${GRADES.map((g) => `<section class="card ref"><h2>🗺️ Peta bab ${g.name} <span class="pill">${unitsOf(g.id).length} bab · ${nSkills(g.id)} keterampilan</span></h2>
+      ${menuGrades().map((g) => `<section class="card ref"><h2>🗺️ Peta bab ${g.name} <span class="pill">${unitsOf(g.id).length} bab · ${nSkills(g.id)} keterampilan</span></h2>
         <div class="tscroll"><table class="tbl reftbl"><thead><tr><th>Bab Metiq</th><th>IXL</th><th>Singapore Math</th><th>Kurikulum Merdeka</th></tr></thead><tbody>
         ${unitsOf(g.id).map((u) => `<tr><td><b>${u.icon} ${u.id}. ${u.name}</b><small>${u.skills.length} keterampilan</small></td><td>${u.ixl}</td><td>${u.sg}</td><td>${/Pengayaan/.test(u.km) ? `<span class="pill warn">${u.km}</span>` : u.km}</td></tr>`).join('')}
         </tbody></table></div></section>`).join('')}
@@ -3019,7 +3019,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   function viewKelas(uid, step) {
     const ctx = teacherCtx(); if (!ctx) return go('#/guru/masuk');
     const u = UNITS.find((x) => x.id === uid); if (!u) return go('#/guru/ajar');
-    if (u.grade !== getGrade()) setGrade(u.grade);
+    if (!unitsOf(getGrade()).includes(u)) setGrade(u.grade);
     const meet = window.METIQ_JADWAL.active(), subMode = !!(meet && meet.classId && !ctx.classes.some((c) => c.id === meet.classId));
     // guru pengganti: materi, soal ke depan, dan permainan; bintang dan tugas siswa tetap milik guru kelas
     stopKelas = window.METIQ_KELAS.mount(app, uid, step, { ctx: subMode ? null : ctx, finishCtx: ctx, meeting: meet, kids: subMode ? [] : ctx.kids, avHTML, kolomOf, buddy: unitBuddy(u), gradeName: gname(u.grade), back: '#/guru/ajar' });
@@ -3265,7 +3265,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     };
     const running = asg.filter((a) => prog(a).left.length), finished = asg.filter((a) => !prog(a).left.length);
     const sug = taskSuggestions(ctx);
-    const grades = GRADES.filter((x) => unitsOf(x.id).length);
+    const grades = menuGrades().filter((x) => unitsOf(x.id).length);
     return `${sug.length ? `<section class="card"><h2>💡 Saran Metiq</h2><p class="small muted">Disusun dari jawaban siswa. Ketuk Kirim, tugas langsung sampai ke siswa dan orang tuanya.</p>
         ${sug.map((x) => `<form data-form="grouptask" data-sids="${x.kids.map((k) => k.id).join(',')}" class="sugrow"><input type="hidden" name="sk" value="${x.id}"><input type="hidden" name="note" value="Latihan: ${esc(SKILLS[x.id].name)}"><input type="hidden" name="due" value=""><span class="grow"><b>${SKILLS[x.id].name}</b><small>${x.why}</small></span><button class="btn sm">Kirim ke ${x.kids.length} siswa</button></form>`).join('')}</section>` : ''}
       <details class="card newtask" id="newasg" ${pre || preSkill ? 'open' : ''}><summary><b>➕ Buat tugas sendiri</b></summary>
@@ -3647,7 +3647,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
 
   /* ---------- Sehari Bekerja (A Day in This Job): misi matematika dari profesi nyata. Pola layar mengikuti Permainan ---------- */
   const J = window.METIQ_JOBS || { BANDS: [], PROFESSIONS: [], MISSIONS: [], INTERESTS: {}, TOPICS: {}, byId: () => null, prof: () => null };
-  const bandOfGrade = (g) => (J.BANDS.find((b) => b.grades.includes(g)) || J.BANDS[1] || {}).id;
+  const bandOfGrade = (g) => ((g = (kmGrade(g) || { like: g }).like), J.BANDS.find((b) => b.grades.includes(g)) || J.BANDS[1] || {}).id;
   const bandIdx = (id) => J.BANDS.findIndex((b) => b.id === id);
   // Jenjang: pilihan siswa sendiri, lalu kelas yang sedang dipelajari; tamu memilih saat pertama masuk
   function jobBand() {
@@ -4178,7 +4178,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     document.body.classList.toggle('mq-body', ['', undefined, 'siswa', 'siswa-baru', 'kode', 'mulai', 'belajar', 'asesmen', 'latihan', 'tugas', 'aku', 'ujian', 'permainan', 'main', 'pengaturan', 'hadiah'].includes(a));
     switch (a) {
       case '': case undefined: return viewHome();
-      case 'kurikulum': if (b !== undefined && GRADES.some((x) => x.id === +b)) { setGrade(+b); ss.set('strand', ''); history.replaceState(null, '', '#/kurikulum'); } return viewCurriculum();
+      case 'kurikulum': if (b !== undefined && anyGrade(+b)) { setGrade(+b); ss.set('strand', ''); history.replaceState(null, '', '#/kurikulum'); } return viewCurriculum();
       case 'siswa': return b ? viewStudentPick(b) : viewStudentEnter();
       case 'siswa-baru': return viewStudentStart();
       case 'kode': return viewStudentCode();
@@ -4647,9 +4647,9 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   }, 60000);
 
   // Tugas langsung dan ujian (js/sesi.js): pemberitahuan di perangkat siswa, penyusun soal dan hasil kelas di dasbor guru
-  window.METIQ_JADWAL.init({ S, Cloud, session, cloudOn, toast, go, esc, SKILLS, UNITS, unitsOf, GRADES, gname, getGrade, loadingHTML,
+  window.METIQ_JADWAL.init({ S, Cloud, session, cloudOn, toast, go, esc, SKILLS, UNITS, unitsOf, GRADES: menuGrades(), gname, getGrade, loadingHTML,
     onRemind: () => { const b = document.querySelector('.bell'); if (b) b.outerHTML = bellHTML(); } });
-  window.METIQ_SESI.init({ S, Cloud, session, cloudOn, toast, go, esc, SKILLS, UNITS, unitsOf, GRADES, gname, getGrade, avHTML, kolomOf, MQ, loadingHTML });
+  window.METIQ_SESI.init({ S, Cloud, session, cloudOn, toast, go, esc, SKILLS, UNITS, unitsOf, GRADES: menuGrades(), gname, getGrade, avHTML, kolomOf, MQ, loadingHTML });
   window.addEventListener('hashchange', route);
   route();
 })();
