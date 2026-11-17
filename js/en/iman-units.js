@@ -74,6 +74,78 @@
             `Starting money minus charity: ${rp(have)} − ${rp(give)} = <b>${rp(have - give)}</b>.`, { unit: 'Rp', meta: { op: '-', a: have, b: give } });
         },
       },
+      {
+        id: '2Z4', name: 'Zakat al-fitr in litres', gen() {
+          const n = pick([2, 4]), liter = 3.5 * n;
+          return inp(`Zakat al-fitr may be 3.5 litres of rice per person. ${pick(NAMA)}'s family has ${n} people. How many litres of rice is their zakat? (write just the number)`, liter,
+            `3.5 litres per person. For ${n} people: 3.5 × ${n} = <b>${liter}</b> litres.`, { meta: { kind: 'count' } });
+        },
+      },
+      {
+        id: '2Z5', name: 'A third in charity', gen() {
+          const per = pick([2, 3, 4]), total = per * 3;
+          return inp(`There are ${total} packs of dates. One third is given to neighbours as charity. How many packs are given?`, per,
+            `One third means splitting into 3 equal parts: ${total} ÷ 3 = <b>${per}</b> packs.`, { meta: { op: '/', a: total, b: 3 } });
+        },
+      },
+    ],
+  }]);
+
+  /* ---------- Kelas 3: rukun, nabi, dan Asmaul Husna ---------- */
+  C.register([{
+    id: '3R', grade: 3, iman: true, name: 'Pillars, prophets, and the 99 names', icon: '🕌', color: '#2f8f6b',
+    sg: '- (local context: multiplication, division, and ordering)', ixl: '-', km: 'Numbers (worship context)',
+    tip: 'There are 5 pillars of Islam and 6 articles of faith. Count them together, then mention that 25 prophets are named in the Qur\'an and that Allah has 99 names (Asmaul Husna). This chapter only practises the numbers.',
+    skills: [
+      {
+        id: '3R1', name: 'Pillars of Islam and articles of faith', gen() {
+          const a = 5, b = 6;
+          return inp(`There are ${a} pillars of Islam and ${b} articles of faith. What is their total?`, a + b,
+            `${a} + ${b} = <b>${a + b}</b>.`, { meta: { op: '+', a, b } });
+        },
+      },
+      {
+        id: '3R2', name: 'Articles of faith left', gen() {
+          const done = r(1, 5);
+          return inp(`There are 6 articles of faith. ${pick(NAMA)} has memorised ${done}. How many are left?`, 6 - done,
+            `6 − ${done} = <b>${6 - done}</b> articles.`, { meta: { op: '-', a: 6, b: done } });
+        },
+      },
+      {
+        id: '3R3', name: 'Five daily prayers over several days', gen() {
+          const d = r(2, 6);
+          return inp(`The obligatory prayer is performed 5 times a day. How many times in ${d} days?`, d * 5,
+            `${d} × 5 = <b>${d * 5}</b> times.`, { meta: { op: 'x', a: d, b: 5 } });
+        },
+      },
+      {
+        id: '3R4', name: "Prophets named in the Qur'an", gen() {
+          const done = r(6, 20);
+          return inp(`25 prophets are named in the Qur'an. ${pick(NAMA)} has learned ${done} names. How many are left?`, 25 - done,
+            `25 − ${done} = <b>${25 - done}</b> names.`, { meta: { op: '-', a: 25, b: done } });
+        },
+      },
+      {
+        id: '3R5', name: 'The 99 names shared equally', gen() {
+          const per = pick([3, 9, 11]), n = 99 / per;
+          return inp(`Asmaul Husna has 99 names. They are written on ${per} cards, the same number on each. How many names per card?`, n,
+            `99 ÷ ${per} = <b>${n}</b> names. Check: ${per} × ${n} = 99.`, { meta: { op: '/', a: 99, b: per } });
+        },
+      },
+      {
+        id: '3R6', name: 'Full rows of the 99 names', gen() {
+          const per = pick([10, 12]), full = Math.floor(99 / per), rest = 99 - full * per;
+          return inp(`The 99 names of Allah are written ${per} per row. How many full rows are there?`, full,
+            `99 ÷ ${per} = ${full} remainder ${rest}. So there are <b>${full}</b> full rows.`, { meta: { op: '/', a: 99, b: per } });
+        },
+      },
+      {
+        id: '3R7', name: 'The third prayer of the day', gen() {
+          const order = ['Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'], k = r(2, 5);
+          return ch(`The obligatory prayers are in order: Subuh, Zuhur, Asar, Magrib, Isya. Which prayer is number ${k}?`, shuffle(order.slice()), order[k - 1],
+            `The order is: 1 Subuh, 2 Zuhur, 3 Asar, 4 Magrib, 5 Isya. Number ${k} is <b>${order[k - 1]}</b>.`, {});
+        },
+      },
     ],
   }]);
 
@@ -148,6 +220,28 @@
           const gaji = pick([3000000, 4000000, 5000000]);
           return inp(`A worker sets aside income zakat of 2.5% of ${rp(gaji)}. How many rupiah is the zakat? (write the number only)`, gaji * 0.025,
             `${rp(gaji)} ÷ 100 = ${rp(gaji / 100)}, then × 2.5 = <b>${rp(gaji * 0.025)}</b>.`, { unit: 'Rp', meta: { kind: 'percent' } });
+        },
+      },
+      {
+        id: '5Z5', name: 'Zakat al-fitr and zakat al-mal', gen() {
+          const n = pick([3, 4, 5]), harta = pick([8000000, 12000000]);
+          const kg = 2.5 * n, fitrah = kg * 15000, mal = harta * 0.025, total = fitrah + mal;
+          return inp(`${pick(NAMA)}'s family pays zakat al-fitr for ${n} people (2.5 kg of rice each, Rp15,000 per kg) and zakat al-mal of 2.5% of ${rp(harta)}. How many rupiah is their total zakat? (write just the number)`, total,
+            `Zakat al-fitr: 2.5 × ${n} = ${kg} kg, costing ${kg} × Rp15,000 = ${rp(fitrah)}. Zakat al-mal: 2.5% × ${rp(harta)} = ${rp(mal)}. Total: ${rp(fitrah)} + ${rp(mal)} = <b>${rp(total)}</b>.`, { unit: 'Rp', meta: { kind: 'percent' } });
+        },
+      },
+      {
+        id: '5Z6', name: 'A third of the shopping money for charity', gen() {
+          const belanja = pick([1200000, 1500000, 1800000]);
+          return inp(`${pick(NAMA)}'s family sets aside one third of their ${rp(belanja)} shopping money for charity. How many rupiah is that? (write just the number)`, belanja / 3,
+            `One third means splitting into 3 equal parts: ${rp(belanja)} ÷ 3 = <b>${rp(belanja / 3)}</b>. Charity has no fixed amount; it is voluntary.`, { unit: 'Rp', meta: { kind: 'fraction' } });
+        },
+      },
+      {
+        id: '5Z7', name: 'Wealth left after zakat', gen() {
+          const harta = pick([4000000, 6000000, 8000000]), zakat = harta * 0.025;
+          return inp(`Wealth of ${rp(harta)} has reached the nisab and been held for one haul. After paying zakat al-mal of 2.5%, how much is left? (write just the number)`, harta - zakat,
+            `Zakat: 2.5% × ${rp(harta)} = ${rp(zakat)}. Left: ${rp(harta)} − ${rp(zakat)} = <b>${rp(harta - zakat)}</b>.`, { unit: 'Rp', meta: { kind: 'percent' } });
         },
       },
     ],

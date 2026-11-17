@@ -41,6 +41,16 @@
       verifiedBy: '',
       verifiedAt: '',
     },
+    // Bab 3R: rukun, nabi, dan Asmaul Husna (kelas 3)
+    '3R': {
+      tema: 'Faith, ordered and counted',
+      dalil: kosong(),
+      ajakan: 'There are five pillars of Islam and six articles of faith. The Qur\'an names twenty-five prophets, and the Asmaul Husna has ninety-nine names. We practise counting with those numbers.',
+      refleksi: 'Which article of faith would you like to understand best? Try naming one prophet you know.',
+      adab: 'Say the names of prophets and the names of Allah with respect and reverence.',
+      verifiedBy: '',
+      verifiedAt: '',
+    },
     // Bab 4Q: Bilangan dalam Al-Qur'an (kelas 4)
     '4Q': {
       tema: 'Numbers mentioned in the Qur\'an',

@@ -40,6 +40,16 @@
       verifiedBy: '',
       verifiedAt: '',
     },
+    // Bab 3R: rukun, nabi, dan Asmaul Husna (kelas 3)
+    '3R': {
+      tema: 'Iman yang teratur dan terhitung',
+      dalil: kosong(),
+      ajakan: 'Rukun Islam ada lima dan rukun iman ada enam. Al-Qur\'an menyebut dua puluh lima nabi, dan Asmaul Husna berjumlah sembilan puluh sembilan. Kita belajar berhitung dengan bilangan-bilangan itu.',
+      refleksi: 'Rukun iman mana yang paling ingin kamu pahami? Coba sebutkan satu nama nabi yang kamu kenal.',
+      adab: 'Sebut nama nabi dan nama Allah dengan hormat dan penuh takzim.',
+      verifiedBy: '',
+      verifiedAt: '',
+    },
     // Bab 4Q: Bilangan dalam Al-Qur'an (kelas 4)
     '4Q': {
       tema: 'Bilangan yang disebut dalam Al-Qur\'an',

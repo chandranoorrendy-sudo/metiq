@@ -73,6 +73,78 @@
             `Uang awal dikurangi sedekah: ${rp(have)} − ${rp(give)} = <b>${rp(have - give)}</b>.`, { unit: 'Rp', meta: { op: '-', a: have, b: give } });
         },
       },
+      {
+        id: '2Z4', name: 'Zakat fitrah dalam liter', gen() {
+          const n = pick([2, 4]), liter = 3.5 * n;
+          return inp(`Zakat fitrah boleh berupa 3,5 liter beras untuk setiap orang. Keluarga ${pick(NAMA)} berjumlah ${n} orang. Berapa liter beras zakatnya? (tulis angkanya saja)`, liter,
+            `3,5 liter untuk tiap orang. Untuk ${n} orang: 3,5 × ${n} = <b>${liter}</b> liter.`, { meta: { kind: 'count' } });
+        },
+      },
+      {
+        id: '2Z5', name: 'Sedekah sepertiga', gen() {
+          const per = pick([2, 3, 4]), total = per * 3;
+          return inp(`Ada ${total} bungkus kurma. Sepertiganya disedekahkan kepada tetangga. Berapa bungkus yang disedekahkan?`, per,
+            `Sepertiga berarti dibagi 3 sama banyak: ${total} ÷ 3 = <b>${per}</b> bungkus.`, { meta: { op: '/', a: total, b: 3 } });
+        },
+      },
+    ],
+  }]);
+
+  /* ---------- Kelas 3: rukun, nabi, dan Asmaul Husna ---------- */
+  C.register([{
+    id: '3R', grade: 3, iman: true, name: 'Rukun, nabi, dan Asmaul Husna', icon: '🕌', color: '#2f8f6b',
+    sg: '- (konteks lokal: perkalian, pembagian, dan urutan)', ixl: '-', km: 'Bilangan (konteks ibadah)',
+    tip: 'Rukun Islam ada 5 dan rukun iman ada 6. Ajak anak menghitung bersama, lalu sebutkan bahwa ada 25 nabi yang namanya disebut dalam Al-Qur\'an dan 99 nama Allah (Asmaul Husna). Bab ini hanya melatih bilangannya.',
+    skills: [
+      {
+        id: '3R1', name: 'Rukun Islam dan rukun iman', gen() {
+          const a = 5, b = 6;
+          return inp(`Rukun Islam ada ${a} dan rukun iman ada ${b}. Berapa jumlah keduanya?`, a + b,
+            `${a} + ${b} = <b>${a + b}</b>.`, { meta: { op: '+', a, b } });
+        },
+      },
+      {
+        id: '3R2', name: 'Sisa rukun iman', gen() {
+          const done = r(1, 5);
+          return inp(`Rukun iman ada 6. ${pick(NAMA)} sudah menghafal ${done} rukun. Berapa rukun yang belum dihafal?`, 6 - done,
+            `6 − ${done} = <b>${6 - done}</b> rukun.`, { meta: { op: '-', a: 6, b: done } });
+        },
+      },
+      {
+        id: '3R3', name: 'Shalat lima waktu beberapa hari', gen() {
+          const d = r(2, 6);
+          return inp(`Shalat wajib dikerjakan 5 kali sehari. Berapa kali shalat wajib dalam ${d} hari?`, d * 5,
+            `${d} × 5 = <b>${d * 5}</b> kali.`, { meta: { op: 'x', a: d, b: 5 } });
+        },
+      },
+      {
+        id: '3R4', name: "Nabi yang disebut Al-Qur'an", gen() {
+          const done = r(6, 20);
+          return inp(`Ada 25 nabi yang namanya disebut dalam Al-Qur'an. ${pick(NAMA)} baru mempelajari ${done} nama. Berapa nama yang belum dipelajari?`, 25 - done,
+            `25 − ${done} = <b>${25 - done}</b> nama.`, { meta: { op: '-', a: 25, b: done } });
+        },
+      },
+      {
+        id: '3R5', name: 'Asmaul Husna dibagi rata', gen() {
+          const per = pick([3, 9, 11]), n = 99 / per;
+          return inp(`Asmaul Husna berjumlah 99 nama. Nama-nama itu ditulis pada ${per} kartu, setiap kartu sama banyak. Berapa nama pada setiap kartu?`, n,
+            `99 ÷ ${per} = <b>${n}</b> nama. Periksa: ${per} × ${n} = 99.`, { meta: { op: '/', a: 99, b: per } });
+        },
+      },
+      {
+        id: '3R6', name: 'Baris penuh Asmaul Husna', gen() {
+          const per = pick([10, 12]), full = Math.floor(99 / per), rest = 99 - full * per;
+          return inp(`99 nama Allah ditulis ${per} nama per baris. Berapa baris penuh yang terbentuk?`, full,
+            `99 ÷ ${per} = ${full} sisa ${rest}. Jadi ada <b>${full}</b> baris penuh.`, { meta: { op: '/', a: 99, b: per } });
+        },
+      },
+      {
+        id: '3R7', name: 'Shalat ketiga dalam sehari', gen() {
+          const order = ['Subuh', 'Zuhur', 'Asar', 'Magrib', 'Isya'], k = r(2, 5);
+          return ch(`Shalat wajib dikerjakan berurutan: Subuh, Zuhur, Asar, Magrib, Isya. Shalat apakah yang ke-${k}?`, shuffle(order.slice()), order[k - 1],
+            `Urutannya: 1 Subuh, 2 Zuhur, 3 Asar, 4 Magrib, 5 Isya. Yang ke-${k} adalah <b>${order[k - 1]}</b>.`, {});
+        },
+      },
     ],
   }]);
 
@@ -147,6 +219,28 @@
           const gaji = pick([3000000, 4000000, 5000000]);
           return inp(`Seorang pekerja menyisihkan zakat penghasilan 2,5% dari ${rp(gaji)}. Berapa rupiah zakatnya? (tulis angkanya saja)`, gaji * 0.025,
             `${rp(gaji)} ÷ 100 = ${rp(gaji / 100)}, lalu × 2,5 = <b>${rp(gaji * 0.025)}</b>.`, { unit: 'Rp', meta: { kind: 'percent' } });
+        },
+      },
+      {
+        id: '5Z5', name: 'Zakat fitrah dan zakat mal', gen() {
+          const n = pick([3, 4, 5]), harta = pick([8000000, 12000000]);
+          const kg = 2.5 * n, fitrah = kg * 15000, mal = harta * 0.025, total = fitrah + mal;
+          return inp(`Keluarga ${pick(NAMA)} membayar zakat fitrah untuk ${n} orang (2,5 kg beras per orang, 1 kg Rp15.000) dan zakat mal 2,5% dari harta ${rp(harta)}. Berapa rupiah seluruh zakatnya? (tulis angkanya saja)`, total,
+            `Zakat fitrah: 2,5 × ${n} = ${kg} kg, harganya ${kg} × Rp15.000 = ${rp(fitrah)}. Zakat mal: 2,5% × ${rp(harta)} = ${rp(mal)}. Jumlahnya ${rp(fitrah)} + ${rp(mal)} = <b>${rp(total)}</b>.`, { unit: 'Rp', meta: { kind: 'percent' } });
+        },
+      },
+      {
+        id: '5Z6', name: 'Sepertiga uang belanja untuk sedekah', gen() {
+          const belanja = pick([1200000, 1500000, 1800000]);
+          return inp(`Keluarga ${pick(NAMA)} biasa menyisihkan sepertiga dari uang belanja ${rp(belanja)} untuk sedekah. Berapa rupiah sedekahnya? (tulis angkanya saja)`, belanja / 3,
+            `Sepertiga berarti dibagi 3 sama banyak: ${rp(belanja)} ÷ 3 = <b>${rp(belanja / 3)}</b>. Sedekah tidak punya kadar wajib; besarannya bebas.`, { unit: 'Rp', meta: { kind: 'fraction' } });
+        },
+      },
+      {
+        id: '5Z7', name: 'Sisa harta setelah zakat', gen() {
+          const harta = pick([4000000, 6000000, 8000000]), zakat = harta * 0.025;
+          return inp(`Harta ${rp(harta)} sudah mencapai nisab dan dimiliki satu haul. Setelah dikeluarkan zakat mal 2,5%, berapa rupiah sisa hartanya? (tulis angkanya saja)`, harta - zakat,
+            `Zakat: 2,5% × ${rp(harta)} = ${rp(zakat)}. Sisa: ${rp(harta)} − ${rp(zakat)} = <b>${rp(harta - zakat)}</b>.`, { unit: 'Rp', meta: { kind: 'percent' } });
         },
       },
     ],
