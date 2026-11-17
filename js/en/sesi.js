@@ -245,6 +245,7 @@
     : '<p class="muted center">Belum ada soal. Tambahkan dari kiri: biarkan Metiq membuatkan, atau tulis sendiri.</p>'}
         </section></div></div>
       <div class="ss-bfoot"><span class="grow">${B.qs.length} soal${B.kind === 'ujian' && B.settings.minutes ? ` · ${B.settings.minutes} menit` : ''}</span>
+        <button class="btn ghost" data-ss="bexport" ${B.qs.length ? '' : 'disabled'}>📄 Print / export</button>
         <button class="btn ghost" data-ss="bsave" ${B.qs.length ? '' : 'disabled'}>💾 Simpan</button><button class="btn" data-ss="bstart" ${B.qs.length ? '' : 'disabled'}>▶ Simpan dan mulai</button></div>`;
   }
   function builderInput(e) {
@@ -312,7 +313,7 @@
       if (at >= 0) B.qs[at] = q; else { if (B.qs.length >= 60) return D.toast('Paling banyak 60 soal'); B.qs.push(q); }
       B.form = { type: f.type }; D.toast(at >= 0 ? 'Soal diperbarui ✔' : 'Soal ditambahkan ✔'); return drawBuilder(box, ctx);
     }
-    if (k === 'bsave' || k === 'bstart') {
+    if (k === 'bsave' || k === 'bstart' || k === 'bexport') {
       if (!B.qs.length) return;
       const title = (B.title || '').trim() || `${KIND[B.kind][1]} ${new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long' })}`;
       b.disabled = true;
@@ -320,7 +321,9 @@
         const settings = B.kind === 'ujian' ? { minutes: +B.settings.minutes || 0, shuffle: !!B.settings.shuffle } : {};
         const id = await Live.save(ctx.c.id, B.id, B.kind, title, B.qs, settings);
         if (k === 'bstart') { await Live.start(id); D.toast('Sesi dimulai. Siswa sudah bisa mengerjakan.'); } else D.toast('Tersimpan ✔');
-        B = null; D.go('#/guru/sesi/' + id);
+        B = null;
+        // Cetak / ekspor: langsung ke lembar soal (PDF lewat dialog cetak, atau Word .docx)
+        D.go((k === 'bexport' ? '#/guru/sesi/cetak-' : '#/guru/sesi/') + id);
       } catch (er) { b.disabled = false; D.toast(esc(errMsg(er))); }
     }
   }
