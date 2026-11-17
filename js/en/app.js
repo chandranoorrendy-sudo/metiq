@@ -305,6 +305,7 @@
     game: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="11" rx="5.5"/><path d="M8 10.5v4M6 12.5h4"/><circle cx="15.5" cy="11.5" r=".8" fill="currentColor"/><circle cx="18" cy="14" r=".8" fill="currentColor"/></svg>',
     gift: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M3 7h18v3H3zM12 7v13M12 7C9 3 6 5 8 7M12 7c3-4 6-2 4 0"/></svg>',
     me: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/></svg>',
+    play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.52.85l10.4-6.5a1 1 0 0 0 0-1.7L9.52 4.65A1 1 0 0 0 8 5.5z"/></svg>',
     clam: '<svg viewBox="0 0 100 100"><path d="M10 56c0 24 18 34 40 34s40-10 40-34z" fill="#1db796"/><path d="M10 56C10 30 28 12 50 12s40 18 40 44c-10-8-26-12-40-12S20 48 10 56z" fill="#35e0bd"/><path d="M50 12v30M31 18l8 26M69 18l-8 26" stroke="#1db796" stroke-width="3.5" stroke-linecap="round" fill="none"/><circle cx="50" cy="62" r="14" fill="#fff"/><circle cx="45" cy="57" r="4.5" fill="#e9fffb"/></svg>',
   };
   const todayStart = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime(); };
@@ -518,8 +519,8 @@
   // Ikan dan gelembung bergerak pelan di dalam gambar pulau (CSS, hanya transform dan opacity)
   const FISH = (x, y, c, f) => `<g transform="translate(${x} ${y}) scale(${f ? -1 : 1} 1)"><g class="isle-fish" style="animation-delay:-${((x + y) % 5) * 0.7}s"><ellipse rx="9" ry="5.5" fill="${c}"/><path d="M8 0l8-6v12z" fill="${c}"/><circle cx="-4" cy="-1.5" r="1.4" fill="#04382e"/></g></g>`;
   const BUB = (x, y, r) => `<circle class="isle-bub" cx="${x}" cy="${y}" r="${r}" style="animation-delay:-${(x + y) % 5}s" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.6"/>`;
-  // Lencana simbol bab (mis. +, ×, ½) supaya setiap tempat tetap menunjukkan babnya
-  const SYMB = (u, ring) => { const lg = u && CH_LOGO.find((x) => x[0].test(u.name)); if (!lg) return ''; const t = lg[1]; return `<circle cx="28" cy="30" r="15" fill="#fff" stroke="${ring}" stroke-width="3"/><text x="28" y="${t.length > 2 ? 34 : 36}" text-anchor="middle" font-size="${t.length > 2 ? 11 : t.length > 1 ? 14 : 18}" font-weight="900" fill="${lg[2]}" font-family="Nunito,sans-serif">${esc(t)}</text>`; };
+  // Simbol bab (mis. +, ×, ½) dipakai sebagai lencana kecil di label tempat, bukan mengapung di laut
+  const SYMB_OF = (u) => (u && CH_LOGO.find((x) => x[0].test(u.name))) || null;
   function placeSVG(who, v, ghost, u) {
     v %= 4;
     let g = '';
@@ -537,7 +538,7 @@
         // kerang mutiara
         '<path d="M86 108q34 14 68 0l-6-16H92z" fill="#f7b2c4"/><path d="M92 92q28-44 56 0z" fill="#ffc9d6"/><path d="M104 92q16-30 32 0M120 50v42" stroke="#f08fa8" stroke-width="2" fill="none"/><circle cx="120" cy="96" r="9" fill="#fff"/><circle cx="117" cy="93" r="3" fill="#e6f7ff"/><path d="M182 110l4-10 4 10 10 1-8 6 3 10-9-6-9 6 3-10-8-6z" fill="#ff8a3d"/><ellipse cx="56" cy="112" rx="16" ry="8" fill="#b9a68a"/><ellipse cx="70" cy="114" rx="10" ry="6" fill="#a8957a"/>' + FISH(60, 54, '#4d96ff'),
       ][v];
-      g = rays + bed + scene + BUB(200, 30, 4) + BUB(208, 18, 2.5) + BUB(46, 66, 3) + SYMB(u, '#1c9be8');
+      g = rays + bed + scene + BUB(200, 30, 4) + BUB(208, 18, 2.5) + BUB(46, 66, 3);
     } else if (who === 'tito') {
       const dune = '<path d="M6 118Q60 72 120 92q50-28 114 22 4 16-14 20H20Q2 132 6 118z" fill="#f2c27b"/><path d="M30 112q40-34 90-18" stroke="#f9dcab" stroke-width="4" fill="none"/>';
       if (ghost) return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true"><g fill="#e9e3d6">${dune.replace(/fill="[^"]+"/g, '').replace(/stroke="[^"]+"/, 'stroke="none"')}<path d="M100 98c0-24 10-40 20-40s20 16 20 40z"/></g></svg>`;
@@ -549,7 +550,7 @@
         '<path d="M66 106V62q0-8 8-8h92q8 0 8 8v44z" fill="#d9774a"/><path d="M100 106V86a20 20 0 0 1 40 0v20z" fill="#f2c27b"/><path d="M66 74h108M66 90h34M140 90h34" stroke="#b85f37" stroke-width="3"/>' + cactus(196, 108, 0.6),
         '<path d="M78 108l34-50 34 50z" fill="#ff8a3d"/><path d="M112 58l12 50h-24z" fill="#ffc06b"/><path d="M95 84l17-26 17 26" stroke="#fff" stroke-width="3" fill="none" opacity=".6"/><path d="M112 58V42l14 5-14 5" stroke="#6a7f7a" stroke-width="2" fill="#e8463a"/><path d="M168 106l8-10 8 10" fill="#ff6f3d"/><path d="M170 106l6-6 6 6" fill="#ffc800"/><rect x="162" y="104" width="28" height="4" rx="2" fill="#8a5a3c"/>',
       ][v];
-      g = sun + dune + scene + SYMB(u, '#e0a800');
+      g = sun + dune + scene;
     } else if (who === 'nahla') {
       const hill = '<ellipse cx="120" cy="134" rx="112" ry="13" fill="#9fd7b0" opacity=".6"/><path d="M14 112q8-32 50-38 56-10 112 0 42 8 50 38-4 20-24 22H38q-22-2-24-22z" fill="#7fcd6c"/><path d="M40 92q60-22 160 0" stroke="#a5e48f" stroke-width="6" fill="none" opacity=".7"/>';
       if (ghost) return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true"><g fill="#dde8e4"><path d="M14 112q8-32 50-38 56-10 112 0 42 8 50 38-4 20-24 22H38q-22-2-24-22z"/><path d="M90 80l30-50 30 50z"/></g></svg>`;
@@ -561,7 +562,7 @@
         hill + '<path d="M66 96l54-82 54 82z" fill="#8aa1b5"/><path d="M120 14l18 28-10-4-8 8-8-8-10 4z" fill="#fff"/><path d="M120 14V-2" stroke="#6a7f7a" stroke-width="2"/><path d="M120-2l14 5-14 5z" fill="#e8463a" transform="translate(0 4)"/>' + ISLE_TREE(54, 106, 0.9, '#2fa66a') + ISLE_TREE(186, 106, 0.9, '#2fa66a'),
         hill + '<rect x="108" y="56" width="5" height="44" fill="#8a5a3c"/><g transform="translate(110 50)"><ellipse cy="0" rx="14" ry="8" fill="#ffc63a"/><ellipse cy="10" rx="17" ry="8" fill="#ffb21c"/><ellipse cy="20" rx="14" ry="7" fill="#ffc63a"/><circle cy="14" r="4" fill="#8a5a3c"/></g>' + [[54, 100, '#ff6f91'], [70, 108, '#9b6dff'], [150, 104, '#ff6f91'], [168, 98, '#4d96ff'], [186, 108, '#ff8a3d'], [86, 96, '#fff']].map(([x, y, c]) => flower(x, y, c)).join(''),
       ][v];
-      g = scene + SYMB(u, '#19b796');
+      g = scene;
     } else {
       const sea = '<ellipse cx="120" cy="118" rx="116" ry="28" fill="#7fd8ea" opacity=".55"/>';
       if (ghost) return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true"><g fill="#dbe8ee"><ellipse cx="120" cy="110" rx="86" ry="22"/><path d="M96 98c0-26 12-42 24-42s24 16 24 42z"/></g></svg>`;
@@ -572,7 +573,7 @@
         '<ellipse cx="120" cy="106" rx="90" ry="28" fill="#f6e3b4"/><ellipse cx="120" cy="104" rx="62" ry="16" fill="#3cc6d6"/><ellipse cx="112" cy="102" rx="28" ry="5" fill="#9eeaf2" opacity=".8"/>' + PALM(52, 106, 0.75) + PALM(194, 108, 0.65) + '<ellipse cx="120" cy="124" rx="14" ry="4" fill="#7fd36e"/>',
         '<ellipse cx="120" cy="108" rx="80" ry="24" fill="#8f9aa3"/><ellipse cx="120" cy="102" rx="62" ry="16" fill="#b2bbc2"/><path d="M110 98l3-58h14l3 58z" fill="#fff"/><path d="M112 82h16M112.6 70h14.8M113 58h14" stroke="#e8463a" stroke-width="7"/><rect x="111" y="32" width="18" height="10" rx="2" fill="#ffd36b"/><path d="M108 32h24l-12-10z" fill="#e8463a"/><path d="M130 37l40-10v20z" fill="#ffd36b" opacity=".35"/>',
       ][v];
-      g = sea + scene + '<path d="M20 132q10-5 20 0t20 0M180 136q10-5 20 0t20 0" stroke="#fff" stroke-width="2.5" fill="none" opacity=".8"/>' + SYMB(u, '#1c9be8');
+      g = sea + scene + '<path d="M20 132q10-5 20 0t20 0M180 136q10-5 20 0t20 0" stroke="#fff" stroke-width="2.5" fill="none" opacity=".8"/>';
     }
     return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true">${g}</svg>`;
   }
@@ -608,8 +609,11 @@
       else if (state === 'next') html += `<button class="isle next ${s}${reveal}" data-act="tip" data-t="🌫️ This place is still covered in fog. Finish your current place to uncover it." aria-label="Next place, still covered in fog">${placeSVG(who, v, false, u)}<span class="fogl"></span><span class="isle-tag"><i>${IC.lock.replace('<svg', '<svg width="16" height="16"')}</i>Next destination</span></button>`;
       else {
         const t = S.testOf(st.id, u.id), stars = t ? '★'.repeat(chestTier(t.stars)) : '';
+        // Lencana simbol bab ikut label (sebelumnya mengapung di laut, jauh dari pulaunya)
+        const sg = SYMB_OF(u), sym = sg ? `<i class="isle-sym" style="--sc:${sg[2]}" aria-hidden="true">${esc(sg[1])}</i>` : '';
+        const pc = Math.round((x.done / x.total) * 100);
         const label = state === 'done' ? `<span class="isle-tag ok"><i>${IC.ok}</i><span><b>${esc(u.name)}</b><small>${place} · Completed${stars ? ` <em>${stars}</em>` : ''}</small></span><u>›</u></span>`
-          : `<span class="isle-tag"><span><b>${esc(u.name)}</b><small>${place} · ${x.done} / ${x.total} skills</small></span><u>›</u></span>`;
+          : `<span class="isle-tag">${sym}<span class="isl-txt"><b>${esc(u.name)}</b><small>${place} · ${x.done} / ${x.total} keterampilan</small><span class="isle-bar" aria-hidden="true"><i style="width:${pc}%"></i></span></span><u>›</u></span>`;
         html += `<a class="isle ${state} ${s}${reveal}${just}" href="#/bab/${u.id}" aria-label="Chapter ${u.id} ${esc(u.name)}, ${place}">${state === 'cur' ? `<span class="isle-pin" aria-hidden="true"></span><span class="isle-glow" aria-hidden="true"></span><span class="isle-buddy" aria-hidden="true">${MQ.svg('happy', { size: 62, who: who === 'meti' ? undefined : who, enter: false })}</span>` : ''}${placeSVG(who, v, false, u)}${reveal ? '<span class="fogl lift"></span>' : ''}${label}${just ? '<span class="isle-spark" aria-hidden="true">✨</span>' : ''}</a>`;
       }
       out += `<div class="isle-row w-${who} ${state}" style="background:linear-gradient(180deg, ${top} 0%, ${bg} 22%, ${bg} 78%, ${bot} 100%)">${html}</div>`;
@@ -3532,7 +3536,7 @@
     app.innerHTML = shell(`
       <a class="back" href="${t.back}">← Back</a>
       <section class="card center"><div class="av lg avnow">${avHTML(t.cur)}</div><h1>Choose avatar ${esc(t.who)}</h1></section>
-      ${window.METIQ_AVATARS.CATALOG.map(([cat, list]) => `<section class="card"><h2>${cat}</h2><div class="avgrid">${list.map((a) => `<button class="avopt ${a === t.cur ? 'on' : ''}" data-act="pickav" data-t="${target}" data-a="${esc(a)}" title="${esc(window.METIQ_AVATARS.NAMES[a] || '')}">${avHTML(a)}</button>`).join('')}</div></section>`).join('')}`);
+      ${window.METIQ_AVATARS.CATALOG.map(([cat, list]) => `<section class="card"><h2>${cat} <small class="avcount">${list.length}</small></h2><div class="avgrid">${list.map((a) => `<button class="avopt ${a === t.cur ? 'on' : ''}" data-act="pickav" data-t="${target}" data-a="${esc(a)}" title="${esc(window.METIQ_AVATARS.NAMES[a] || '')}" aria-pressed="${a === t.cur}">${avHTML(a)}</button>`).join('')}</div></section>`).join('')}`);
   }
   async function saveAvatar(target, a) {
     const ses = session.get(), t = avatarTarget(target);
@@ -3717,7 +3721,7 @@
     JM = { m, p, i: -1, tries: 0, first: 0, input: '', sel: -1, place: {}, pick: null, t0: Date.now(), log: [] };
     app.innerHTML = `<div class="mq-top"><a class="mq-ico" href="#/profesi/${p.id}" aria-label="Log out">${IC.x}</a><div class="mq-prog"><i id="sbar" style="width:0%"></i></div>
         <button class="mq-ico mq-coretbtn" id="mqcoret" data-act="coret" aria-label="Scratch paper" hidden>✏️</button>${m.audio ? `<button class="mq-ico" data-act="jsay" aria-label="Listen">🔊</button>` : `<button class="mq-ico psound" data-act="sound" aria-label="Sound">${window.SFX.enabled() ? '🔔' : '🔕'}</button>`}</div>
-      <div class="jtrail" id="jtrail" style="--n:${m.steps.length};--c:${p.color}"><u></u>${m.steps.map((_, k) => `<i style="left:${(k / m.steps.length) * 100}%"></i>`).join('')}<em>🏁</em><span>${MQ.svg('happy', { size: 40, enter: false })}</span></div>
+      <div class="jtrail" id="jtrail" style="--n:${m.steps.length};--c:${p.color}"><u></u>${m.steps.map((_, k) => `<i style="left:${4 + (k / m.steps.length) * 92}%"></i>`).join('')}<em>🏁</em><span>${MQ.svg('happy', { size: 40, enter: false })}</span></div>
       <main class="mq-screen jt-in" id="pq"></main><div class="mq-foot" id="fb"></div>`;
     jScene();
   }
@@ -3726,7 +3730,7 @@
     box.innerHTML = `<div class="jscene" style="--c:${p.color}">${JV.stage(p.people, m.art, p.color, true)}<small class="jlv">${esc(p.name)} · ${(J.BANDS.find((b) => b.id === m.level) || {}).name}</small><h1>${esc(m.title)}</h1>
       <div class="mq-say"><div>${MQ.svg('hello', { size: 76 })}</div><div class="mq-bubble"><span>${esc(m.scenario)}</span></div></div>
       ${m.simplified ? `<p class="jnote">ℹ️ ${esc(m.simplified)}</p>` : ''}</div>`;
-    fb.className = 'mq-foot'; fb.innerHTML = `<div class="mq-foot-in"><button class="mq-btn pulse" data-act="jnext">Start mission</button></div>`;
+    fb.className = 'mq-foot'; fb.innerHTML = `<div class="mq-foot-in"><button class="mq-btn pulse ic-r" data-act="jnext">Mulai misi${IC.play}</button></div>`;
     jPlay('s', 350);
   }
   function jStep() {
