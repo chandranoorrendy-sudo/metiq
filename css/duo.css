@@ -1303,3 +1303,218 @@ body.coret-open #pq { -webkit-user-select: none; user-select: none; }
 .gsi { display: flex; justify-content: center; width: 100%; max-width: 360px; min-height: 46px; margin: 8px auto 0; }
 .gsi-wait .loading { padding: 8px; }
 .card .gsi { margin-top: 12px; }
+
+/* =========================================================================
+   v176 � Penyempurnaan tampilan
+   Peta belajar yang hidup, kartu profesi yang lebih jelas, avatar yang lebih
+   rapi, dan tombol yang lebih terasa saat disentuh. Animasi memakai transform
+   dan opacity saja supaya tetap ringan di HP kelas bawah.
+   ========================================================================= */
+
+/* ---------- Peta belajar: latar bergerak ---------- */
+.isle-row { isolation: isolate; }
+.isle-row > * { z-index: 1; }
+.isle-row::after { content: ''; position: absolute; inset: -70% -55%; z-index: 0; pointer-events: none; will-change: transform; }
+.isle-row.w-meti::after {
+  background:
+    radial-gradient(circle 5px at 40px 70px, rgba(255, 255, 255, .55) 60%, transparent 74%),
+    radial-gradient(circle 3px at 170px 210px, rgba(255, 255, 255, .45) 60%, transparent 74%),
+    radial-gradient(circle 4px at 300px 130px, rgba(255, 255, 255, .4) 60%, transparent 74%);
+  background-size: 420px 300px; animation: isle-rise 30s linear infinite;
+}
+.isle-row.w-tito::after {
+  background:
+    radial-gradient(circle 2.5px at 60px 80px, rgba(202, 146, 74, .3) 60%, transparent 74%),
+    radial-gradient(circle 2px at 220px 170px, rgba(202, 146, 74, .24) 60%, transparent 74%),
+    radial-gradient(ellipse 70px 18px at 330px 60px, rgba(255, 236, 200, .5), transparent 72%);
+  background-size: 420px 300px; animation: isle-drift 34s linear infinite;
+}
+.isle-row.w-nahla::after {
+  background:
+    radial-gradient(ellipse 95px 30px at 90px 70px, rgba(255, 255, 255, .6), transparent 70%),
+    radial-gradient(ellipse 70px 24px at 260px 180px, rgba(255, 255, 255, .5), transparent 70%);
+  background-size: 420px 300px; animation: isle-drift 42s linear infinite;
+}
+.isle-row.w-lumo::after {
+  background:
+    radial-gradient(ellipse 60px 12px at 70px 90px, rgba(255, 255, 255, .55), transparent 72%),
+    radial-gradient(ellipse 46px 10px at 250px 180px, rgba(255, 255, 255, .45), transparent 72%),
+    radial-gradient(ellipse 80px 14px at 350px 60px, rgba(255, 255, 255, .35), transparent 72%);
+  background-size: 420px 300px; animation: isle-drift 32s linear infinite;
+}
+.isle-row:nth-child(2n)::after { animation-direction: reverse; }
+.isle-row.next::after { opacity: .4; }
+.isle-row.fog::after { opacity: .2; }
+
+.isles::before, .isles::after { animation: isle-blob 20s ease-in-out infinite alternate; }
+.isles::after { animation-delay: -9s; }
+
+@keyframes isle-rise { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, -300px, 0); } }
+@keyframes isle-drift { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-420px, 0, 0); } }
+@keyframes isle-blob { from { transform: translate3d(0, 0, 0) scale(1); opacity: .85; } to { transform: translate3d(18px, 10px, 0) scale(1.12); opacity: 1; } }
+
+/* Pulau bernapas pelan dan hiu ikan kecil berenang di adegannya */
+.isle.done .isle-svg, .isle.visit .isle-svg { animation: isle-bob 8s ease-in-out infinite; }
+.isle-row:nth-child(2n) .isle-svg { animation-delay: -2.6s; }
+.isle-row:nth-child(3n) .isle-svg { animation-duration: 10s; }
+@keyframes isle-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.isle-fish { animation: isle-swim 6.5s ease-in-out infinite alternate; }
+@keyframes isle-swim { from { transform: translateX(-5px); } to { transform: translateX(6px); } }
+.isle-bub { transform-box: fill-box; transform-origin: center; animation: isle-bub 4.5s ease-in-out infinite; }
+@keyframes isle-bub { 0%, 100% { transform: translateY(2px) scale(.88); opacity: .5; } 50% { transform: translateY(-6px) scale(1.06); opacity: .95; } }
+
+/* Kabut tipis yang mengalir saat peta berpindah dunia */
+.isle-coast { position: relative; z-index: 1; height: 30px; margin: -12px 0 -14px; overflow: hidden; pointer-events: none; }
+.isle-coast::before, .isle-coast::after { content: ''; position: absolute; top: 4px; width: 70%; height: 24px; border-radius: 50%; }
+.isle-coast::before { left: -10%; background: radial-gradient(closest-side, rgba(255, 255, 255, .8), transparent 72%); animation: isle-coast 17s ease-in-out infinite alternate; }
+.isle-coast::after { right: -10%; background: radial-gradient(closest-side, rgba(255, 255, 255, .55), transparent 72%); animation: isle-coast 23s ease-in-out infinite alternate-reverse; }
+@keyframes isle-coast { from { transform: translateX(-22px); } to { transform: translateX(26px); } }
+
+/* Label pulau sedikit terangkat saat disentuh (hanya perangkat dengan tetikus) */
+@media (hover: hover) {
+  .isle-tag { transition: transform .18s ease, box-shadow .18s ease; }
+  .isle:hover .isle-tag { transform: translateX(-50%) translateY(-3px); box-shadow: 0 10px 24px rgba(4, 56, 46, .2); }
+}
+
+/* ---------- Sehari Bekerja: saringan dan kartu profesi ---------- */
+.jfilters > div { flex-wrap: wrap; overflow-x: visible; row-gap: 6px; }
+.jtile { transition: transform .16s ease, box-shadow .16s ease; }
+.jtile .art { position: relative; overflow: hidden; }
+.jtile .art::before { content: ''; position: absolute; inset: 6% 8%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 24%, #fff), transparent 70%); }
+.jtile .art svg, .jtile .art .jpeople { position: relative; z-index: 1; transition: transform .2s ease; }
+.jtile .jlvl { position: absolute; top: 8px; left: 8px; z-index: 2; padding: 2px 9px; border-radius: 999px; background: rgba(255, 255, 255, .95); color: #4c6460; font-size: .64rem; font-weight: 900; letter-spacing: .04em; box-shadow: 0 2px 6px rgba(4, 56, 46, .16); }
+.mq-gt .art { position: relative; overflow: hidden; }
+.mq-gt .art::before { content: ''; position: absolute; inset: 8% 12%; border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 18%, #fff), transparent 72%); }
+.mq-gt .art svg { position: relative; }
+@media (hover: hover) {
+  .jtile:hover, .mq-gt:hover { transform: translateY(-4px); box-shadow: 0 12px 22px color-mix(in srgb, var(--c) 22%, transparent); }
+  .jtile:hover .art svg, .mq-gt:hover .art svg, .jtile:hover .art .jpeople { transform: translateY(-2px) scale(1.04); }
+}
+
+/* ---------- Avatar: cincin, pilihan yang jelas ---------- */
+.av { background: linear-gradient(180deg, #fff 0%, #e9fbf5 100%); box-shadow: inset 0 0 0 3px #fff, 0 4px 0 #bfeee2; }
+.av.sm { box-shadow: inset 0 0 0 2px #fff; }
+.av.lg { box-shadow: inset 0 0 0 4px #fff, 0 5px 0 #bfeee2; }
+.mq-me .av { box-shadow: 0 0 0 4px #fff, 0 0 0 9px #d6f6ee, 0 12px 22px rgba(4, 56, 46, .14); }
+.avgrid { grid-template-columns: repeat(auto-fill, minmax(68px, 1fr)); gap: 12px; }
+.avopt { position: relative; background: linear-gradient(160deg, #fff, #e9fbf5); box-shadow: 0 3px 0 #d9efe9; transition: transform .12s ease, box-shadow .12s ease; }
+.avopt:hover { transform: translateY(-2px); }
+.avopt.on { background: #fff; box-shadow: 0 0 0 3px #d6f6ee, 0 4px 0 var(--mq); }
+.avopt.on::after { content: ''; position: absolute; right: -1px; bottom: -1px; width: 21px; height: 21px; border-radius: 50%; background: var(--mq-d); box-shadow: 0 2px 0 #0a7d68; }
+.avopt.on::before { content: ''; position: absolute; z-index: 1; right: 7px; bottom: 8px; width: 5px; height: 9px; border: solid #fff; border-width: 0 2.4px 2.4px 0; transform: rotate(45deg); }
+
+/* ---------- Tombol dan navigasi ---------- */
+:where(a, button, [role="button"]):focus-visible { outline: 3px solid var(--mq-d); outline-offset: 3px; }
+.mq-btn { background-image: linear-gradient(180deg, rgba(255, 255, 255, .34), rgba(255, 255, 255, 0) 58%); }
+.mq-btn.ghost { background-image: none; }
+.mq-btn.bad { background-image: linear-gradient(180deg, rgba(255, 255, 255, .22), rgba(255, 255, 255, 0) 58%); }
+.mq-nav a.on { background: #eafff9; border-color: #8fe6d2; box-shadow: 0 3px 0 #cdeee5; }
+.mq-nav a.on svg { animation: mq-navpop .34s ease; }
+.mq-nav a.on > svg { filter: drop-shadow(0 2px 0 rgba(25, 183, 150, .22)); }
+.mq-ico:hover { background: #f1f4f3; }
+@keyframes mq-navpop { 50% { transform: translateY(-3px) scale(1.08); } }
+@media (hover: hover) { .mq-btn:hover:not([disabled]) { transform: translateY(-1px); } }
+
+/* ---------- Hormati pilihan "kurangi gerak" ---------- */
+@media (prefers-reduced-motion: reduce) {
+  .isle-row::after, .isles::before, .isles::after, .isle.done .isle-svg, .isle.visit .isle-svg,
+  .isle-fish, .isle-bub, .isle-coast::before, .isle-coast::after, .mq-nav a.on svg { animation: none !important; }
+  .isle-tag, .jtile, .avopt, .mq-btn { transition: none !important; }
+}
+/* Metiq interface refresh: a calm editorial system, built around clear next steps. */
+:root {
+  --mq-ink: #172b3b;
+  --mq-dd: #126b66;
+  --mq-d: #278e83;
+  --mq: #73c9b5;
+  --mq-l: #d9f2e9;
+  --mq-bg: #eff7f2;
+  --mq-line: #dce7e2;
+  --mq-gold: #e9b95e;
+  --mq-gold-d: #c89538;
+}
+body:not(.mq-body) { background-color: #f5f6f2; }
+body { color: #203744; }
+.top { background: rgba(255,255,255,.94); border-bottom-color: #e2e8e3; }
+.logo { color: #203744; }
+.logo-m { border-radius: 10px; background: #275f61; color: #fff; }
+.wrap { max-width: 840px; padding-top: 22px; }
+.wrap.wide { max-width: 1220px; }
+.card { border: 1px solid #e4e9e4; border-radius: 18px; box-shadow: 0 5px 18px rgba(28,48,58,.045); }
+.btn { background: #255e63; color: #fff; box-shadow: 0 3px 0 #194b50; border-radius: 12px; }
+.btn:active { box-shadow: 0 1px 0 #194b50; }
+.btn.ghost { color: #255e63; background: #edf5f0; }
+.pill { background: #eaf3ed; color: #275f61; }
+input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39,142,131,.12); }
+.role { grid-template-columns: 58px 1fr; border-left-width: 4px; border-radius: 18px; }
+.role .ri { display: grid; place-items: center; width: 48px; height: 48px; border-radius: 15px; background: color-mix(in srgb,var(--c) 13%,#fff); font-size: 1.8rem; }
+.role b { font-size: 1.08rem; }
+.av { color: #203744; }
+.tbl th { background: #f2f5f1; }
+.subtabs a.on, .gtabs button.on { color: #175f5b; border-color: #278e83; }
+:where(.card, .role, .mq-gt, .jtile) { transition: box-shadow .18s ease, transform .18s ease; }
+.mq-page { max-width: 980px; margin: 0 auto; padding: 0 20px 104px; }
+.mq-bar { max-width: 940px; margin: 0 auto; padding: 14px 2px 8px; gap: 10px; }
+.mq-chip, .mq-ring { border: 1px solid #dfe7e2; background: #fff; box-shadow: 0 2px 7px rgba(23,43,59,.05); }
+.mq-chip { border-radius: 12px; color: #304859; font-size: .88rem; }
+.mq-chip.grade { background: #233d50; border-color: #233d50; color: #fff; }
+.mq-chip.star { color: #77571c; }
+.mq-ring { width: 42px; height: 42px; border: 3px solid #dce7e2; }
+.isle-hi { max-width: 940px; margin: 12px auto 14px; padding: 20px 22px; border: 1px solid #e7e3d6; border-radius: 24px; background: linear-gradient(110deg,#fffdf8,#f6f4eb 68%,#eef4ef); box-shadow: 0 8px 24px rgba(40,57,54,.06); }
+.isle-hi .who { width: 84px; }
+.isle-hi h1 { font-size: clamp(1.2rem,2.4vw,1.65rem); letter-spacing: -.025em; }
+.isle-hi p { color: #63777b; }
+.isle-score { border: 1px solid #e8d9b9; background: #fffaf0; }
+.isles { max-width: 940px; margin: 12px auto 0; padding: 12px 12px 20px; border: 1px solid rgba(30,73,84,.1); border-radius: 26px; box-shadow: 0 14px 36px rgba(35,67,76,.08); }
+.isle-row { padding: 10px 0 12px; }
+.isle-region { padding: 7px 14px; border: 1px solid rgba(23,43,59,.08); box-shadow: 0 3px 10px rgba(23,43,59,.08); font-size: .82rem; letter-spacing: .02em; }
+.isle { max-width: 360px; padding-bottom: 42px; }
+.isle-svg { filter: drop-shadow(0 9px 8px rgba(32,62,66,.13)); }
+.isle-tag { border: 1px solid rgba(23,43,59,.1); border-radius: 14px; box-shadow: 0 5px 14px rgba(23,43,59,.11); }
+.isle.cur .isle-tag { border-color: #5aab96; box-shadow: 0 7px 18px rgba(29,104,91,.18); }
+.isle.cur .isle-pin { background: #203f50; box-shadow: 0 0 0 5px rgba(255,255,255,.85),0 0 0 8px rgba(32,63,80,.18); }
+.isle-row::after { opacity: .52; }
+.isle-buddy { filter: drop-shadow(0 5px 5px rgba(23,43,59,.12)); }
+.mq-nav { background: rgba(255,255,255,.96); border-top: 1px solid #e2e8e3; box-shadow: 0 -6px 24px rgba(23,43,59,.05); }
+.mq-nav-in { max-width: 760px; gap: 5px; }
+.mq-nav a { min-height: 56px; color: #718088; font-size: .72rem; }
+.mq-nav a.on { border: 0; border-radius: 14px; background: #e9f4ed; color: #185f5b; box-shadow: none; }
+.mq-nav a.on svg { animation: none; }
+.mq-btn { border-radius: 12px; background: #255e63; color: #fff; box-shadow: 0 3px 0 #194b50; text-transform: none; letter-spacing: 0; }
+.mq-btn:active:not([disabled]) { box-shadow: 0 1px 0 #194b50; }
+.mq-btn.ghost { color: #255e63; border: 1px solid #cbded6; background: #fff; box-shadow: 0 2px 0 #dce7e2; }
+.mq-btn.warn { color: #493715; background: #f0ca79; box-shadow: 0 3px 0 #d3a850; }
+.mq-btn.pulse:not([disabled]) { animation: none; }
+.mq-gt { border: 1px solid color-mix(in srgb,var(--c) 28%,#e6e9e3); border-bottom-width: 1px; border-radius: 18px; box-shadow: 0 4px 12px rgba(25,43,51,.06); }
+.mq-gt .art { border-radius: 13px; }
+.jtile { min-height: 220px; }
+.jtile .art { border: 1px solid rgba(23,43,59,.06); }
+.jtile .art svg, .mq-gt .art svg { transition: transform .24s ease; }
+.jtile .new, .jtile .jdone { border-radius: 8px; box-shadow: none; }
+.av { border: 2px solid #fff; background: linear-gradient(145deg,#f0e7d5,#dcece3); box-shadow: 0 2px 8px rgba(23,43,59,.14); }
+.av.sm { border-width: 1px; }
+.av.lg { border-width: 3px; }
+.avopt { border: 1px solid #e2e8e3; box-shadow: 0 2px 6px rgba(23,43,59,.06); }
+.avopt.on { box-shadow: 0 0 0 3px #d6eee4,0 3px 8px rgba(23,43,59,.1); }
+.role { border: 1px solid #e3e8e3; border-left: 4px solid var(--c); border-radius: 18px; box-shadow: 0 5px 18px rgba(23,43,59,.06); }
+:where(a,button,[role="button"]):focus-visible { outline-color: #256e70; }
+@media (min-width: 760px) {
+  .mq-page { padding-left: 28px; padding-right: 28px; }
+  .isles { padding: 22px 34px 34px; }
+  .isle-row { min-height: 184px; }
+  .isle { width: 58%; }
+}
+@media (max-width: 560px) {
+  .mq-page { padding-left: 12px; padding-right: 12px; }
+  .isle-hi { margin: 8px 0 12px; padding: 13px 12px; gap: 7px; }
+  .isle-hi .who { width: 60px; }
+  .isle-hi .who svg { width: 60px; }
+  .isle-score { min-width: 68px; padding: 6px; }
+  .isle-score small { font-size: .62rem; }
+  .isles { border-radius: 20px; padding-left: 4px; padding-right: 4px; }
+  .mq-nav a { font-size: .64rem; }
+  .mq-nav a svg { width: 24px; height: 24px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .isle.cur .isle-buddy, .isle-row::after, .jtile .art svg, .mq-gt .art svg { animation: none !important; transition: none !important; }
+}

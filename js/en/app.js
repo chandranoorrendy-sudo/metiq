@@ -515,8 +515,9 @@
   const worldOf = (u) => unitBuddy(u) || 'meti';
   const ISLE_TREE = (x, y, s, c) => `<path d="M${x} ${y - 26 * s}l${11 * s} ${22 * s}h${-22 * s}z" fill="${c}"/><path d="M${x} ${y - 16 * s}l${9 * s} ${18 * s}h${-18 * s}z" fill="${c}" opacity=".85"/><rect x="${x - 2 * s}" y="${y - 4 * s}" width="${4 * s}" height="${6 * s}" fill="#8a5a3c"/>`;
   const PALM = (x, y, s) => `<path d="M${x} ${y}q${4 * s} ${-22 * s} ${-2 * s} ${-44 * s}" stroke="#9a6a3f" stroke-width="${5 * s}" fill="none" stroke-linecap="round"/>${[[-26, -8], [24, -10], [-14, -22], [16, -24], [2, -30]].map(([dx, r]) => `<ellipse cx="${x - 2 * s + dx * s * 0.5}" cy="${y - 46 * s}" rx="${15 * s}" ry="${5 * s}" fill="#2fa66a" transform="rotate(${r + (dx > 0 ? 20 : -20)} ${x - 2 * s} ${y - 46 * s})"/>`).join('')}<circle cx="${x - 2 * s}" cy="${y - 43 * s}" r="${3 * s}" fill="#8a5a3c"/>`;
-  const FISH = (x, y, c, f) => `<g transform="translate(${x} ${y}) scale(${f ? -1 : 1} 1)"><ellipse rx="9" ry="5.5" fill="${c}"/><path d="M8 0l8-6v12z" fill="${c}"/><circle cx="-4" cy="-1.5" r="1.4" fill="#04382e"/></g>`;
-  const BUB = (x, y, r) => `<circle cx="${x}" cy="${y}" r="${r}" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.6"/>`;
+  // Ikan dan gelembung bergerak pelan di dalam gambar pulau (CSS, hanya transform dan opacity)
+  const FISH = (x, y, c, f) => `<g transform="translate(${x} ${y}) scale(${f ? -1 : 1} 1)"><g class="isle-fish" style="animation-delay:-${((x + y) % 5) * 0.7}s"><ellipse rx="9" ry="5.5" fill="${c}"/><path d="M8 0l8-6v12z" fill="${c}"/><circle cx="-4" cy="-1.5" r="1.4" fill="#04382e"/></g></g>`;
+  const BUB = (x, y, r) => `<circle class="isle-bub" cx="${x}" cy="${y}" r="${r}" style="animation-delay:-${(x + y) % 5}s" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.6"/>`;
   // Lencana simbol bab (mis. +, ×, ½) supaya setiap tempat tetap menunjukkan babnya
   const SYMB = (u, ring) => { const lg = u && CH_LOGO.find((x) => x[0].test(u.name)); if (!lg) return ''; const t = lg[1]; return `<circle cx="28" cy="30" r="15" fill="#fff" stroke="${ring}" stroke-width="3"/><text x="28" y="${t.length > 2 ? 34 : 36}" text-anchor="middle" font-size="${t.length > 2 ? 11 : t.length > 1 ? 14 : 18}" font-weight="900" fill="${lg[2]}" font-family="Nunito,sans-serif">${esc(t)}</text>`; };
   function placeSVG(who, v, ghost, u) {
@@ -598,7 +599,7 @@
       const bg = bgOf(x), top = i ? mixHex(bgOf(rows[i - 1]), bg, 0.5) : bg, bot = i < rows.length - 1 ? mixHex(bg, bgOf(rows[i + 1]), 0.5) : '#ffffff';
       const reveal = fresh && (state === 'cur' || state === 'next') ? ' reveal' : '', just = fresh === u.id ? ' just' : '';
       let html = i ? isleLink(s === 'r' ? 'lr' : 'rl', state === 'next' || state === 'fog', who) : '';
-      if (who !== prevWho && state !== 'fog') html += `<div class="isle-region w-${who}"><span>${W.icon}</span>${W.name}</div>`;
+      if (i && who !== prevWho && state !== 'fog') html += `<div class="isle-coast" aria-hidden="true"></div><div class="isle-region w-${who}"><span>${W.icon}</span>${W.name}</div>`;
       prevWho = state === 'fog' ? prevWho : who;
       if (state === 'fog') html += `<div class="isle fog ${s}" aria-hidden="true">${placeSVG(who, v, true, u)}<span class="fogl"></span></div>`;
       else if (state === 'next') html += `<button class="isle next ${s}${reveal}" data-act="tip" data-t="🌫️ This place is still covered in fog. Finish your current place to uncover it." aria-label="Next place, still covered in fog">${placeSVG(who, v, false, u)}<span class="fogl"></span><span class="isle-tag"><i>${IC.lock.replace('<svg', '<svg width="16" height="16"')}</i>Next destination</span></button>`;
@@ -3658,7 +3659,7 @@
     const chip = (k, v, label) => `<button class="${(f[k] || '') === v ? 'on' : ''}" data-act="jfilter" data-k="${k}" data-v="${v}">${label}</button>`;
     const tile = (p) => {
       const m = inBand.find((x) => x.profession === p.id), done = m && missionDone(kid, m), st = m ? missionStars(kid, m) : 0;
-      return `<a class="mq-gt jtile" href="#/profesi/${p.id}" style="--c:${p.color};--bg:${JV.light(p.color, 0.88)}" aria-label="${esc(p.name)}${done ? ', done' : ''}">${done ? '<span class="new jdone">✓</span>' : ''}<span class="art">${JV.icon(p.id, p.color) || `<span class="jpeople">${p.people}</span>`}</span><b>${esc(p.name)}</b><small>${m ? esc(m.title) : ''}</small>${done ? `<span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span>` : ''}</a>`;
+      return `<a class="mq-gt jtile" href="#/profesi/${p.id}" style="--c:${p.color};--bg:${JV.light(p.color, 0.88)}" aria-label="${esc(p.name)}${done ? ', done' : ''}">${done ? '<span class="new jdone">✓</span>' : ''}${m ? `<span class="jlvl">${(J.BANDS.find((b) => b.id === m.level) || {}).name}</span>` : ''}<span class="art">${JV.icon(p.id, p.color) || `<span class="jpeople">${p.people}</span>`}</span><b>${esc(p.name)}</b><small>${m ? esc(m.title) : ''}</small>${done ? `<span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span>` : ''}</a>`;
     };
     app.innerHTML = mqPage(`
       <div class="mq-ghead">${kid ? '' : `<a class="mq-ico" href="#/" aria-label="Back">${IC.back}</a>`}
