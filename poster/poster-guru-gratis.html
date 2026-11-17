@@ -83,7 +83,7 @@
   <div class="levels"><span class="k">🧸 TK A · TK B</span><span>🎒 SD Kelas 1–6</span><span class="s">📐 SMP Kelas 7–8</span><span class="h">✖️ Aljabar 1 & 2</span><span class="h">📏 Geometri</span><span class="h">📈 Prakalkulus</span><span class="h">∫ Kalkulus</span></div>
 
   <section class="sec s1">
-    <div class="stepbar"><span class="big">1</span><div><h2>Daftar 2 menit, langsung aktif</h2><p>Buka metiq-math.vercel.app → <span class="btn">Saya Guru</span> → <b>Daftar gratis</b></p></div></div>
+    <div class="stepbar"><span class="big">1</span><div><h2>Daftar 2 menit, langsung aktif</h2><p>Buka metiqmath.com → <span class="btn">Saya Guru</span> → <b>Daftar gratis</b></p></div></div>
     <div class="flow">
       <div><b class="n">ISI</b>Nama, email, dan kata sandi</div>
       <div><b class="n">ISI</b><b>Nama kelas pertama</b>, mis. "TK B Melati" atau "7A"</div>
@@ -126,14 +126,14 @@
   <div class="foot">
     <div class="qr" id="qr"></div>
     <div>
-      <div class="url">metiq-math.vercel.app</div>
+      <div class="url">metiqmath.com</div>
       <p>Pindai kode QR atau ketik alamat di atas. Belum yakin? Di halaman Saya Guru, ketuk <b>Coba dulu sebagai guru contoh</b>, tanpa mendaftar.</p>
       <div class="pills"><span>Gratis untuk guru</span><span>Tanpa iklan</span><span>Bahasa Indonesia</span><span>Kurikulum Merdeka</span></div>
     </div>
   </div>
 </div>
 <script>
-  const q = qrcode(0, 'M'); q.addData('https://metiq-math.vercel.app'); q.make();
+  const q = qrcode(0, 'M'); q.addData('https://metiqmath.com'); q.make();
   document.getElementById('qr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
   document.querySelectorAll('[data-m]').forEach((el, i) => { el.innerHTML = METIQ_MASCOT.svg(el.dataset.m, { size: i ? 150 : 200, who: el.dataset.who, enter: false }); });
 </script>

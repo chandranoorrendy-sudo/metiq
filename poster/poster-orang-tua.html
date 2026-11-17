@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Panduan Orang Tua Metiq</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<style>
+  :root { --tiffany: #66ffdb; --on-tiffany: #04382e; --brand: #00806b; --ink: #16302b; --muted: #5c7570; --bg: #f1fbf8; --line: #dcefe9; --a: #ff7a59; --a-bg: #fff1ec; --b: #4d96ff; --b-bg: #eef4ff; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { width: 1080px; height: 1720px; font-family: 'Nunito', system-ui, sans-serif; color: var(--ink); background: var(--bg); overflow: hidden; }
+  .poster { position: relative; height: 100%; padding: 48px 56px 40px; display: flex; flex-direction: column; }
+  .poster::before { content: ''; position: absolute; inset: 0 0 auto; height: 520px; background: linear-gradient(160deg, #d8fff4 0%, #f1fbf8 70%); z-index: -1; }
+  .top { display: flex; align-items: center; gap: 14px; }
+  .top img { width: 64px; height: 64px; }
+  .top b { font-size: 40px; font-weight: 900; }
+  .top .tag { margin-left: auto; background: #fff4d6; color: #8a5a00; font-weight: 800; font-size: 22px; padding: 8px 18px; border-radius: 999px; }
+  .hero { display: grid; grid-template-columns: 1fr 360px; align-items: center; gap: 12px; margin-top: 18px; }
+  h1 { font-size: 60px; line-height: 1.05; margin: 0 0 14px; font-weight: 900; letter-spacing: -.5px; }
+  h1 span { color: var(--brand); }
+  .lead { font-size: 25px; color: var(--muted); margin: 0; line-height: 1.4; font-weight: 700; }
+  .hero img { width: 100%; }
+  .q { margin: 16px 0 16px; text-align: center; font-size: 28px; font-weight: 900; }
+  .q span { background: var(--ink); color: #fff; padding: 8px 22px; border-radius: 999px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; flex: 1; }
+  .col { background: #fff; border-radius: 28px; padding: 26px 26px 22px; border: 3px solid var(--c); box-shadow: 0 10px 30px rgba(16, 48, 43, .07); display: flex; flex-direction: column; }
+  .col.a { --c: var(--a); --cbg: var(--a-bg); } .col.b { --c: var(--b); --cbg: var(--b-bg); }
+  .chead { background: var(--cbg); margin: -26px -26px 18px; padding: 20px 26px; border-radius: 25px 25px 0 0; }
+  .chead small { display: inline-block; background: var(--c); color: #fff; font-weight: 900; font-size: 19px; padding: 3px 14px; border-radius: 999px; }
+  .chead h2 { margin: 8px 0 2px; font-size: 33px; line-height: 1.12; font-weight: 900; }
+  .chead p { margin: 0; color: var(--muted); font-size: 20px; font-weight: 700; }
+  ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 13px; }
+  li { display: grid; grid-template-columns: 46px 1fr; gap: 14px; align-items: start; font-size: 22px; line-height: 1.32; font-weight: 700; }
+  li .n { width: 46px; height: 46px; border-radius: 50%; background: var(--c); color: #fff; display: grid; place-items: center; font-weight: 900; font-size: 24px; }
+  li b { font-weight: 900; }
+  .btn { display: inline-block; background: var(--tiffany); color: var(--on-tiffany); font-weight: 900; padding: 1px 10px; border-radius: 8px; border-bottom: 3px solid #2fd9b4; white-space: nowrap; }
+  .code { font-family: ui-monospace, Consolas, monospace; background: var(--bg); border: 2px dashed var(--line); padding: 0 8px; border-radius: 8px; font-weight: 900; letter-spacing: 2px; white-space: nowrap; }
+  .tip { margin-top: auto; padding-top: 16px; }
+  .tip div { background: var(--cbg); border-radius: 16px; padding: 12px 16px; font-size: 19px; line-height: 1.35; font-weight: 700; }
+  .foot { margin-top: 22px; display: grid; grid-template-columns: 170px 1fr; gap: 24px; align-items: center; background: var(--ink); color: #fff; border-radius: 28px; padding: 20px 26px; }
+  .qr { background: #fff; border-radius: 16px; padding: 10px; width: 170px; height: 170px; }
+  .qr svg { width: 100%; height: 100%; display: block; }
+  .foot .url { font-size: 38px; font-weight: 900; color: var(--tiffany); }
+  .foot p { margin: 4px 0 0; font-size: 21px; line-height: 1.4; font-weight: 700; opacity: .92; }
+  .foot .pills { margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap; }
+  .foot .pills span { background: rgba(255, 255, 255, .12); padding: 5px 14px; border-radius: 999px; font-size: 18px; font-weight: 800; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="top"><img src="../icons/icon.svg" alt=""><b>Metiq</b><span class="tag">⭐ Matematika SD Kelas 1–6 · Gratis</span></div>
+
+  <div class="hero">
+    <div>
+      <h1>Ayah/Bunda, yuk daftarkan ananda di <span>Metiq!</span></h1>
+      <p class="lead">Latihan matematika dari HP: soal menyesuaikan kemampuan anak, ada penjelasan setiap jawaban belum tepat, dan laporannya bisa Ayah/Bunda pantau.</p>
+    </div>
+    <img src="../img/hero-kids.webp" alt="">
+  </div>
+
+  <div class="q"><span>Apakah ananda sudah punya kelas di Metiq?</span></div>
+
+  <div class="cols">
+    <section class="col a">
+      <div class="chead"><small>SUDAH PUNYA KELAS</small><h2>Kelas sudah dibuatkan</h2><p>Ayah/Bunda sudah menerima kode dari guru atau admin Metiq.</p></div>
+      <ol>
+        <li><span class="n">1</span><span>Siapkan dua kode: <b>kode kelas</b> untuk anak dan <b>kode orang tua</b> (6 huruf/angka) untuk Ayah/Bunda.</span></li>
+        <li><span class="n">2</span><span>Buka <b>metiqmath.com</b>, ketuk <span class="btn">Saya Siswa</span>, masukkan kode kelas, lalu pilih <b>nama ananda</b>.</span></li>
+        <li><span class="n">3</span><span>Ananda mengerjakan <b>asesmen awal</b> singkat (cukup sekali) agar latihan dimulai dari level yang pas.</span></li>
+        <li><span class="n">4</span><span>Untuk laporan, ketuk <span class="btn">Saya Orang Tua</span> dan masukkan <b>kode orang tua</b>.</span></li>
+        <li><span class="n">5</span><span>Selesai! Pantau hasil latihan dan kabar tugas dari guru.</span></li>
+      </ol>
+      <div class="tip"><div>💡 Punya beberapa anak? Ajukan <b>akun orang tua</b> (email + kata sandi) agar laporan semua anak terlihat di satu akun, dari HP mana pun.</div></div>
+    </section>
+
+    <section class="col b">
+      <div class="chead"><small>BELUM PUNYA KELAS</small><h2>Kelas akan dibuatkan</h2><p>Ajukan dulu, admin Metiq yang menempatkan ananda di kelas.</p></div>
+      <ol>
+        <li><span class="n">1</span><span>Buka <b>metiqmath.com</b>, ketuk menu <b>☰</b> → <span class="btn">✋ Ajukan akun</span>, lalu pilih <b>Siswa</b>.</span></li>
+        <li><span class="n">2</span><span>Isi <b>nama</b> dan <b>usia ananda</b>, sekolah (opsional), dan <b>No. WhatsApp</b> Ayah/Bunda. Ketuk <b>Kirim pengajuan</b>.</span></li>
+        <li><span class="n">3</span><span>Simpan <b>kode pengajuan</b> yang muncul. Admin memeriksa dalam <b>1–2 hari</b>.</span></li>
+        <li><span class="n">4</span><span>Ketuk <b>Cek status</b> atau tunggu kabar WhatsApp. Setelah disetujui, Ayah/Bunda mendapat <b>kode kelas</b> dan <b>kode orang tua</b>.</span></li>
+        <li><span class="n">5</span><span>Lanjutkan seperti kolom <b>“Sudah punya kelas”</b> mulai langkah 2.</span></li>
+      </ol>
+      <div class="tip"><div>🏡 Ingin mengajar ananda sendiri di rumah? Pilih <b>Keluarga homeschooling</b>: Ayah/Bunda mendapat kelas keluarga dan akun untuk setiap anak.</div></div>
+    </section>
+  </div>
+
+  <div class="foot">
+    <div class="qr" id="qr"></div>
+    <div>
+      <div class="url">metiqmath.com</div>
+      <p>Pindai kode QR atau ketik alamat di atas. Bisa dibuka dari HP mana pun, tanpa perlu memasang aplikasi.</p>
+      <div class="pills"><span>Ingin mencoba dulu? Kode 1234</span><span>📱 Bisa dipasang di layar HP</span></div>
+    </div>
+  </div>
+</div>
+<script>
+  const q = qrcode(0, 'M'); q.addData('https://metiqmath.com'); q.make();
+  document.getElementById('qr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+</script>
+</body>
+</html>

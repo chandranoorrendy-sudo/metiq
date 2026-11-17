@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Metiq Alamat Baru</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.min.js"></script>
+<script src="../js/mascot.js"></script>
+<script src="../js/mascot-friends.js"></script>
+<style>
+  :root { --tiffany: #66ffdb; --mq: #35e0bd; --brand: #00806b; --ink: #16302b; --muted: #5c7570; }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { width: 1080px; height: 1350px; font-family: 'Nunito', system-ui, sans-serif; color: var(--ink); background: #f1fbf8; overflow: hidden; }
+  .poster { position: relative; height: 100%; padding: 44px 56px 44px; display: flex; flex-direction: column; overflow: hidden; }
+  .poster > * { flex: none; }
+  .poster::before { content: ''; position: absolute; inset: 0; z-index: -2; background: radial-gradient(900px 560px at 50% 60%, #c9fff0 0%, rgba(201, 255, 240, 0) 70%), linear-gradient(170deg, #dcfff5 0%, #f1fbf8 55%); }
+  .dots i { position: absolute; z-index: -1; display: grid; place-items: center; width: 66px; height: 66px; border-radius: 20px; font-style: normal; font-weight: 900; font-size: 36px; color: #fff; box-shadow: 0 6px 0 rgba(0, 0, 0, .12); }
+  .top { display: flex; align-items: center; gap: 14px; }
+  .top img { width: 60px; height: 60px; }
+  .top b { font-size: 38px; font-weight: 900; }
+  .top .tag { margin-left: auto; background: var(--ink); color: var(--tiffany); font-weight: 900; font-size: 22px; padding: 9px 20px; border-radius: 999px; letter-spacing: .02em; }
+  h1 { margin: 22px 0 0; font-size: 70px; line-height: 1.02; font-weight: 900; letter-spacing: -1px; text-align: center; }
+  h1 span { color: var(--brand); }
+  .addr { position: relative; align-self: center; margin-top: 22px; display: flex; align-items: center; gap: 16px; padding: 16px 34px 16px 22px; border-radius: 999px; background: #fff; border: 4px solid var(--mq); box-shadow: 0 8px 0 #26b894, 0 18px 40px rgba(16, 48, 43, .15); }
+  .addr .lock { display: grid; place-items: center; width: 58px; height: 58px; border-radius: 50%; background: var(--mq); font-size: 30px; }
+  .addr b { font-size: 64px; font-weight: 900; letter-spacing: -1px; color: var(--ink); }
+  .addr b span { color: var(--brand); }
+  .lead { margin: 30px auto 0; max-width: 880px; text-align: center; font-size: 28px; line-height: 1.35; font-weight: 800; color: var(--muted); }
+  .lead b { color: var(--ink); }
+
+  .stage { position: relative; height: 470px; margin-top: 18px; }
+  .ph { position: absolute; top: 46px; width: 196px; height: 420px; padding: 9px; border-radius: 38px; background: #10241f; box-shadow: 0 22px 44px rgba(16, 48, 43, .26); }
+  .ph img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: top; border-radius: 30px; }
+  .ph.l { left: 150px; transform: rotate(-7deg); }
+  .ph.r { right: 150px; transform: rotate(7deg); }
+  .ph.r img { object-position: 50% 58%; }
+  .ph.c { left: 50%; top: 0; width: 220px; height: 466px; margin-left: -110px; z-index: 2; }
+  .meti { position: absolute; left: -6px; top: 70px; z-index: 3; }
+  .nahla { position: absolute; right: 4px; top: 40px; z-index: 3; }
+  .tito { position: absolute; right: 30px; bottom: -6px; z-index: 3; }
+
+  .foot { margin-top: auto; display: grid; grid-template-columns: 150px 1fr; gap: 26px; align-items: center; background: var(--ink); color: #fff; border-radius: 30px; padding: 20px 26px; }
+  .qr { background: #fff; border-radius: 16px; padding: 10px; } .qr svg { display: block; width: 100%; height: auto; }
+  .foot .url { font-size: 44px; font-weight: 900; color: var(--tiffany); letter-spacing: -.5px; }
+  .foot p { margin: 4px 0 12px; font-size: 21px; line-height: 1.35; font-weight: 700; opacity: .92; }
+  .chips span { display: inline-block; margin: 0 6px 0 0; padding: 7px 15px; border-radius: 999px; background: rgba(102, 255, 219, .14); color: var(--tiffany); font-size: 19px; font-weight: 900; }
+</style>
+</head>
+<body>
+<div class="poster">
+  <div class="top"><img src="../icons/icon.svg" alt=""><b>Metiq</b><span class="tag">✨ KENALAN DENGAN METIQ</span></div>
+
+  <h1>Teman belajar matematika<br>anak jadi <span>seru!</span></h1>
+  <div class="addr"><span class="lock">🔒</span><b>metiq<span>math</span>.com</b></div>
+  <p class="lead">Latihan singkat <b>TK sampai SMA</b> bersama Meti, ada penjelasan langkah demi langkah dan permainan. <b>Gratis untuk siswa</b>, orang tua bisa memantau kemajuan anak.</p>
+
+  <div class="stage">
+    <div class="ph l"><img src="pembaruan/s-main.png" alt=""></div>
+    <div class="ph c"><img src="pembaruan/s-peta.png" alt=""></div>
+    <div class="ph r"><img src="pembaruan2/anim3.png" alt=""></div>
+    <div class="meti" data-m="hello" data-s="190"></div>
+    <div class="nahla" data-m="cheer" data-who="nahla" data-s="120"></div>
+    <div class="tito" data-m="happy" data-who="tito" data-s="110"></div>
+  </div>
+
+  <div class="foot">
+    <div class="qr" id="qr"></div>
+    <div>
+      <div class="url">metiqmath.com</div>
+      <p>Pindai kode QR atau ketik alamatnya di HP, tablet, atau laptop. Tanpa memasang aplikasi.</p>
+      <div class="chips"><span>💡 Lihat caranya</span><span>🎮 Permainan</span><span>👨‍👩‍👧 Laporan orang tua</span></div>
+    </div>
+  </div>
+</div>
+<script>
+  const q = qrcode(0, 'M'); q.addData('https://metiqmath.com'); q.make();
+  document.getElementById('qr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
+  document.querySelectorAll('[data-m]').forEach((el) => { el.innerHTML = METIQ_MASCOT.svg(el.dataset.m, { size: +el.dataset.s, who: el.dataset.who, enter: false }); });
+</script>
+</body>
+</html>

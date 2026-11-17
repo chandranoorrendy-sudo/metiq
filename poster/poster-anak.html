@@ -77,7 +77,7 @@
   <section class="card">
     <h2>Cara mulai, cuma 3 langkah</h2>
     <div class="steps">
-      <div class="step st1"><span class="n">1</span><i>📱</i><b>Buka Metiq</b><p>Pindai QR di bawah atau ketik<br><b style="white-space:nowrap;font-size:18.5px">metiq-math.vercel.app</b></p></div>
+      <div class="step st1"><span class="n">1</span><i>📱</i><b>Buka Metiq</b><p>Pindai QR di bawah atau ketik<br><b style="white-space:nowrap;font-size:18.5px">metiqmath.com</b></p></div>
       <div class="step st2"><span class="n">2</span><i>✏️</i><b>Ketuk <span class="pill">Mulai belajar</span></b><p>Ketik namamu, lalu kerjakan tes singkat supaya soalnya pas untukmu</p></div>
       <div class="step st3"><span class="n">3</span><i>🔑</i><b>Simpan kode belajarmu</b><p>Ada di halaman <b>Aku</b>. Berikan ke gurumu supaya kamu masuk kelasnya</p><span class="code">ABC123</span></div>
     </div>
@@ -100,14 +100,14 @@
   <div class="foot">
     <div class="qr" id="qr"></div>
     <div>
-      <div class="url">metiq-math.vercel.app</div>
+      <div class="url">metiqmath.com</div>
       <p>Gratis, tanpa iklan, tanpa memasang aplikasi. Bisa dari HP atau komputer.</p>
       <span class="ask">👨‍👩‍👧 Minta izin ayah, ibu, atau gurumu dulu ya!</span>
     </div>
   </div>
 </div>
 <script>
-  const q = qrcode(0, 'M'); q.addData('https://metiq-math.vercel.app'); q.make();
+  const q = qrcode(0, 'M'); q.addData('https://metiqmath.com'); q.make();
   document.getElementById('qr').innerHTML = q.createSvgTag({ cellSize: 6, margin: 0, scalable: true });
   document.querySelectorAll('[data-m]').forEach((el) => { el.innerHTML = METIQ_MASCOT.svg(el.dataset.m, { size: +el.dataset.s, who: el.dataset.who, enter: false }); });
 </script>
