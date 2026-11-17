@@ -1669,3 +1669,41 @@ input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39
   .atlas-head { backdrop-filter: none; }
   .isles::before, .isles::after { animation: none !important; }
 }
+
+/* Ikon permainan: kartu ilustrasi berwarna sesuai jenis permainan, dengan depth ringan. */
+.mq-ggrid .mq-gt {
+  gap: 9px;
+  padding: 9px 9px 13px;
+  border-color: color-mix(in srgb, var(--c) 26%, #fff);
+  background: linear-gradient(155deg, color-mix(in srgb, var(--c) 12%, #fff), var(--bg) 72%);
+  box-shadow: 0 5px 14px rgba(30, 52, 58, .08);
+}
+.mq-ggrid .mq-gt .art {
+  aspect-ratio: 1.38 / 1;
+  border: 1px solid color-mix(in srgb, var(--c) 16%, #fff);
+  border-radius: 15px;
+  background:
+    radial-gradient(ellipse at 18% 12%, color-mix(in srgb, var(--c) 16%, #fff), transparent 52%),
+    linear-gradient(145deg, #fff 8%, color-mix(in srgb, var(--c) 5%, #fff));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.95), 0 3px 9px rgba(31,70,76,.06);
+}
+.mq-ggrid .mq-gt .art::before {
+  inset: 3% 8%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--c) 13%, #fff), transparent 74%);
+}
+.mq-ggrid .mq-gt .art svg {
+  z-index: 1;
+  width: 96%;
+  max-height: 94%;
+  filter: drop-shadow(0 5px 5px rgba(24,61,73,.08));
+  transition: transform .2s ease, filter .2s ease;
+}
+.mq-ggrid .mq-gt b { font-size: .94rem; }
+.mq-ggrid .mq-gt .st { margin-top: 1px; }
+@media (hover: hover) {
+  .mq-ggrid .mq-gt:hover .art svg { transform: translateY(-3px) scale(1.035); filter: drop-shadow(0 8px 6px rgba(24,61,73,.14)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mq-ggrid .mq-gt .art svg { transition: none; }
+}

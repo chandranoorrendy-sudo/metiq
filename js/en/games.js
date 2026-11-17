@@ -805,7 +805,24 @@
     grafik: '<path d="M16 10v68h96" stroke="#155e75" stroke-width="4" fill="none" stroke-linecap="round"/>' + [[26, 40, '#38bdf8'], [48, 22, '#f472b6'], [70, 50, '#facc15'], [92, 32, '#4ade80']].map(([x, y, c]) => `<rect x="${x}" y="${y}" width="14" height="${76 - y}" rx="3" fill="${c}"/>`).join(''),
     pola: [[18, '#65a30d', 'c'], [42, '#f59e0b', 's'], [66, '#65a30d', 'c'], [90, '#f59e0b', 's']].map(([x, c, k], i) => (i === 3 ? `<rect x="${x - 11}" y="34" width="22" height="22" rx="5" fill="none" stroke="#65a30d" stroke-width="3" stroke-dasharray="4 3"/><text x="${x}" y="51" text-anchor="middle" font-size="16" font-weight="900" fill="#3f6212">?</text>` : k === 'c' ? `<circle cx="${x}" cy="45" r="11" fill="${c}"/>` : `<rect x="${x - 11}" y="34" width="22" height="22" rx="4" fill="${c}"/>`)).join(''),
   };
-  const art = (type, size = 120) => `<svg class="gart" viewBox="0 0 120 90" width="${size}" height="${Math.round(size * 0.75)}" aria-hidden="true">${ART[type] || ''}</svg>`;
+  let artUid = 0;
+  const art = (type, size = 120) => {
+    const [accent, wash] = LOOK[type] || ['#278e83', '#eaf5ef'], uid = `game-art-${type}-${++artUid}`;
+    return `<svg class="gart" viewBox="0 0 120 90" width="${size}" height="${Math.round(size * 0.75)}" aria-hidden="true">
+      <defs>
+        <linearGradient id="${uid}-tile" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${wash}"/><stop offset="1" stop-color="#fff"/></linearGradient>
+        <filter id="${uid}-lift" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="0" dy="3" stdDeviation="2.2" flood-color="#183d49" flood-opacity=".18"/></filter>
+      </defs>
+      <rect x="3" y="3" width="114" height="84" rx="23" fill="url(#${uid}-tile)"/>
+      <circle cx="99" cy="17" r="17" fill="#fff" opacity=".56"/>
+      <circle cx="15" cy="74" r="17" fill="${accent}" opacity=".08"/>
+      <path d="M13 67c14-14 26 8 40-2s24-20 39-10" fill="none" stroke="${accent}" stroke-width="1.5" stroke-linecap="round" opacity=".12"/>
+      <g filter="url(#${uid}-lift)">${ART[type] || ''}</g>
+      <path d="M18 13h20" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".72"/>
+      <circle cx="104" cy="72" r="2.2" fill="${accent}" opacity=".48"/>
+      <circle cx="98" cy="77" r="1.2" fill="${accent}" opacity=".32"/>
+    </svg>`;
+  };
   const starsFor = (g, pts) => g.stars.filter((t) => pts >= t).length;
 
   /* ---------- Putaran 10 soal untuk garis bilangan dan juring: pilih dulu, lalu Periksa ---------- */
