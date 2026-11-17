@@ -592,6 +592,9 @@
   function isleMapHTML(st, isles, fresh) {
     if (!isles.length) return '';
     const seen = {}, rows = isles.map((x) => { const who = worldOf(x.u), k = seen[who] = (seen[who] || 0) + 1; return { ...x, who, v: k - 1 }; });
+    const atlas = rows.find((x) => x.state === 'cur') || rows.find((x) => x.state === 'next') || rows[0];
+    const atlasWorld = WORLDS[atlas.who];
+    const atlasHead = `<header class="atlas-head"><span class="atlas-compass" aria-hidden="true"><b>↑</b><small>N</small></span><span class="atlas-copy"><small>LEARNING ADVENTURE</small><b>${atlasWorld.icon} ${atlasWorld.name}</b><span>Tap an island to continue</span></span><span class="atlas-stamp" aria-hidden="true">METIQ<br><b>FIELD<br>ATLAS</b></span></header>`;
     const bgOf = (r) => { const c = WORLDS[r.who].bg; return r.state === 'fog' ? mixHex(c, '#e9edf0', 0.9) : r.state === 'next' ? mixHex(c, '#e6ebee', 0.75) : c; }; // belum terbuka: abu-abu berkabut
     let out = '', prevWho = null;
     rows.forEach((x, i) => {
@@ -611,7 +614,7 @@
       }
       out += `<div class="isle-row w-${who} ${state}" style="background:linear-gradient(180deg, ${top} 0%, ${bg} 22%, ${bg} 78%, ${bot} 100%)">${html}</div>`;
     });
-    return `<section class="isles" aria-label="Learning adventure map">${out}<div class="isle-mist" aria-hidden="true"></div></section>`;
+    return `<section class="isles" aria-label="Learning adventure map">${atlasHead}${out}<div class="isle-mist" aria-hidden="true"></div></section>`;
   }
   // Halaman satu tempat (bab), dibuka dengan mengetuk tempat di peta. Bukan jalur bulatan:
   // gambar besar tempat itu bersama maskotnya, lalu daftar misi (keterampilan) berupa kartu, kartu pelajaran, dan peti harta karun.
