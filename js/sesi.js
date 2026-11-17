@@ -115,6 +115,17 @@
       if (r) r.submittedAt = r.submittedAt || Date.now(); local.save(db);
       return { score: s.kind === 'tugas' || s.reveal ? (r ? r.score : 0) : null, total: s.questions.length };
     },
+    // Mode fokus ujian: catat berapa kali siswa meninggalkan halaman ujian (pindah tab/aplikasi).
+    // Di server butuh supabase/033_ujian_fokus.sql; bila belum dijalankan, panggilan ini gagal diam-diam.
+    async focus(sesId, count) {
+      const x = ses(), n = Math.max(0, Math.round(count) || 0);
+      if (cloud()) return D.Cloud.rpc('student_sesi_focus', { p_code: x.code, p_student_id: x.id, p_session: sesId, p_count: n });
+      const db = local.load(), rows = db.rows[sesId] = db.rows[sesId] || {};
+      const r = rows[x.id] = rows[x.id] || { sid: x.id, answers: {}, paper: false, score: 0, startedAt: Date.now(), submittedAt: null };
+      r.focus = { count: n, at: Date.now() };
+      local.save(db);
+      return { ok: true };
+    },
   };
   // SQL 029 belum dijalankan di server
   const missing = (e) => e && (e.status === 404 || /could not find the function|schema cache/i.test(e.message || ''));
@@ -338,7 +349,7 @@
     st.s = s; st.rows = data.rows || []; st.off = (data.now || Date.now()) - Date.now();
     const nm = (k, i) => (st.hide ? `Siswa ${i + 1}` : esc(k.name));
     const cell = (r, q) => { const a = r && (r.answers || {})[q.id]; return `<i class="${a ? (a.ok ? 'g' : 'r') : ''}${a && a.paper ? ' p' : ''}" title="${a ? (a.ok ? 'Benar' : 'Salah' + (a.given ? ': ' + esc(strip(a.given)) : '')) : 'Belum dijawab'}"></i>`; };
-    const status = (r) => (!r ? '<span class="ss-st n">Belum mulai</span>' : r.paper ? '<span class="ss-st p">📝 Kertas</span>' : r.submittedAt ? '<span class="ss-st d">✅ Selesai</span>' : `<span class="ss-st w">✏️ ${Object.keys(r.answers || {}).length}/${sm.n}</span>`);
+    const status = (r) => { const base = !r ? '<span class="ss-st n">Belum mulai</span>' : r.paper ? '<span class="ss-st p">📝 Kertas</span>' : r.submittedAt ? '<span class="ss-st d">✅ Selesai</span>' : `<span class="ss-st w">✏️ ${Object.keys(r.answers || {}).length}/${sm.n}</span>`; const f = r && r.focus && +r.focus.count; return base + (f ? ` <span class="ss-st f" title="Meninggalkan halaman ujian ${f} kali">⚠️ ${f}</span>` : ''); };
     const head = `${tv ? '' : '<button class="back link" data-sm="back">← Daftar tugas dan ujian</button>'}
       <section class="card ss-mhead"><div class="ss-mt"><span class="ss-ic">${KIND[s.kind][0]}</span><div class="grow"><small class="muted">${KIND[s.kind][1]} · ${sm.n} soal${s.settings && s.settings.minutes ? ` · ${s.settings.minutes} menit` : ''}</small><h2>${esc(s.title)}</h2></div>
         ${live ? '<span class="pill ss-live">● Berjalan</span>' : s.status === 'draft' ? '<span class="pill">Draf</span>' : `<span class="pill">Selesai ${fmtDate(s.endedAt)}</span>`}</div>
@@ -392,8 +403,8 @@
   }
   function csv(st, ctx) {
     const s = st.s, sm = summarize(s, st.rows, ctx.kids);
-    const rows = [['nama', 'cara', 'nilai', 'benar', 'jumlah_soal', 'selesai', ...s.questions.map((_, i) => 'soal_' + (i + 1))]];
-    sm.list.forEach(({ k, r }) => rows.push([k.name, r ? (r.paper ? 'kertas' : 'perangkat') : '', r ? Math.round((r.score * 100) / sm.n) : '', r ? r.score : '', sm.n, r && r.submittedAt ? new Date(r.submittedAt).toISOString() : '',
+    const rows = [['nama', 'cara', 'nilai', 'benar', 'jumlah_soal', 'selesai', 'pindah_tab', ...s.questions.map((_, i) => 'soal_' + (i + 1))]];
+    sm.list.forEach(({ k, r }) => rows.push([k.name, r ? (r.paper ? 'kertas' : 'perangkat') : '', r ? Math.round((r.score * 100) / sm.n) : '', r ? r.score : '', sm.n, r && r.submittedAt ? new Date(r.submittedAt).toISOString() : '', r && r.focus ? (+r.focus.count || 0) : '',
       ...s.questions.map((q) => { const a = r && (r.answers || {})[q.id]; return a ? (a.ok ? 'benar' : 'salah' + (a.given ? ': ' + strip(a.given) : '')) : ''; })]));
     const body = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
     const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + body], { type: 'text/csv' }));
@@ -532,6 +543,7 @@
     if (!mine) {
       main.innerHTML = `<div class="ss-intro">${D.MQ ? D.MQ.svg('hello', { size: 130, enter: false }) : ''}<span class="pill">${KIND[s.kind][0]} ${KIND[s.kind][1]}</span><h1>${esc(s.title)}</h1>
         <ul class="ss-facts"><li>📋 ${s.questions.length} soal</li>${exam && s.settings.minutes ? `<li>⏱️ ${s.settings.minutes} menit, mulai saat kamu menekan Mulai</li>` : ''}<li>✏️ Ada kertas coret untuk menghitung</li>
+          ${exam ? '<li>🖥️ Pakai tablet atau laptop. Jangan pindah tab/aplikasi: setiap perpindahan dicatat untuk guru.</li>' : ''}
           ${exam ? '<li>🤫 Jawabanmu baru dinilai setelah dikumpulkan</li>' : '<li>✅ Setiap jawaban langsung diperiksa</li>'}</ul>
         <button class="mq-btn pulse" id="ssgo">Mulai mengerjakan</button></div>`;
       main.querySelector('#ssgo').addEventListener('click', async (e) => {
@@ -550,9 +562,37 @@
     const strokes = {};
     const endAt = exam && s.settings.minutes ? mine.startedAt + s.settings.minutes * 60000 : 0;
     root.querySelector('.ss-top').innerHTML = `<a class="mq-ico" href="#/belajar" aria-label="Keluar">✕</a><span class="grow ss-tt"><small>${KIND[s.kind][0]} ${KIND[s.kind][1]}</small><b>${esc(s.title)}</b></span>
-      ${endAt ? '<span class="ss-clock" id="ssclock">--:--</span>' : ''}<span class="ss-sync" id="sssync" hidden>⏳</span>${board ? '<button class="ss-cbtn" id="sscoret">✏️ <span>Kertas coret</span></button>' : ''}`;
+      ${exam ? '<span class="ss-focus-chip" id="ssfocus" hidden title="Kamu meninggalkan halaman ujian">⚠️ 0</span>' : ''}${endAt ? '<span class="ss-clock" id="ssclock">--:--</span>' : ''}<span class="ss-sync" id="sssync" hidden>⏳</span>${board ? '<button class="ss-cbtn" id="sscoret">✏️ <span>Kertas coret</span></button>' : ''}`;
     const cb = root.querySelector('#sscoret');
     if (cb) cb.addEventListener('click', () => { if (board.isOpen()) { strokes[qs[i].id] = board.save(); board.close(); cb.classList.remove('on'); } else { board.open(true); board.load(strokes[qs[i].id] || []); cb.classList.add('on'); } });
+
+    /* ---------- Mode fokus ujian: beri peringatan dan catat bila siswa pindah tab/aplikasi ---------- */
+    let focusN = (mine.focus && +mine.focus.count) || 0, focusOff = false, awayAt = 0;
+    const focusChip = () => { const el = root.querySelector('#ssfocus'); if (el) { el.hidden = !focusN; el.textContent = `⚠️ ${focusN}`; el.title = `Kamu meninggalkan halaman ujian ${focusN} kali`; } };
+    const warnFocus = () => {
+      const was = host.querySelector('.ss-focus'); if (was) was.remove();
+      const box = document.createElement('div');
+      box.className = 'ss-focus';
+      box.innerHTML = `<div class="ss-focus-card" role="alertdialog" aria-labelledby="ssft">
+        <b id="ssft">⚠️ Mode fokus ujian</b>
+        <p>Kamu meninggalkan halaman ujian. Kejadian ini dicatat untuk guru${focusN ? ` (ke-${focusN})` : ''}.</p>
+        <p class="small">Kerjakan ujian di halaman ini saja. Untuk menghitung, gunakan tombol ✏️ Kertas coret.</p>
+        <button class="mq-btn">Lanjutkan ujian</button></div>`;
+      box.querySelector('button').addEventListener('click', () => box.remove());
+      host.appendChild(box);
+    };
+    const onVis = () => {
+      if (!exam || !alive || !host.isConnected) return;
+      if (document.hidden) { awayAt = Date.now(); return; }
+      if (!awayAt) return;
+      const gone = Date.now() - awayAt; awayAt = 0;
+      if (gone < 1200) return; // kedipan sebentar tidak dihitung
+      focusN++; focusChip(); warnFocus();
+      if (!focusOff) Live.focus(s.id, focusN).catch((e) => { if (e && (e.status === 404 || /could not find the function|schema cache/i.test(e.message || ''))) focusOff = true; });
+    };
+    document.addEventListener('visibilitychange', onVis);
+    const stopFocus = () => document.removeEventListener('visibilitychange', onVis);
+    if (focusN) focusChip();
     const syncEl = () => { const el = root.querySelector('#sssync'); if (el) { el.hidden = !failed.length && !sending; el.textContent = failed.length ? '⚠️ belum terkirim' : '⏳'; } };
     // jawaban dikirim satu per satu; yang gagal dicoba lagi
     const send = async (qid, given, ms) => {
@@ -606,6 +646,7 @@
       const left = qs.filter((q) => A[q.id] === undefined).length;
       if (!force && !confirm(left ? `Masih ada ${left} soal yang belum dijawab. Kumpulkan sekarang?` : 'Kumpulkan jawabanmu sekarang?')) { if (endAt && !alive) alive = true; return; }
       alive = false;
+      if (exam) stopFocus();
       main.innerHTML = D.loadingHTML;
       // tunggu jawaban yang masih terkirim
       for (let k = 0; k < 20 && (sending || failed.length); k++) { failed.slice().forEach((f) => send(f.qid, f.given, f.ms)); await new Promise((r) => setTimeout(r, 500)); }
