@@ -1145,3 +1145,12 @@ b.big { font-size: 1.3rem; display: block; }
 .ugbar .ugt { height: 12px; background: #eef5f3; border-radius: 99px; overflow: hidden; } .ugbar .ugt i { display: block; height: 100%; background: var(--brand-2); border-radius: 99px; }
 .ugbar small { grid-column: 2 / 4; color: var(--muted); font-weight: 600; margin-top: -4px; }
 .ubars.ugh { height: 100px; }
+
+/* Ekspor lembar soal ke Word (dasbor guru) */
+.wordexp { display: grid; gap: 8px; margin: 6px 0 16px; padding: 12px 14px; border: 2px dashed #cdeee5; border-radius: 16px; background: #f7fffc; }
+.wordexp > b { font-size: .98rem; color: #04382e; }
+.wordexp .wt { margin: 0; font-weight: 900; font-size: .98rem; color: #04382e; }
+.wordexp .small { margin: 0; }
+.wordexp .cb { margin: 0; }
+.wordexp .btn { justify-self: start; background: #fff; color: #0b6b57; border: 2px solid #b7e8db; }
+.wordexp .btn:active { transform: translateY(1px); }

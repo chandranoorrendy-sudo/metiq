@@ -409,7 +409,8 @@
       box.innerHTML = `<div class="ss-noprint"><button class="back link" data-sp="back">← Kembali</button>
           <section class="card"><h2>🖨️ Cetak: ${esc(s.title)}</h2><p class="small muted">Lembar soal untuk setiap siswa, dengan tempat menulis nama dan jawaban. Kunci jawaban tercetak di halaman terpisah. Setelah dinilai, tandai benar/salah tiap siswa di halaman hasil (📝 Nilai kertas) supaya nilai kelas tetap lengkap.</p>
           <label class="ss-chk"><input type="checkbox" data-sp="key" ${withKey ? 'checked' : ''}> Sertakan kunci jawaban di halaman terakhir</label>
-          <div class="row-btn left"><button class="btn" data-sp="print">🖨️ Cetak atau simpan PDF</button></div></section></div>
+          <div class="row-btn left"><button class="btn" data-sp="print">🖨️ Cetak atau simpan PDF</button><button class="btn ghost" data-sp="docx">📄 Word (.docx)</button></div>
+          <p class="small muted">Berkas Word bisa disunting di Microsoft Word. Pecahan tampil dua baris dan bisa langsung diketik.</p></section></div>
         <article class="ss-sheet"><header><div><b>${esc(s.title)}</b><small>${KIND[s.kind][1]} · ${esc(ctx.c.name)}${s.settings && s.settings.minutes ? ` · ${s.settings.minutes} menit` : ''}</small></div>
           <div class="ss-id"><span>Nama: ____________________________</span><span>Tanggal: ______________</span><span>Nilai: ______</span></div></header>
           <ol>${s.questions.map((q) => `<li><div class="ss-qt">${q.text}</div>${q.vis ? `<div class="qvis ss-qv">${q.vis}</div>` : ''}
@@ -422,6 +423,17 @@
       const b = e.target.closest('[data-sp]'); if (!b) return;
       if (b.dataset.sp === 'back') return D.go('#/guru/sesi/' + id);
       if (b.dataset.sp === 'print') return window.print();
+      if (b.dataset.sp === 'docx') {
+        const Dx = window.METIQ_DOCX;
+        if (!Dx) return D.toast('Ekspor Word belum siap. Muat ulang halaman ya.');
+        const qs = Dx.fromSession(s);
+        b.disabled = true;
+        Dx.build({ title: s.title, className: ctx.c.name, teacherName: (ctx.t && ctx.t.name) || '', questions: qs, withKey })
+          .then((blob) => { Dx.save(blob, `metiq-${Dx.fileSlug(s.title)}.docx`); D.toast('Lembar soal diunduh. Buka di Microsoft Word ✔'); })
+          .catch(() => D.toast('Gagal membuat berkas Word. Coba lagi ya.'))
+          .then(() => { b.disabled = false; });
+        return;
+      }
       if (b.dataset.sp === 'key') { withKey = b.checked; draw(withKey); }
     });
     document.body.classList.add('ss-printing');

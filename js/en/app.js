@@ -3256,6 +3256,7 @@
         <small>${special ? `For ${nameList(kids) || 'removed students'}` : 'For the whole class'} · ${a.skills.filter((k) => SKILLS[k]).map((k) => SKILLS[k].name).join(', ')}</small>
         <div class="tbar sm"><i style="width:${pct(d.length, kids.length)}%"></i></div>
         <small><b>${d.length} of ${kids.length}</b> done${left.length && left.length <= 6 ? `. Not yet: ${left.map((k) => esc(k.name)).join(', ')}` : ''}</small></div>
+        <button class="link small" data-act="asgdocx" data-id="${a.id}">📄 Word</button>
         <button class="link small danger" data-act="rmasg" data-id="${a.id}">Delete</button></div>`;
     };
     const running = asg.filter((a) => prog(a).left.length), finished = asg.filter((a) => !prog(a).left.length);
@@ -3276,9 +3277,50 @@
           </fieldset>
           <h3 class="stepn"><i>3</i> Message and due date <small class="muted">(optional)</small></h3>
           <div class="grow2"><label>Message for students<input name="note" maxlength="120" placeholder="e.g. Practice for Friday's quiz"></label><label>Due date<input name="due" type="date"></label></div>
+          <div class="wordexp">
+            <p class="wt">📄 Worksheet for Microsoft Word</p>
+            <p class="small muted">Download this task as a .docx file to print or edit in Word. Fractions become two-row fractions (numerator on top, denominator below) that you can type into.</p>
+            <label class="cb"><input type="checkbox" data-docxkey checked> Include the answer key on the last page</label>
+            <button type="button" class="btn ghost sm" data-act="todocx">📄 Export to Word (.docx)</button>
+          </div>
           <button class="btn" id="asgsend">📌 Send task</button></form></details>
       <section class="card"><h2>Tasks in progress <span class="pill">${running.length}</span></h2>${running.map(card).join('') || '<p class="muted">No tasks in progress.</p>'}</section>
       ${finished.length ? `<details class="card"><summary><b>✅ Completed tasks (${finished.length})</b></summary>${finished.map(card).join('')}</details>` : ''}`;
+  }
+  // Ekspor lembar soal ke Microsoft Word (.docx). Pecahan ditulis sebagai OMML <m:f>, jadi di Word
+  // tampil dua baris dan bisa langsung diketik. Dipakai formulir tugas dan tombol per tugas.
+  function taskDocx(btn, skills, title, due, withKey) {
+    const ctx = teacherCtx();
+    if (!ctx) return;
+    const D = window.METIQ_DOCX;
+    if (!D) return toast('Word export is not ready. Please reload the page.');
+    const sk = (skills || []).filter((id) => SKILLS[id]);
+    if (!sk.length) return toast('Choose at least one topic first');
+    const qs = D.genQuestions(sk, Math.min(20, Math.max(6, sk.length * 3)));
+    if (!qs.length) return toast('Questions could not be generated. Try another topic.');
+    const name = title || 'Practice: ' + SKILLS[sk[0]].name;
+    if (btn) btn.disabled = true;
+    D.build({
+      title: name,
+      className: ctx.c.name,
+      teacherName: (ctx.t && ctx.t.name) || '',
+      skills: sk.map((id) => SKILLS[id].name),
+      due: due || '',
+      questions: qs,
+      withKey: withKey !== false,
+    }).then((blob) => {
+      D.save(blob, `metiq-${D.fileSlug(name)}.docx`);
+      toast('Worksheet downloaded. Open it in Microsoft Word ✔');
+    }).catch(() => toast('Could not create the Word file. Please try again.'))
+      .then(() => { if (btn) btn.disabled = false; });
+  }
+  function exportTaskDocx(btn) {
+    const f = btn.closest('form');
+    if (!f) return;
+    const fd = new FormData(f), sk = fd.getAll('sk').filter((id) => SKILLS[id]);
+    if (!sk.length) return toast('Choose at least one topic first');
+    const keyEl = f.querySelector('[data-docxkey]');
+    taskDocx(btn, sk, String(fd.get('note') || '').trim(), String(fd.get('due') || '').trim() ? fdue(String(fd.get('due') || '').trim()) : '', !keyEl || keyEl.checked);
   }
   function settingsCard(ctx) {
     const st = settingsOf(ctx.c);
@@ -4218,6 +4260,13 @@
     if (['jnext', 'jretry', 'jsay', 'jopt', 'jkey', 'jcheck', 'jitem', 'jbin'].includes(act)) return jAct(act, el);
     if (act === 'lang') { location.href = location.pathname + '?lang=' + (window.METIQ_LANG === 'en' ? 'id' : 'en') + location.hash; return; }  // ?lang berbeda selalu memuat ulang halaman; index.html menyimpan pilihannya
     if (act === 'jband') { ls.set('metiq_jband', el.dataset.b); return route(); }
+    if (act === 'todocx') return exportTaskDocx(el);
+    if (act === 'asgdocx') {
+      const ctx = teacherCtx(); if (!ctx) return;
+      const a = S.assignmentsOf(ctx.c.id).find((x) => x.id === el.dataset.id);
+      if (a) taskDocx(el, a.skills, a.note || '', a.due ? fdue(a.due) : '');
+      return;
+    }
     if (act === 'jfilter') { const f = ls.get('metiq_jfilter', {}); f[el.dataset.k] = el.dataset.v; ls.set('metiq_jfilter', f); return route(); }
     if (act === 'apstu') return;
     if (act === 'ungp') { ss.set('ungp', +el.dataset.p); const ctx = teacherCtx(); if (ctx) renderUngrouped(ctx); const t = document.querySelector('.ungtbl'); if (t) t.closest('.card').scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
