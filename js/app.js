@@ -576,7 +576,9 @@
       ][v];
       g = sea + scene + '<path d="M20 132q10-5 20 0t20 0M180 136q10-5 20 0t20 0" stroke="#fff" stroke-width="2.5" fill="none" opacity=".8"/>';
     }
-    return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true">${g}</svg>`;
+    const floatBase = '<ellipse cx="120" cy="139" rx="101" ry="8" fill="#226d79" opacity=".22"/><path d="M24 105Q47 91 76 97Q121 84 166 96Q196 91 216 106L202 128Q121 151 38 131Z" fill="#806d63"/><path d="M35 116Q78 126 120 119T207 115L201 128Q121 149 39 131Z" fill="#68584f" opacity=".5"/>';
+    const floatRim = '<path d="M29 108Q77 119 120 113T211 108" fill="none" stroke="#fff4d4" stroke-width="4" stroke-linecap="round" opacity=".9"/><path d="M53 129l12 4-8 8m33-9 11 3-5 8m63-12 11 3-6 8" fill="none" stroke="#a89480" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" opacity=".9"/>';
+    return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true">${floatBase}${g}${floatRim}</svg>`;
   }
   // Jejak di antara dua tempat: gelembung di laut, jejak kaki di gurun, batu di gunung, batu loncatan di kepulauan
   const isleLink = (dir, faint, who) => {
@@ -587,7 +589,9 @@
       nahla: ([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="9" ry="5" fill="#b8c2b9"/><ellipse cx="${x}" cy="${y - 1}" rx="9" ry="4" fill="#d6ddd4"/>`,
       lumo: ([x, y]) => `<ellipse cx="${x}" cy="${y}" rx="11" ry="5" fill="#f6f1e4"/><ellipse cx="${x}" cy="${y + 2}" rx="11" ry="4" fill="#d9cdb4" opacity=".6"/>`,
     }[who];
-    return `<div class="isle-link ${faint ? 'faint' : ''}" aria-hidden="true"><svg viewBox="0 0 200 56" preserveAspectRatio="none">${pts.map(mark).join('')}</svg></div>`;
+    const track = dir === 'lr' ? 'M10 43C54 8 111 53 190 13' : 'M10 13C54 50 127 4 190 43';
+    const bridge = `<path d="${track}" fill="none" stroke="rgba(61,94,102,.22)" stroke-width="15" stroke-linecap="round"/><path d="${track}" fill="none" stroke="#fff1cf" stroke-width="11" stroke-linecap="round"/>`;
+    return `<div class="isle-link ${faint ? 'faint' : ''}" aria-hidden="true"><svg viewBox="0 0 200 56" preserveAspectRatio="none">${bridge}${pts.map(mark).join('')}</svg></div>`;
   };
   // Campuran dua warna hex, untuk perpindahan latar yang halus antardunia
   const mixHex = (a, b, t) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, '0')).join('');
