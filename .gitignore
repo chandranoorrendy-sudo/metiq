@@ -2,3 +2,17 @@
 *.local.*
 tools/i18n/node_modules/
 tools/i18n/todo/
+
+# Bahan mentah dan hasil ekspor (poster, media sosial, presentasi) tidak masuk repo.
+# Isinya video dan gambar berat (ratusan MB) yang tidak dipakai situs; simpan di luar Git.
+incoming/
+work in-progress/
+poster/instagram/
+poster/tiktok/
+poster/presentasi-adzkia/
+poster/pembaruan/
+poster/pembaruan2/
+
+# Berkas alat
+.vercel/
+supabase/.temp/
