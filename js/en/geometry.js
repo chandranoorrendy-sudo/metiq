@@ -5,7 +5,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, num, pil, opt, lesson } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, num, pil, opt, lesson, VH } = C.kit;
   const G = 10;
   const pt = (x, y) => `(${N(x)}, ${N(y)})`;
 
@@ -15,7 +15,7 @@
       tip: 'Railroad rails are an example of parallel lines; the ties are transversals.',
       skills: [
         { id: 'GA1', name: 'Corresponding and alternate angles', gen() { const a = r(25, 155); const [nm, same] = pick([['corresponding', true], ['alternate interior', true], ['alternate exterior', true], ['same-side interior', false]]); const ans = same ? a : 180 - a; return num(`Two parallel lines are cut by a transversal. One angle is ${a}°. How many degrees is the angle ${nm} to it?`, ans, 'With parallel lines: corresponding and alternate angles are equal; same-side angles add up to 180°.', [
-          ['Identify the angle pair', same ? `${nm} angles are equal.` : `${nm} angles add up to 180°.`], ['Answer', same ? `<b>${a}°</b>` : `180° − ${a}° = <b>${180 - a}°</b>`]], { unit: '°' }); } },
+          ['Identify the angle pair', same ? `${nm} angles are equal.` : `${nm} angles add up to 180°.`], ['Answer', same ? `<b>${a}°</b>` : `180° − ${a}° = <b>${180 - a}°</b>`]], { unit: '°', vis: VH.parallel(a) }); } },
         { id: 'GA2', name: 'Solving algebraic angles', gen() { const x = r(5, 25), a = r(2, 5), b = r(-10, 20), c = r(1, 4); if (a === c) return C.SKILLS.GA2.gen(); const d = (a - c) * x + b; if (a * x + b <= 0 || a * x + b >= 180) return C.SKILLS.GA2.gen(); return num(`Two corresponding angles are (${a}x ${b < 0 ? '−' : '+'} ${Math.abs(b)})° and (${c}x ${d < 0 ? '−' : '+'} ${Math.abs(d)})°. What is x?`, x, 'Corresponding angles are equal, so make an equation and solve.', [
           ['Equations', `${a}x ${b < 0 ? '−' : '+'} ${Math.abs(b)} = ${c}x ${d < 0 ? '−' : '+'} ${Math.abs(d)}`], ['Solve', `${a - c}x = ${N(d - b)} → x = <b>${x}</b>`]]); } },
       ],
@@ -59,7 +59,7 @@
       tip: 'SOH CAH TOA: sin = opposite/hypotenuse, cos = adjacent/hypotenuse, tan = opposite/adjacent.',
       skills: [
         { id: 'GE1', name: 'Sin, cos, and tan ratios', gen() { const [a, b, c] = pick([[3, 4, 5], [5, 12, 13], [8, 15, 17], [7, 24, 25], [20, 21, 29]]); const f = pick(['sin', 'cos', 'tan']); const ans = f === 'sin' ? F(a, c) : f === 'cos' ? F(b, c) : F(a, b); return num(`Right triangle: opposite side of θ = ${a}, adjacent side = ${b}, hypotenuse = ${c}. What is ${f} θ? (fraction)`, ans, 'sin = opposite/hypotenuse, cos = adjacent/hypotenuse, tan = opposite/adjacent.', [
-          ['Choose the sides', f === 'sin' ? `opposite = ${a}, hypotenuse = ${c}` : f === 'cos' ? `adjacent = ${b}, hypotenuse = ${c}` : `opposite = ${a}, adjacent = ${b}`], ['Answer', `${f} θ = <b>${ans}</b>`]]); } },
+          ['Choose the sides', f === 'sin' ? `opposite = ${a}, hypotenuse = ${c}` : f === 'cos' ? `adjacent = ${b}, hypotenuse = ${c}` : `opposite = ${a}, adjacent = ${b}`], ['Answer', `${f} θ = <b>${ans}</b>`]], { vis: VH.rightTri(a, b, { hyp: c }) }); } },
         { id: 'GE2', name: 'Sides with special angles', gen() { const k = r(2, 12), kind = pick(['30', '60', '45']); if (kind === '45') return num(`An isosceles right triangle has legs of ${k} cm. Its hypotenuse is a√2 cm. What is a?`, k, '45°-45°-90° triangle: side ratio 1 : 1 : √2.', [
           ['Ratio', `leg : hypotenuse = 1 : √2`], ['Hypotenuse', `${k}√2, so a = <b>${k}</b>`]]);
           return num(`A right triangle with a ${kind}° angle has a hypotenuse of ${2 * k} cm. How many cm is the side opposite the 30° angle?`, k, '30°-60°-90° triangle: side ratio 1 : √3 : 2 (opposite 30° : opposite 60° : hypotenuse).', [
@@ -84,10 +84,10 @@
       id: 'GG', grade: G, name: 'Circles', icon: '◯', color: '#00a8cc', ixl: 'W, Y', sg: 'Phase F · Geometry', km: 'Geometry',
       tip: 'Cut a pizza into sectors: the outer edge of each slice is the arc length.',
       skills: [
-        { id: 'GG1', name: 'Central and inscribed angles', gen() { const even = r(10, 85) * 2, ask = pick(['inscribed', 'central']); return ask === 'inscribed' ? num(`A central angle on arc AB is ${even}°. How many degrees is an inscribed angle on the same arc?`, even / 2, 'Inscribed angle = ½ × the central angle on the same arc.', [['Halve it', `${even}° : 2 = <b>${even / 2}°</b>`]], { unit: '°' })
-          : num(`An inscribed angle on arc AB is ${even / 2}°. How many degrees is the central angle on the same arc?`, even, 'Central angle = 2 × the inscribed angle on the same arc.', [['Double it', `2 × ${even / 2}° = <b>${even}°</b>`]], { unit: '°' }); } },
+        { id: 'GG1', name: 'Central and inscribed angles', gen() { const even = r(10, 85) * 2, ask = pick(['inscribed', 'central']); return ask === 'inscribed' ? num(`A central angle on arc AB is ${even}°. How many degrees is an inscribed angle on the same arc?`, even / 2, 'Inscribed angle = ½ × the central angle on the same arc.', [['Halve it', `${even}° : 2 = <b>${even / 2}°</b>`]], { unit: '°', vis: VH.circle(7, even, { sector: true }) })
+          : num(`An inscribed angle on arc AB is ${even / 2}°. How many degrees is the central angle on the same arc?`, even, 'Central angle = 2 × the inscribed angle on the same arc.', [['Double it', `2 × ${even / 2}° = <b>${even}°</b>`]], { unit: '°', vis: VH.circle(7, even, { sector: true }) }); } },
         { id: 'GG2', name: 'Arc length and sector area', gen() { const rr = pick([7, 14, 21]), deg = pick([30, 45, 60, 90, 120, 180]), luas = Math.random() < 0.5; const ans = luas ? (deg / 360) * (22 / 7) * rr * rr : (deg / 360) * 2 * (22 / 7) * rr; if (Math.abs(ans * 100 - Math.round(ans * 100)) > 1e-9) return C.SKILLS.GG2.gen(); return num(`Radius ${rr} cm, central angle ${deg}°. What is the ${luas ? 'sector area in cm²' : 'arc length in cm'}? (π = 22/7)`, Math.round(ans * 100) / 100, `${luas ? 'Sector area = (θ/360°) × πr²' : 'Arc length = (θ/360°) × 2πr'}.`, [
-          ['Part of the circle', `${deg}/360 = ${F(deg, 360)}`], ['Multiply', luas ? `${F(deg, 360)} × 22/7 × ${rr}² = <b>${N(Math.round(ans * 100) / 100)}</b>` : `${F(deg, 360)} × 2 × 22/7 × ${rr} = <b>${N(Math.round(ans * 100) / 100)}</b>`]], { unit: luas ? 'cm²' : 'cm' }); } },
+          ['Part of the circle', `${deg}/360 = ${F(deg, 360)}`], ['Multiply', luas ? `${F(deg, 360)} × 22/7 × ${rr}² = <b>${N(Math.round(ans * 100) / 100)}</b>` : `${F(deg, 360)} × 2 × 22/7 × ${rr} = <b>${N(Math.round(ans * 100) / 100)}</b>`]], { unit: luas ? 'cm²' : 'cm', vis: VH.circle(rr, deg, { sector: true }) }); } },
         { id: 'GG3', name: 'Equation of a circle', gen() { const a = r(-6, 6), b = r(-6, 6), rr = r(1, 9), ask = pick(['radius', 'center x', 'center y']); const t = `(x ${a < 0 ? '+' : '−'} ${Math.abs(a)})² + (y ${b < 0 ? '+' : '−'} ${Math.abs(b)})² = ${rr * rr}`; const ans = ask === 'radius' ? rr : ask === 'center x' ? a : b; return num(`Circle ${t}. What is ${ask === 'radius' ? 'its radius' : (ask === 'center x' ? 'abscissa (x)' : 'ordinate (y)') + ' its center'}?`, ans, 'The circle (x − a)² + (y − b)² = r² has center (a, b) and radius r.', [
           ['Compare with the general form', `center ${pt(a, b)}, r² = ${rr * rr}`], ['Answer', `<b>${N(ans)}</b>`]]); } },
       ],
@@ -97,11 +97,11 @@
       tip: 'Open up a cardboard box into a net to see its surface area.',
       skills: [
         { id: 'GH1', name: 'Area of a trapezoid', gen() { const a = r(3, 15), b = r(3, 15), t = r(2, 12); return num(`A trapezoid has parallel sides of ${a} cm and ${b} cm, and height ${t} cm. What is its area in cm²?`, ((a + b) * t) / 2, 'Trapezoid area = ½ × (sum of parallel sides) × height.', [
-          ['Sum of the parallel sides', `${a} + ${b} = ${a + b}`], ['Multiply by the height, divide by 2', `${a + b} × ${t} ÷ 2 = <b>${N(((a + b) * t) / 2)}</b> cm²`]], { unit: 'cm²' }); } },
+          ['Sum of the parallel sides', `${a} + ${b} = ${a + b}`], ['Multiply by the height, divide by 2', `${a + b} × ${t} ÷ 2 = <b>${N(((a + b) * t) / 2)}</b> cm²`]], { unit: 'cm²', vis: VH.flat('trap', [a, b, t]) }); } },
         { id: 'GH2', name: 'Surface area of a cuboid', gen() { const p = r(2, 12), l = r(2, 10), t = r(2, 10); return num(`A cuboid measures ${p} cm × ${l} cm × ${t} cm. What is its surface area in cm²?`, 2 * (p * l + p * t + l * t), 'Surface area of a cuboid = 2(lw + lh + wh).', [
-          ['Areas of three pairs of faces', `lw = ${p * l}, lh = ${p * t}, wh = ${l * t}`], ['Add, then multiply by 2', `2 × ${p * l + p * t + l * t} = <b>${2 * (p * l + p * t + l * t)}</b> cm²`]], { unit: 'cm²' }); } },
+          ['Areas of three pairs of faces', `lw = ${p * l}, lh = ${p * t}, wh = ${l * t}`], ['Add, then multiply by 2', `2 × ${p * l + p * t + l * t} = <b>${2 * (p * l + p * t + l * t)}</b> cm²`]], { unit: 'cm²', vis: VH.solid('box', [p, l, t]) }); } },
         { id: 'GH3', name: 'Volume of a pyramid', gen() { const s = r(2, 12), t = pick([3, 6, 9, 12]); return num(`A square pyramid has base side ${s} cm and height ${t} cm. What is its volume in cm³?`, (s * s * t) / 3, 'Volume of a pyramid = ⅓ × base area × height.', [
-          ['Base area', `${s}² = ${s * s}`], ['Calculate', `⅓ × ${s * s} × ${t} = <b>${N((s * s * t) / 3)}</b> cm³`]], { unit: 'cm³' }); } },
+          ['Base area', `${s}² = ${s * s}`], ['Calculate', `⅓ × ${s * s} × ${t} = <b>${N((s * s * t) / 3)}</b> cm³`]], { unit: 'cm³', vis: VH.solid('pyramid', [s, t]) }); } },
       ],
     },
     {
@@ -109,7 +109,7 @@
       tip: 'The midpoint of two cities on a map = the average of their coordinates.',
       skills: [
         { id: 'GI1', name: 'Midpoint of a segment', gen() { const x1 = r(-9, 9), y1 = r(-9, 9), x2 = x1 + 2 * nz(-5, 5), y2 = y1 + 2 * nz(-5, 5), ans = pt((x1 + x2) / 2, (y1 + y2) / 2); return pil(`The midpoint of the segment from ${pt(x1, y1)} to ${pt(x2, y2)} is ...`, opt(ans, [pt((x2 - x1) / 2, (y2 - y1) / 2), pt(x1 + x2, y1 + y2), pt((x1 + y1) / 2, (x2 + y2) / 2), pt((x1 + x2) / 2, (y1 - y2) / 2)]), ans, 'Midpoint = ((x₁ + x₂)/2, (y₁ + y₂)/2).', [
-          ['Average of x', `(${N(x1)} + ${P(x2)}) : 2 = ${N((x1 + x2) / 2)}`], ['Average of y', `(${N(y1)} + ${P(y2)}) : 2 = ${N((y1 + y2) / 2)}`], ['Midpoint', `<b>${ans}</b>`]]); } },
+          ['Average of x', `(${N(x1)} + ${P(x2)}) : 2 = ${N((x1 + x2) / 2)}`], ['Average of y', `(${N(y1)} + ${P(y2)}) : 2 = ${N((y1 + y2) / 2)}`], ['Midpoint', `<b>${ans}</b>`]], { vis: VH.plane({ min: -10, max: 10, points: [[x1, y1, 'A'], [x2, y2, 'B'], [(x1 + x2) / 2, (y1 + y2) / 2, 'M', '#e08a00']] }) }); } },
         { id: 'GI2', name: 'Endpoint from midpoint', gen() { const mx = r(-6, 6), my = r(-6, 6), x1 = r(-9, 9), y1 = r(-9, 9), ans = pt(2 * mx - x1, 2 * my - y1); return pil(`M${pt(mx, my)} is the midpoint of AB with A${pt(x1, y1)}. Where is B?`, opt(ans, [pt(mx + x1, my + y1), pt((mx + x1) / 2, (my + y1) / 2), pt(2 * x1 - mx, 2 * y1 - my), pt(mx - x1, my - y1)]), ans, 'B = (2xₘ − x_A, 2yₘ − y_A).', [
           ['x B', `2 × ${P(mx)} − ${P(x1)} = ${N(2 * mx - x1)}`], ['y B', `2 × ${P(my)} − ${P(y1)} = ${N(2 * my - y1)}`], ['B', `<b>${ans}</b>`]]); } },
       ],

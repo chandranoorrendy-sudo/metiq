@@ -4,7 +4,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, num, pil, opt, lesson } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, num, pil, opt, lesson, VH } = C.kit;
   const G = 10;
   const pt = (x, y) => `(${N(x)}, ${N(y)})`;
 
@@ -14,7 +14,7 @@
       tip: 'Rel kereta api adalah contoh garis sejajar; bantalan rel adalah garis transversal.',
       skills: [
         { id: 'GA1', name: 'Sudut sehadap dan berseberangan', gen() { const a = r(25, 155); const [nm, same] = pick([['sehadap', true], ['dalam berseberangan', true], ['luar berseberangan', true], ['dalam sepihak', false]]); const ans = same ? a : 180 - a; return num(`Dua garis sejajar dipotong garis transversal. Sebuah sudut besarnya ${a}°. Berapa derajat sudut yang ${nm} dengannya?`, ans, 'Pada garis sejajar: sudut sehadap dan sudut berseberangan sama besar; sudut sepihak berjumlah 180°.', [
-          ['Kenali pasangan sudut', same ? `Sudut ${nm} sama besar.` : `Sudut ${nm} berjumlah 180°.`], ['Jawab', same ? `<b>${a}°</b>` : `180° − ${a}° = <b>${180 - a}°</b>`]], { unit: '°' }); } },
+          ['Kenali pasangan sudut', same ? `Sudut ${nm} sama besar.` : `Sudut ${nm} berjumlah 180°.`], ['Jawab', same ? `<b>${a}°</b>` : `180° − ${a}° = <b>${180 - a}°</b>`]], { unit: '°', vis: VH.parallel(a) }); } },
         { id: 'GA2', name: 'Menyelesaikan sudut berbentuk aljabar', gen() { const x = r(5, 25), a = r(2, 5), b = r(-10, 20), c = r(1, 4); if (a === c) return C.SKILLS.GA2.gen(); const d = (a - c) * x + b; if (a * x + b <= 0 || a * x + b >= 180) return C.SKILLS.GA2.gen(); return num(`Dua sudut sehadap besarnya (${a}x ${b < 0 ? '−' : '+'} ${Math.abs(b)})° dan (${c}x ${d < 0 ? '−' : '+'} ${Math.abs(d)})°. Berapa x?`, x, 'Sudut sehadap sama besar, jadi buat persamaan dan selesaikan.', [
           ['Persamaan', `${a}x ${b < 0 ? '−' : '+'} ${Math.abs(b)} = ${c}x ${d < 0 ? '−' : '+'} ${Math.abs(d)}`], ['Selesaikan', `${a - c}x = ${N(d - b)} → x = <b>${x}</b>`]]); } },
       ],
@@ -58,7 +58,7 @@
       tip: 'SinDeMi CosSaMi TanDeSa: sin = depan/miring, cos = samping/miring, tan = depan/samping.',
       skills: [
         { id: 'GE1', name: 'Perbandingan sin, cos, tan', gen() { const [a, b, c] = pick([[3, 4, 5], [5, 12, 13], [8, 15, 17], [7, 24, 25], [20, 21, 29]]); const f = pick(['sin', 'cos', 'tan']); const ans = f === 'sin' ? F(a, c) : f === 'cos' ? F(b, c) : F(a, b); return num(`Segitiga siku-siku: sisi depan sudut θ = ${a}, sisi samping = ${b}, sisi miring = ${c}. Berapa ${f} θ? (pecahan)`, ans, 'sin = depan/miring, cos = samping/miring, tan = depan/samping.', [
-          ['Pilih sisi', f === 'sin' ? `depan = ${a}, miring = ${c}` : f === 'cos' ? `samping = ${b}, miring = ${c}` : `depan = ${a}, samping = ${b}`], ['Jawab', `${f} θ = <b>${ans}</b>`]]); } },
+          ['Pilih sisi', f === 'sin' ? `depan = ${a}, miring = ${c}` : f === 'cos' ? `samping = ${b}, miring = ${c}` : `depan = ${a}, samping = ${b}`], ['Jawab', `${f} θ = <b>${ans}</b>`]], { vis: VH.rightTri(a, b, { hyp: c }) }); } },
         { id: 'GE2', name: 'Sisi dengan sudut istimewa', gen() { const k = r(2, 12), kind = pick(['30', '60', '45']); if (kind === '45') return num(`Segitiga siku-siku sama kaki, sisi siku-sikunya ${k} cm. Sisi miringnya a√2 cm. Berapa a?`, k, 'Segitiga 45°-45°-90°: perbandingan sisi 1 : 1 : √2.', [
           ['Perbandingan', `siku : miring = 1 : √2`], ['Sisi miring', `${k}√2, jadi a = <b>${k}</b>`]]);
           return num(`Segitiga siku-siku dengan sudut ${kind}°, sisi miringnya ${2 * k} cm. Berapa cm sisi di depan sudut 30°?`, k, 'Segitiga 30°-60°-90°: perbandingan sisi 1 : √3 : 2 (depan 30° : depan 60° : miring).', [
@@ -83,10 +83,10 @@
       id: 'GG', grade: G, name: 'Lingkaran', icon: '◯', color: '#00a8cc', ixl: 'W, Y', sg: 'Fase F · Geometri', km: 'Geometri',
       tip: 'Potong pizza menjadi juring: panjang tepi tiap potong adalah panjang busur.',
       skills: [
-        { id: 'GG1', name: 'Sudut pusat dan sudut keliling', gen() { const even = r(10, 85) * 2, ask = pick(['keliling', 'pusat']); return ask === 'keliling' ? num(`Sudut pusat menghadap busur AB besarnya ${even}°. Berapa derajat sudut keliling yang menghadap busur yang sama?`, even / 2, 'Sudut keliling = ½ × sudut pusat yang menghadap busur yang sama.', [['Bagi dua', `${even}° : 2 = <b>${even / 2}°</b>`]], { unit: '°' })
-          : num(`Sudut keliling menghadap busur AB besarnya ${even / 2}°. Berapa derajat sudut pusat yang menghadap busur yang sama?`, even, 'Sudut pusat = 2 × sudut keliling yang menghadap busur yang sama.', [['Kali dua', `2 × ${even / 2}° = <b>${even}°</b>`]], { unit: '°' }); } },
+        { id: 'GG1', name: 'Sudut pusat dan sudut keliling', gen() { const even = r(10, 85) * 2, ask = pick(['keliling', 'pusat']); return ask === 'keliling' ? num(`Sudut pusat menghadap busur AB besarnya ${even}°. Berapa derajat sudut keliling yang menghadap busur yang sama?`, even / 2, 'Sudut keliling = ½ × sudut pusat yang menghadap busur yang sama.', [['Bagi dua', `${even}° : 2 = <b>${even / 2}°</b>`]], { unit: '°', vis: VH.circle(7, even, { sector: true }) })
+          : num(`Sudut keliling menghadap busur AB besarnya ${even / 2}°. Berapa derajat sudut pusat yang menghadap busur yang sama?`, even, 'Sudut pusat = 2 × sudut keliling yang menghadap busur yang sama.', [['Kali dua', `2 × ${even / 2}° = <b>${even}°</b>`]], { unit: '°', vis: VH.circle(7, even, { sector: true }) }); } },
         { id: 'GG2', name: 'Panjang busur dan luas juring', gen() { const rr = pick([7, 14, 21]), deg = pick([30, 45, 60, 90, 120, 180]), luas = Math.random() < 0.5; const ans = luas ? (deg / 360) * (22 / 7) * rr * rr : (deg / 360) * 2 * (22 / 7) * rr; if (Math.abs(ans * 100 - Math.round(ans * 100)) > 1e-9) return C.SKILLS.GG2.gen(); return num(`Jari-jari ${rr} cm, sudut pusat ${deg}°. Berapa ${luas ? 'cm² luas juring' : 'cm panjang busur'}? (π = 22/7)`, Math.round(ans * 100) / 100, `${luas ? 'Luas juring = (θ/360°) × πr²' : 'Panjang busur = (θ/360°) × 2πr'}.`, [
-          ['Bagian lingkaran', `${deg}/360 = ${F(deg, 360)}`], ['Kalikan', luas ? `${F(deg, 360)} × 22/7 × ${rr}² = <b>${N(Math.round(ans * 100) / 100)}</b>` : `${F(deg, 360)} × 2 × 22/7 × ${rr} = <b>${N(Math.round(ans * 100) / 100)}</b>`]], { unit: luas ? 'cm²' : 'cm' }); } },
+          ['Bagian lingkaran', `${deg}/360 = ${F(deg, 360)}`], ['Kalikan', luas ? `${F(deg, 360)} × 22/7 × ${rr}² = <b>${N(Math.round(ans * 100) / 100)}</b>` : `${F(deg, 360)} × 2 × 22/7 × ${rr} = <b>${N(Math.round(ans * 100) / 100)}</b>`]], { unit: luas ? 'cm²' : 'cm', vis: VH.circle(rr, deg, { sector: true }) }); } },
         { id: 'GG3', name: 'Persamaan lingkaran', gen() { const a = r(-6, 6), b = r(-6, 6), rr = r(1, 9), ask = pick(['jari-jari', 'x pusat', 'y pusat']); const t = `(x ${a < 0 ? '+' : '−'} ${Math.abs(a)})² + (y ${b < 0 ? '+' : '−'} ${Math.abs(b)})² = ${rr * rr}`; const ans = ask === 'jari-jari' ? rr : ask === 'x pusat' ? a : b; return num(`Lingkaran ${t}. Berapa ${ask === 'jari-jari' ? 'jari-jarinya' : (ask === 'x pusat' ? 'absis (x)' : 'ordinat (y)') + ' titik pusatnya'}?`, ans, 'Lingkaran (x − a)² + (y − b)² = r² berpusat di (a, b) dengan jari-jari r.', [
           ['Bandingkan dengan bentuk umum', `pusat ${pt(a, b)}, r² = ${rr * rr}`], ['Jawab', `<b>${N(ans)}</b>`]]); } },
       ],
@@ -96,11 +96,11 @@
       tip: 'Buka kardus menjadi jaring-jaring untuk melihat luas permukaannya.',
       skills: [
         { id: 'GH1', name: 'Luas trapesium', gen() { const a = r(3, 15), b = r(3, 15), t = r(2, 12); return num(`Trapesium dengan sisi sejajar ${a} cm dan ${b} cm, tinggi ${t} cm. Berapa cm² luasnya?`, ((a + b) * t) / 2, 'Luas trapesium = ½ × (jumlah sisi sejajar) × tinggi.', [
-          ['Jumlah sisi sejajar', `${a} + ${b} = ${a + b}`], ['Kalikan tinggi, bagi 2', `${a + b} × ${t} : 2 = <b>${N(((a + b) * t) / 2)}</b> cm²`]], { unit: 'cm²' }); } },
+          ['Jumlah sisi sejajar', `${a} + ${b} = ${a + b}`], ['Kalikan tinggi, bagi 2', `${a + b} × ${t} : 2 = <b>${N(((a + b) * t) / 2)}</b> cm²`]], { unit: 'cm²', vis: VH.flat('trap', [a, b, t]) }); } },
         { id: 'GH2', name: 'Luas permukaan balok', gen() { const p = r(2, 12), l = r(2, 10), t = r(2, 10); return num(`Balok berukuran ${p} cm × ${l} cm × ${t} cm. Berapa cm² luas permukaannya?`, 2 * (p * l + p * t + l * t), 'Luas permukaan balok = 2(pl + pt + lt).', [
-          ['Luas tiga pasang sisi', `pl = ${p * l}, pt = ${p * t}, lt = ${l * t}`], ['Jumlah lalu kali 2', `2 × ${p * l + p * t + l * t} = <b>${2 * (p * l + p * t + l * t)}</b> cm²`]], { unit: 'cm²' }); } },
+          ['Luas tiga pasang sisi', `pl = ${p * l}, pt = ${p * t}, lt = ${l * t}`], ['Jumlah lalu kali 2', `2 × ${p * l + p * t + l * t} = <b>${2 * (p * l + p * t + l * t)}</b> cm²`]], { unit: 'cm²', vis: VH.solid('box', [p, l, t]) }); } },
         { id: 'GH3', name: 'Volume limas', gen() { const s = r(2, 12), t = pick([3, 6, 9, 12]); return num(`Limas persegi dengan sisi alas ${s} cm dan tinggi ${t} cm. Berapa cm³ volumenya?`, (s * s * t) / 3, 'Volume limas = ⅓ × luas alas × tinggi.', [
-          ['Luas alas', `${s}² = ${s * s}`], ['Hitung', `⅓ × ${s * s} × ${t} = <b>${N((s * s * t) / 3)}</b> cm³`]], { unit: 'cm³' }); } },
+          ['Luas alas', `${s}² = ${s * s}`], ['Hitung', `⅓ × ${s * s} × ${t} = <b>${N((s * s * t) / 3)}</b> cm³`]], { unit: 'cm³', vis: VH.solid('pyramid', [s, t]) }); } },
       ],
     },
     {
@@ -108,7 +108,7 @@
       tip: 'Titik tengah dua kota di peta = rata-rata koordinatnya.',
       skills: [
         { id: 'GI1', name: 'Titik tengah ruas garis', gen() { const x1 = r(-9, 9), y1 = r(-9, 9), x2 = x1 + 2 * nz(-5, 5), y2 = y1 + 2 * nz(-5, 5), ans = pt((x1 + x2) / 2, (y1 + y2) / 2); return pil(`Titik tengah ruas garis ${pt(x1, y1)} dan ${pt(x2, y2)} adalah ...`, opt(ans, [pt((x2 - x1) / 2, (y2 - y1) / 2), pt(x1 + x2, y1 + y2), pt((x1 + y1) / 2, (x2 + y2) / 2), pt((x1 + x2) / 2, (y1 - y2) / 2)]), ans, 'Titik tengah = ((x₁ + x₂)/2, (y₁ + y₂)/2).', [
-          ['Rata-rata x', `(${N(x1)} + ${P(x2)}) : 2 = ${N((x1 + x2) / 2)}`], ['Rata-rata y', `(${N(y1)} + ${P(y2)}) : 2 = ${N((y1 + y2) / 2)}`], ['Titik tengah', `<b>${ans}</b>`]]); } },
+          ['Rata-rata x', `(${N(x1)} + ${P(x2)}) : 2 = ${N((x1 + x2) / 2)}`], ['Rata-rata y', `(${N(y1)} + ${P(y2)}) : 2 = ${N((y1 + y2) / 2)}`], ['Titik tengah', `<b>${ans}</b>`]], { vis: VH.plane({ min: -10, max: 10, points: [[x1, y1, 'A'], [x2, y2, 'B'], [(x1 + x2) / 2, (y1 + y2) / 2, 'M', '#e08a00']] }) }); } },
         { id: 'GI2', name: 'Titik ujung dari titik tengah', gen() { const mx = r(-6, 6), my = r(-6, 6), x1 = r(-9, 9), y1 = r(-9, 9), ans = pt(2 * mx - x1, 2 * my - y1); return pil(`M${pt(mx, my)} adalah titik tengah AB dengan A${pt(x1, y1)}. Di mana B?`, opt(ans, [pt(mx + x1, my + y1), pt((mx + x1) / 2, (my + y1) / 2), pt(2 * x1 - mx, 2 * y1 - my), pt(mx - x1, my - y1)]), ans, 'B = (2xₘ − x_A, 2yₘ − y_A).', [
           ['x B', `2 × ${P(mx)} − ${P(x1)} = ${N(2 * mx - x1)}`], ['y B', `2 × ${P(my)} − ${P(y1)} = ${N(2 * my - y1)}`], ['B', `<b>${ans}</b>`]]); } },
       ],

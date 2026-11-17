@@ -5,7 +5,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, lin, num, pil, opt, lesson, FR, CX, gcd } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, lin, num, pil, opt, lesson, FR, CX, gcd, VH } = C.kit;
   // Coret silang saat mengalikan pecahan: pembilang dan penyebut yang punya faktor sama dicoret, angka barunya ditulis kecil.
   // Pecahan sudah dalam bentuk seperti yang tampil di soal (paling sederhana). null bila tidak ada yang bisa dicoret.
   function crossSteps(a, b, c, d) {
@@ -22,7 +22,7 @@
       skills: [
         { id: '7A1', name: 'Adding and subtracting integers', gen() { const a = nz(-20, 20), b = nz(-20, 20), add = Math.random() < 0.5, ans = add ? a + b : a - b; return num(`${N(a)} ${add ? '+' : '−'} ${P(b)} = ?`, ans, 'Subtracting is the same as adding the opposite: a − b = a + (−b). Same signs add, different signs subtract.', [
           ['Change to addition', add ? `${N(a)} + ${P(b)}` : `${N(a)} − ${P(b)} = ${N(a)} + ${P(-b)}`],
-          ['Calculate', `The result is <b>${N(ans)}</b>.`]], { meta: { kind: 'neg' } }); } },
+          ['Calculate', `The result is <b>${N(ans)}</b>.`]], { meta: { kind: 'neg' }, vis: VH.numLine({ min: Math.min(a, ans) - 1, max: Math.max(a, ans) + 1, from: a, to: ans, label: ((add ? b : -b) < 0 ? '−' : '+') + Math.abs(add ? b : -b) }) }); } },
         { id: '7A2', name: 'Multiplying and dividing integers', gen() { const a = nz(-12, 12), b = nz(-12, 12), mul = Math.random() < 0.5; if (mul) return num(`${N(a)} × ${P(b)} = ?`, a * b, 'Positive × positive and negative × negative give a positive result; different signs give a negative result.', [
           ['Multiply the values', `${Math.abs(a)} × ${Math.abs(b)} = ${Math.abs(a * b)}`], ['Determine the sign', `The signs are ${(a < 0) === (b < 0) ? 'same → positive' : 'different → negative'}. The result is <b>${N(a * b)}</b>.`]], { meta: { kind: 'neg' } });
           const t = a * b; return num(`${N(t)} : ${P(b)} = ?`, a, 'The sign rules for division are the same as for multiplication.', [
@@ -102,7 +102,7 @@
         { id: '7G1', name: 'Supplementary and complementary angles', gen() { const lurus = Math.random() < 0.5, t = lurus ? 180 : 90, a = r(15, t - 15); return num(`Two angles are ${lurus ? 'supplementary (they add up to 180°)' : 'complementary (they add up to 90°)'}. One is ${a}°. How many degrees is the other?`, t - a, `${lurus ? 'supplementary, adding up to 180°' : 'complementary, adding up to 90°'} angles.`, [
           ['Subtract from their sum', `${t}° − ${a}° = <b>${t - a}°</b>`]], { unit: '°' }); } },
         { id: '7G2', name: 'Sum of angles in a triangle', gen() { const a = r(20, 100), b = r(20, 160 - a); return num(`Two angles of a triangle are ${a}° and ${b}°. How many degrees is the third?`, 180 - a - b, 'The three angles of a triangle always add up to 180°.', [
-          ['Add the known angles', `${a}° + ${b}° = ${a + b}°`], ['Subtract from 180°', `180° − ${a + b}° = <b>${180 - a - b}°</b>`]], { unit: '°' }); } },
+          ['Add the known angles', `${a}° + ${b}° = ${a + b}°`], ['Subtract from 180°', `180° − ${a + b}° = <b>${180 - a - b}°</b>`]], { unit: '°', vis: VH.triAngles(a, b, { showC: false }) }); } },
         { id: '7G3', name: 'Vertical angles', gen() { const a = r(20, 160); const want = pick(['vertical', 'supplementary']); const ans = want === 'vertical' ? a : 180 - a; return num(`Two intersecting lines form an angle of ${a}°. How many degrees is the angle ${want} to it?`, ans, 'Vertical angles are equal; adjacent angles on a straight line add up to 180°.', [
           ['Identify the relationship', want === 'vertical' ? 'Vertical angles are equal.' : 'Supplementary angles add up to 180°.'], ['Answer', want === 'vertical' ? `<b>${a}°</b>` : `180° − ${a}° = <b>${180 - a}°</b>`]], { unit: '°' }); } },
       ],
@@ -112,9 +112,9 @@
       tip: 'Measure the circumference of a glass with thread and divide by its diameter: the result is close to π.',
       skills: [
         { id: '7H1', name: 'Circumference of a circle', gen() { const rr = pick([7, 14, 21, 28, 35]); return num(`The radius of a circle is ${rr} cm. What is its circumference in cm? (π = 22/7)`, (2 * 22 * rr) / 7, 'Circumference C = 2πr.', [
-          ['Substitution', `K = 2 × 22/7 × ${rr}`], ['Calculate', `2 × 22 × ${rr / 7} = <b>${(2 * 22 * rr) / 7}</b> cm`]], { unit: 'cm' }); } },
+          ['Substitution', `K = 2 × 22/7 × ${rr}`], ['Calculate', `2 × 22 × ${rr / 7} = <b>${(2 * 22 * rr) / 7}</b> cm`]], { unit: 'cm', vis: VH.circle(rr) }); } },
         { id: '7H2', name: 'Area of a circle', gen() { const rr = pick([7, 14, 21]); return num(`The radius of a circle is ${rr} cm. What is its area in cm²? (π = 22/7)`, (22 * rr * rr) / 7, 'Area A = πr².', [
-          ['Substitution', `L = 22/7 × ${rr} × ${rr}`], ['Calculate', `22 × ${rr / 7} × ${rr} = <b>${(22 * rr * rr) / 7}</b> cm²`]], { unit: 'cm²' }); } },
+          ['Substitution', `L = 22/7 × ${rr} × ${rr}`], ['Calculate', `22 × ${rr / 7} × ${rr} = <b>${(22 * rr * rr) / 7}</b> cm²`]], { unit: 'cm²', vis: VH.circle(rr) }); } },
         { id: '7H3', name: 'Volume of prisms', gen() { const a = r(3, 12), t = r(3, 12), p = r(2, 15); return num(`Triangular prism: triangle base ${a} cm and triangle height ${t} cm, prism height ${p} cm. What is its volume in cm³?`, (a * t * p) / 2, 'Volume of a prism = base area × prism height.', [
           ['Area of the triangular base', `½ × ${a} × ${t} = ${N((a * t) / 2)} cm²`], ['Multiply by the prism height', `${N((a * t) / 2)} × ${p} = <b>${N((a * t * p) / 2)}</b> cm³`]], { unit: 'cm³' }); } },
       ],

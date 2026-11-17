@@ -5,7 +5,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, lin, num, pil, opt, lesson } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, lin, num, pil, opt, lesson, VH } = C.kit;
   const pt = (x, y) => `(${N(x)}, ${N(y)})`;
 
   const UNITS = [
@@ -38,11 +38,11 @@
       tip: 'Builders use 3–4–5 to make exact right angles.',
       skills: [
         { id: '8C1', name: 'Finding the hypotenuse', gen() { const [a, b, c] = pick([[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [7, 24, 25], [9, 12, 15], [12, 16, 20], [20, 21, 29]]); return num(`The legs of a triangle are ${a} cm and ${b} cm. What is the hypotenuse in cm?`, c, 'In a right triangle: c² = a² + b² (c = hypotenuse).', [
-          ['Square the legs', `${a}² + ${b}² = ${a * a} + ${b * b} = ${c * c}`], ['Take the root', `c = √${c * c} = <b>${c}</b> cm`]], { unit: 'cm' }); } },
+          ['Square the legs', `${a}² + ${b}² = ${a * a} + ${b * b} = ${c * c}`], ['Take the root', `c = √${c * c} = <b>${c}</b> cm`]], { unit: 'cm', vis: VH.rightTri(a, b, { hyp: '?' }) }); } },
         { id: '8C2', name: 'Finding a leg', gen() { const [a, b, c] = pick([[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [7, 24, 25], [9, 40, 41], [12, 35, 37]]); return num(`The hypotenuse of a right triangle is ${c} cm and one leg is ${a} cm. How long is the other leg in cm?`, b, 'b² = c² − a².', [
-          ['Subtract the squares', `${c}² − ${a}² = ${c * c} − ${a * a} = ${b * b}`], ['Take the root', `b = √${b * b} = <b>${b}</b> cm`]], { unit: 'cm' }); } },
+          ['Subtract the squares', `${c}² − ${a}² = ${c * c} − ${a * a} = ${b * b}`], ['Take the root', `b = √${b * b} = <b>${b}</b> cm`]], { unit: 'cm', vis: VH.rightTri(a, b, { hyp: c, labelB: '?' }) }); } },
         { id: '8C3', name: 'Distance between two points', gen() { const [a, b, c] = pick([[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 6, 10], [12, 5, 13]]); const x1 = r(-5, 5), y1 = r(-5, 5), sx = pick([1, -1]), sy = pick([1, -1]); return num(`What is the distance between points ${pt(x1, y1)} and ${pt(x1 + sx * a, y1 + sy * b)}?`, c, 'Distance = √((x₂ − x₁)² + (y₂ − y₁)²), the Pythagorean theorem on the coordinate plane.', [
-          ['Differences of coordinates', `Δx = ${a}, Δy = ${b}`], ['Pythagoras', `√(${a * a} + ${b * b}) = √${c * c} = <b>${c}</b>`]]); } },
+          ['Differences of coordinates', `Δx = ${a}, Δy = ${b}`], ['Pythagoras', `√(${a * a} + ${b * b}) = √${c * c} = <b>${c}</b>`]], { vis: VH.plane({ min: -10, max: 10, points: [[x1, y1, 'A'], [x1 + sx * a, y1 + sy * b, 'B']] }) }); } },
       ],
     },
     {
@@ -62,7 +62,7 @@
         { id: '8E1', name: 'Function values', gen() { const a = nz(-5, 6), b = nz(-9, 9), x = nz(-6, 6), ans = a * x + b; return num(`f(x) = ${lin(a, b)}. What is f(${N(x)})?`, ans, 'f(a) means substitute x = a into the function\'s formula.', [
           ['Substitution', `f(${N(x)}) = ${N(a)} × ${P(x)} ${b < 0 ? '−' : '+'} ${Math.abs(b)}`], ['Calculate', `<b>${N(ans)}</b>`]]); } },
         { id: '8E2', name: 'Slope of a line through two points', gen() { const x1 = r(-6, 6), y1 = r(-6, 6), dx = nz(-6, 6), dy = nz(-8, 8); return num(`What is the slope of the line through ${pt(x1, y1)} and ${pt(x1 + dx, y1 + dy)}? (simplest fraction if needed)`, F(dy, dx), 'm = (y₂ − y₁) / (x₂ − x₁).', [
-          ['Difference in y', `${N(y1 + dy)} − ${P(y1)} = ${N(dy)}`], ['Difference in x', `${N(x1 + dx)} − ${P(x1)} = ${N(dx)}`], ['Divide', `m = ${N(dy)}/${N(dx)} = <b>${F(dy, dx)}</b>`]]); } },
+          ['Difference in y', `${N(y1 + dy)} − ${P(y1)} = ${N(dy)}`], ['Difference in x', `${N(x1 + dx)} − ${P(x1)} = ${N(dx)}`], ['Divide', `m = ${N(dy)}/${N(dx)} = <b>${F(dy, dx)}</b>`]], { vis: VH.plane({ min: -8, max: 8, points: [[x1, y1, 'A'], [x1 + dx, y1 + dy, 'B']], seg: [[x1, y1, x1 + dx, y1 + dy]] }) }); } },
         { id: '8E3', name: 'Line equation y = mx + c', gen() { const m = nz(-5, 5), x1 = nz(-5, 5), c = r(-9, 9), y1 = m * x1 + c; return num(`A line with slope ${N(m)} passes through the point ${pt(x1, y1)}. Its equation is y = ${N(m)}x + c. What is c?`, c, 'Substitute the point into y = mx + c, then solve for c.', [
           ['Substitution', `${N(y1)} = ${N(m)} × ${P(x1)} + c = ${N(m * x1)} + c`], ['Solve', `c = ${N(y1)} − ${P(m * x1)} = <b>${N(c)}</b>`]]); } },
       ],
@@ -94,11 +94,11 @@
       tip: 'A milk can is a cylinder, an ice cream cone is a cone, and a soccer ball is a sphere.',
       skills: [
         { id: '8H1', name: 'Volume of a cylinder', gen() { const rr = pick([7, 14]), t = r(2, 20); return num(`A cylinder has radius ${rr} cm and height ${t} cm. What is its volume in cm³? (π = 22/7)`, (22 * rr * rr * t) / 7, 'Volume of a cylinder = πr²h.', [
-          ['Base area', `22/7 × ${rr}² = ${(22 * rr * rr) / 7} cm²`], ['Multiply by the height', `${(22 * rr * rr) / 7} × ${t} = <b>${N((22 * rr * rr * t) / 7)}</b> cm³`]], { unit: 'cm³' }); } },
+          ['Base area', `22/7 × ${rr}² = ${(22 * rr * rr) / 7} cm²`], ['Multiply by the height', `${(22 * rr * rr) / 7} × ${t} = <b>${N((22 * rr * rr * t) / 7)}</b> cm³`]], { unit: 'cm³', vis: VH.solid('cyl', [rr, t]) }); } },
         { id: '8H2', name: 'Volume of a cone', gen() { const rr = pick([7, 14]), t = pick([3, 6, 9, 12, 15]); return num(`A cone has radius ${rr} cm and height ${t} cm. What is its volume in cm³? (π = 22/7)`, (22 * rr * rr * t) / 21, 'Volume of a cone = ⅓πr²h.', [
-          ['Calculate πr²h', `22/7 × ${rr}² × ${t} = ${(22 * rr * rr * t) / 7}`], ['Divide by 3', `${(22 * rr * rr * t) / 7} ÷ 3 = <b>${N((22 * rr * rr * t) / 21)}</b> cm³`]], { unit: 'cm³' }); } },
+          ['Calculate πr²h', `22/7 × ${rr}² × ${t} = ${(22 * rr * rr * t) / 7}`], ['Divide by 3', `${(22 * rr * rr * t) / 7} ÷ 3 = <b>${N((22 * rr * rr * t) / 21)}</b> cm³`]], { unit: 'cm³', vis: VH.solid('cone', [rr, t]) }); } },
         { id: '8H3', name: 'Volume of a sphere', gen() { const rr = pick([3, 6, 9]); return num(`A sphere has radius ${rr} cm. Its volume is kπ cm³. What is k?`, (4 * rr ** 3) / 3, 'Volume of a sphere = 4/3 πr³.', [
-          ['Calculate r³', `${rr}³ = ${rr ** 3}`], ['Multiply by 4/3', `4/3 × ${rr ** 3} = <b>${N((4 * rr ** 3) / 3)}</b>, so its volume is ${N((4 * rr ** 3) / 3)}π cm³`]]); } },
+          ['Calculate r³', `${rr}³ = ${rr ** 3}`], ['Multiply by 4/3', `4/3 × ${rr ** 3} = <b>${N((4 * rr ** 3) / 3)}</b>, so its volume is ${N((4 * rr ** 3) / 3)}π cm³`]], { vis: VH.solid('sphere', [rr]) }); } },
       ],
     },
     {
@@ -106,7 +106,7 @@
       tip: 'Toss two coins 20 times and record the results; compare with the theoretical probability.',
       skills: [
         { id: '8I1', name: 'Range and quartiles', gen() { const xs = Array.from({ length: 7 }, () => r(10, 60)); const s = [...xs].sort((a, b) => a - b); const kind = pick(['range', 'Q1', 'Q3']); const ans = kind === 'range' ? s[6] - s[0] : kind === 'Q1' ? s[1] : s[5]; return num(`Data: ${xs.join(', ')}. What is the ${kind === 'range' ? 'the range' : 'quartile ' + (kind === 'Q1' ? 'lower (Q1)' : 'upper (Q3)')}?`, ans, 'Range = largest − smallest. For 7 ordered data points, Q1 = point 2, median = point 4, Q3 = point 6.', [
-          ['Sort', s.join(', ')], ['Answer', kind === 'range' ? `${s[6]} − ${s[0]} = <b>${ans}</b>` : `${kind} = data point ${kind === 'Q1' ? 2 : 6} = <b>${ans}</b>`]]); } },
+          ['Sort', s.join(', ')], ['Answer', kind === 'range' ? `${s[6]} − ${s[0]} = <b>${ans}</b>` : `${kind} = data point ${kind === 'Q1' ? 2 : 6} = <b>${ans}</b>`]], { vis: VH.bars(s) }); } },
         { id: '8I2', name: 'Combined average', gen() { const n1 = r(10, 30), n2 = r(10, 30), m1 = r(60, 90), m2 = r(60, 90), tot = n1 * m1 + n2 * m2; if (tot % (n1 + n2)) return C.SKILLS['8I2'].gen(); return num(`The average score of ${n1} students in class A is ${m1}, and the average of ${n2} students in class B is ${m2}. What is the combined average?`, tot / (n1 + n2), 'Combined average = (total of A + total of B) ÷ total number of students.', [
           ['Total scores', `${n1} × ${m1} + ${n2} × ${m2} = ${n1 * m1} + ${n2 * m2} = ${tot}`], ['Divide by the number of students', `${tot} : ${n1 + n2} = <b>${N(tot / (n1 + n2))}</b>`]]); } },
         { id: '8I3', name: 'Probability of compound events', gen() { const k = pick(['dadu', 'koin']); if (k === 'koin') { const n = pick([2, 3]); const h = r(0, n); const ways = C.kit.nCr(n, h), tot = 2 ** n; return num(`${n} coins are tossed together. What's the probability of getting exactly ${h} tails? (simplest fraction)`, F(ways, tot), 'Probability = number of desired outcomes ÷ size of the sample space.', [

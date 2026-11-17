@@ -4712,6 +4712,58 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   window.METIQ_JADWAL.init({ S, Cloud, session, cloudOn, toast, go, esc, SKILLS, UNITS, unitsOf, GRADES: menuGrades(), gname, getGrade, loadingHTML,
     onRemind: () => { const b = document.querySelector('.bell'); if (b) b.outerHTML = bellHTML(); } });
   window.METIQ_SESI.init({ S, Cloud, session, cloudOn, toast, go, esc, SKILLS, UNITS, unitsOf, GRADES: menuGrades(), gname, getGrade, avHTML, kolomOf, MQ, loadingHTML });
+  /* ---------- Pecahan dua baris di layar ----------
+   * Teks soal dan pilihan jawaban masih ditulis "3/4". Di sini hanya TAMPILAN yang diubah
+   * menjadi pecahan bertumpuk (pembilang di atas, penyebut di bawah), terbatas pada kotak
+   * soal/pilihan/penjelasan. Data jawaban tetap "3/4" sehingga penilaian dan ekspor Word aman. */
+  const FRAC_BOX = '.mq-bubble, .mq-opts, .mq-vis, .ss-text, .ss-opts, .ss-fb, .ss-qt, .ss-qo, .ss-qp, .ss-po, .ss-qv, .ss-key, .ss-qa, .qtext, .lopts, .qcard, .ol-q, .ol-pick';
+  const FRAC_TXT = /(^|[^\d/])(\d{1,3})\s*\/\s*(\d{1,3})(?![\d/])/;
+  function fracInto(box) {
+    const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach((node) => {
+      const t = node.nodeValue;
+      if (!t || !FRAC_TXT.test(t)) return;
+      const par = node.parentElement;
+      if (!par || par.closest('svg, .mfr, .gfr, input, textarea, .code, .mq-key, .ss-keys, .ss-disp')) return;
+      const re = /(^|[^\d/])(\d{1,3})\s*\/\s*(\d{1,3})(?![\d/])/g;
+      let m, last = 0, hit = false;
+      const frag = document.createDocumentFragment();
+      while ((m = re.exec(t))) {
+        hit = true;
+        const start = m.index + m[1].length;
+        if (start > last) frag.appendChild(document.createTextNode(t.slice(last, start)));
+        const sp = document.createElement('span');
+        sp.className = 'mfr';
+        sp.innerHTML = `<b>${m[2]}</b><b>${m[3]}</b>`;
+        frag.appendChild(sp);
+        last = start + m[2].length + (m[0].length - m[1].length - m[2].length);
+      }
+      if (!hit) return;
+      if (last < t.length) frag.appendChild(document.createTextNode(t.slice(last)));
+      node.replaceWith(frag);
+    });
+  }
+  const fracBoxes = new Set();
+  function fracScan() {
+    document.querySelectorAll(FRAC_BOX).forEach((b) => fracBoxes.add(b));
+    if (!fracBoxes.size) return;
+    fracBoxes.forEach((b) => { if (b.isConnected && (b.textContent || '').indexOf('/') >= 0) fracInto(b); });
+    fracBoxes.clear();
+  }
+  const fracWatch = new MutationObserver((list) => {
+    list.forEach((m) => m.addedNodes.forEach((n) => {
+      if (n.nodeType === 1) {
+        if (n.matches && n.matches(FRAC_BOX)) fracBoxes.add(n);
+        if (n.querySelectorAll) n.querySelectorAll(FRAC_BOX).forEach((x) => fracBoxes.add(x));
+      } else if (n.nodeType === 3 && n.parentElement) { const box = n.parentElement.closest(FRAC_BOX); if (box) fracBoxes.add(box); }
+    }));
+    if (fracBoxes.size) requestAnimationFrame(fracScan);
+  });
+  fracWatch.observe(document.body, { childList: true, subtree: true });
+  fracScan();
+
   window.addEventListener('hashchange', route);
   route();
 })();

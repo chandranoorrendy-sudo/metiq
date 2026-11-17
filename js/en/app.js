@@ -508,9 +508,9 @@
   // Dunia setiap maskot. Bab milik maskot itu (unitBuddy) menjadi tempat di dunianya: Meti menjelajah laut,
   // Tito gurun, Nahla pegunungan, Lumo kepulauan. Tempat ke-k milik maskot yang sama memakai gambar ke-k (berputar).
   const WORLDS = {
-    meti: { name: 'Meti\'s Sea', icon: '🐙', bg: '#8fd3f0', places: ['Raja Ampat Reef', 'Shipwreck', 'Seagrass Forest', 'Pearl Cave'] },
-    tito: { name: 'Tito\'s Desert', icon: '🐜', bg: '#fbe2b3', places: ['Sand Dunes', 'Oasis', 'Rock Canyon', 'Explorer Camp'] },
-    nahla: { name: 'Nahla\'s Mountains & Forest', icon: '🐝', bg: '#d3eecf', places: ['Kelimutu Lake', 'Baluran Savanna', 'Rinjani Peak', 'Rainforest'] },
+    meti: { name: 'Meti\'s Sea', icon: '🐙', bg: '#8fd3f0', places: ['Terumbu Raja Ampat', 'Shipwreck', 'Hutan Lamun', 'Gua Mutiara'] },
+    tito: { name: 'Tito\'s Desert', icon: '🐜', bg: '#fbe2b3', places: ['Sand Dunes', 'Oasis', 'Ngarai Batu', 'Kemah Penjelajah'] },
+    nahla: { name: 'Gunung & Hutan Nahla', icon: '🐝', bg: '#d3eecf', places: ['Danau Kelimutu', 'Sabana Baluran', 'Puncak Rinjani', 'Hutan Hujan'] },
     lumo: { name: 'Lumo\'s Islands', icon: '🐬', bg: '#bdeaf6', places: ['Tropical Island', 'Volcano Island', 'Atoll', 'Lighthouse Island'] },
   };
   const worldOf = (u) => unitBuddy(u) || 'meti';
@@ -4698,6 +4698,58 @@
   window.METIQ_JADWAL.init({ S, Cloud, session, cloudOn, toast, go, esc, SKILLS, UNITS, unitsOf, GRADES: menuGrades(), gname, getGrade, loadingHTML,
     onRemind: () => { const b = document.querySelector('.bell'); if (b) b.outerHTML = bellHTML(); } });
   window.METIQ_SESI.init({ S, Cloud, session, cloudOn, toast, go, esc, SKILLS, UNITS, unitsOf, GRADES: menuGrades(), gname, getGrade, avHTML, kolomOf, MQ, loadingHTML });
+  /* ---------- Pecahan dua baris di layar ----------
+   * Teks soal dan pilihan jawaban masih ditulis "3/4". Di sini hanya TAMPILAN yang diubah
+   * menjadi pecahan bertumpuk (pembilang di atas, penyebut di bawah), terbatas pada kotak
+   * soal/pilihan/penjelasan. Data jawaban tetap "3/4" sehingga penilaian dan ekspor Word aman. */
+  const FRAC_BOX = '.mq-bubble, .mq-opts, .mq-vis, .ss-text, .ss-opts, .ss-fb, .ss-qt, .ss-qo, .ss-qp, .ss-po, .ss-qv, .ss-key, .ss-qa, .qtext, .lopts, .qcard, .ol-q, .ol-pick';
+  const FRAC_TXT = /(^|[^\d/])(\d{1,3})\s*\/\s*(\d{1,3})(?![\d/])/;
+  function fracInto(box) {
+    const walker = document.createTreeWalker(box, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    while (walker.nextNode()) nodes.push(walker.currentNode);
+    nodes.forEach((node) => {
+      const t = node.nodeValue;
+      if (!t || !FRAC_TXT.test(t)) return;
+      const par = node.parentElement;
+      if (!par || par.closest('svg, .mfr, .gfr, input, textarea, .code, .mq-key, .ss-keys, .ss-disp')) return;
+      const re = /(^|[^\d/])(\d{1,3})\s*\/\s*(\d{1,3})(?![\d/])/g;
+      let m, last = 0, hit = false;
+      const frag = document.createDocumentFragment();
+      while ((m = re.exec(t))) {
+        hit = true;
+        const start = m.index + m[1].length;
+        if (start > last) frag.appendChild(document.createTextNode(t.slice(last, start)));
+        const sp = document.createElement('span');
+        sp.className = 'mfr';
+        sp.innerHTML = `<b>${m[2]}</b><b>${m[3]}</b>`;
+        frag.appendChild(sp);
+        last = start + m[2].length + (m[0].length - m[1].length - m[2].length);
+      }
+      if (!hit) return;
+      if (last < t.length) frag.appendChild(document.createTextNode(t.slice(last)));
+      node.replaceWith(frag);
+    });
+  }
+  const fracBoxes = new Set();
+  function fracScan() {
+    document.querySelectorAll(FRAC_BOX).forEach((b) => fracBoxes.add(b));
+    if (!fracBoxes.size) return;
+    fracBoxes.forEach((b) => { if (b.isConnected && (b.textContent || '').indexOf('/') >= 0) fracInto(b); });
+    fracBoxes.clear();
+  }
+  const fracWatch = new MutationObserver((list) => {
+    list.forEach((m) => m.addedNodes.forEach((n) => {
+      if (n.nodeType === 1) {
+        if (n.matches && n.matches(FRAC_BOX)) fracBoxes.add(n);
+        if (n.querySelectorAll) n.querySelectorAll(FRAC_BOX).forEach((x) => fracBoxes.add(x));
+      } else if (n.nodeType === 3 && n.parentElement) { const box = n.parentElement.closest(FRAC_BOX); if (box) fracBoxes.add(box); }
+    }));
+    if (fracBoxes.size) requestAnimationFrame(fracScan);
+  });
+  fracWatch.observe(document.body, { childList: true, subtree: true });
+  fracScan();
+
   window.addEventListener('hashchange', route);
   route();
 })();

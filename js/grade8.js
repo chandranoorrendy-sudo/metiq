@@ -4,7 +4,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, lin, num, pil, opt, lesson } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, lin, num, pil, opt, lesson, VH } = C.kit;
   const pt = (x, y) => `(${N(x)}, ${N(y)})`;
 
   const UNITS = [
@@ -37,11 +37,11 @@
       tip: 'Tukang bangunan memakai 3–4–5 untuk membuat sudut siku-siku yang tepat.',
       skills: [
         { id: '8C1', name: 'Mencari sisi miring', gen() { const [a, b, c] = pick([[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [7, 24, 25], [9, 12, 15], [12, 16, 20], [20, 21, 29]]); return num(`Sisi siku-siku segitiga ${a} cm dan ${b} cm. Berapa cm sisi miringnya?`, c, 'Pada segitiga siku-siku: c² = a² + b² (c = sisi miring).', [
-          ['Kuadratkan sisi siku-siku', `${a}² + ${b}² = ${a * a} + ${b * b} = ${c * c}`], ['Ambil akar', `c = √${c * c} = <b>${c}</b> cm`]], { unit: 'cm' }); } },
+          ['Kuadratkan sisi siku-siku', `${a}² + ${b}² = ${a * a} + ${b * b} = ${c * c}`], ['Ambil akar', `c = √${c * c} = <b>${c}</b> cm`]], { unit: 'cm', vis: VH.rightTri(a, b, { hyp: '?' }) }); } },
         { id: '8C2', name: 'Mencari sisi siku-siku', gen() { const [a, b, c] = pick([[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 15, 17], [7, 24, 25], [9, 40, 41], [12, 35, 37]]); return num(`Sisi miring segitiga siku-siku ${c} cm dan salah satu sisi siku-sikunya ${a} cm. Berapa cm sisi yang lain?`, b, 'b² = c² − a².', [
-          ['Kurangkan kuadratnya', `${c}² − ${a}² = ${c * c} − ${a * a} = ${b * b}`], ['Ambil akar', `b = √${b * b} = <b>${b}</b> cm`]], { unit: 'cm' }); } },
+          ['Kurangkan kuadratnya', `${c}² − ${a}² = ${c * c} − ${a * a} = ${b * b}`], ['Ambil akar', `b = √${b * b} = <b>${b}</b> cm`]], { unit: 'cm', vis: VH.rightTri(a, b, { hyp: c, labelB: '?' }) }); } },
         { id: '8C3', name: 'Jarak dua titik', gen() { const [a, b, c] = pick([[3, 4, 5], [6, 8, 10], [5, 12, 13], [8, 6, 10], [12, 5, 13]]); const x1 = r(-5, 5), y1 = r(-5, 5), sx = pick([1, -1]), sy = pick([1, -1]); return num(`Berapa jarak titik ${pt(x1, y1)} dan ${pt(x1 + sx * a, y1 + sy * b)}?`, c, 'Jarak = √((x₂ − x₁)² + (y₂ − y₁)²), yaitu teorema Pythagoras pada bidang koordinat.', [
-          ['Selisih koordinat', `Δx = ${a}, Δy = ${b}`], ['Pythagoras', `√(${a * a} + ${b * b}) = √${c * c} = <b>${c}</b>`]]); } },
+          ['Selisih koordinat', `Δx = ${a}, Δy = ${b}`], ['Pythagoras', `√(${a * a} + ${b * b}) = √${c * c} = <b>${c}</b>`]], { vis: VH.plane({ min: -10, max: 10, points: [[x1, y1, 'A'], [x1 + sx * a, y1 + sy * b, 'B']] }) }); } },
       ],
     },
     {
@@ -61,7 +61,7 @@
         { id: '8E1', name: 'Nilai fungsi', gen() { const a = nz(-5, 6), b = nz(-9, 9), x = nz(-6, 6), ans = a * x + b; return num(`f(x) = ${lin(a, b)}. Berapa f(${N(x)})?`, ans, 'f(a) berarti substitusikan x = a ke rumus fungsi.', [
           ['Substitusi', `f(${N(x)}) = ${N(a)} × ${P(x)} ${b < 0 ? '−' : '+'} ${Math.abs(b)}`], ['Hitung', `<b>${N(ans)}</b>`]]); } },
         { id: '8E2', name: 'Gradien garis melalui dua titik', gen() { const x1 = r(-6, 6), y1 = r(-6, 6), dx = nz(-6, 6), dy = nz(-8, 8); return num(`Berapa gradien garis yang melalui ${pt(x1, y1)} dan ${pt(x1 + dx, y1 + dy)}? (pecahan paling sederhana jika perlu)`, F(dy, dx), 'm = (y₂ − y₁) / (x₂ − x₁).', [
-          ['Selisih y', `${N(y1 + dy)} − ${P(y1)} = ${N(dy)}`], ['Selisih x', `${N(x1 + dx)} − ${P(x1)} = ${N(dx)}`], ['Bagi', `m = ${N(dy)}/${N(dx)} = <b>${F(dy, dx)}</b>`]]); } },
+          ['Selisih y', `${N(y1 + dy)} − ${P(y1)} = ${N(dy)}`], ['Selisih x', `${N(x1 + dx)} − ${P(x1)} = ${N(dx)}`], ['Bagi', `m = ${N(dy)}/${N(dx)} = <b>${F(dy, dx)}</b>`]], { vis: VH.plane({ min: -8, max: 8, points: [[x1, y1, 'A'], [x1 + dx, y1 + dy, 'B']], seg: [[x1, y1, x1 + dx, y1 + dy]] }) }); } },
         { id: '8E3', name: 'Persamaan garis y = mx + c', gen() { const m = nz(-5, 5), x1 = nz(-5, 5), c = r(-9, 9), y1 = m * x1 + c; return num(`Garis bergradien ${N(m)} melalui titik ${pt(x1, y1)}. Persamaannya y = ${N(m)}x + c. Berapa c?`, c, 'Substitusikan titik ke y = mx + c, lalu selesaikan c.', [
           ['Substitusi', `${N(y1)} = ${N(m)} × ${P(x1)} + c = ${N(m * x1)} + c`], ['Selesaikan', `c = ${N(y1)} − ${P(m * x1)} = <b>${N(c)}</b>`]]); } },
       ],
@@ -93,11 +93,11 @@
       tip: 'Kaleng susu berbentuk tabung, cone es krim berbentuk kerucut, bola sepak berbentuk bola.',
       skills: [
         { id: '8H1', name: 'Volume tabung', gen() { const rr = pick([7, 14]), t = r(2, 20); return num(`Tabung berjari-jari ${rr} cm dan tinggi ${t} cm. Berapa cm³ volumenya? (π = 22/7)`, (22 * rr * rr * t) / 7, 'Volume tabung = πr²t.', [
-          ['Luas alas', `22/7 × ${rr}² = ${(22 * rr * rr) / 7} cm²`], ['Kalikan tinggi', `${(22 * rr * rr) / 7} × ${t} = <b>${N((22 * rr * rr * t) / 7)}</b> cm³`]], { unit: 'cm³' }); } },
+          ['Luas alas', `22/7 × ${rr}² = ${(22 * rr * rr) / 7} cm²`], ['Kalikan tinggi', `${(22 * rr * rr) / 7} × ${t} = <b>${N((22 * rr * rr * t) / 7)}</b> cm³`]], { unit: 'cm³', vis: VH.solid('cyl', [rr, t]) }); } },
         { id: '8H2', name: 'Volume kerucut', gen() { const rr = pick([7, 14]), t = pick([3, 6, 9, 12, 15]); return num(`Kerucut berjari-jari ${rr} cm dan tinggi ${t} cm. Berapa cm³ volumenya? (π = 22/7)`, (22 * rr * rr * t) / 21, 'Volume kerucut = ⅓πr²t.', [
-          ['Hitung πr²t', `22/7 × ${rr}² × ${t} = ${(22 * rr * rr * t) / 7}`], ['Bagi 3', `${(22 * rr * rr * t) / 7} : 3 = <b>${N((22 * rr * rr * t) / 21)}</b> cm³`]], { unit: 'cm³' }); } },
+          ['Hitung πr²t', `22/7 × ${rr}² × ${t} = ${(22 * rr * rr * t) / 7}`], ['Bagi 3', `${(22 * rr * rr * t) / 7} : 3 = <b>${N((22 * rr * rr * t) / 21)}</b> cm³`]], { unit: 'cm³', vis: VH.solid('cone', [rr, t]) }); } },
         { id: '8H3', name: 'Volume bola', gen() { const rr = pick([3, 6, 9]); return num(`Bola berjari-jari ${rr} cm. Volumenya kπ cm³. Berapa k?`, (4 * rr ** 3) / 3, 'Volume bola = 4/3 πr³.', [
-          ['Hitung r³', `${rr}³ = ${rr ** 3}`], ['Kalikan 4/3', `4/3 × ${rr ** 3} = <b>${N((4 * rr ** 3) / 3)}</b>, jadi volumenya ${N((4 * rr ** 3) / 3)}π cm³`]]); } },
+          ['Hitung r³', `${rr}³ = ${rr ** 3}`], ['Kalikan 4/3', `4/3 × ${rr ** 3} = <b>${N((4 * rr ** 3) / 3)}</b>, jadi volumenya ${N((4 * rr ** 3) / 3)}π cm³`]], { vis: VH.solid('sphere', [rr]) }); } },
       ],
     },
     {
@@ -105,7 +105,7 @@
       tip: 'Lempar dua koin 20 kali dan catat hasilnya; bandingkan dengan peluang teoretisnya.',
       skills: [
         { id: '8I1', name: 'Jangkauan dan kuartil', gen() { const xs = Array.from({ length: 7 }, () => r(10, 60)); const s = [...xs].sort((a, b) => a - b); const kind = pick(['jangkauan', 'Q1', 'Q3']); const ans = kind === 'jangkauan' ? s[6] - s[0] : kind === 'Q1' ? s[1] : s[5]; return num(`Data: ${xs.join(', ')}. Berapa ${kind === 'jangkauan' ? 'jangkauannya' : 'kuartil ' + (kind === 'Q1' ? 'bawah (Q1)' : 'atas (Q3)')}?`, ans, 'Jangkauan = data terbesar − terkecil. Untuk 7 data terurut, Q1 = data ke-2, median = data ke-4, Q3 = data ke-6.', [
-          ['Urutkan', s.join(', ')], ['Jawab', kind === 'jangkauan' ? `${s[6]} − ${s[0]} = <b>${ans}</b>` : `${kind} = data ke-${kind === 'Q1' ? 2 : 6} = <b>${ans}</b>`]]); } },
+          ['Urutkan', s.join(', ')], ['Jawab', kind === 'jangkauan' ? `${s[6]} − ${s[0]} = <b>${ans}</b>` : `${kind} = data ke-${kind === 'Q1' ? 2 : 6} = <b>${ans}</b>`]], { vis: VH.bars(s) }); } },
         { id: '8I2', name: 'Rata-rata gabungan', gen() { const n1 = r(10, 30), n2 = r(10, 30), m1 = r(60, 90), m2 = r(60, 90), tot = n1 * m1 + n2 * m2; if (tot % (n1 + n2)) return C.SKILLS['8I2'].gen(); return num(`Rata-rata nilai ${n1} siswa kelas A adalah ${m1}, dan rata-rata ${n2} siswa kelas B adalah ${m2}. Berapa rata-rata gabungannya?`, tot / (n1 + n2), 'Rata-rata gabungan = (jumlah nilai A + jumlah nilai B) : banyak siswa seluruhnya.', [
           ['Jumlah nilai', `${n1} × ${m1} + ${n2} × ${m2} = ${n1 * m1} + ${n2 * m2} = ${tot}`], ['Bagi banyak siswa', `${tot} : ${n1 + n2} = <b>${N(tot / (n1 + n2))}</b>`]]); } },
         { id: '8I3', name: 'Peluang kejadian majemuk', gen() { const k = pick(['dadu', 'koin']); if (k === 'koin') { const n = pick([2, 3]); const h = r(0, n); const ways = C.kit.nCr(n, h), tot = 2 ** n; return num(`${n} koin dilempar bersama. Berapa peluang muncul tepat ${h} gambar? (pecahan paling sederhana)`, F(ways, tot), 'Peluang = banyak hasil yang diinginkan : banyak ruang sampel.', [

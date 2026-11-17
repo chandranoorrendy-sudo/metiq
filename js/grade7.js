@@ -4,7 +4,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, lin, num, pil, opt, lesson, FR, CX, gcd } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, lin, num, pil, opt, lesson, FR, CX, gcd, VH } = C.kit;
   // Coret silang saat mengalikan pecahan: pembilang dan penyebut yang punya faktor sama dicoret, angka barunya ditulis kecil.
   // Pecahan sudah dalam bentuk seperti yang tampil di soal (paling sederhana). null bila tidak ada yang bisa dicoret.
   function crossSteps(a, b, c, d) {
@@ -21,7 +21,7 @@
       skills: [
         { id: '7A1', name: 'Menjumlah dan mengurangi bilangan bulat', gen() { const a = nz(-20, 20), b = nz(-20, 20), add = Math.random() < 0.5, ans = add ? a + b : a - b; return num(`${N(a)} ${add ? '+' : '−'} ${P(b)} = ?`, ans, 'Mengurangi sama dengan menjumlah lawannya: a − b = a + (−b). Tanda sama dijumlah, tanda beda dikurangi.', [
           ['Ubah ke penjumlahan', add ? `${N(a)} + ${P(b)}` : `${N(a)} − ${P(b)} = ${N(a)} + ${P(-b)}`],
-          ['Hitung', `Hasilnya <b>${N(ans)}</b>.`]], { meta: { kind: 'neg' } }); } },
+          ['Hitung', `Hasilnya <b>${N(ans)}</b>.`]], { meta: { kind: 'neg' }, vis: VH.numLine({ min: Math.min(a, ans) - 1, max: Math.max(a, ans) + 1, from: a, to: ans, label: ((add ? b : -b) < 0 ? '−' : '+') + Math.abs(add ? b : -b) }) }); } },
         { id: '7A2', name: 'Mengalikan dan membagi bilangan bulat', gen() { const a = nz(-12, 12), b = nz(-12, 12), mul = Math.random() < 0.5; if (mul) return num(`${N(a)} × ${P(b)} = ?`, a * b, 'Positif × positif dan negatif × negatif hasilnya positif; tanda berbeda hasilnya negatif.', [
           ['Kalikan nilainya', `${Math.abs(a)} × ${Math.abs(b)} = ${Math.abs(a * b)}`], ['Tentukan tanda', `Tanda ${(a < 0) === (b < 0) ? 'sama → positif' : 'berbeda → negatif'}. Hasilnya <b>${N(a * b)}</b>.`]], { meta: { kind: 'neg' } });
           const t = a * b; return num(`${N(t)} : ${P(b)} = ?`, a, 'Aturan tanda pembagian sama dengan perkalian.', [
@@ -101,7 +101,7 @@
         { id: '7G1', name: 'Sudut berpelurus dan berpenyiku', gen() { const lurus = Math.random() < 0.5, t = lurus ? 180 : 90, a = r(15, t - 15); return num(`Dua sudut ${lurus ? 'berpelurus (jumlahnya 180°)' : 'berpenyiku (jumlahnya 90°)'}. Salah satunya ${a}°. Berapa derajat sudut yang lain?`, t - a, `Sudut ${lurus ? 'berpelurus berjumlah 180°' : 'berpenyiku berjumlah 90°'}.`, [
           ['Kurangkan dari jumlahnya', `${t}° − ${a}° = <b>${t - a}°</b>`]], { unit: '°' }); } },
         { id: '7G2', name: 'Jumlah sudut segitiga', gen() { const a = r(20, 100), b = r(20, 160 - a); return num(`Dua sudut segitiga ${a}° dan ${b}°. Berapa derajat sudut ketiga?`, 180 - a - b, 'Jumlah ketiga sudut segitiga selalu 180°.', [
-          ['Jumlahkan sudut yang diketahui', `${a}° + ${b}° = ${a + b}°`], ['Kurangkan dari 180°', `180° − ${a + b}° = <b>${180 - a - b}°</b>`]], { unit: '°' }); } },
+          ['Jumlahkan sudut yang diketahui', `${a}° + ${b}° = ${a + b}°`], ['Kurangkan dari 180°', `180° − ${a + b}° = <b>${180 - a - b}°</b>`]], { unit: '°', vis: VH.triAngles(a, b, { showC: false }) }); } },
         { id: '7G3', name: 'Sudut bertolak belakang', gen() { const a = r(20, 160); const want = pick(['bertolak belakang', 'berpelurus']); const ans = want === 'bertolak belakang' ? a : 180 - a; return num(`Dua garis berpotongan membentuk sudut ${a}°. Berapa derajat sudut yang ${want} dengannya?`, ans, 'Sudut bertolak belakang sama besar; sudut yang bersebelahan pada garis lurus berjumlah 180°.', [
           ['Kenali hubungannya', want === 'bertolak belakang' ? 'Sudut bertolak belakang sama besar.' : 'Sudut berpelurus berjumlah 180°.'], ['Jawab', want === 'bertolak belakang' ? `<b>${a}°</b>` : `180° − ${a}° = <b>${180 - a}°</b>`]], { unit: '°' }); } },
       ],
@@ -111,9 +111,9 @@
       tip: 'Ukur keliling gelas dengan benang lalu bagi dengan diameternya: hasilnya mendekati π.',
       skills: [
         { id: '7H1', name: 'Keliling lingkaran', gen() { const rr = pick([7, 14, 21, 28, 35]); return num(`Jari-jari lingkaran ${rr} cm. Berapa cm kelilingnya? (π = 22/7)`, (2 * 22 * rr) / 7, 'Keliling lingkaran K = 2πr.', [
-          ['Substitusi', `K = 2 × 22/7 × ${rr}`], ['Hitung', `2 × 22 × ${rr / 7} = <b>${(2 * 22 * rr) / 7}</b> cm`]], { unit: 'cm' }); } },
+          ['Substitusi', `K = 2 × 22/7 × ${rr}`], ['Hitung', `2 × 22 × ${rr / 7} = <b>${(2 * 22 * rr) / 7}</b> cm`]], { unit: 'cm', vis: VH.circle(rr) }); } },
         { id: '7H2', name: 'Luas lingkaran', gen() { const rr = pick([7, 14, 21]); return num(`Jari-jari lingkaran ${rr} cm. Berapa cm² luasnya? (π = 22/7)`, (22 * rr * rr) / 7, 'Luas lingkaran L = πr².', [
-          ['Substitusi', `L = 22/7 × ${rr} × ${rr}`], ['Hitung', `22 × ${rr / 7} × ${rr} = <b>${(22 * rr * rr) / 7}</b> cm²`]], { unit: 'cm²' }); } },
+          ['Substitusi', `L = 22/7 × ${rr} × ${rr}`], ['Hitung', `22 × ${rr / 7} × ${rr} = <b>${(22 * rr * rr) / 7}</b> cm²`]], { unit: 'cm²', vis: VH.circle(rr) }); } },
         { id: '7H3', name: 'Volume prisma', gen() { const a = r(3, 12), t = r(3, 12), p = r(2, 15); return num(`Prisma segitiga: alas segitiga ${a} cm dan tinggi segitiga ${t} cm, tinggi prisma ${p} cm. Berapa cm³ volumenya?`, (a * t * p) / 2, 'Volume prisma = luas alas × tinggi prisma.', [
           ['Luas alas segitiga', `½ × ${a} × ${t} = ${N((a * t) / 2)} cm²`], ['Kalikan tinggi prisma', `${N((a * t) / 2)} × ${p} = <b>${N((a * t * p) / 2)}</b> cm³`]], { unit: 'cm³' }); } },
       ],

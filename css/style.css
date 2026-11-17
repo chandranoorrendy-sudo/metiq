@@ -1154,3 +1154,6 @@ b.big { font-size: 1.3rem; display: block; }
 .wordexp .cb { margin: 0; }
 .wordexp .btn { justify-self: start; background: #fff; color: #0b6b57; border: 2px solid #b7e8db; }
 .wordexp .btn:active { transform: translateY(1px); }
+
+/* Diagram soal SMP/SMA (js/kit-hs.js VH) */
+.vh { display: block; width: auto; max-width: 100%; height: auto; margin: 2px auto; }
