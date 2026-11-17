@@ -508,12 +508,13 @@
   // Dunia setiap maskot. Bab milik maskot itu (unitBuddy) menjadi tempat di dunianya: Meti menjelajah laut,
   // Tito gurun, Nahla pegunungan, Lumo kepulauan. Tempat ke-k milik maskot yang sama memakai gambar ke-k (berputar).
   const WORLDS = {
-    meti: { name: 'Laut Meti', icon: '🐙', bg: '#8fd3f0', places: ['Terumbu Karang', 'Kapal Karam', 'Hutan Alga', 'Kerang Mutiara'] },
-    tito: { name: 'Gurun Tito', icon: '🐜', bg: '#fbe2b3', places: ['Bukit Pasir', 'Oasis', 'Batu Ngarai', 'Kemah Gurun'] },
-    nahla: { name: 'Pegunungan Nahla', icon: '🐝', bg: '#d3eecf', places: ['Danau Gunung', 'Sabana', 'Puncak Gunung', 'Padang Bunga'] },
+    meti: { name: 'Laut Meti', icon: '🐙', bg: '#8fd3f0', places: ['Terumbu Raja Ampat', 'Kapal Karam', 'Hutan Lamun', 'Gua Mutiara'] },
+    tito: { name: 'Gurun Tito', icon: '🐜', bg: '#fbe2b3', places: ['Bukit Pasir', 'Oasis', 'Ngarai Batu', 'Kemah Penjelajah'] },
+    nahla: { name: 'Gunung & Hutan Nahla', icon: '🐝', bg: '#d3eecf', places: ['Danau Kelimutu', 'Sabana Baluran', 'Puncak Rinjani', 'Hutan Hujan'] },
     lumo: { name: 'Kepulauan Lumo', icon: '🐬', bg: '#bdeaf6', places: ['Pulau Tropis', 'Pulau Gunung Api', 'Atol', 'Pulau Mercusuar'] },
   };
   const worldOf = (u) => unitBuddy(u) || 'meti';
+  const biomeOf = (who, v) => who === 'meti' ? 'sea' : who === 'tito' ? 'desert' : who === 'nahla' ? ['mountain', 'savanna', 'mountain', 'forest'][v % 4] : 'sea';
   const ISLE_TREE = (x, y, s, c) => `<path d="M${x} ${y - 26 * s}l${11 * s} ${22 * s}h${-22 * s}z" fill="${c}"/><path d="M${x} ${y - 16 * s}l${9 * s} ${18 * s}h${-18 * s}z" fill="${c}" opacity=".85"/><rect x="${x - 2 * s}" y="${y - 4 * s}" width="${4 * s}" height="${6 * s}" fill="#8a5a3c"/>`;
   const PALM = (x, y, s) => `<path d="M${x} ${y}q${4 * s} ${-22 * s} ${-2 * s} ${-44 * s}" stroke="#9a6a3f" stroke-width="${5 * s}" fill="none" stroke-linecap="round"/>${[[-26, -8], [24, -10], [-14, -22], [16, -24], [2, -30]].map(([dx, r]) => `<ellipse cx="${x - 2 * s + dx * s * 0.5}" cy="${y - 46 * s}" rx="${15 * s}" ry="${5 * s}" fill="#2fa66a" transform="rotate(${r + (dx > 0 ? 20 : -20)} ${x - 2 * s} ${y - 46 * s})"/>`).join('')}<circle cx="${x - 2 * s}" cy="${y - 43 * s}" r="${3 * s}" fill="#8a5a3c"/>`;
   // Ikan dan gelembung bergerak pelan di dalam gambar pulau (CSS, hanya transform dan opacity)
@@ -560,7 +561,7 @@
         mts + hill + '<ellipse cx="120" cy="100" rx="44" ry="11" fill="#5cc2e8"/><ellipse cx="110" cy="98" rx="18" ry="3" fill="#bdeaf6" opacity=".8"/>' + ISLE_TREE(46, 106, 1, '#2fa66a') + ISLE_TREE(190, 104, 0.9, '#2fa66a') + ISLE_TREE(176, 112, 0.7, '#2fa66a'),
         '<circle cx="200" cy="26" r="13" fill="#ffd36b"/>' + hill.replace('fill="#7fcd6c"', 'fill="#e2c25a"').replace('stroke="#a5e48f"', 'stroke="#f1d77c"') + '<path d="M120 100V66" stroke="#8a5a3c" stroke-width="6" stroke-linecap="round"/><path d="M120 74l-14-8M120 70l12-10" stroke="#8a5a3c" stroke-width="4" stroke-linecap="round"/><ellipse cx="120" cy="58" rx="40" ry="10" fill="#4f9e4a"/><ellipse cx="112" cy="54" rx="24" ry="5" fill="#6dbb5c"/>' + [56, 66, 168, 182].map((x, i) => `<path d="M${x} 104l3-12 3 12" stroke="#c9a23d" stroke-width="2.5" fill="none"/>`).join(''),
         hill + '<path d="M66 96l54-82 54 82z" fill="#8aa1b5"/><path d="M120 14l18 28-10-4-8 8-8-8-10 4z" fill="#fff"/><path d="M120 14V-2" stroke="#6a7f7a" stroke-width="2"/><path d="M120-2l14 5-14 5z" fill="#e8463a" transform="translate(0 4)"/>' + ISLE_TREE(54, 106, 0.9, '#2fa66a') + ISLE_TREE(186, 106, 0.9, '#2fa66a'),
-        hill + '<rect x="108" y="56" width="5" height="44" fill="#8a5a3c"/><g transform="translate(110 50)"><ellipse cy="0" rx="14" ry="8" fill="#ffc63a"/><ellipse cy="10" rx="17" ry="8" fill="#ffb21c"/><ellipse cy="20" rx="14" ry="7" fill="#ffc63a"/><circle cy="14" r="4" fill="#8a5a3c"/></g>' + [[54, 100, '#ff6f91'], [70, 108, '#9b6dff'], [150, 104, '#ff6f91'], [168, 98, '#4d96ff'], [186, 108, '#ff8a3d'], [86, 96, '#fff']].map(([x, y, c]) => flower(x, y, c)).join(''),
+        hill + '<path d="M42 105V67M42 78l-12-12m12 22 13-15M198 106V72m0 10-12-12m12 19 12-14" stroke="#79533b" stroke-width="5" stroke-linecap="round"/><g fill="#2f8952"><circle cx="42" cy="60" r="20"/><circle cx="29" cy="68" r="12"/><circle cx="56" cy="69" r="13"/><circle cx="198" cy="65" r="18"/><circle cx="185" cy="72" r="12"/><circle cx="211" cy="73" r="12"/></g><g fill="#58ad65"><circle cx="42" cy="56" r="12"/><circle cx="198" cy="61" r="11"/></g><path d="M84 106l8-17 8 17m36 0 8-19 8 19" stroke="#4a9b52" stroke-width="3" fill="none" stroke-linecap="round"/>' ,
       ][v];
       g = scene;
     } else {
@@ -616,7 +617,7 @@
           : `<span class="isle-tag">${sym}<span class="isl-txt"><b>${esc(u.name)}</b><small>${place} · ${x.done} / ${x.total} keterampilan</small><span class="isle-bar" aria-hidden="true"><i style="width:${pc}%"></i></span></span><u>›</u></span>`;
         html += `<a class="isle ${state} ${s}${reveal}${just}" href="#/bab/${u.id}" aria-label="Bab ${u.id} ${esc(u.name)}, ${place}">${state === 'cur' ? `<span class="isle-pin" aria-hidden="true"></span><span class="isle-glow" aria-hidden="true"></span><span class="isle-buddy" aria-hidden="true">${MQ.svg('happy', { size: 62, who: who === 'meti' ? undefined : who, enter: false })}</span>` : ''}${placeSVG(who, v, false, u)}${reveal ? '<span class="fogl lift"></span>' : ''}${label}${just ? '<span class="isle-spark" aria-hidden="true">✨</span>' : ''}</a>`;
       }
-      out += `<div class="isle-row w-${who} ${state}" style="background:linear-gradient(180deg, ${top} 0%, ${bg} 22%, ${bg} 78%, ${bot} 100%)">${html}</div>`;
+      out += `<div class="isle-row w-${who} biome-${biomeOf(who, v)} ${state}" style="background:linear-gradient(180deg, ${top} 0%, ${bg} 22%, ${bg} 78%, ${bot} 100%)">${html}</div>`;
     });
     return `<section class="isles" aria-label="Peta petualangan belajar">${atlasHead}${out}<div class="isle-mist" aria-hidden="true"></div></section>`;
   }
