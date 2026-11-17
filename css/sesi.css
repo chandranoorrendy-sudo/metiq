@@ -216,3 +216,6 @@
 
 /* Penyusun soal: tombol cetak/ekspor ikut turun baris di layar sempit */
 @media (max-width: 560px) { .ss-bfoot { flex-wrap: wrap; row-gap: 8px; } .ss-bfoot .grow { min-width: 100%; } .ss-bfoot .btn.ghost { flex: 1 1 calc(50% - 4px); } .ss-bfoot .btn:not(.ghost) { flex: 1 1 100%; order: 3; } }
+
+/* Mulai ujian: tombol biasa dan mode fokus (layar penuh) */
+.ss-startrow { display: grid; gap: 10px; margin-top: 6px; }

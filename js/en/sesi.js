@@ -132,6 +132,20 @@
   const missing = (e) => e && (e.status === 404 || /could not find the function|schema cache/i.test(e.message || ''));
   const errMsg = (e) => (missing(e) ? 'Fitur sesi kelas belum aktif di server. Jalankan supabase/029_sesi_kelas.sql di Supabase.' : e && e.status ? e.message : 'Can\'t connect to the server');
 
+  /* ---------- Layar penuh (mode fokus) ---------- */
+  const isFull = () => !!(document.fullscreenElement || document.webkitFullscreenElement);
+  function goFull() {
+    if (isFull()) return Promise.resolve(true);
+    const el = document.documentElement, fn = el.requestFullscreen || el.webkitRequestFullscreen;
+    if (!fn) return Promise.resolve(false);
+    try { return Promise.resolve(fn.call(el)).then(() => true).catch(() => false); } catch (e) { return Promise.resolve(false); }
+  }
+  function leaveFull() {
+    if (!isFull()) return;
+    const fn = document.exitFullscreen || document.webkitExitFullscreen;
+    if (fn) { try { fn.call(document); } catch (e) { /* abaikan */ } }
+  }
+
   /* ---------- Soal dari pembuat soal Metiq ---------- */
   function freeze(q, sid) {
     const o = { id: 'q' + rid(), type: q.type === 'choice' && q.options ? 'choice' : 'input', text: q.text, answer: String(q.answer), skill: sid };
@@ -548,11 +562,18 @@
       main.innerHTML = `<div class="ss-intro">${D.MQ ? D.MQ.svg('hello', { size: 130, enter: false }) : ''}<span class="pill">${KIND[s.kind][0]} ${KIND[s.kind][1]}</span><h1>${esc(s.title)}</h1>
         <ul class="ss-facts"><li>📋 ${s.questions.length} soal</li>${exam && s.settings.minutes ? `<li>⏱️ ${s.settings.minutes} menit, mulai saat kamu menekan Mulai</li>` : ''}<li>✏️ Ada kertas coret untuk menghitung</li>
           ${exam ? '<li>🖥️ Use a tablet or laptop. Do not switch tabs or apps: every switch is recorded for the teacher.</li>' : ''}
+          ${exam ? '<li>🔒 Focus mode makes the screen full. Leaving full screen is also recorded.</li>' : ''}
           ${exam ? '<li>🤫 Jawabanmu baru dinilai setelah dikumpulkan</li>' : '<li>✅ Setiap jawaban langsung diperiksa</li>'}</ul>
-        <button class="mq-btn pulse" id="ssgo">Mulai mengerjakan</button></div>`;
-      main.querySelector('#ssgo').addEventListener('click', async (e) => {
-        e.target.disabled = true;
-        try { const r = await Live.join(s.id); runner(root, Object.assign({}, st, { mine: r || { answers: {}, startedAt: Date.now() } })); } catch (er) { e.target.disabled = false; D.toast(esc(errMsg(er))); }
+        <div class="ss-startrow"><button class="mq-btn pulse" id="ssgo">Mulai mengerjakan</button>${exam ? '<button class="mq-btn ghost" id="ssfs">🔒 Start focus mode</button>' : ''}</div></div>`;
+      const go = async (e) => {
+        const btn = e.currentTarget; if (btn) btn.disabled = true;
+        try { const r = await Live.join(s.id); runner(root, Object.assign({}, st, { mine: r || { answers: {}, startedAt: Date.now() } })); } catch (er) { if (btn) btn.disabled = false; D.toast(esc(errMsg(er))); }
+      };
+      main.querySelector('#ssgo').addEventListener('click', go);
+      const fsBtn = main.querySelector('#ssfs');
+      if (fsBtn) fsBtn.addEventListener('click', async (e) => {
+        if (!(await goFull())) D.toast('Full screen is not available on this device. You can still take the exam.');
+        go(e);
       });
       return;
     }
@@ -566,24 +587,30 @@
     const strokes = {};
     const endAt = exam && s.settings.minutes ? mine.startedAt + s.settings.minutes * 60000 : 0;
     root.querySelector('.ss-top').innerHTML = `<a class="mq-ico" href="#/belajar" aria-label="Log out">✕</a><span class="grow ss-tt"><small>${KIND[s.kind][0]} ${KIND[s.kind][1]}</small><b>${esc(s.title)}</b></span>
-      ${exam ? '<span class="ss-focus-chip" id="ssfocus" hidden title="You left the exam page">⚠️ 0</span>' : ''}${endAt ? '<span class="ss-clock" id="ssclock">--:--</span>' : ''}<span class="ss-sync" id="sssync" hidden>⏳</span>${board ? '<button class="ss-cbtn" id="sscoret">✏️ <span>Kertas coret</span></button>' : ''}`;
+      ${exam ? '<span class="ss-focus-chip" id="ssfocus" hidden title="You left the exam page">⚠️ 0</span><button class="ss-cbtn" id="ssfsbtn" aria-label="Full screen">⛶</button>' : ''}${endAt ? '<span class="ss-clock" id="ssclock">--:--</span>' : ''}<span class="ss-sync" id="sssync" hidden>⏳</span>${board ? '<button class="ss-cbtn" id="sscoret">✏️ <span>Kertas coret</span></button>' : ''}`;
     const cb = root.querySelector('#sscoret');
     if (cb) cb.addEventListener('click', () => { if (board.isOpen()) { strokes[qs[i].id] = board.save(); board.close(); cb.classList.remove('on'); } else { board.open(true); board.load(strokes[qs[i].id] || []); cb.classList.add('on'); } });
+    const fsBtn = root.querySelector('#ssfsbtn');
+    if (fsBtn) fsBtn.addEventListener('click', () => { if (isFull()) leaveFull(); else goFull(); });
 
     /* ---------- Mode fokus ujian: beri peringatan dan catat bila siswa pindah tab/aplikasi ---------- */
-    let focusN = (mine.focus && +mine.focus.count) || 0, focusOff = false, awayAt = 0;
+    let focusN = (mine.focus && +mine.focus.count) || 0, focusOff = false, awayAt = 0, fsUsed = isFull();
     const focusChip = () => { const el = root.querySelector('#ssfocus'); if (el) { el.hidden = !focusN; el.textContent = `⚠️ ${focusN}`; el.title = `You left the exam page ${focusN} times`; } };
-    const warnFocus = () => {
+    const warnFocus = (why) => {
       const was = host.querySelector('.ss-focus'); if (was) was.remove();
       const box = document.createElement('div');
       box.className = 'ss-focus';
       box.innerHTML = `<div class="ss-focus-card" role="alertdialog" aria-labelledby="ssft">
         <b id="ssft">⚠️ Exam focus mode</b>
-        <p>You left the exam page. This is recorded for the teacher${focusN ? `  (attempt ${focusN})` : ''}.</p>
+        <p>${why === 'fs' ? 'You left focus mode full screen.' : 'Kamu meninggalkan halaman ujian.'} Kejadian ini dicatat untuk guru${focusN ? `  (attempt ${focusN})` : ''}.</p>
         <p class="small">Do the exam on this page only. To work things out, use the ✏️ Scratch paper button.</p>
-        <button class="mq-btn">Continue the exam</button></div>`;
-      box.querySelector('button').addEventListener('click', () => box.remove());
+        <button class="mq-btn">Back to the exam</button></div>`;
+      box.querySelector('button').addEventListener('click', () => { box.remove(); if (why === 'fs') goFull(); });
       host.appendChild(box);
+    };
+    const violation = (why) => {
+      focusN++; focusChip(); warnFocus(why);
+      if (!focusOff) Live.focus(s.id, focusN).catch((e) => { if (e && (e.status === 404 || /could not find the function|schema cache/i.test(e.message || ''))) focusOff = true; });
     };
     const onVis = () => {
       if (!exam || !alive || !host.isConnected) return;
@@ -591,11 +618,23 @@
       if (!awayAt) return;
       const gone = Date.now() - awayAt; awayAt = 0;
       if (gone < 1200) return; // kedipan sebentar tidak dihitung
-      focusN++; focusChip(); warnFocus();
-      if (!focusOff) Live.focus(s.id, focusN).catch((e) => { if (e && (e.status === 404 || /could not find the function|schema cache/i.test(e.message || ''))) focusOff = true; });
+      violation('tab');
+    };
+    const onFs = () => {
+      if (!exam || !alive) return;
+      if (isFull()) { fsUsed = true; return; }
+      if (!fsUsed) return;
+      fsUsed = false;
+      violation('fs');
     };
     document.addEventListener('visibilitychange', onVis);
-    const stopFocus = () => document.removeEventListener('visibilitychange', onVis);
+    document.addEventListener('fullscreenchange', onFs);
+    document.addEventListener('webkitfullscreenchange', onFs);
+    const stopFocus = () => {
+      document.removeEventListener('visibilitychange', onVis);
+      document.removeEventListener('fullscreenchange', onFs);
+      document.removeEventListener('webkitfullscreenchange', onFs);
+    };
     if (focusN) focusChip();
     const syncEl = () => { const el = root.querySelector('#sssync'); if (el) { el.hidden = !failed.length && !sending; el.textContent = failed.length ? '⚠️ belum terkirim' : '⏳'; } };
     // jawaban dikirim satu per satu; yang gagal dicoba lagi
@@ -650,7 +689,7 @@
       const left = qs.filter((q) => A[q.id] === undefined).length;
       if (!force && !confirm(left ? `Masih ada ${left} soal yang belum dijawab. Kumpulkan sekarang?` : 'Kumpulkan jawabanmu sekarang?')) { if (endAt && !alive) alive = true; return; }
       alive = false;
-      if (exam) stopFocus();
+      if (exam) { stopFocus(); leaveFull(); }
       main.innerHTML = D.loadingHTML;
       // tunggu jawaban yang masih terkirim
       for (let k = 0; k < 20 && (sending || failed.length); k++) { failed.slice().forEach((f) => send(f.qid, f.given, f.ms)); await new Promise((r) => setTimeout(r, 500)); }
