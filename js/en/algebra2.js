@@ -5,7 +5,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, fact, nCr, FR, CX } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, fact, nCr, FR, CX, VH } = C.kit;
   const G = 11;
   const cx = (a, b) => (b === 0 ? N(a) : `${a ? N(a) + ' ' + (b < 0 ? '−' : '+') + ' ' : b < 0 ? '−' : ''}${Math.abs(b) === 1 ? '' : Math.abs(b)}i`);
 
@@ -26,8 +26,8 @@
       id: 'A2B', grade: G, name: 'Advanced polynomials', icon: '🧮', color: '#ff7a59', ixl: 'L–M, Q', sg: 'Phase F · Algebra and Functions', km: 'Algebra',
       tip: 'Remainder theorem: the remainder of f(x) divided by (x − a) equals f(a), with no long division needed.',
       skills: [
-        { id: 'A2B1', name: 'Remainder theorem', gen() { const cs = [nz(-3, 3), r(-6, 6), r(-6, 6), r(-9, 9)], a = nz(-3, 3), val = cs.reduce((s, c) => s * a + c, 0); return num(`What is the remainder when f(x) = ${poly(cs)} is divided by (${lin(1, -a)})?`, val, 'The remainder of f(x) divided by (x − a) is f(a).', [
-          ['Find a', `x ${a < 0 ? '+' : '−'} ${Math.abs(a)} = 0 → x = ${N(a)}`], ['Calculate f(' + N(a) + ')', `${cs.map((c, i) => `${P(c)} × ${P(a)}${sup(3 - i)}`).join(' + ')} = <b>${N(val)}</b>`]]); } },
+        { id: 'A2B1', name: 'Remainder theorem', gen() { const cs = [nz(-3, 3), r(-6, 6), r(-6, 6), r(-9, 9)], a = nz(-3, 3), val = cs.reduce((s, c) => s * a + c, 0), substituted = cs.map((c, i) => { const p = 3 - i, term = `${P(Math.abs(c))}${p === 0 ? '' : ` × ${P(a)}${p === 1 ? '' : sup(p)}`}`; return i === 0 ? `${c < 0 ? '−' : ''}${term}` : `${c < 0 ? ' − ' : ' + '}${term}`; }).join(''), evaluated = cs.map((c, i) => c * a ** (3 - i)), expanded = evaluated.map((v, i) => i === 0 ? N(v) : v < 0 ? ` − ${N(-v)}` : ` + ${N(v)}`).join(''); return num(`What is the remainder when f(x) = ${poly(cs)} is divided by (${lin(1, -a)})?`, val, 'Remainder theorem: dividing f(x) by (x − a) leaves f(a). Find a from the divisor, then evaluate f(a).', [
+          ['Find x from the divisor', `${lin(1, -a)} = 0 → x = ${N(a)}. So the remainder is f(${N(a)}).<div class="hs-visual" role="img" aria-label="Remainder theorem path from divisor ${lin(1, -a)} to f(${N(a)})">${VH.remainder(a)}</div>`], ['Substitute x = ' + N(a), `f(${N(a)}) = ${substituted}`], ['Evaluate powers and products', `${expanded}`], ['Add the results', `${expanded} = <b>${N(val)}</b>`]]); } },
         { id: 'A2B2', name: 'Polynomial factors', gen() { const p = nz(-4, 4), q = nz(-4, 4), s = nz(-4, 4); const cs = [1, -(p + q + s), p * q + p * s + q * s, -p * q * s]; const ans = `(${lin(1, -p)})`; return pil(`Which is a factor of ${poly(cs)}?`, opt(ans, [`(${lin(1, p)})`, `(${lin(1, p + 1)})`, `(${lin(1, -p - 1)})`, `(${lin(1, p * q)})`].filter((x) => ![p, q, s].some((t) => x === `(${lin(1, -t)})`))), ans, 'Factor theorem: (x − a) is a factor of f(x) if f(a) = 0.', [
           ['Test x = ' + N(p), `f(${N(p)}) = 0`], ['Conclude', `<b>${ans}</b> is a factor.`]]); } },
         { id: 'A2B3', name: 'Roots of polynomials', gen() { const p = nz(-4, 4), q = nz(-4, 4), s = nz(-4, 4); if (new Set([p, q, s]).size < 3) return C.SKILLS.A2B3.gen(); const cs = [1, -(p + q + s), p * q + p * s + q * s, -p * q * s]; return num(`What is the sum of all roots of ${poly(cs)} = 0?`, p + q + s, 'For ax³ + bx² + cx + d = 0, the sum of the roots = −b/a.', [

@@ -1077,6 +1077,8 @@ b.big { font-size: 1.3rem; display: block; }
 
 /* Langkah beranimasi SMP-SMA: langkah muncul satu per satu, garis coret tergambar sesudahnya */
 .lk-steps > li { animation: kc-in .45s ease both; animation-delay: calc(var(--t0, 0s) + var(--t, 0s)); }
+.hs-visual { display: flex; justify-content: center; width: min(100%, 320px); margin: 9px auto 2px; padding: 5px; border: 1px solid #d9ebe5; border-radius: 14px; background: #fff; }
+.hs-visual .vh { margin: 0 auto; }
 .lk .mcx { position: relative; display: inline-block; text-decoration: none; }
 .lk .mcx::after { content: ''; position: absolute; left: -2px; right: -2px; top: 50%; height: 3px; border-radius: 3px; background: var(--no); transform-origin: left; transform: rotate(-16deg) scaleX(1); animation: lk-strike .45s ease both; animation-delay: calc(var(--t0, 0s) + var(--t, 0s) + .8s); }
 @keyframes lk-strike { from { transform: rotate(-16deg) scaleX(0); } }

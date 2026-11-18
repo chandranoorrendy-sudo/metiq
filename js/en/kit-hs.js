@@ -49,9 +49,8 @@
   // Langkah beranimasi (ada coretan atau latihan berpola): muncul satu per satu, garis merah tergambar sesudah langkahnya tampil
   const tahap = (kunci, steps, motion) => {
     const head = kunci ? `<div class="kunci"><b>Key idea</b><p>${kunci}</p></div>` : '';
-    if (!motion && !steps.some(([, d]) => /class="mcx"/.test(d))) return `${head}<ol class="tahap">${steps.map(([t, d]) => `<li><b>${t}</b><div>${d}</div></li>`).join('')}</ol>`;
-    let at = 0.3;
-    const li = steps.map(([t, d]) => { const s = `<li style="--t:${at.toFixed(2)}s"><b>${t}</b><div>${d}</div></li>`; at += /class="mcx"/.test(d) ? 2.4 : 1.5; return s; }).join('');
+    let at = 0.18;
+    const li = steps.map(([t, d]) => { const s = `<li style="--t:${at.toFixed(2)}s"><b>${t}</b><div>${d}</div></li>`; at += /class="mcx"/.test(d) ? 2.4 : 0.95; return s; }).join('');
     return `${head}<div class="lk"><ol class="tahap lk-steps">${li}</ol><button class="link small kc-again" data-act="kolomplay">↻ Replay</button></div>`;
   };
   const KEYS = ['−', ',', '/'];
@@ -167,6 +166,25 @@
       s += ln(cx, cy, cx + R, cy, { color: CL.orange }) + `<circle cx="${cx}" cy="${cy}" r="2.5" fill="${CL.ink}"/>` + txt(cx + R / 2, cy - 6, `r = ${r}`, { size: 10, color: CL.orange });
     }
     return sv(w, h, s);
+  };
+  VH.circleEq = (h, k, r) => {
+    const cx = 100, cy = 70, R = 38;
+    let s = `<circle cx="${cx}" cy="${cy}" r="${R}" fill="#fff" stroke="${CL.ink}" stroke-width="2"/>`;
+    s += ln(cx, cy, cx + 27, cy - 27, { color: CL.orange, w: 2.5 }) + `<circle cx="${cx}" cy="${cy}" r="3.5" fill="${CL.brand}"/>`;
+    s += txt(cx, 18, `Center C(${N(h)}, ${N(k)})`, { size: 11, color: CL.ink });
+    s += txt(cx + 24, cy - 8, `r = ${N(r)}`, { size: 9, color: CL.orange }) + txt(cx, 132, `r² = ${N(r * r)}`, { size: 10, color: CL.brand });
+    return sv(200, 146, s);
+  };
+  VH.remainder = (a) => {
+    const divisor = lin(1, -a), cards = [['Divisor', divisor], ['Set to 0', `${divisor} = 0`], ['Solve for x', `x = ${N(a)}`], ['Remainder', `f(${N(a)})`]];
+    let s = '';
+    cards.forEach(([label, value], i) => {
+      const x = 5 + i * 78;
+      s += `<rect x="${x}" y="20" width="70" height="60" rx="11" fill="${i === 3 ? '#e1f7f0' : '#f3fbf8'}" stroke="${i === 3 ? CL.brand : CL.line}" stroke-width="1.5"/>`;
+      s += txt(x + 35, 42, label, { size: 8, color: CL.soft }) + txt(x + 35, 62, value, { size: 10, color: CL.ink });
+      if (i < cards.length - 1) s += txt(x + 75, 55, '›', { size: 18, color: CL.brand });
+    });
+    return sv(320, 100, s);
   };
   // Bangun ruang sederhana: balok, tabung, kerucut, bola, limas
   VH.solid = (kind, dims, unit = ' cm') => {

@@ -4,7 +4,7 @@
  */
 (function () {
   const C = window.METIQ_CURRICULUM;
-  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, fact, nCr, FR, CX } = C.kit;
+  const { r, pick, shuffle, N, P, nz, F, FH, sup, poly, lin, num, pil, opt, lesson, fact, nCr, FR, CX, VH } = C.kit;
   const G = 11;
   const cx = (a, b) => (b === 0 ? N(a) : `${a ? N(a) + ' ' + (b < 0 ? '−' : '+') + ' ' : b < 0 ? '−' : ''}${Math.abs(b) === 1 ? '' : Math.abs(b)}i`);
 
@@ -25,8 +25,8 @@
       id: 'A2B', grade: G, name: 'Polinomial lanjut', icon: '🧮', color: '#ff7a59', ixl: 'L–M, Q', sg: 'Fase F · Aljabar dan Fungsi', km: 'Aljabar',
       tip: 'Teorema sisa: sisa pembagian f(x) oleh (x − a) sama dengan f(a), tanpa perlu membagi panjang.',
       skills: [
-        { id: 'A2B1', name: 'Teorema sisa', gen() { const cs = [nz(-3, 3), r(-6, 6), r(-6, 6), r(-9, 9)], a = nz(-3, 3), val = cs.reduce((s, c) => s * a + c, 0); return num(`Berapa sisa pembagian f(x) = ${poly(cs)} oleh (${lin(1, -a)})?`, val, 'Sisa pembagian f(x) oleh (x − a) adalah f(a).', [
-          ['Tentukan a', `x ${a < 0 ? '+' : '−'} ${Math.abs(a)} = 0 → x = ${N(a)}`], ['Hitung f(' + N(a) + ')', `${cs.map((c, i) => `${P(c)} × ${P(a)}${sup(3 - i)}`).join(' + ')} = <b>${N(val)}</b>`]]); } },
+        { id: 'A2B1', name: 'Teorema sisa', gen() { const cs = [nz(-3, 3), r(-6, 6), r(-6, 6), r(-9, 9)], a = nz(-3, 3), val = cs.reduce((s, c) => s * a + c, 0), substituted = cs.map((c, i) => { const p = 3 - i, term = `${P(Math.abs(c))}${p === 0 ? '' : ` × ${P(a)}${p === 1 ? '' : sup(p)}`}`; return i === 0 ? `${c < 0 ? '−' : ''}${term}` : `${c < 0 ? ' − ' : ' + '}${term}`; }).join(''), evaluated = cs.map((c, i) => c * a ** (3 - i)), expanded = evaluated.map((v, i) => i === 0 ? N(v) : v < 0 ? ` − ${N(-v)}` : ` + ${N(v)}`).join(''); return num(`Berapa sisa pembagian f(x) = ${poly(cs)} oleh (${lin(1, -a)})?`, val, 'Teorema sisa: pembagian f(x) oleh (x − a) bersisa f(a). Jadi, cari a dari pembagi lalu hitung nilai f(a).', [
+          ['Cari nilai x dari pembagi', `${lin(1, -a)} = 0 → x = ${N(a)}. Maka sisanya adalah f(${N(a)}).<div class="hs-visual" role="img" aria-label="Alur teorema sisa dari pembagi ${lin(1, -a)} menuju f(${N(a)})">${VH.remainder(a)}</div>`], ['Substitusikan x = ' + N(a), `f(${N(a)}) = ${substituted}`], ['Hitung pangkat dan perkalian', `${expanded}`], ['Jumlahkan hasilnya', `${expanded} = <b>${N(val)}</b>`]]); } },
         { id: 'A2B2', name: 'Faktor polinomial', gen() { const p = nz(-4, 4), q = nz(-4, 4), s = nz(-4, 4); const cs = [1, -(p + q + s), p * q + p * s + q * s, -p * q * s]; const ans = `(${lin(1, -p)})`; return pil(`Manakah faktor dari ${poly(cs)}?`, opt(ans, [`(${lin(1, p)})`, `(${lin(1, p + 1)})`, `(${lin(1, -p - 1)})`, `(${lin(1, p * q)})`].filter((x) => ![p, q, s].some((t) => x === `(${lin(1, -t)})`))), ans, 'Teorema faktor: (x − a) faktor dari f(x) jika f(a) = 0.', [
           ['Uji x = ' + N(p), `f(${N(p)}) = 0`], ['Simpulkan', `<b>${ans}</b> adalah faktor.`]]); } },
         { id: 'A2B3', name: 'Akar-akar polinomial', gen() { const p = nz(-4, 4), q = nz(-4, 4), s = nz(-4, 4); if (new Set([p, q, s]).size < 3) return C.SKILLS.A2B3.gen(); const cs = [1, -(p + q + s), p * q + p * s + q * s, -p * q * s]; return num(`Berapa jumlah semua akar ${poly(cs)} = 0?`, p + q + s, 'Untuk ax³ + bx² + cx + d = 0, jumlah akar = −b/a.', [
