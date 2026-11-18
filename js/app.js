@@ -230,9 +230,9 @@
         <a class="mq-resume mq-parent" href="#/ortu"><span class="av"><img class="family-icon" src="icons/family-parent-v1.png" alt=""></span><span class="grow">Saya orang tua<small>Lihat laporan belajar anak dengan kode dari guru</small></span>›</a>
       </section>
       <section class="mq-feat">
-        <div style="--bg:#e6fffa"><span class="em">🎯</span>Soal pas dengan levelmu</div>
-        <div style="--bg:#fff3c4"><span class="em">🎬</span>Pelajaran beranimasi</div>
-        <div style="--bg:#ffe3ec"><span class="em">🎁</span>Kumpulkan hadiah</div>
+        <div style="--bg:#e6fffa"><span class="em">${IC.target}</span>Soal pas dengan levelmu</div>
+        <div style="--bg:#fff3c4"><span class="em">${IC.film}</span>Pelajaran beranimasi</div>
+        <div style="--bg:#ffe3ec"><span class="em">${IC.gift}</span>Kumpulkan hadiah</div>
       </section>
       <section class="mq-lgr"><h2>Materi TK sampai SMA</h2>${landGradesHTML()}</section>
       <section class="mq-stats" id="landstats" hidden></section>
@@ -304,6 +304,20 @@
     task: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="14" height="17" rx="2.5"/><path d="M9 4h6v3H9zM8.5 12h7M8.5 16h5"/></svg>',
     game: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="7" width="18" height="11" rx="5.5"/><path d="M8 10.5v4M6 12.5h4"/><circle cx="15.5" cy="11.5" r=".8" fill="currentColor"/><circle cx="18" cy="14" r=".8" fill="currentColor"/></svg>',
     gift: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M3 7h18v3H3zM12 7v13M12 7C9 3 6 5 8 7M12 7c3-4 6-2 4 0"/></svg>',
+    target: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="15" cy="17" r="10"/><circle cx="15" cy="17" r="5"/><path d="m13 19 13-13M21 6h5v5M12 7h-2M6 13v2M19 24h2"/></svg>',
+    film: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M4 10h24v17H4zM4 10l4-6h21l-4 6M11 4l4 6m3-6 4 6m3-6 4 6"/><path d="m14 15 7 4-7 4z" fill="currentColor" stroke="none"/></svg>',
+    abacus: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="4" width="22" height="24" rx="4"/><path d="M8 11h16M8 17h16M8 23h16"/><circle cx="12" cy="11" r="2.2" fill="currentColor"/><circle cx="20" cy="17" r="2.2" fill="currentColor"/><circle cx="15" cy="23" r="2.2" fill="currentColor"/></svg>',
+    prime: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="2.5" fill="currentColor"/><circle cx="23" cy="9" r="2.5" fill="currentColor"/><circle cx="9" cy="23" r="2.5" fill="currentColor"/><circle cx="23" cy="23" r="2.5" fill="currentColor"/><path d="M13 9h6M9 13v6M23 13v6M13 23h6M16 13v6"/></svg>',
+    geometry: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 26 15 6l12 20zM9 22h13M15 6l6 16"/><circle cx="15" cy="6" r="2" fill="currentColor"/></svg>',
+    combine: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="m9 9 7 7m0 0 7-7m-7 7v9"/><circle cx="8" cy="8" r="3" fill="currentColor"/><circle cx="24" cy="8" r="3" fill="currentColor"/><circle cx="16" cy="25" r="3" fill="currentColor"/></svg>',
+    leaf: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M26 5C14 5 6 10 6 20a7 7 0 0 0 7 7c10 0 15-8 13-22Z"/><path d="M7 26c4-7 9-11 16-15M14 20l-1-6m5 2 5 1"/></svg>',
+    food: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 16h22a11 11 0 0 1-22 0Z"/><path d="M8 23h16M10 11c0-2 2-2 2-4m4 4c0-2 2-2 2-4m4 4c0-2 2-2 2-4"/></svg>',
+    tech: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="5" width="24" height="17" rx="2.5"/><path d="M11 27h10m-5-5v5m-8-11 4-4 4 4 7-7"/></svg>',
+    chart: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M5 27V6m0 21h23"/><rect x="9" y="17" width="4" height="7" rx="1"/><rect x="17" y="12" width="4" height="12" rx="1"/><rect x="25" y="8" width="3" height="16" rx="1"/><path d="m9 13 5-4 4 2 7-6"/></svg>',
+    people: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="4"/><circle cx="23" cy="12" r="3"/><path d="M4 27v-2a8 8 0 0 1 16 0v2zm16-9a6 6 0 0 1 8 5v2h-5"/></svg>',
+    sport: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="16" r="12"/><path d="m12 5 4 5 6-1m6 6-6 3-1 7m-11 2 1-7-5-4m5-6-3 6 3 6m6-11 4 5-4 6-7-1"/></svg>',
+    medal: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 3 3 10-5 4L4 5zm14 0-3 10 5 4 3-12z" fill="currentColor" opacity=".25"/><circle cx="16" cy="20" r="8"/><path d="m16 15 1.5 3 3.5.5-2.5 2.4.6 3.4-3.1-1.6-3.1 1.6.6-3.4-2.5-2.4 3.5-.5z" fill="currentColor" stroke="none"/></svg>',
+    clock: '<svg viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="16" cy="17" r="11"/><path d="M16 10v7l5 3M12 3h8"/></svg>',
     me: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-5 4-7 8-7s7 2 8 7"/></svg>',
     play: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5.5v13a1 1 0 0 0 1.52.85l10.4-6.5a1 1 0 0 0 0-1.7L9.52 4.65A1 1 0 0 0 8 5.5z"/></svg>',
     clam: '<svg viewBox="0 0 100 100"><path d="M10 56c0 24 18 34 40 34s40-10 40-34z" fill="#1db796"/><path d="M10 56C10 30 28 12 50 12s40 18 40 44c-10-8-26-12-40-12S20 48 10 56z" fill="#35e0bd"/><path d="M50 12v30M31 18l8 26M69 18l-8 26" stroke="#1db796" stroke-width="3.5" stroke-linecap="round" fill="none"/><circle cx="50" cy="62" r="14" fill="#fff"/><circle cx="45" cy="57" r="4.5" fill="#e9fffb"/></svg>',
@@ -3724,7 +3738,8 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     }
     const f = ls.get('metiq_jfilter', {}), inBand = J.MISSIONS.filter((m) => m.level === band);
     const profs = J.PROFESSIONS.filter((p) => (!f.i || p.interest === f.i) && inBand.some((m) => m.profession === p.id && (!f.t || m.topics.includes(f.t))));
-    const chip = (k, v, label) => `<button class="${(f[k] || '') === v ? 'on' : ''}" data-act="jfilter" data-k="${k}" data-v="${v}">${label}</button>`;
+    const interestIcons = { bangun: IC.geometry, makanan: IC.food, alam: IC.leaf, teknologi: IC.tech, data: IC.chart, usaha: IC.job, orang: IC.people, olahraga: IC.sport, keluarga: IC.home };
+    const chip = (k, v, label, icon = '') => `<button class="${(f[k] || '') === v ? 'on' : ''}" data-act="jfilter" data-k="${k}" data-v="${v}">${icon ? `<span class="jfilter-ic">${icon}</span>` : ''}${label}</button>`;
     const tile = (p) => {
       const m = inBand.find((x) => x.profession === p.id), done = m && missionDone(kid, m), st = m ? missionStars(kid, m) : 0;
       return `<a class="mq-gt jtile" href="#/profesi/${p.id}" style="--c:${p.color};--bg:${JV.light(p.color, 0.88)}" aria-label="${esc(p.name)}${done ? ', selesai' : ''}">${done ? '<span class="new jdone">✓</span>' : ''}${m ? `<span class="jlvl">${(J.BANDS.find((b) => b.id === m.level) || {}).name}</span>` : ''}<span class="art">${JV.icon(p.id, p.color) || `<span class="jpeople">${p.people}</span>`}</span><b>${esc(p.name)}</b><small>${m ? esc(m.title) : ''}</small>${done ? `<span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span>` : ''}</a>`;
@@ -3733,7 +3748,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       <div class="mq-ghead">${kid ? '' : `<a class="mq-ico" href="#/" aria-label="Kembali">${IC.back}</a>`}
         <div class="mq-gsay">${MQ.svg('happy', { size: 74 })}<div class="mq-bubble"><p>Sehari jadi apa hari ini?</p></div></div></div>
       ${bandPills(band)}
-      <div class="jfilters"><div>${chip('i', '', 'Semua minat')}${Object.entries(J.INTERESTS).map(([k, v]) => chip('i', k, v)).join('')}</div>
+      <div class="jfilters"><div>${chip('i', '', 'Semua minat')}${Object.entries(J.INTERESTS).map(([k, v]) => chip('i', k, v.replace(/^[^\p{L}\p{N}]+/u, ''), interestIcons[k])).join('')}</div>
         <div>${chip('t', '', 'Semua topik')}${Object.entries(J.TOPICS).map(([k, v]) => chip('t', k, v)).join('')}</div></div>
       ${profs.length ? `<div class="mq-ggrid">${profs.map(tile).join('')}</div>` : `<p class="mq-note">Belum ada misi untuk pilihan ini. Coba minat atau topik lain.</p>`}
       <p class="mq-note">${kid ? `Misi selesai: <b>${J.MISSIONS.filter((m) => missionDone(kid, m)).length}</b> dari ${J.MISSIONS.length}` : 'Masuk sebagai siswa agar misimu tersimpan.'}</p>`, 'profesi');
@@ -4025,15 +4040,16 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       return;
     }
     const kid = gameKid(), L = olLevel(), tier = ss.get('olTier', 1);
-    const card = ([k, [name, em]]) => { const n = olStat(kid, L, k), has = olPool(L, k, tier).length; return `<a class="ol-card ${has ? '' : 'off'}" href="${has ? `#/olimpiade/latih/${L}-${k}-${tier}` : '#/olimpiade'}"><span class="em">${em}</span><b>${name}</b><small>${n ? `${n} soal terpecahkan` : `${olPool(L, k).length} jenis soal`}</small></a>`; };
+    const olIcons = { A: IC.abacus, N: IC.prime, G: IC.geometry, K: IC.combine };
+    const card = ([k, [name]]) => { const n = olStat(kid, L, k), has = olPool(L, k, tier).length; return `<a class="ol-card ${has ? '' : 'off'}" href="${has ? `#/olimpiade/latih/${L}-${k}-${tier}` : '#/olimpiade'}"><span class="ol-card-icon">${olIcons[k]}</span><b>${name}</b><small>${n ? `${n} soal terpecahkan` : `${olPool(L, k).length} jenis soal`}</small></a>`; };
     app.innerHTML = mqPage(`<div class="mq-ghead"><a class="mq-ico" href="#/permainan" aria-label="Kembali">${IC.back}</a><div class="mq-gsay">${MQ.svg('think', { size: 74 })}<div class="mq-bubble"><p>Tantang dirimu!</p></div></div></div>
-      <div class="ol-wrap"><h1>🏅 Olimpiade</h1><p class="ol-lead">Latihan soal non-rutin untuk persiapan OSN dan kompetisi matematika. Bandingkan dengan rekormu sendiri.</p>
+      <div class="ol-wrap"><h1><span class="ol-title-icon">${IC.medal}</span>Olimpiade</h1><p class="ol-lead">Latihan soal non-rutin untuk persiapan OSN dan kompetisi matematika. Bandingkan dengan rekormu sendiri.</p>
       <div class="ol-seg" role="tablist" aria-label="Jenjang">${Object.keys(OLM.LEVELS).map((x) => `<button class="${x === L ? 'on' : ''}" data-act="ollevel" data-v="${x}">${x}</button>`).join('')}</div>
       <h2>Latihan per bidang</h2>
       <div class="ol-seg small" role="tablist" aria-label="Tingkat">${[1, 2, 3].map((t) => `<button class="${t === tier ? 'on' : ''}" data-act="oltier" data-v="${t}">Tingkat ${t}</button>`).join('')}</div>
       <div class="ol-grid">${Object.entries(OLM.FIELDS).map(card).join('')}</div>
       <h2>Simulasi</h2>
-      <a class="ol-sim" href="#/olimpiade/simulasi/${L}"><b>⏱️ Simulasi ${OL_SIM_N} soal, ${OL_SIM_MIN} menit</b><small>Semua bidang, dari mudah ke sukar. Pembahasan muncul di akhir.</small></a>
+      <a class="ol-sim" href="#/olimpiade/simulasi/${L}"><b><span class="ol-sim-icon">${IC.clock}</span>Simulasi ${OL_SIM_N} soal, ${OL_SIM_MIN} menit</b><small>Semua bidang, dari mudah ke sukar. Pembahasan muncul di akhir.</small></a>
       <details class="ol-info"><summary>Bagaimana soal olimpiade disusun?</summary>
         <p>Soal olimpiade bersifat <b>non-rutin</b>: materinya tidak jauh dari sekolah, tetapi caranya harus ditemukan sendiri. Kompetisi membaginya ke dalam empat bidang: aljabar, teori bilangan, geometri, dan kombinatorika.</p>
         <p>Di IMO, setiap negara mengusulkan soal, lalu panitia menyaring menjadi daftar pendek sekitar 30 soal dan juri memilih 6. Di OSN, soal berjenjang dari tingkat kabupaten/kota sampai nasional.</p>
