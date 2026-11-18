@@ -3283,7 +3283,7 @@
           <h3 class="stepn"><i>3</i> Message and due date <small class="muted">(optional)</small></h3>
           <div class="grow2"><label>Message for students<input name="note" maxlength="120" placeholder="e.g. Practice for Friday's quiz"></label><label>Due date<input name="due" type="date"></label></div>
           <div class="wordexp">
-            <p class="wt">📄 Worksheet for Microsoft Word</p>
+            <p class="wordexp-t">📄 Worksheet for Microsoft Word</p>
             <p class="small muted">Download this task as a .docx file to print or edit in Word. Fractions become two-row fractions (numerator on top, denominator below) that you can type into.</p>
             <label class="cb"><input type="checkbox" data-docxkey checked> Include the answer key on the last page</label>
             <button type="button" class="btn ghost sm" data-act="todocx">📄 Export to Word (.docx)</button>

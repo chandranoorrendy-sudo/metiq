@@ -3296,7 +3296,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
           <h3 class="stepn"><i>3</i> Pesan dan tenggat <small class="muted">(boleh dikosongkan)</small></h3>
           <div class="grow2"><label>Pesan untuk siswa<input name="note" maxlength="120" placeholder="mis. Latihan untuk ulangan Jumat"></label><label>Tenggat<input name="due" type="date"></label></div>
           <div class="wordexp">
-            <p class="wt">📄 Lembar soal untuk Microsoft Word</p>
+            <p class="wordexp-t">📄 Lembar soal untuk Microsoft Word</p>
             <p class="small muted">Unduh tugas ini sebagai berkas .docx untuk dicetak atau disunting di Word. Pecahan dibuat dua baris (pembilang di atas, penyebut di bawah) sehingga bisa langsung diketik.</p>
             <label class="cb"><input type="checkbox" data-docxkey checked> Sertakan kunci jawaban di halaman terakhir</label>
             <button type="button" class="btn ghost sm" data-act="todocx">📄 Ekspor ke Word (.docx)</button>
