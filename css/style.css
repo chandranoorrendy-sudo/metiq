@@ -585,16 +585,20 @@ h2.allsk { margin: 18px 0 8px; }
 @media (min-width: 760px) { .gmem { grid-template-columns: repeat(4, 1fr); } .gq { font-size: 2.6rem; } }
 
 /* ---------- Permainan balok jatuh ---------- */
+.mq-gplay { --gavail: calc(100dvh - 232px); padding-bottom: 14px; }
 .g-susun { background: #ffe9d6; } .g-kembar { background: #e3ecff; }
-.gtip { margin: 0 0 6px; }
+.gtip { margin: 0 0 4px; }
 .gnext { display: inline-block; min-width: 46px; padding: 2px 8px; border-radius: 10px; font-size: 1.05rem !important; box-shadow: inset 0 -3px 0 rgba(0, 0, 0, .12); }
-.gtower { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; background: #16302b; padding: 8px; border-radius: 18px; max-width: 420px; margin: 0 auto; touch-action: manipulation; }
-.gcol { display: flex; flex-direction: column-reverse; gap: 6px; padding: 4px; border-radius: 12px; background: rgba(255, 255, 255, .06); cursor: pointer; }
+/* Lebar papan dihitung dari tinggi layar supaya 5 x 8 kotak muat dan tetap besar. */
+.gtower { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; background: #16302b; padding: 6px; border-radius: 18px; width: min(100%, 420px, calc(var(--gavail) * 5 / 8)); max-width: none; margin: 0 auto; touch-action: manipulation; }
+.gcol { display: flex; flex-direction: column-reverse; gap: 4px; padding: 3px; border-radius: 12px; background: rgba(255, 255, 255, .06); cursor: pointer; }
 .gcol:hover, .gcol:active { background: rgba(102, 255, 219, .18); }
+.gcol.sel { background: rgba(102, 255, 219, .14); box-shadow: inset 0 0 0 2px rgba(102, 255, 219, .55); }
 .gcol.full { animation: gshake .3s; } @keyframes gshake { 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
 .gslot, .gblk { display: grid; place-items: center; aspect-ratio: 1; border-radius: 10px; font-style: normal; }
 .gslot { background: rgba(255, 255, 255, .05); }
-.gblk { color: #16302b; font-weight: 900; font-size: clamp(.8rem, 3.6vw, 1.15rem); box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .14); padding: 0 2px; overflow: hidden; }
+.gslot.gtrail { background: rgba(102, 255, 219, .10); }
+.gblk { color: #16302b; font-weight: 900; font-size: clamp(.95rem, calc(var(--gavail) * .072), 1.9rem); box-shadow: inset 0 -4px 0 rgba(0, 0, 0, .14); padding: 0 2px; overflow: hidden; }
 .gblk.new { animation: gdrop .25s ease-out; } @keyframes gdrop { from { transform: translateY(-120%); opacity: .4; } }
 .gblk.merge { animation: gmerge .35s; } @keyframes gmerge { 50% { transform: scale(1.18); } }
 
@@ -670,14 +674,19 @@ h2.allsk { margin: 18px 0 8px; }
 .vztip b { display: block; font-size: .9rem; } .vztip small { display: block; opacity: .8; font-size: .74rem; }
 
 /* ---------- Menara Kembar (balok jatuh terus) ---------- */
-.gtower.gk .gcol { gap: 4px; }
+.gtower.gk .gcol { gap: 3px; }
 .gslot.glimit { background: rgba(224, 70, 75, .18); box-shadow: inset 0 -2px 0 #e0464b; }
 .gslot.gghost { box-shadow: inset 0 0 0 2px rgba(102, 255, 219, .7); }
-.gblk.fall { box-shadow: 0 0 0 2px #fff, inset 0 -4px 0 rgba(0, 0, 0, .14); }
+.gblk.fall { box-shadow: 0 0 0 3px #fff, 0 0 18px rgba(102, 255, 219, .9), inset 0 -4px 0 rgba(0, 0, 0, .14); transform: scale(1.04); }
 .gtower.gover { animation: gshake .4s; filter: grayscale(.4); }
-.gctrl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; max-width: 420px; margin: 10px auto 0; }
-.gctrl button { padding: 14px 0; border: 0; border-radius: 14px; background: var(--tiffany); color: var(--on-tiffany); font-size: 1.3rem; font-weight: 900; cursor: pointer; box-shadow: 0 3px 0 var(--tiffany-dark); touch-action: manipulation; }
+.gctrl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; width: min(100%, 420px, calc(var(--gavail) * 5 / 8)); max-width: none; margin: 8px auto 0; }
+.gctrl button { padding: clamp(9px, calc(var(--gavail) * .022), 16px) 0; border: 0; border-radius: 14px; background: var(--tiffany); color: var(--on-tiffany); font-size: clamp(1.05rem, calc(var(--gavail) * .038), 1.5rem); font-weight: 900; cursor: pointer; box-shadow: 0 3px 0 var(--tiffany-dark); touch-action: manipulation; }
 .gctrl button:active { transform: translateY(2px); box-shadow: none; }
+.mq-gplay .ghud { padding: 4px 6px; margin-bottom: 6px; }
+.mq-gplay .ghud small { font-size: .66rem; }
+.mq-gplay .ghud b { font-size: 1.2rem; }
+.mq-gplay .row-btn { margin: 6px 0 0; }
+.mq-gplay .row-btn .btn { min-height: 34px; padding: 6px 14px; font-size: .82rem; }
 
 /* ---------- Statistik mode coba ---------- */
 .fbar { display: grid; grid-template-columns: minmax(120px, 1.2fr) 1fr auto; gap: 8px; align-items: center; font-size: .82rem; font-weight: 700; margin: 6px 0; }

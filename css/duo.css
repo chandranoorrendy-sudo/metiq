@@ -1793,3 +1793,7 @@ input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39
     repeating-linear-gradient(104deg, transparent 0 29px, rgba(95,138,70,.22) 30px 31px, transparent 32px 48px);
 }
 @media (prefers-reduced-motion: reduce) { .isles::before, .isles::after { animation: none !important; } }
+
+/* Permainan: layar penuh tanpa ruang ekstra untuk menu bawah (menu tidak tampil saat bermain) */
+.mq-screen.mq-gplay { padding-bottom: 14px; }
+.mq-screen.mq-gplay { min-height: calc(100dvh - 64px); }
