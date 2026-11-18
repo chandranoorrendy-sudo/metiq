@@ -1906,3 +1906,155 @@ input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39
   .mq-land .mq-hero .mq-cta .mq-btn.pulse { border-radius: 16px; }
   .mq-land .mq-feat div { padding-top: 12px; }
 }
+
+/* Shared UI refresh: more breathing room, clearer hierarchy, and calmer illustration surfaces. */
+.mq-page { max-width: 1040px; padding-inline: clamp(14px, 2.5vw, 28px); }
+.mq-ghead { gap: 12px; padding: 16px clamp(14px, 2vw, 24px) 8px; }
+.mq-gtitle { color: #183b3b; letter-spacing: -.02em; }
+.mq-note { max-width: 720px; margin: 14px auto; padding: 12px 16px; border: 1px solid #e3ece8; border-radius: 14px; background: #f7fbf9; line-height: 1.45; }
+.mq-page :where(a, button, summary):focus-visible { outline: 3px solid #126e67; outline-offset: 3px; }
+
+/* Install help: keep long instructions comfortably inside their card on narrow phones. */
+.mq-land .mq-install { box-sizing: border-box; min-width: 0; overflow: hidden; }
+.mq-land .mq-install .ig-note { box-sizing: border-box; width: auto; max-width: 100%; margin: 0 20px 12px; line-height: 1.55; overflow-wrap: anywhere; }
+.mq-land .mq-install .ig-steps { box-sizing: border-box; width: auto; min-width: 0; margin: 0 12px 12px; padding: 0; }
+.mq-land .mq-install .ig-steps li { min-width: 0; }
+.mq-land .mq-install .ig-pic { min-width: 0; max-width: 100%; }
+
+/* Games and profession cards use one consistent grid and one consistent art frame. */
+.mq-ggrid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 16px; padding: 6px clamp(14px, 2vw, 22px) 18px; }
+.mq-ggrid .mq-gt {
+  min-width: 0;
+  gap: 10px;
+  padding: 12px 12px 14px;
+  border: 1px solid color-mix(in srgb, var(--c) 24%, #e7eeeb);
+  border-bottom: 3px solid color-mix(in srgb, var(--c) 44%, #d7e4df);
+  border-radius: 22px;
+  background: linear-gradient(160deg, #fff, color-mix(in srgb, var(--bg) 58%, #fff) 100%);
+  box-shadow: 0 7px 20px rgba(24, 58, 61, .055);
+  text-align: left;
+}
+.mq-ggrid .mq-gt .art { aspect-ratio: 1.42 / 1; border: 1px solid rgba(22,58,59,.05); border-radius: 16px; background: #f9fbfa; }
+.mq-ggrid .mq-gt .art svg { width: 88%; max-height: 100%; }
+.mq-ggrid .mq-gt b { min-height: 0; align-self: stretch; font-size: 1rem; line-height: 1.25; }
+.mq-ggrid .mq-gt .gt-detail { min-height: 2.4em; color: #71837e; font-size: .76rem; font-weight: 700; line-height: 1.35; }
+.mq-ggrid .mq-gt .st { align-self: flex-start; margin-top: auto; }
+.mq-ggrid .mq-gt.jtile { align-items: stretch; text-align: left; }
+.mq-ggrid .jtile .art { aspect-ratio: 1.55 / 1; border-radius: 16px; background: color-mix(in srgb, var(--bg) 35%, #fff); }
+.mq-ggrid .jtile .art svg { width: 78%; max-width: 168px; }
+.mq-ggrid .jtile b { font-size: 1rem; }
+.mq-ggrid .jtile small { min-height: 2.5em; text-align: left; color: #71837e; font-size: .78rem; }
+.mq-ggrid .jtile .jlvl { color: #455b56; }
+.mq-ggrid .mq-gt .new, .mq-ggrid .jtile .jdone { top: 10px; right: 10px; border-radius: 999px; box-shadow: 0 2px 8px rgba(27,58,60,.12); }
+.ol-cta { margin: 8px clamp(14px, 2vw, 22px) 12px; padding: 12px 16px; border: 1px solid #f1dfb0; border-radius: 18px; background: linear-gradient(110deg,#fff9e7,#fffdf7); box-shadow: 0 4px 12px rgba(138,106,0,.06); font-size: 1rem; }
+.ol-medal { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: 14px; background: #fff0c4; color: #b37b04; }
+.ol-medal svg { width: 28px; height: 28px; }
+
+/* Profession detail: pair the custom vector profession icon with concise, readable information. */
+.jhero {
+  display: grid;
+  grid-template-columns: minmax(132px, 190px) minmax(0, 1fr);
+  align-items: center;
+  gap: clamp(16px, 3vw, 28px);
+  margin: 12px clamp(14px, 2vw, 22px) 18px;
+  padding: clamp(18px, 3vw, 28px);
+  border: 1px solid color-mix(in srgb, var(--c) 24%, #e8efec);
+  border-radius: 26px;
+  background: linear-gradient(145deg, color-mix(in srgb, var(--c) 8%, #fff), #fff 72%);
+  box-shadow: 0 12px 28px rgba(25,65,64,.07);
+  text-align: left;
+}
+.jhero-art { display: grid; place-items: center; aspect-ratio: 1; border: 1px solid color-mix(in srgb, var(--c) 15%, #fff); border-radius: 24px; background: rgba(255,255,255,.78); }
+.jhero-art svg { display: block; width: min(88%, 172px); height: auto; }
+.jhero-copy { min-width: 0; }
+.jhero-copy h1 { margin: 0 0 14px; color: #193c3c; font-size: clamp(1.35rem, 3vw, 1.8rem); letter-spacing: -.03em; line-height: 1.15; }
+.jhero-detail { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.jhero-detail section { min-width: 0; padding: 12px 14px; border: 1px solid rgba(40,77,71,.08); border-radius: 16px; background: rgba(255,255,255,.78); }
+.jhero-detail h2 { margin: 0 0 6px; color: color-mix(in srgb, var(--c) 72%, #183b3b); font-size: .82rem; font-weight: 900; }
+.jhero-detail p { margin: 0; color: #506760; font-size: .88rem; font-weight: 600; line-height: 1.5; }
+.jtopicart { flex: none; display: grid; place-items: center; width: 58px; height: 58px; overflow: hidden; border-radius: 16px; background: color-mix(in srgb, var(--c) 10%, #fff); }
+.jtopicart svg { width: 54px; height: 46px; }
+.jsub { margin: 22px clamp(14px, 2vw, 22px) 10px; color: #193c3c; font-size: 1.15rem; }
+.jmissions { gap: 10px; margin-inline: clamp(14px, 2vw, 22px); }
+.jmis { min-width: 0; min-height: 68px; gap: 12px; padding: 12px 14px; border: 1px solid #e4ece8; border-bottom: 2px solid color-mix(in srgb, var(--c, #19b796) 28%, #dce8e3); border-radius: 16px; box-shadow: 0 4px 12px rgba(25,65,64,.035); }
+.jmis .grow { min-width: 0; }
+.jmis .grow b { line-height: 1.25; }
+.jmis .grow small { line-height: 1.4; }
+.jmis.mine { background: color-mix(in srgb, var(--c) 5%, #fff); border-color: color-mix(in srgb, var(--c) 35%, #e4ece8); }
+
+/* Belajar map: clearer route, lighter textures, tighter vertical rhythm. */
+.isles {
+  border: 1px solid rgba(30,73,84,.09);
+  border-radius: 28px;
+  background: linear-gradient(180deg,#eaf7f3 0%,#d9eee9 48%,#f3f8f3 100%);
+  box-shadow: 0 14px 34px rgba(35,67,76,.09), inset 0 0 0 4px rgba(255,255,255,.42);
+}
+.isles::before, .isles::after { opacity: .34; }
+.atlas-head { border-color: rgba(32,91,102,.10); background: rgba(255,255,255,.92); box-shadow: 0 5px 16px rgba(25,77,91,.06); backdrop-filter: blur(6px); }
+.atlas-stamp { display: none; }
+.atlas-compass { border-radius: 15px; box-shadow: none; background: #eaf7f3; }
+.isle-row { min-height: 228px; padding-block: 4px 8px; }
+.isle-row::after { opacity: .20; }
+.isle-row::before { opacity: .52; }
+.isle-svg { filter: drop-shadow(0 9px 7px rgba(28,72,78,.14)); }
+.isle.cur .isle-svg { animation-duration: 6s; }
+.isle-tag { border-radius: 17px; border-color: rgba(25,79,87,.10); box-shadow: 0 5px 14px rgba(26,70,77,.11); }
+.isle.cur .isle-tag { border-color: #59a994; box-shadow: 0 7px 18px rgba(22,91,83,.14); }
+.isle-link { height: 52px; margin-block: -5px; }
+.isle-link svg { width: 66%; filter: none; }
+.isle-region { border: 1px solid rgba(30,73,84,.08); border-radius: 999px; box-shadow: 0 3px 10px rgba(23,43,59,.06); }
+.isle-pin { animation-duration: 2.5s; }
+
+/* Mascot motion: retain personality while slowing the repeated movement and reducing bounce. */
+.mq-enter { animation-duration: .62s; }
+.mq-float.mq-enter { animation: mq-pop .62s cubic-bezier(.22,.75,.32,1) both, mq-bob 4.8s ease-in-out .7s infinite; }
+@keyframes mq-pop {
+  0% { opacity: 0; transform: translateY(18px) scale(.92); }
+  72% { opacity: 1; transform: translateY(-3px) scale(1.015); }
+  100% { opacity: 1; transform: none; }
+}
+@keyframes mq-bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+.mq-enter .mq-arms { animation-duration: 4.4s; }
+@keyframes mq-sway { 50% { transform: skewX(-1.3deg); } }
+.mq-tuft { animation-duration: 3.6s; }
+@keyframes mq-tuft { 50% { transform: rotate(6deg); } }
+.mq-wave { animation-duration: 2.5s; }
+@keyframes mq-wave { 0%,100% { transform: rotate(0); } 42% { transform: rotate(-10deg); } 68% { transform: rotate(2deg); } }
+.mq-cheerL, .mq-cheerR { animation-duration: .92s; }
+@keyframes mq-cl { to { transform: rotate(7deg); } }
+@keyframes mq-cr { to { transform: rotate(-7deg); } }
+.mq-land .st-meti { animation: landing-mascot-float 5s ease-in-out infinite; }
+@keyframes landing-mascot-float { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+@keyframes st-hop { 0%,100% { transform: translateY(0); } 18% { transform: translateY(1px) scale(1.04,.97); } 48% { transform: translateY(-10px) scale(.98,1.02); } 72% { transform: translateY(0); } }
+@keyframes st-fly { 0%,100% { transform: translate(0,0) rotate(0); } 25% { transform: translate(-12px,8px) rotate(-5deg); } 50% { transform: translate(-5px,14px) rotate(2deg); } 75% { transform: translate(8px,6px) rotate(5deg); } }
+@keyframes st-jump { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8%); } }
+
+@media (min-width: 820px) {
+  .mq-ggrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .jhero { grid-template-columns: minmax(150px, 205px) minmax(0,1fr); }
+}
+@media (max-width: 680px) {
+  .mq-page { padding-inline: 14px; }
+  .mq-ghead { padding-inline: 14px; }
+  .mq-ggrid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; padding-inline: 0; }
+  .mq-ggrid .mq-gt { padding: 9px; border-radius: 18px; }
+  .mq-ggrid .mq-gt .art { aspect-ratio: 1.18 / 1; }
+  .mq-ggrid .mq-gt b { font-size: .92rem; }
+  .mq-ggrid .mq-gt .gt-detail { font-size: .72rem; }
+  .jhero { grid-template-columns: 1fr; gap: 14px; margin-inline: 0; padding: 16px; }
+  .jhero-art { width: 100%; max-height: 172px; aspect-ratio: 2 / 1; }
+  .jhero-art svg { width: min(54%, 150px); }
+  .jhero-copy h1 { margin-bottom: 10px; }
+  .jhero-detail { grid-template-columns: 1fr; gap: 9px; }
+  .jhero-detail section { padding: 10px 12px; }
+  .jsub, .jmissions { margin-inline: 0; }
+  .isles { margin-inline: -2px; padding: 10px 10px 18px; border-radius: 22px; }
+  .isle-row { min-height: 204px; }
+  .isle.cur { width: 88%; }
+  .isle-svg { filter: drop-shadow(0 7px 6px rgba(28,72,78,.12)); }
+  .mq-land .mq-install .ig-note { margin-inline: 18px; font-size: .88rem; }
+  .mq-land .mq-install .ig-steps { margin-inline: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mq-land .st-meti { animation: none !important; }
+}

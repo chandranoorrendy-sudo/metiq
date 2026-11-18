@@ -227,7 +227,8 @@
         <div class="mq-cta">${kid
     ? '<a class="mq-btn pulse" href="#/belajar"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>Keep learning</a><a class="mq-btn ghost" href="#/kode"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" d="M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5V10a2 2 0 0 0 0 4v2.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5V14a2 2 0 0 0 0-4z"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M9.5 12.5l2 2 3.5-4"/></svg>Learning code</a>'
     : '<a class="mq-btn pulse" href="#/siswa-baru"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>Start learning</a><a class="mq-btn ghost" href="#/kode"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" d="M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5V10a2 2 0 0 0 0 4v2.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5V14a2 2 0 0 0 0-4z"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M9.5 12.5l2 2 3.5-4"/></svg>I already have a code</a>'}</div>
-        ${kid ? '' : '<p class="mq-land-alt"><a class="mq-link" href="#/mulai/siswa">Try it first with sample data</a></p><p class="mq-land-alt gshow" hidden><button class="mq-link" data-act="gkids">🔑 Continue learning with a parent\'s Gmail<span class="chev" aria-hidden="true">›</span></button></p>'} <a class="mq-resume mq-parent" href="#/ortu"><span class="av">👨‍👩‍👧</span><span class="grow">I'm a parent<small>See your child's learning report with a code from the teacher</small></span>›</a>
+        ${kid ? '' : '<p class="mq-land-alt"><a class="mq-link" href="#/mulai/siswa">Try it first with sample data</a></p><p class="mq-land-alt gshow" hidden><button class="mq-link" data-act="gkids">🔑 Continue learning with a parent\'s Gmail<span class="chev" aria-hidden="true">›</span></button></p>'}
+        <a class="mq-resume mq-parent" href="#/ortu"><span class="av"><img class="family-icon" src="icons/family-parent-v1.png" alt=""></span><span class="grow">I'm a parent<small>See your child's learning report with a code from the teacher</small></span>›</a>
       </section>
       <section class="mq-feat">
         <div style="--bg:#e6fffa"><span class="em">🎯</span>Questions at your level</div>
@@ -3045,7 +3046,7 @@
     const pill = (x) => { const lock = x.id > max; return `<button class="mq-gg ${x.id === g ? 'on' : ''} ${lock ? 'lock' : ''}" data-act="ggrade" data-g="${x.id}" aria-label="${gname(x.id)}${lock ? ' (locked)' : ''}"><b>${x.short || x.id}</b>${lock ? `<i>${IC.lock}</i>` : ''}</button>`; };
     const tile = (x) => {
       const b = best(x.id), st = b ? G.starsFor(x, b.score) : 0, [c, bg] = G.LOOK[x.type];
-      return `<a class="mq-gt" href="#/main/${x.id}" style="--c:${c};--bg:${bg}" aria-label="${esc(x.name)}, ${st} stars">${x.isNew && !b ? '<span class="new">New</span>' : ''}<span class="art">${G.art(x.type)}</span><b>${x.name}</b><span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span></a>`;
+      return `<a class="mq-gt" href="#/main/${x.id}" style="--c:${c};--bg:${bg}" aria-label="${esc(x.name)}, ${st} stars">${x.isNew && !b ? '<span class="new">New</span>' : ''}<span class="art">${G.art(x.type)}</span><b>${esc(x.name)}</b><small class="gt-detail">${esc(G.TYPES[x.type] || '')}</small><span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span></a>`;
     };
     let body;
     if (g > max) {
@@ -3060,7 +3061,7 @@
       <div class="mq-ghead">${kid ? '' : `<a class="mq-ico" href="#/" aria-label="Back">${IC.back}</a>`}
         <div class="mq-gsay">${MQ.svg('happy', { size: 74 })}<div class="mq-bubble"><p>Let's play!</p></div></div>
         ${kid ? `<button class="mq-gchip" data-act="tip" data-t="⭐ Stars from the best score in each game (up to 3)">${gStar(true)}${S.starsOf(kid.id)}</button>` : ''}</div>
-      <a class="ol-cta" href="#/olimpiade"><span>🏅</span><span class="grow"><b>Olympiad</b><small>Competition practice for elementary, middle, and high school</small></span>›</a>
+      <a class="ol-cta" href="#/olimpiade"><span class="ol-medal" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M12 4h7l2 12-6 4zM28 4h-7l-2 12 6 4z" fill="currentColor" opacity=".72"/><circle cx="20" cy="24" r="10" fill="none" stroke="currentColor" stroke-width="3"/><path d="m20 17 2 5 5 .4-3.8 3.2 1.2 4.9-4.4-2.8-4.4 2.8 1.2-4.9-3.8-3.2 5-.4z" fill="currentColor"/></svg></span><span class="grow"><b>Olympiad</b><small>Competition practice for elementary, middle, and high school</small></span>›</a>
       <div class="mq-ggs" role="tablist" aria-label="Grade">${GRADES.map(pill).join('')}</div>
       ${body}`, 'main');
   }
@@ -3730,9 +3731,9 @@
     const kid = gameKid(), band = jobBand();
     const list = J.MISSIONS.filter((m) => m.profession === pid).sort((a, b) => bandIdx(a.level) - bandIdx(b.level));
     app.innerHTML = mqPage(`
-      <div class="mq-ghead"><a class="mq-ico" href="#/profesi" aria-label="Back">${IC.back}</a><span class="mq-gtitle">${esc(p.name)}</span></div>
-      <section class="jhero" style="--c:${p.color}">${JV.stage(p.people, p.art, p.color)}
-        <h2>What do they do?</h2><p>${esc(p.what)}</p><h2>The math they use</h2><p>${esc(p.math)}</p></section>
+      <div class="mq-ghead"><a class="mq-ico" href="#/profesi" aria-label="Back">${IC.back}</a></div>
+      <section class="jhero" style="--c:${p.color}"><div class="jhero-art">${JV.icon(p.id, p.color)}</div><div class="jhero-copy">
+        <h1>${esc(p.name)}</h1><div class="jhero-detail"><section><h2>What do they do?</h2><p>${esc(p.what)}</p></section><section><h2>The math they use</h2><p>${esc(p.math)}</p></section></div></div></section>
       <h2 class="jsub">Missions</h2>
       <div class="jmissions">${list.map((m) => { const done = missionDone(kid, m), st = missionStars(kid, m); return `<a class="jmis ${m.level === band ? 'mine' : ''}" href="#/misi/${m.id}" style="--c:${p.color}"><span class="lv">${(J.BANDS.find((b) => b.id === m.level) || {}).name}</span><span class="grow"><b>${esc(m.title)}</b><small>${m.topics.map((t) => J.TOPICS[t]).join(' · ')}${m.audio ? ' · 🎧 read aloud' : ''}</small></span>${done ? `<span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span>` : '<span class="go">›</span>'}</a>`; }).join('')}</div>`, 'profesi');
   }
@@ -3744,7 +3745,7 @@
     app.innerHTML = mqPage(`
       <div class="mq-ghead"><button class="mq-ico" data-act="back" aria-label="Back">${IC.back}</button><span class="mq-gtitle">What jobs use this?</span></div>
       <p class="jlead">${u.icon} <b>${esc(u.name)}</b> is used in this job:</p>
-      <div class="jmissions">${list.map((m) => { const p = J.prof(m.profession); return `<a class="jmis" href="#/misi/${m.id}" style="--c:${p.color}"><span class="jpeople">${p.people}</span><span class="grow"><b>${esc(p.name)}</b><small>${esc(m.title)} · ${(J.BANDS.find((b) => b.id === m.level) || {}).name}</small></span><span class="go">›</span></a>`; }).join('')}</div>`, 'profesi');
+      <div class="jmissions">${list.map((m) => { const p = J.prof(m.profession); return `<a class="jmis" href="#/misi/${m.id}" style="--c:${p.color}"><span class="jtopicart">${JV.icon(p.id, p.color)}</span><span class="grow"><b>${esc(p.name)}</b><small>${esc(m.title)} · ${(J.BANDS.find((b) => b.id === m.level) || {}).name}</small></span><span class="go">›</span></a>`; }).join('')}</div>`, 'profesi');
   }
 
   /* Pemutar misi: satu soal per layar; salah → petunjuk dan coba lagi (setelah 3 kali, jawaban ditunjukkan) */

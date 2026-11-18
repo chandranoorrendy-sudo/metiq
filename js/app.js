@@ -3057,7 +3057,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const pill = (x) => { const lock = x.id > max; return `<button class="mq-gg ${x.id === g ? 'on' : ''} ${lock ? 'lock' : ''}" data-act="ggrade" data-g="${x.id}" aria-label="${gname(x.id)}${lock ? ' (terkunci)' : ''}"><b>${x.short || x.id}</b>${lock ? `<i>${IC.lock}</i>` : ''}</button>`; };
     const tile = (x) => {
       const b = best(x.id), st = b ? G.starsFor(x, b.score) : 0, [c, bg] = G.LOOK[x.type];
-      return `<a class="mq-gt" href="#/main/${x.id}" style="--c:${c};--bg:${bg}" aria-label="${esc(x.name)}, ${st} bintang">${x.isNew && !b ? '<span class="new">Baru</span>' : ''}<span class="art">${G.art(x.type)}</span><b>${x.name}</b><span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span></a>`;
+      return `<a class="mq-gt" href="#/main/${x.id}" style="--c:${c};--bg:${bg}" aria-label="${esc(x.name)}, ${st} bintang">${x.isNew && !b ? '<span class="new">Baru</span>' : ''}<span class="art">${G.art(x.type)}</span><b>${esc(x.name)}</b><small class="gt-detail">${esc(G.TYPES[x.type] || '')}</small><span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span></a>`;
     };
     let body;
     if (g > max) {
@@ -3073,7 +3073,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       <div class="mq-ghead">${kid ? '' : `<a class="mq-ico" href="#/" aria-label="Kembali">${IC.back}</a>`}
         <div class="mq-gsay">${MQ.svg('happy', { size: 74 })}<div class="mq-bubble"><p>Ayo main!</p></div></div>
         ${kid ? `<button class="mq-gchip" data-act="tip" data-t="⭐ Bintang dari skor terbaik tiap permainan (maksimal 3)">${gStar(true)}${S.starsOf(kid.id)}</button>` : ''}</div>
-      <a class="ol-cta" href="#/olimpiade"><span>🏅</span><span class="grow"><b>Olimpiade</b><small>Latihan soal kompetisi SD, SMP, SMA</small></span>›</a>
+      <a class="ol-cta" href="#/olimpiade"><span class="ol-medal" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M12 4h7l2 12-6 4zM28 4h-7l-2 12 6 4z" fill="currentColor" opacity=".72"/><circle cx="20" cy="24" r="10" fill="none" stroke="currentColor" stroke-width="3"/><path d="m20 17 2 5 5 .4-3.8 3.2 1.2 4.9-4.4-2.8-4.4 2.8 1.2-4.9-3.8-3.2 5-.4z" fill="currentColor"/></svg></span><span class="grow"><b>Olimpiade</b><small>Latihan soal kompetisi SD, SMP, SMA</small></span>›</a>
       <div class="mq-ggs" role="tablist" aria-label="Kelas">${GRADES.map(pill).join('')}</div>
       ${body}`, 'main');
   }
@@ -3744,9 +3744,9 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const kid = gameKid(), band = jobBand();
     const list = J.MISSIONS.filter((m) => m.profession === pid).sort((a, b) => bandIdx(a.level) - bandIdx(b.level));
     app.innerHTML = mqPage(`
-      <div class="mq-ghead"><a class="mq-ico" href="#/profesi" aria-label="Kembali">${IC.back}</a><span class="mq-gtitle">${esc(p.name)}</span></div>
-      <section class="jhero" style="--c:${p.color}">${JV.stage(p.people, p.art, p.color)}
-        <h2>Apa yang dikerjakan?</h2><p>${esc(p.what)}</p><h2>Matematika yang dipakai</h2><p>${esc(p.math)}</p></section>
+      <div class="mq-ghead"><a class="mq-ico" href="#/profesi" aria-label="Kembali">${IC.back}</a></div>
+      <section class="jhero" style="--c:${p.color}"><div class="jhero-art">${JV.icon(p.id, p.color)}</div><div class="jhero-copy">
+        <h1>${esc(p.name)}</h1><div class="jhero-detail"><section><h2>Apa yang dikerjakan?</h2><p>${esc(p.what)}</p></section><section><h2>Matematika yang dipakai</h2><p>${esc(p.math)}</p></section></div></div></section>
       <h2 class="jsub">Misi</h2>
       <div class="jmissions">${list.map((m) => { const done = missionDone(kid, m), st = missionStars(kid, m); return `<a class="jmis ${m.level === band ? 'mine' : ''}" href="#/misi/${m.id}" style="--c:${p.color}"><span class="lv">${(J.BANDS.find((b) => b.id === m.level) || {}).name}</span><span class="grow"><b>${esc(m.title)}</b><small>${m.topics.map((t) => J.TOPICS[t]).join(' · ')}${m.audio ? ' · 🎧 dibacakan' : ''}</small></span>${done ? `<span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span>` : '<span class="go">›</span>'}</a>`; }).join('')}</div>`, 'profesi');
   }
@@ -3758,7 +3758,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     app.innerHTML = mqPage(`
       <div class="mq-ghead"><button class="mq-ico" data-act="back" aria-label="Kembali">${IC.back}</button><span class="mq-gtitle">Dipakai di pekerjaan apa?</span></div>
       <p class="jlead">${u.icon} <b>${esc(u.name)}</b> dipakai dalam pekerjaan ini:</p>
-      <div class="jmissions">${list.map((m) => { const p = J.prof(m.profession); return `<a class="jmis" href="#/misi/${m.id}" style="--c:${p.color}"><span class="jpeople">${p.people}</span><span class="grow"><b>${esc(p.name)}</b><small>${esc(m.title)} · ${(J.BANDS.find((b) => b.id === m.level) || {}).name}</small></span><span class="go">›</span></a>`; }).join('')}</div>`, 'profesi');
+      <div class="jmissions">${list.map((m) => { const p = J.prof(m.profession); return `<a class="jmis" href="#/misi/${m.id}" style="--c:${p.color}"><span class="jtopicart">${JV.icon(p.id, p.color)}</span><span class="grow"><b>${esc(p.name)}</b><small>${esc(m.title)} · ${(J.BANDS.find((b) => b.id === m.level) || {}).name}</small></span><span class="go">›</span></a>`; }).join('')}</div>`, 'profesi');
   }
 
   /* Pemutar misi: satu soal per layar; salah → petunjuk dan coba lagi (setelah 3 kali, jawaban ditunjukkan) */
