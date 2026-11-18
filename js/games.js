@@ -806,6 +806,8 @@
   };
   let artUid = 0;
   const art = (type, size = 120) => {
+    const sprite = { kilat: 0, balon: 1, pasangan: 2, susun: 3, kembar: 4, garis: 5, juring: 6, jam: 7, uang: 8, batang: 9, timbang: 10, peta: 11 };
+    if (sprite[type] !== undefined) { const i = sprite[type]; return `<span class="game-sprite" style="--px:${(i % 4) * 33.333}%;--py:${Math.floor(i / 4) * 50}%;width:${size}px;height:${Math.round(size * .75)}px" aria-hidden="true"></span>`; }
     const [accent, wash] = LOOK[type] || ['#278e83', '#eaf5ef'], uid = `game-art-${type}-${++artUid}`;
     return `<svg class="gart" viewBox="0 0 120 90" width="${size}" height="${Math.round(size * 0.75)}" aria-hidden="true">
       <defs>

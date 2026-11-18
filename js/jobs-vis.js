@@ -97,6 +97,8 @@
   };
   const icon = (pid, color) => {
     const t = TOOL[pid]; if (!t) return '';
+    const positions = { 'insinyur-sipil': 0, arsitek: 1, koki: 2, petani: 3, 'pengembang-gim': 4, 'ilmuwan-data': 5, pengusaha: 6, guru: 7, programmer: 8, olahraga: 9, keluarga: 10, kesehatan: 11 };
+    if (positions[pid] !== undefined) { const i = positions[pid]; return `<span class="job-sprite" style="--px:${(i % 4) * 33.333}%;--py:${Math.floor(i / 4) * 50}%" aria-hidden="true"></span>`; }
     const c = color || '#19b796';
     return `<svg class="gart jicon" viewBox="0 0 120 90" aria-hidden="true"><circle cx="60" cy="46" r="38" fill="${light(c, 0.82)}"/><circle cx="14" cy="18" r="3.5" fill="${c}" opacity=".5"/><circle cx="108" cy="78" r="4" fill="${c}" opacity=".45"/><circle cx="106" cy="12" r="2.5" fill="${c}" opacity=".4"/>${t}</svg>`;
   };

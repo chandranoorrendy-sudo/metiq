@@ -2124,3 +2124,58 @@ input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39
   .isle-fish, .isle-tail, .isle-kelp, .isle-coral, .isle-palm-leaves, .isle-tree, .isle-cactus,
   .isle-water, .isle-ripple, .isle-bridge-deck { animation: none !important; }
 }
+
+/* Cohesive image generated illustration sprites for professions, games and avatars. */
+.job-sprite, .game-sprite, .avportrait {
+  display: block;
+  background-repeat: no-repeat;
+  background-position: var(--px) var(--py);
+}
+.job-sprite {
+  width: 100%; height: 100%; min-height: 132px;
+  background-image: url('../assets/generated/profession-icons.png');
+  background-size: 400% 300%;
+}
+.game-sprite {
+  border-radius: 22px;
+  background-image: url('../assets/generated/game-icons.png');
+  background-size: 400% 300%;
+  filter: drop-shadow(0 4px 4px rgba(21, 54, 62, .14));
+}
+.avportrait {
+  width: 100%; height: 100%;
+  background-image: url('../assets/generated/avatar-portraits.png');
+  background-size: 400% 300%;
+  background-color: #effbf7;
+  border-radius: 50%;
+}
+.alb-th.lock > svg { filter: grayscale(1) blur(3px); opacity: .45; }
+.mq-btn {
+  min-height: 50px;
+  border: 1px solid rgba(255,255,255,.28);
+  border-radius: 15px;
+  background: linear-gradient(145deg, #2f7775, #205a60);
+  box-shadow: 0 3px 0 #17484f, 0 8px 18px rgba(27, 87, 87, .12);
+  font-size: .98rem;
+  font-weight: 850;
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+.mq-btn.ghost { background: linear-gradient(180deg, #fff, #f6fbf8); }
+.mq-btn.warn { background: linear-gradient(145deg, #ffdb82, #f3c45e); }
+.mq-btn:focus-visible, .mq-gt:focus-visible, .jtile:focus-visible, .mq-gg:focus-visible, .avopt:focus-visible {
+  outline: 3px solid #21b99b; outline-offset: 3px;
+}
+.mq-card { border-color: #dcebe6; background: linear-gradient(155deg, #fff, #f8fcfa); box-shadow: 0 5px 16px rgba(23, 66, 65, .045); }
+.mq-sec { scroll-margin-top: 80px; }
+.mq-sec > h2, .mq-sec > h3 { letter-spacing: -.015em; }
+.avportrait { width: 100%; height: 100%; min-width: 38px; min-height: 38px; }
+.job-sprite { min-height: 0; width: 88%; height: auto; aspect-ratio: 4 / 3; position: relative; z-index: 1; transition: transform .22s ease; }
+.jtile .art .job-sprite { width: 78%; max-width: 168px; }
+.jhero-art .job-sprite { width: 84%; max-width: 172px; }
+.jtopicart .job-sprite { width: 92%; height: 92%; aspect-ratio: 1; background-size: 400% 300%; }
+.game-sprite { width: 88% !important; height: auto !important; aspect-ratio: 4 / 3; position: relative; z-index: 1; transition: transform .22s ease; }
+.mq-gart .game-sprite { width: 84% !important; animation: mq-bob 3.2s ease-in-out infinite; }
+.mq-gt:hover .game-sprite, .jtile:hover .job-sprite { transform: translateY(-2px) scale(1.035); }
+.alb-th .alb-art image { image-rendering: auto; }
+.alb-th .lk { background: #254f58; box-shadow: 0 3px 10px rgba(14, 46, 50, .24); }
+@media (prefers-reduced-motion: reduce) { .mq-btn, .game-sprite, .job-sprite { transition: none !important; animation: none !important; } }
