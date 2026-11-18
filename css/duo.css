@@ -1882,8 +1882,10 @@ input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39
 .mq-land .mq-hero > p { color: #49645d; }
 .mq-land .mq-hero .mq-cta .mq-btn.pulse {
   justify-content: center;
+  background: var(--mq-l);
+  color: var(--mq-ink);
   border-radius: 18px;
-  box-shadow: 0 6px 0 #0d947b, 0 14px 25px rgba(25,183,150,.22);
+  box-shadow: 0 6px 0 var(--mq-d), 0 14px 25px rgba(25,183,150,.22);
 }
 .mq-land .mq-hero .mq-cta .mq-btn.ghost { justify-content: center; border-radius: 16px; }
 .mq-land .mq-hero .mq-install { border-radius: 18px; background: rgba(255,255,255,.84); }
@@ -1892,6 +1894,8 @@ input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39
 .mq-land .mq-feat div:nth-child(2) { border-top: 4px solid #f4b837; }
 .mq-land .mq-feat div:nth-child(3) { border-top: 4px solid #e878a1; }
 .mq-land .mq-feat .em { border-radius: 18px; }
+.mq-land .mq-parent .av { display: grid; place-items: center; overflow: hidden; padding: 0; }
+.mq-land .mq-parent .family-icon { display: block; width: 100%; height: 100%; object-fit: contain; }
 .mq-land .mq-testi { padding: 28px 0 8px; }
 .mq-land .mq-testi h2 { margin: 0 0 14px; text-align: center; font-size: clamp(1.3rem,2.5vw,1.7rem); }
 .mq-page .isle-hi { border-width: 1px; box-shadow: 0 12px 30px rgba(40,57,54,.09); }
