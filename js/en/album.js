@@ -88,6 +88,10 @@
     { id: 'komodo', order: [0, 1, 2, 3, 5, 4, 6, 7, 8], name: 'Komodo', place: 'East Nusa Tenggara', fact: 'The largest lizard in the world. It lives in Komodo National Park and is found only in Indonesia.' },
     { id: 'ampera', order: [0, 1, 2, 6, 8, 7, 3, 5, 4], name: 'Ampera Bridge', place: 'Palembang, South Sumatra', fact: 'A red bridge over the Musi River, opened in 1965.' },
   ];
-  ALBUM.forEach((a) => { a.svg = `<svg viewBox="0 0 300 300" class="alb-art" role="img" aria-label="${a.name}">${ART[a.id]}</svg>`; });
+  const landmarkOrder = ['monas', 'borobudur', 'gadang', 'tongkonan', 'jamgadang', 'rajaampat', 'prambanan', 'bromo', 'toba', 'honai', 'komodo', 'ampera'];
+  ALBUM.forEach((a) => {
+    const i = landmarkOrder.indexOf(a.id), x = (i % 3) * 362, y = Math.floor(i / 3) * 362;
+    a.svg = i >= 0 ? `<svg viewBox="0 0 300 300" class="alb-art" role="img" aria-label="${a.name}"><svg x="0" y="0" width="300" height="300" viewBox="${x} ${y} 362 362" preserveAspectRatio="xMidYMid slice"><image href="assets/generated/album-landmarks.png" width="1086" height="1448"/></svg></svg>` : `<svg viewBox="0 0 300 300" class="alb-art" role="img" aria-label="${a.name}">${ART[a.id]}</svg>`;
+  });
   window.METIQ_ALBUM = ALBUM;
 })();

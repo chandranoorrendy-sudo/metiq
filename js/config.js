@@ -5,7 +5,7 @@ window.METIQ_CONFIG = {
   supabaseKey: 'sb_publishable_Wp1oxytM0fWDtbSWoh06Pg_3-GNL6Pu',
   // Client ID OAuth Google (bukan rahasia) untuk tombol "Masuk dengan Google" orang tua (SQL 027 dan 028).
   googleClientId: '174789841971-095c49bv0rt2jl3k50rs3ds45a8gdui4.apps.googleusercontent.com',
-  // Bintang dihitung di server (butuh supabase/014_bintang_server.sql).
-  // Nyalakan hanya setelah migrasi itu dijalankan di Supabase.
-  starsServer: false,
+  // Bintang dihitung di server (butuh supabase/014_bintang_server.sql dan 034).
+  // Angka bintang dari perangkat tidak lagi diterima server, jadi ini harus menyala.
+  starsServer: true,
 };

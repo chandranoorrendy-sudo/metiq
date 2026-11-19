@@ -5,11 +5,13 @@
  *   Versi lama dari berkas yang sama dihapus agar penyimpanan tidak membengkak.
  * - Permintaan ke server lain (Supabase, Google) dan selain GET tidak pernah disimpan.
  */
-const CACHE = 'metiq-v1';
-const CORE = ['./', 'index.html', 'offline.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon.svg'];
+const RELEASE = new URL(self.location.href).searchParams.get('v') || '0';
+const CACHE = 'metiq-' + RELEASE;
+const CORE = ['./', 'index.html', 'offline.html', 'manifest.webmanifest', 'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon.svg']
+  .map((url) => new Request(url + '?v=' + RELEASE));
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE.map((u) => new Request(u, { cache: 'reload' })))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(CORE.map((req) => new Request(req, { cache: 'reload' })))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {

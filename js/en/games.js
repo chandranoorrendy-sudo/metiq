@@ -1257,11 +1257,12 @@
       };
       const render = () => {
         const ghost = cur ? grid[cur.c].length : -1;
-        el.querySelector('#gtower').innerHTML = grid.map((col, c) => `<div class="gcol" data-c="${c}">${[...Array(ROWS)].map((_, r) => {
+        el.querySelector('#gtower').innerHTML = grid.map((col, c) => `<div class="gcol ${cur && cur.c === c ? 'sel' : ''}" data-c="${c}">${[...Array(ROWS)].map((_, r) => {
           const v = col[r], fall = cur && cur.c === c && cur.r === r;
           if (fall) return `<i class="gblk fall" style="background:${color(cur.v)}">${g.show(cur.v)}</i>`;
           if (v !== undefined) return `<i class="gblk ${mark.has(c + ':' + r) ? 'merge' : ''}" style="background:${color(v)}">${g.show(v)}</i>`;
-          return `<i class="gslot ${r === LIMIT ? 'glimit' : ''} ${cur && cur.c === c && r === ghost && ghost < cur.r ? 'gghost' : ''}"></i>`;
+          const trail = cur && cur.c === c && r >= ghost && r < cur.r ? 'gtrail' : '';
+          return `<i class="gslot ${r === LIMIT ? 'glimit' : ''} ${trail} ${cur && cur.c === c && r === ghost && ghost < cur.r ? 'gghost' : ''}"></i>`;
         }).join('')}</div>`).join('');
         const nx = el.querySelector('#gnext'); nx.textContent = g.show(next); nx.style.background = color(next);
         el.querySelector('#gaux').textContent = g.show(top);

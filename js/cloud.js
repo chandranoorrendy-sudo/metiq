@@ -66,6 +66,8 @@
         for (const [sid, box] of Object.entries(outbox)) {
           const batch = box.answers.slice(0, 300);
           const prog = JSON.parse(JSON.stringify(box.progress));
+          // Mode server: bintang x:/u:/g: tidak dikirim dari perangkat; server menghitungnya dari klaim.
+          if (SRV) Object.keys(prog).forEach((k) => { if (/^(x:|u:|g:)/.test(k)) delete prog[k]; });
           const claims = (box.claims || []).slice(0, 50);
           if (!batch.length && !Object.keys(prog).length && !claims.length) { delete outbox[sid]; continue; }
           try {
@@ -77,6 +79,8 @@
               window.Store.applySync(sid, out.progress);
               window.dispatchEvent(new CustomEvent('metiq:sync', { detail: { sid } }));
             }
+            // Buang angka bintang yang tadi tidak dikirim (server yang berwenang).
+            if (SRV) Object.keys(box.progress).forEach((k) => { if (/^(x:|u:|g:)/.test(k)) delete box.progress[k]; });
           } catch (e) {
             // siswa sudah dihapus guru atau kode kelas berubah: data tidak bisa dikirim lagi
             if (e.status === 400 && /tidak ditemukan/.test(e.message)) { delete outbox[sid]; continue; }

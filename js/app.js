@@ -121,7 +121,7 @@
   // Tombol emas di strip mode coba: siswa langsung mulai sungguhan (tanpa persetujuan), guru mengajukan akun guru
   const realBtn = () => { const r = session.get().role; return r === 'siswa' ? '<button class="mq-real" data-act="realstart" aria-label="Mulai belajar sungguhan"><span class="sp">✨</span>Mulai sungguhan</button>' : r === 'guru' ? '<button class="mq-real" data-act="realsignup" data-k="guru" aria-label="Daftar guru gratis"><span class="sp">✨</span>Daftar guru gratis</button>' : ''; };
   const shell = (inner, opts = {}) => `
-    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=69" alt="">Metiq<span class="alpha">Beta</span></a>${opts.right || ''}</header>
+    <header class="top"><a href="#/" class="logo"><img class="logo-i" src="icons/icon.svg?v=${window.METIQ_ASSET_VERSION}" alt="">Metiq<span class="alpha">Beta</span></a>${opts.right || ''}</header>
     <main class="wrap ${opts.cls || ''}">${session.get().demo ? `<div class="demobar">🧪 <span class="grow"><b>Mode coba</b>${tryInfo() && tryInfo().name ? ` · ${esc(tryInfo().name)}` : ''} · data contoh di perangkat ini</span>${realBtn()}<button class="link" data-act="logout">Keluar</button></div>` : ''}${inner}</main>`;
 
   /* ---------- Analitik (dipakai guru dan orang tua) ---------- */
@@ -212,7 +212,7 @@
     if (ses.role === 'guru' && (cloudOn() ? ses.token : S.teacher(ses.id))) return go('#/guru/ringkasan');
     const kid = ses.role === 'siswa' && S.student(ses.id);
     app.innerHTML = `<div class="mq-land">
-      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=69" alt="">Metiq<span class="alpha">Beta</span></a><span class="mq-lright"><a class="mq-tlink" href="#/guru">Saya guru<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 1 9l11 6 9-4.9V17h2V9L12 3zm-6 9.7V16c0 1.7 2.7 3.5 6 3.5s6-1.8 6-3.5v-3.3l-6 3.3-6-3.3z"/></svg></a><button class="mq-lang" data-act="lang" aria-label="Ganti bahasa">${window.METIQ_LANG === 'en' ? 'EN' : 'ID'}<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 9h12l-6 7z"/></svg></button></span></header>
+      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=${window.METIQ_ASSET_VERSION}" alt="">Metiq<span class="alpha">Beta</span></a><span class="mq-lright"><a class="mq-tlink" href="#/guru">Saya guru<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 1 9l11 6 9-4.9V17h2V9L12 3zm-6 9.7V16c0 1.7 2.7 3.5 6 3.5s6-1.8 6-3.5v-3.3l-6 3.3-6-3.3z"/></svg></a><button class="mq-lang" data-act="lang" aria-label="Ganti bahasa">${window.METIQ_LANG === 'en' ? 'EN' : 'ID'}<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 9h12l-6 7z"/></svg></button></span></header>
       <section class="mq-hero">
         <div class="mq-stage" aria-label="Meti dan teman-temannya"><span class="mq-sym a">+</span><span class="mq-sym b">×</span><span class="mq-sym c">=</span><span class="mq-sym d">7</span>
           <div class="st st-meti">${MQ.svg('hello', { size: 190 })}</div>
@@ -269,7 +269,7 @@
       ['Ketuk ikon menu <b>☰</b> (tiga garis/titik) di <b>pojok kanan bawah</b> browser.', '<div class="ig-bar"><span>‹</span><span>›</span><span>⌂</span><span>▢</span><span class="on">☰</span></div>'],
       ['Pilih <b>Add page to</b> (Tambahkan halaman ke).', menu(['History', 'Downloads', 'Saved pages', '⊕ Add page to', 'Settings'], '⊕ Add page to')],
       ['Pilih <b>Home screen</b> (Layar utama).', menu(['Bookmarks', 'Quick access', 'Home screen', 'Install as web app'], 'Home screen')],
-      ['Ketuk <b>Add</b> (Tambahkan). Ikon Metiq muncul di layar HP. Ketuk ikon itu untuk membuka Metiq kapan saja.', '<div class="ig-add"><img src="icons/icon.svg?v=69" alt=""><small>Metiq</small><div><span>Cancel</span><span class="on">Add</span></div></div>'],
+      ['Ketuk <b>Add</b> (Tambahkan). Ikon Metiq muncul di layar HP. Ketuk ikon itu untuk membuka Metiq kapan saja.', '<div class="ig-add"><img src="icons/icon.svg?v=' + window.METIQ_ASSET_VERSION + '" alt=""><small>Metiq</small><div><span>Cancel</span><span class="on">Add</span></div></div>'],
     ];
     return `<details class="mq-install"><summary><span class="em ops" aria-hidden="true"><i>+</i><i>−</i><i>×</i><i>=</i></span><span class="grow"><b>Pasang Metiq di layar HP</b><small>Buka Metiq dengan satu ketukan, seperti aplikasi</small></span><span class="chev">›</span></summary>
       <p class="ig-note">Langkah untuk <b>Samsung Internet</b>:</p>
@@ -4614,8 +4614,18 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       if (!cloudOn()) return finish();
       const k = S.student(sid), c = k && S.cls(k.classId), code = session.get().code || (c && c.code);
       const btn = f.querySelector('button'); if (btn) btn.disabled = true;
-      return Cloud.rpc('submit_feedback', { p_code: code, p_student_id: sid, p_assignment_id: a, p_by: by, p_rating: rating, p_comment: comment })
-        .then(finish).catch((err) => { if (btn) btn.disabled = false; toast(err.status ? esc(err.message) : 'Tidak bisa terhubung ke server'); });
+      const ses = session.get(), isParent = by === 'ortu';
+      // Ulasan orang tua lewat fungsi terpisah yang memeriksa sesi/kode orang tua, bukan sekadar p_by.
+      const call = isParent
+        ? Cloud.rpc('submit_feedback_parent', { p_ptoken: ses.ptoken || '', p_pcode: ses.pcode || '', p_code: code, p_student_id: sid, p_assignment_id: a, p_rating: rating, p_comment: comment })
+        : Cloud.rpc('submit_feedback', { p_code: code, p_student_id: sid, p_assignment_id: a, p_by: by, p_rating: rating, p_comment: comment });
+      return call.then(finish).catch((err) => {
+        if (btn) btn.disabled = false;
+        if (isParent && (err.status === 404 || /could not find the function|schema cache/i.test(err.message || ''))) {
+          return toast('Ulasan orang tua belum aktif di server. Jalankan supabase/034_perbaikan_sinkron.sql.');
+        }
+        toast(err.status ? esc(err.message) : 'Tidak bisa terhubung ke server');
+      });
     }
     if (kind === 'nisn') {
       const sid = f.dataset.s, n = String(fd.get('nisn') || '').replace(/\D/g, '');

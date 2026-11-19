@@ -1,8 +1,9 @@
 // Pemuat aplikasi. Bahasa dipilih sebelum aplikasi dimuat: ID memakai js/, EN memakai salinan js/en/ hasil tools/i18n/build.js.
 // Sengaja berupa berkas terpisah (bukan skrip di index.html) supaya Content-Security-Policy bisa melarang semua skrip inline.
-// Nomor versi (?v=) diambil dari alamat berkas ini di index.html, jadi cukup ganti nomornya di index.html.
+// Satu nomor versi (?v=) di index.html mengikat berkas aplikasi, gaya, dan ikon ke rilis yang sama.
 (function () {
   var me = document.currentScript, v = ((me && me.src.match(/[?&]v=(\d+)/)) || [])[1] || '0';
+  window.METIQ_ASSET_VERSION = v;
   var q = /[?&]lang=(en|id)\b/.exec(location.search), L = q && q[1];
   try { if (L) localStorage.setItem('metiq_lang', L); else L = localStorage.getItem('metiq_lang'); } catch (e) {}
   var en = L === 'en'; window.METIQ_LANG = en ? 'en' : 'id';
@@ -17,6 +18,6 @@
   });
   // Mode offline (sw.js): hanya di https atau localhost
   if ('serviceWorker' in navigator && (location.protocol === 'https:' || location.hostname === 'localhost')) {
-    addEventListener('load', function () { navigator.serviceWorker.register('sw.js').catch(function () {}); });
+    addEventListener('load', function () { navigator.serviceWorker.register('sw.js?v=' + v).catch(function () {}); });
   }
 })();

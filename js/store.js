@@ -27,6 +27,16 @@
     return Math.max(0, s - (s < 50 ? 4 : s < 80 ? 7 : 10));
   }
 
+  // Rekaman progres yang menang ditentukan berurutan: att, skor, ok, ms, last.
+  // Perbandingan "att >= att" lama membuat dua perangkat dengan jumlah percobaan sama saling menimpa.
+  const newerProgress = (a, b) => {
+    if (!b) return true;
+    const A = [+a.att || 0, +a.score || 0, +a.ok || 0, +a.ms || 0, +a.last || 0];
+    const B = [+b.att || 0, +b.score || 0, +b.ok || 0, +b.ms || 0, +b.last || 0];
+    for (let i = 0; i < A.length; i++) if (A[i] !== B[i]) return A[i] > B[i];
+    return false;
+  };
+
   const Store = {
     AVATARS,
     nextScore,
@@ -44,7 +54,12 @@
         pending.answers.forEach((a) => { if (!have.has(a.id)) db.answers.push(a); });
         if (sid) {
           const p = db.progress[sid] = db.progress[sid] || {};
-          Object.entries(pending.progress).forEach(([k, v]) => { if (!p[k] || v.att >= p[k].att) p[k] = v; });
+          const srvStars = !!(window.METIQ_CONFIG || {}).starsServer;
+          Object.entries(pending.progress).forEach(([k, v]) => {
+            // Bintang (x:/u:/g:) hanya dari server saat mode server aktif; jangan menimpa hasil server.
+            if (srvStars && /^(x:|u:|g:)/.test(k)) return;
+            if (newerProgress(v, p[k])) p[k] = v;
+          });
         }
       }
       save();

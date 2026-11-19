@@ -46,7 +46,7 @@
   // Bentuk linear ax + b (atau ax − b) sebagai teks
   const lin = (a, b, v = 'x') => poly([a, b], v);
   // Penjelasan bertahap
-  // Langkah beranimasi (ada coretan atau latihan berpola): muncul satu per satu, garis merah tergambar sesudah langkahnya tampil
+  // Semua langkah solusi muncul berurutan; coretan dan latihan berpola mendapat jeda tambahan.
   const tahap = (kunci, steps, motion) => {
     const head = kunci ? `<div class="kunci"><b>Key idea</b><p>${kunci}</p></div>` : '';
     let at = 0.18;
@@ -171,12 +171,12 @@
     const cx = 100, cy = 70, R = 38;
     let s = `<circle cx="${cx}" cy="${cy}" r="${R}" fill="#fff" stroke="${CL.ink}" stroke-width="2"/>`;
     s += ln(cx, cy, cx + 27, cy - 27, { color: CL.orange, w: 2.5 }) + `<circle cx="${cx}" cy="${cy}" r="3.5" fill="${CL.brand}"/>`;
-    s += txt(cx, 18, `Center C(${N(h)}, ${N(k)})`, { size: 11, color: CL.ink });
+    s += txt(cx, 18, `Pusat C(${N(h)}, ${N(k)})`, { size: 11, color: CL.ink });
     s += txt(cx + 24, cy - 8, `r = ${N(r)}`, { size: 9, color: CL.orange }) + txt(cx, 132, `r² = ${N(r * r)}`, { size: 10, color: CL.brand });
     return sv(200, 146, s);
   };
   VH.remainder = (a) => {
-    const divisor = lin(1, -a), cards = [['Divisor', divisor], ['Set to 0', `${divisor} = 0`], ['Solve for x', `x = ${N(a)}`], ['Remainder', `f(${N(a)})`]];
+    const divisor = lin(1, -a), cards = [['Pembagi', divisor], ['Buat = 0', `${divisor} = 0`], ['Temukan x', `x = ${N(a)}`], ['Nilai sisa', `f(${N(a)})`]];
     let s = '';
     cards.forEach(([label, value], i) => {
       const x = 5 + i * 78;
