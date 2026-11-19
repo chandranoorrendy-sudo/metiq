@@ -49,6 +49,7 @@ select version, name, applied_at from public.schema_migrations order by version;
 | 033 | `033_ujian_fokus.sql` | Mode fokus ujian |
 | 034 | `034_perbaikan_sinkron.sql` | Urutan progres: trigger `progress_guard` |
 | 035 | `035_ulasan_orang_tua.sql` | Ulasan orang tua dengan sesi/kode orang tua |
+| 036 | `036_satu_student_sync.sql` | Hapus `student_sync` 4 argumen (hindari PGRST203) |
 
 ## Catatan 014a–014c, 034, dan 035
 
@@ -60,3 +61,5 @@ select version, name, applied_at from public.schema_migrations order by version;
 - `js/config.js` memakai `starsServer: true`. Bila 014c belum dijalankan, aplikasi otomatis
   kembali ke fungsi lama sehingga sinkronisasi tetap berjalan; muat ulang halaman setelah migrasi.
 - Semua berkas di bawah 10 KB supaya bisa ditempel di SQL Editor Supabase.
+- 036 menghapus `student_sync` 4 argumen supaya PostgREST tidak bingung memilih
+  (PGRST203). Aplikasi lama tetap dilayani versi 6 argumen dengan nilai bawaan.
