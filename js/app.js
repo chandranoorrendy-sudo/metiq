@@ -495,7 +495,7 @@
       ${unsent ? `<div class="mq-demo">📶 ${unsent} jawaban menunggu internet untuk dikirim ke guru.</div>` : ''}
       ${TASKS_ON && todo ? `<a class="mq-task" href="#/tugas"><span class="em">📌</span><b>${todo} tugas dari gurumu</b><span>›</span></a>` : ''}
       ${allDone ? `<div class="mq-all">${MQ.svg('cheer', { size: 120 })}<div>Semua bab ${gname(g)} sudah tuntas! 🎉</div><button class="mq-btn" style="margin-top:12px" data-act="gsheet">Pilih kelas lain</button></div>` : ''}
-      ${isleMapHTML(st, isles, fresh)}
+      ${isleMapHTML(st, isles, fresh, { biomes: (() => { const stats = Object.fromEntries(EXPEDITION_ORDER.map((w) => [w, { done: 0, total: 0 }])); m.units.forEach((u) => { const p = stats[mapWorldOf(u)]; p.total++; if (u.skills.every((s) => ['done', 'gold'].includes(m.st(s.id).state))) p.done++; }); return stats; })() })}
       ${gradeSheet}`, 'belajar');
     // Pulau "sekarang" langsung terlihat di layar pertama
     setTimeout(() => { const c = document.querySelector('.isle.cur') || document.querySelector('.isle.done:last-of-type'); if (c) c.scrollIntoView({ block: 'center' }); }, 60);
@@ -529,16 +529,37 @@
   };
   const worldOf = (u) => unitBuddy(u) || 'meti';
   const biomeOf = (who, v) => who === 'meti' ? 'sea' : who === 'tito' ? 'desert' : who === 'nahla' ? ['mountain', 'savanna', 'mountain', 'forest'][v % 4] : 'sea';
+  const EXPEDITION_ORDER = ['meti', 'tito', 'nahla', 'lumo'];
+  const mapWorldOf = (u) => {
+    const course = UNITS.filter((x) => x.grade === u.grade), index = course.indexOf(u);
+    return EXPEDITION_ORDER[Math.min(3, Math.max(0, Math.floor(index * 4 / Math.max(1, course.length))))];
+  };
   const ISLE_TREE = (x, y, s, c) => `<g class="isle-tree"><path d="M${x} ${y - 26 * s}l${11 * s} ${22 * s}h${-22 * s}z" fill="${c}"/><path d="M${x} ${y - 16 * s}l${9 * s} ${18 * s}h${-18 * s}z" fill="${c}" opacity=".85"/><rect x="${x - 2 * s}" y="${y - 4 * s}" width="${4 * s}" height="${6 * s}" fill="#8a5a3c"/></g>`;
   const PALM = (x, y, s) => `<g class="isle-palm"><path d="M${x} ${y}q${4 * s} ${-22 * s} ${-2 * s} ${-44 * s}" stroke="#9a6a3f" stroke-width="${5 * s}" fill="none" stroke-linecap="round"/><g class="isle-palm-leaves">${[[-26, -8], [24, -10], [-14, -22], [16, -24], [2, -30]].map(([dx, r]) => `<ellipse cx="${x - 2 * s + dx * s * 0.5}" cy="${y - 46 * s}" rx="${15 * s}" ry="${5 * s}" fill="#2fa66a" transform="rotate(${r + (dx > 0 ? 20 : -20)} ${x - 2 * s} ${y - 46 * s})"/>`).join('')}</g><circle cx="${x - 2 * s}" cy="${y - 43 * s}" r="${3 * s}" fill="#8a5a3c"/></g>`;
   // Small fish use a shared, shaded silhouette; body and tail animate separately.
   const FISH = (x, y, c, f) => `<g transform="translate(${x} ${y}) scale(${f ? -1 : 1} 1)"><defs><linearGradient id="fish-${x}-${y}" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#fff" stop-opacity=".7"/><stop offset=".42" stop-color="${c}"/><stop offset="1" stop-color="${c}" stop-opacity=".78"/></linearGradient></defs><g class="isle-fish" style="animation-delay:-${((x + y) % 5) * 0.7}s"><path class="isle-tail" d="M8 0l10-7v14z" fill="${c}"/><ellipse cx="-1" cy="0" rx="11" ry="7" fill="url(#fish-${x}-${y})"/><path d="M-2-5q3-7 8-2l-2 5z" fill="${c}" opacity=".78"/><path d="M-8-4q-2 4 0 8" stroke="#164c60" stroke-opacity=".3" stroke-width="1.2" fill="none"/><path d="M-5 4q4 2 8 .5" stroke="#fff" stroke-opacity=".56" stroke-width="1.25" fill="none"/><circle cx="-6" cy="-1.5" r="1.8" fill="#153d49"/><circle cx="-6.5" cy="-2.1" r=".7" fill="#fff"/></g></g>`;
   const BUB = (x, y, r) => `<circle class="isle-bub" cx="${x}" cy="${y}" r="${r}" style="animation-delay:-${(x + y) % 5}s" fill="none" stroke="#fff" stroke-opacity=".75" stroke-width="1.6"/>`;
   const reefScene = () => `<g class="isle-reef"><ellipse cx="120" cy="112" rx="92" ry="15" fill="#328f90" opacity=".32"/><path class="isle-kelp" d="M34 112q-10-18 0-37t0-30M52 113q9-17 0-35t2-28M204 112q10-16 0-33t2-27" fill="none" stroke="#36ad8b" stroke-width="5" stroke-linecap="round"/><g class="isle-coral"><path d="M66 112V82M66 94L54 78M66 90l12-14M54 78v-8M78 76v-8" stroke="#ee668b" stroke-width="8" stroke-linecap="round" fill="none"/><path d="M97 112V88m0 11-10-10m10 4 9-11m29 30V79m0 17 10-12m-10 5-8-12" stroke="#ff9956" stroke-width="7" stroke-linecap="round" fill="none"/><path d="M155 112a20 20 0 0 1 40 0z" fill="#8c67e8"/><path d="M175 112l-13-17m13 17V91m0 21 13-17" stroke="#c8b7ff" stroke-width="2.5"/><circle cx="91" cy="108" r="6" fill="#ffd16c"/><circle cx="207" cy="104" r="7" fill="#ffb86b"/></g><path d="M30 117q24-8 48 0m117-2q16-7 32 0" fill="none" stroke="#d4fff2" stroke-width="2" opacity=".65"/></g>${FISH(184,56,'#ffad33')}${FISH(105,44,'#4d96ff',true)}${FISH(66,66,'#f36d91')}`;
+  const ISLAND_SPRITES = {
+    meti: { src: 'assets/generated/sea-islands.png', width: 1261, height: 1247 },
+    tito: { src: 'assets/generated/desert-islands.png', width: 1261, height: 1247 },
+    nahla: { src: 'assets/generated/nahla-islands.png', width: 1312, height: 1199 },
+    lumo: { src: 'assets/generated/lumo-islands.png', width: 1774, height: 887 },
+  };
+  function generatedIsland(who, index) {
+    if (who === 'meti' && index === 0) return '<image class="reef-island-render" href="assets/generated/reef-island-cutout.png" x="0" y="-4" width="240" height="160" preserveAspectRatio="none"/>' + FISH(42, 58, '#4d96ff', true) + FISH(196, 58, '#ffad33') + BUB(30, 42, 3) + BUB(212, 44, 4);
+    const sheet = ISLAND_SPRITES[who]; if (!sheet) return '';
+    const cellW = sheet.width / 2, cellH = sheet.height / 2, sceneIndex = who === 'meti' ? index - 1 : index;
+    if (sceneIndex < 0 || sceneIndex > 3) return '';
+    const x = (sceneIndex % 2) * cellW, y = Math.floor(sceneIndex / 2) * cellH;
+    return `<svg x="0" y="0" width="240" height="150" viewBox="${x} ${y} ${cellW} ${cellH}" preserveAspectRatio="xMidYMid slice"><image href="${sheet.src}" width="${sheet.width}" height="${sheet.height}"/></svg>`;
+  }
   // Simbol bab (mis. +, ×, ½) dipakai sebagai lencana kecil di label tempat, bukan mengapung di laut
   const SYMB_OF = (u) => (u && CH_LOGO.find((x) => x[0].test(u.name))) || null;
   function placeSVG(who, v, ghost, u) {
     v %= 4;
+    const generated = generatedIsland(who, v);
+    if (generated) return `<svg class="isle-svg" viewBox="0 0 240 150" aria-hidden="true">${generated}</svg>`;
     let g = '';
     if (who === 'meti') {
       const bed = '<defs><linearGradient id="isle-bed-sea" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#b7ecc3"/><stop offset=".45" stop-color="#65cba9"/><stop offset="1" stop-color="#3e9b91"/></linearGradient></defs><path class="isle-bed" d="M7 117q12-18 43-17 21-10 47-3 28-10 55 1 48-9 81 15 5 18-13 24-93 17-190 1-29-4-23-21z" fill="url(#isle-bed-sea)"/><path d="M17 115q27-13 50-7m73-7q38-8 76 10" stroke="#ecffd7" stroke-width="3" stroke-linecap="round" fill="none" opacity=".8"/><path d="M31 128q38 8 73 3m22 1q42 6 74-3" stroke="#368d83" stroke-width="2.5" stroke-linecap="round" fill="none" opacity=".42"/><ellipse cx="55" cy="120" rx="10" ry="3" fill="#fff0bf" opacity=".7"/><ellipse cx="194" cy="120" rx="8" ry="3" fill="#fff0bf" opacity=".7"/>';
@@ -614,35 +635,48 @@
   };
   // Campuran dua warna hex, untuk perpindahan latar yang halus antardunia
   const mixHex = (a, b, t) => '#' + [1, 3, 5].map((i) => Math.round(parseInt(a.substr(i, 2), 16) * (1 - t) + parseInt(b.substr(i, 2), 16) * t).toString(16).padStart(2, '0')).join('');
-  function isleMapHTML(st, isles, fresh) {
+  function isleMapHTML(st, isles, fresh, route = {}) {
     if (!isles.length) return '';
-    const seen = {}, rows = isles.map((x) => { const who = worldOf(x.u), k = seen[who] = (seen[who] || 0) + 1; return { ...x, who, v: k - 1 }; });
-    const atlas = rows.find((x) => x.state === 'cur') || rows.find((x) => x.state === 'next') || rows[0];
-    const atlasWorld = WORLDS[atlas.who];
-    const atlasHead = `<header class="atlas-head"><span class="atlas-compass" aria-hidden="true"><b>↑</b><small>N</small></span><span class="atlas-copy"><small>PETA PETUALANGAN</small><b>${atlasWorld.icon} ${atlasWorld.name}</b><span>Ketuk pulau untuk melanjutkan perjalanan</span></span><span class="atlas-stamp" aria-hidden="true">METIQ<br><b>FIELD<br>ATLAS</b></span></header>`;
+    const seen = {}, rows = isles.map((x) => { const who = mapWorldOf(x.u), k = seen[who] = (seen[who] || 0) + 1; return { ...x, who, v: k - 1 }; });
+    const atlasHead = `<header class="atlas-head"><span class="atlas-compass" aria-hidden="true"><b>⌖</b><small>GO</small></span><span class="atlas-copy"><small>EKSPEDISI MATEMATIKA</small><b>Jelajahi bioma, satu checkpoint tiap langkah</b><span>Ikuti rute sampai peti harta karun di ujung peta.</span></span><span class="atlas-stamp" aria-hidden="true">METIQ<br><b>FIELD<br>ATLAS</b></span></header>`;
     const bgOf = (r) => { const c = WORLDS[r.who].bg; return r.state === 'fog' ? mixHex(c, '#e9edf0', 0.9) : r.state === 'next' ? mixHex(c, '#e6ebee', 0.75) : c; }; // belum terbuka: abu-abu berkabut
-    let out = '', prevWho = null;
+    const biomeChest = (who) => {
+      const stats = route.biomes && route.biomes[who] || { done: 0, total: 0 }, complete = stats.total > 0 && stats.done >= stats.total;
+      const rewards = { meti: ['Mutiara Laut', 'pearl'], tito: ['Ruby Gurun', 'ruby'], nahla: ['Zamrud Hutan', 'emerald'], lumo: ['Berlian Kepulauan', 'diamond'] };
+      const [gemName, gem] = rewards[who];
+      const jewel = gem === 'pearl'
+        ? '<circle cx="20" cy="20" r="13" fill="url(#gem-pearl)" stroke="#d4e8ee" stroke-width="1.5"/><ellipse cx="15" cy="14" rx="4" ry="2.6" fill="#fff" opacity=".82"/>'
+        : `<path d="M20 3 34 13 28 33H12L6 13z" fill="url(#gem-${gem})" stroke="rgba(255,255,255,.9)" stroke-width="1.4"/><path d="m6 13 14 4 14-4M12 33l8-16 8 16M20 3v14" fill="none" stroke="rgba(255,255,255,.72)" stroke-width="1.2"/>`;
+      const gemMark = `<span class="atlas-gem ${gem}" aria-hidden="true"><svg viewBox="0 0 40 40"><defs><linearGradient id="gem-${gem}" x1="0" y1="0" x2="1" y2="1"><stop stop-color="${gem === 'ruby' ? '#ff91aa' : gem === 'emerald' ? '#94f3ba' : '#a4eeff'}"/><stop offset="1" stop-color="${gem === 'ruby' ? '#cb174c' : gem === 'emerald' ? '#087c55' : '#3988e6'}"/></linearGradient><radialGradient id="gem-pearl"><stop stop-color="#fff"/><stop offset=".55" stop-color="#eefaff"/><stop offset="1" stop-color="#a7d6e4"/></radialGradient></defs>${jewel}</svg></span>`;
+      return complete
+        ? `<a class="atlas-chest open ${gem}" href="#/hadiah" aria-label="${WORLDS[who].name} selesai, hadiah ${gemName}"><span class="atlas-chest-art">${chestSVG('open')}${gemMark}</span><span class="grow"><small>HADIAH BIOMA · ${stats.done}/${stats.total} CHECKPOINT</small><b>${gemName} ditemukan!</b><span>Peti ${WORLDS[who].name} terbuka. Lihat koleksi hadiahmu.</span></span><u>Lihat hadiah&nbsp; ›</u></a>`
+        : `<button class="atlas-chest locked ${gem}" data-act="tip" data-t="🔒 Selesaikan semua checkpoint di ${WORLDS[who].name} untuk menemukan ${gemName}."><span class="atlas-chest-art">${chestSVG('locked')}${gemMark}</span><span class="grow"><small>HADIAH BIOMA · ${stats.done}/${stats.total} CHECKPOINT</small><b>${gemName} menunggu di peti</b><span>Selesaikan checkpoint di ${WORLDS[who].name} untuk menemukannya.</span><i class="atlas-chest-bar"><em style="width:${stats.total ? Math.round(stats.done / stats.total * 100) : 0}%"></em></i></span><i class="atlas-chest-lock">${IC.lock}</i></button>`;
+    };
+    let out = '', prevWho = null, regionNo = 0;
     rows.forEach((x, i) => {
       const { u, state, who, v } = x, s = i % 2 ? 'r' : 'l', W = WORLDS[who], place = W.places[v % 4];
       const bg = bgOf(x), top = i ? mixHex(bgOf(rows[i - 1]), bg, 0.5) : bg, bot = i < rows.length - 1 ? mixHex(bg, bgOf(rows[i + 1]), 0.5) : '#ffffff';
       const reveal = fresh && (state === 'cur' || state === 'next') ? ' reveal' : '', just = fresh === u.id ? ' just' : '';
       let html = i ? isleLink(s === 'r' ? 'lr' : 'rl', state === 'next' || state === 'fog', who) : '';
-      if (i && who !== prevWho && state !== 'fog') html += `<div class="isle-coast" aria-hidden="true"></div><div class="isle-region w-${who}"><span>${W.icon}</span>${W.name}</div>`;
+      if (who !== prevWho && state !== 'fog') {
+        if (prevWho) out += biomeChest(prevWho);
+        html += `<div class="isle-region w-${who}"><small>BIOMA ${String(++regionNo).padStart(2, '0')}</small><b><span>${W.icon}</span>${W.name}</b><i>${W.places.join(' · ')}</i></div>`;
+      }
       prevWho = state === 'fog' ? prevWho : who;
-      if (state === 'fog') html += `<div class="isle fog ${s}" aria-hidden="true">${placeSVG(who, v, true, u)}<span class="fogl"></span></div>`;
-      else if (state === 'next') html += `<button class="isle next ${s}${reveal}" data-act="tip" data-t="🌫️ Tempat ini masih tertutup kabut. Tuntaskan tempat sekarang untuk membukanya." aria-label="Tempat berikutnya, masih tertutup kabut">${placeSVG(who, v, false, u)}<span class="fogl"></span><span class="isle-tag"><i>${IC.lock.replace('<svg', '<svg width="16" height="16"')}</i>Tujuan berikutnya</span></button>`;
+      const checkpoint = String(i + 1).padStart(2, '0');
+      if (state === 'fog') html += `<div class="isle fog ${s}" aria-hidden="true"><span class="checkpoint-mystery"><i>${IC.lock}</i><b>Checkpoint ${checkpoint}</b><small>Masih tertutup kabut</small></span>${placeSVG(who, v, true, u)}<span class="fogl"></span></div>`;
+      else if (state === 'next') html += `<button class="isle next ${s}${reveal}" data-act="tip" data-t="🌫️ Selesaikan checkpoint saat ini untuk membuka tempat berikutnya." aria-label="Checkpoint ${checkpoint}, masih terkunci">${placeSVG(who, v, false, u)}<span class="fogl"></span><span class="isle-tag"><i class="cp-step">${IC.lock.replace('<svg', '<svg width="16" height="16"')}</i><span><small class="cp-kicker">CHECKPOINT ${checkpoint} · BERIKUTNYA</small><b>Tujuan berikutnya</b><small>Selesaikan checkpoint saat ini untuk membuka rute.</small></span></span></button>`;
       else {
         const t = S.testOf(st.id, u.id), stars = t ? '★'.repeat(chestTier(t.stars)) : '';
-        // Lencana simbol bab ikut label (sebelumnya mengapung di laut, jauh dari pulaunya)
-        const sg = SYMB_OF(u), sym = sg ? `<i class="isle-sym" style="--sc:${sg[2]}" aria-hidden="true">${esc(sg[1])}</i>` : '';
         const pc = Math.round((x.done / x.total) * 100);
-        const label = state === 'done' ? `<span class="isle-tag ok"><i>${IC.ok}</i><span><b>${esc(u.name)}</b><small>${place} · Selesai${stars ? ` <em>${stars}</em>` : ''}</small></span><u>›</u></span>`
-          : `<span class="isle-tag">${sym}<span class="isl-txt"><b>${esc(u.name)}</b><small>${place} · ${x.done} / ${x.total} keterampilan</small><span class="isle-bar" aria-hidden="true"><i style="width:${pc}%"></i></span></span><u>›</u></span>`;
-        html += `<a class="isle ${state} ${s}${reveal}${just}" href="#/bab/${u.id}" aria-label="Bab ${u.id} ${esc(u.name)}, ${place}">${state === 'cur' ? `<span class="isle-pin" aria-hidden="true"></span><span class="isle-glow" aria-hidden="true"></span><span class="isle-buddy" aria-hidden="true">${MQ.svg('happy', { size: 62, who: who === 'meti' ? undefined : who, enter: false })}</span>` : ''}${placeSVG(who, v, false, u)}${reveal ? '<span class="fogl lift"></span>' : ''}${label}${just ? '<span class="isle-spark" aria-hidden="true">✨</span>' : ''}</a>`;
+        const phase = state === 'done' ? 'SELESAI' : state === 'cur' ? 'CHECKPOINT SEKARANG' : state === 'visit' ? 'LANJUTKAN' : 'TERBUKA';
+        const label = `<span class="isle-tag ${state === 'done' ? 'ok' : ''}"><i class="cp-step">${state === 'done' ? IC.ok : checkpoint}</i><span class="isl-txt"><small class="cp-kicker">CHECKPOINT ${checkpoint} · ${phase}</small><b>${esc(u.name)}</b><small>${place} · ${x.done} dari ${x.total} keterampilan${stars ? ` · ${stars}` : ''}</small><span class="isle-bar" aria-hidden="true"><i style="width:${pc}%"></i></span></span><u aria-hidden="true">›</u></span>`;
+        html += `<a class="isle ${state} ${s}${reveal}${just}" href="#/bab/${u.id}" aria-label="Checkpoint ${checkpoint}: ${esc(u.name)}, ${place}, ${x.done} dari ${x.total} keterampilan">${placeSVG(who, v, false, u)}${reveal ? '<span class="fogl lift"></span>' : ''}${label}${just ? '<span class="isle-spark" aria-hidden="true">✨</span>' : ''}</a>`;
       }
-      out += `<div class="isle-row w-${who} biome-${biomeOf(who, v)} ${state}" style="background:linear-gradient(180deg, ${top} 0%, ${bg} 22%, ${bg} 78%, ${bot} 100%)">${html}</div>`;
+      out += `<div class="isle-row w-${who} biome-${biomeOf(who, v)} ${state}" style="--top:${top};--biome:${bg};--bottom:${bot}">${html}</div>`;
     });
-    return `<section class="isles" aria-label="Peta petualangan belajar">${atlasHead}${out}<div class="isle-mist" aria-hidden="true"></div></section>`;
+    if (prevWho) out += biomeChest(prevWho);
+    return `<section class="isles" aria-label="Peta ekspedisi belajar">${atlasHead}${out}</section>`;
   }
   // Halaman satu tempat (bab), dibuka dengan mengetuk tempat di peta. Bukan jalur bulatan:
   // gambar besar tempat itu bersama maskotnya, lalu daftar misi (keterampilan) berupa kartu, kartu pelajaran, dan peti harta karun.
@@ -978,8 +1012,9 @@
     if (pad) { pad.hidden = false; pad.place = place; place(); if (pad.fit) pad.fit(); return; }
     const COLORS = [['#0a7d68', 'hijau'], ['#1c9be8', 'biru'], ['#ff5a5f', 'merah']];
     pad = document.createElement('div'); pad.id = 'coret'; pad.className = 'mq-coret';
+    const currentQuestion = P && P.q ? (P.q.log || P.q.text) : (OL && OL.cur && OL.cur.q ? OL.cur.q.text : 'Catatan dan langkah pengerjaan');
     pad.innerHTML = `<div class="bar"><b>✏️<span class="lbl"> Kertas coret</span></b><span class="tools">${COLORS.map(([c, n], i) => `<button data-c="${c}" class="${i ? '' : 'on'}" aria-label="Pensil ${n}"><i style="background:${c}"></i></button>`).join('')}
-      <button data-c="erase" aria-label="Penghapus">🧽</button><button data-k="finger" class="${penSeen ? '' : 'off'}" aria-label="Izinkan menulis dengan jari" title="Pensil terdeteksi: sentuhan jari diabaikan. Ketuk untuk menulis dengan jari.">👆</button><button data-k="clear" aria-label="Hapus semua coretan">🗑️</button><button data-k="size" aria-label="Perbesar atau perkecil kertas coret">↕</button><button data-k="close" aria-label="Tutup kertas coret">✕</button></span></div>${P && P.q ? `<div class="qcopy">${esc(strip(P.q.log || P.q.text))}</div>` : ''}<canvas aria-label="Kertas coret"></canvas>`;
+      <button data-c="erase" aria-label="Penghapus">🧽</button><button data-k="finger" class="${penSeen ? '' : 'off'}" aria-label="Izinkan menulis dengan jari" title="Pensil terdeteksi: sentuhan jari diabaikan. Ketuk untuk menulis dengan jari.">👆</button><button data-k="clear" aria-label="Hapus semua coretan">🗑️</button><button data-k="size" aria-label="Perbesar atau perkecil kertas coret">↕</button><button data-k="close" aria-label="Tutup kertas coret">✕</button></span></div><div class="qcopy">${esc(strip(currentQuestion))}</div><canvas aria-label="Kertas coret"></canvas>`;
     if (coretTall) pad.classList.add('tall');
     document.body.appendChild(pad); pad.place = place; place();
     const cv = pad.querySelector('canvas'), ctx = cv.getContext('2d');
@@ -4060,7 +4095,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
         <p>Di IMO, setiap negara mengusulkan soal, lalu panitia menyaring menjadi daftar pendek sekitar 30 soal dan juri memilih 6. Di OSN, soal berjenjang dari tingkat kabupaten/kota sampai nasional.</p>
         <p>Soal di Metiq dibuat sendiri dengan gaya yang sama dan angka yang berubah, bukan salinan soal lomba. Tahap akhir kompetisi memakai soal uraian dan pembuktian yang tidak bisa dinilai otomatis, jadi latihan itu tetap perlu didampingi guru.</p></details></div>`, 'main');
   }
-  const olFoot = () => `<div class="mq-foot-in"><div class="mq-krow"><button class="mq-ktog" data-act="keystog" aria-label="Tampilkan atau sembunyikan tombol angka">🔢 <span class="ka">Tombol angka</span><span class="kb">Sembunyikan</span> <i>▲</i></button><span class="mq-mini">Jawaban: <b id="indisp2">–</b></span></div>
+  const olFoot = () => `<div class="mq-foot-in"><div class="mq-krow"><button class="mq-ktog" data-act="keystog" aria-label="Tampilkan atau sembunyikan tombol angka">🔢 <span class="ka">Tampilkan angka</span><span class="kb">Sembunyikan</span> <i>▲</i></button><button class="mq-ktog" data-act="coret" aria-label="Buka kertas coret">✏️ Kertas coret</button><span class="mq-mini">Jawaban: <b id="indisp2">–</b></span></div>
     <div class="mq-keys extra">${['−', '/'].map((k) => `<button class="mq-key" data-act="olkey" data-k="${k}">${k}</button>`).join('')}</div>
     <div class="mq-keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button class="mq-key" data-act="olkey" data-k="${n}">${n}</button>`).join('')}<button class="mq-key del" data-act="olkey" data-k="del" aria-label="Hapus">⌫</button><button class="mq-key" data-act="olkey" data-k="0">0</button></div>
     <button class="mq-btn" id="olcheck" data-act="olcheck" disabled>${OL && OL.sim ? (OL.i < OL.items.length - 1 ? 'Simpan, lanjut' : 'Simpan') : 'Periksa'}</button></div>`;
@@ -4074,9 +4109,12 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     P = null; // soal sudah terlihat di atas kertas coret
     box.innerHTML = `<div class="ol-tag">${OL.sim ? `Soal ${OL.i + 1} dari ${OL.items.length} · ` : ''}${tag}</div><div class="mq-say"><div class="mq-bubble ol-q" id="olq"><span>${q.text}</span></div></div>
       <div class="mq-ans"><div class="mq-disp" id="indisp">${esc(OL.input) || '&nbsp;'}</div></div>
+      <button class="mq-coretcta ol-scratch" data-act="coret">✏️ Buka kertas coret</button>
       ${OL.sim ? `<div class="ol-dots">${OL.items.map((x, i) => `<button class="${i === OL.i ? 'on' : ''} ${x.input ? 'done' : ''}" data-act="olgo" data-i="${i}">${i + 1}</button>`).join('')}</div><button class="link small" data-act="olend">Selesai dan lihat hasil</button>`
     : `<p class="ol-hintw"><button class="mq-link" data-act="olhint">💡 Petunjuk</button><button class="mq-link" data-act="olshow">Lihat pembahasan</button></p><p class="jhint" id="olh" hidden>💡 ${q.hint}</p>`}`;
-    fb.className = 'mq-foot compact'; fb.innerHTML = olFoot(); olSync();
+    const keysOpen = innerHeight > 780;
+    document.body.classList.toggle('ol-keypad-open', keysOpen);
+    fb.className = 'mq-foot compact ol-keys' + (keysOpen ? ' kshow' : ''); fb.innerHTML = olFoot(); olSync();
     box.style.paddingBottom = fb.offsetHeight + 20 + 'px';
     if (innerWidth >= 700) openCoret();
   }
@@ -4429,7 +4467,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       document.getElementById('indisp').innerHTML = P.input || '&nbsp;'; refreshCheck();
       if (!document.querySelector('#fb.cor')) document.getElementById('indisp').scrollIntoView({ block: 'nearest' });
     } else if (act === 'jhint') { const h = document.getElementById('jhint'); if (h) { h.hidden = false; el.parentElement.hidden = true; } }
-    else if (act === 'keystog') { const fb = document.getElementById('fb'); if (fb) fb.classList.toggle('kshow'); }
+    else if (act === 'keystog') { const fb = document.getElementById('fb'); if (fb) { fb.classList.toggle('kshow'); if (fb.classList.contains('ol-keys')) document.body.classList.toggle('ol-keypad-open', fb.classList.contains('kshow')); } }
     else if (act === 'check') { if (P && !P.locked) submit(P.q.type === 'choice' ? P.q.options[P.sel] : P.input); }
     else if (act === 'choose') { if (!P || P.locked) return; P.sel = +el.dataset.i; if (P.q.optAudio) playClips([P.q.optAudio[P.sel]]); document.querySelectorAll('.mq-opt').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); refreshCheck(); }
     else if (act === 'next') nextQ();

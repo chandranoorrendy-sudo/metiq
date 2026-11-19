@@ -103,18 +103,27 @@
   // Karakter: Meti bawaan; teman lain didaftarkan lewat METIQ_MASCOT.register({ id, name, label, colors, body(pose), limbs(kind), face(pose), effects })
   const META = { id: 'meti', name: 'Meti', label: 'Meti si gurita', faceBox: '14 8 172 140' };
   const FRIENDS = {};
+  // Four generated, consistent 3D character illustrations in a 2×2 transparent sprite sheet.
+  const ART = 'assets/generated/mascot-friends.png';
+  const ART_OFFSET = { meti: [0, 0], tito: [-512, 0], nahla: [0, -512], lumo: [-512, -512] };
+  function art(who, x = 0, y = 0, size = 512) {
+    const [ox, oy] = ART_OFFSET[who] || ART_OFFSET.meti;
+    return `<svg x="${x}" y="${y}" width="${size}" height="${size}" viewBox="0 0 512 512" aria-hidden="true" focusable="false"><image href="${ART}" x="${ox}" y="${oy}" width="1024" height="1024" preserveAspectRatio="none"/></svg>`;
+  }
   const pick = (who) => (who && FRIENDS[who]) || null;
 
   // enter: false = tanpa animasi muncul (dipakai saat maskot diganti pose di tengah soal)
   function svg(pose = 'normal', o = {}) {
     const p = POSES[pose] || POSES.normal, size = o.size || 140, enter = o.enter !== false, f = pick(o.who);
-    const cls = `mq-mascot mq-p-${pose}${f ? ' mq-who-' + f.id : ''}${enter ? ' mq-enter' : ''}${o.float ? ' mq-float' : ''}${o.cls ? ' ' + o.cls : ''}`;
+    const cls = `mq-mascot mq-illustrated mq-p-${pose}${f ? ' mq-who-' + f.id : ''}${enter ? ' mq-enter' : ''}${o.float ? ' mq-float' : ''}${o.cls ? ' ' + o.cls : ''}`;
+    if (o.art !== false) return `<svg class="${cls}" viewBox="0 0 200 200" width="${size}" height="${size}" role="img" aria-label="${f ? f.label : 'Meti si gurita'}">${art(f ? f.id : 'meti', 0, 0, 200)}${enter ? (f && f.effects === 'bubbles' ? BUBBLES : SPARKLES) : ''}</svg>`;
     if (f) return `<svg class="${cls}" viewBox="0 0 200 200" width="${size}" height="${size}" role="img" aria-label="${f.label}">${enter ? (f.effects === 'bubbles' ? BUBBLES : SPARKLES) : ''}${f.limbs(p.arms, 'back')}${f.body(pose)}${f.limbs(p.arms, 'front')}</svg>`;
     return `<svg class="${cls}" viewBox="0 0 200 200" width="${size}" height="${size}" role="img" aria-label="Meti si gurita">${enter ? BUBBLES : ''}${arms(p.arms)}${head(pose)}</svg>`;
   }
   // Hanya kepala (untuk ikon kecil dan avatar)
   function face(size = 48, pose = 'normal', who) {
     const f = pick(who);
+    if (!window.METIQ_MASCOT_DISABLE_ART) return `<svg class="mq-mascot mq-illustrated mq-face${f ? ' mq-who-' + f.id : ''}" viewBox="0 0 200 200" width="${size}" height="${size}" role="img" aria-label="${f ? f.name : 'Meti'}">${art(f ? f.id : 'meti', 0, 0, 200)}</svg>`;
     if (f) { const [, , w, h] = f.faceBox.split(' ').map(Number); return `<svg class="mq-mascot mq-face mq-who-${f.id}" viewBox="${f.faceBox}" width="${size}" height="${Math.round(size * h / w)}" role="img" aria-label="${f.name}">${f.face(pose)}</svg>`; }
     return `<svg class="mq-mascot mq-face" viewBox="14 8 172 140" width="${size}" height="${Math.round(size * 140 / 172)}" role="img" aria-label="Meti">${head(pose)}</svg>`;
   }
