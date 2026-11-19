@@ -11,7 +11,7 @@
   // Tugas dari guru disembunyikan dulu di tampilan siswa: tahap ini guru belum banyak dilibatkan.
   // Fitur guru (memberi tugas, melihat kemajuan) tetap utuh. Ubah ke true untuk menampilkannya lagi.
   const TASKS_ON = false;
-  // Bintang dihitung di server (lihat supabase/014_bintang_server.sql). Menyala lewat js/config.js.
+  // Bintang dihitung di server (lihat supabase/014a-014c). Menyala lewat js/config.js.
   const STARS_SRV = !!(window.METIQ_CONFIG || {}).starsServer;
 
   /* ---------- Utilitas ---------- */

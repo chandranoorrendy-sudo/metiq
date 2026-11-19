@@ -11,6 +11,10 @@
   let flushTimer = null, flushing = false;
   // Mode bintang server: angka bintang tidak lagi dikirim dari perangkat, hanya klaim putaran.
   const SRV = !!cfg.starsServer;
+  // Server lama (SQL 014c belum dijalankan) belum punya student_sync 6 argumen.
+  // Saat itu terjadi, sinkronisasi kembali ke cara lama supaya jawaban tetap terkirim.
+  let srvOff = false;
+  const srvMode = () => SRV && !srvOff;
   const isStarKey = (k) => /^(x|u|g):/.test(k);
 
   const Cloud = {
@@ -42,14 +46,14 @@
     },
 
     queueProgress(sid, code, key, progress) {
-      if (SRV && isStarKey(key)) return;
+      if (srvMode() && isStarKey(key)) return;
       const box = outbox[sid] = outbox[sid] || { code, answers: [], progress: {}, claims: [] };
       box.code = code; box.progress[key] = progress;
       saveOut(); clearTimeout(flushTimer); flushTimer = setTimeout(Cloud.flush, 1500);
     },
     // Klaim satu putaran (latihan, ujian bab, atau permainan). Server yang memutuskan bintangnya.
     queueClaim(sid, code, claim) {
-      if (!SRV || !claim || !claim.id) return;
+      if (!srvMode() || !claim || !claim.id) return;
       const box = outbox[sid] = outbox[sid] || { code, answers: [], progress: {}, claims: [] };
       box.claims = box.claims || [];
       if (!box.claims.some((c) => c.id === claim.id)) box.claims.push(claim);
@@ -66,29 +70,46 @@
         for (const [sid, box] of Object.entries(outbox)) {
           const batch = box.answers.slice(0, 300);
           const prog = JSON.parse(JSON.stringify(box.progress));
+          const claims = srvMode() ? (box.claims || []).slice(0, 50) : [];
           // Mode server: bintang x:/u:/g: tidak dikirim dari perangkat; server menghitungnya dari klaim.
-          if (SRV) Object.keys(prog).forEach((k) => { if (/^(x:|u:|g:)/.test(k)) delete prog[k]; });
-          const claims = (box.claims || []).slice(0, 50);
-          if (!batch.length && !Object.keys(prog).length && !claims.length) { delete outbox[sid]; continue; }
+          if (srvMode()) Object.keys(prog).forEach((k) => { if (isStarKey(k)) delete prog[k]; });
+          if (!batch.length && !Object.keys(prog).length && !claims.length) {
+            if (!(box.claims || []).length) delete outbox[sid];
+            continue;
+          }
+          let sent = prog;
           try {
-            const args = { p_code: box.code, p_student_id: sid, p_answers: batch, p_progress: prog };
-            if (SRV) { args.p_claims = claims; args.p_server = true; }
-            const out = await Cloud.rpc('student_sync', args);
+            let out;
+            if (srvMode()) {
+              try {
+                out = await Cloud.rpc('student_sync', { p_code: box.code, p_student_id: sid, p_answers: batch, p_progress: prog, p_claims: claims, p_server: true });
+              } catch (e) {
+                // Fungsi 6 argumen belum ada (SQL 014c/034 belum dijalankan): pakai cara lama
+                // sekali, lalu teruskan jawaban apa adanya termasuk bintang lokal.
+                if (e.status !== 404 && !/PGRST202|could not find the function|schema cache/i.test(e.message || '')) throw e;
+                srvOff = true;
+                claims.length = 0; // klaim disimpan dulu, dikirim setelah SQL 014c dijalankan
+                sent = JSON.parse(JSON.stringify(box.progress));
+                out = await Cloud.rpc('student_sync', { p_code: box.code, p_student_id: sid, p_answers: batch, p_progress: sent });
+              }
+            } else {
+              out = await Cloud.rpc('student_sync', { p_code: box.code, p_student_id: sid, p_answers: batch, p_progress: prog });
+            }
             // Angka bintang resmi dari server menggantikan angka di perangkat.
             if (out && out.progress && window.Store) {
               window.Store.applySync(sid, out.progress);
               window.dispatchEvent(new CustomEvent('metiq:sync', { detail: { sid } }));
             }
             // Buang angka bintang yang tadi tidak dikirim (server yang berwenang).
-            if (SRV) Object.keys(box.progress).forEach((k) => { if (/^(x:|u:|g:)/.test(k)) delete box.progress[k]; });
+            if (srvMode()) Object.keys(box.progress).forEach((k) => { if (isStarKey(k)) delete box.progress[k]; });
           } catch (e) {
             // siswa sudah dihapus guru atau kode kelas berubah: data tidak bisa dikirim lagi
             if (e.status === 400 && /tidak ditemukan/.test(e.message)) { delete outbox[sid]; continue; }
             throw e;
           }
-          const sent = new Set(batch.map((a) => a.id));
-          box.answers = box.answers.filter((a) => !sent.has(a.id));
-          Object.keys(prog).forEach((k) => { if (JSON.stringify(box.progress[k]) === JSON.stringify(prog[k])) delete box.progress[k]; });
+          const sentIds = new Set(batch.map((a) => a.id));
+          box.answers = box.answers.filter((a) => !sentIds.has(a.id));
+          Object.keys(sent).forEach((k) => { if (JSON.stringify(box.progress[k]) === JSON.stringify(sent[k])) delete box.progress[k]; });
           if (claims.length) { const cs = new Set(claims.map((c) => c.id)); box.claims = (box.claims || []).filter((c) => !cs.has(c.id)); }
           if (!box.answers.length && !Object.keys(box.progress).length && !(box.claims || []).length) delete outbox[sid];
           saveOut();

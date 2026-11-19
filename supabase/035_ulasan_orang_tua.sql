@@ -63,6 +63,11 @@ grant execute on function public.submit_feedback(text, text, text, text, int, te
 revoke execute on function public.submit_feedback_parent(text, text, text, text, text, int, text) from public;
 grant execute on function public.submit_feedback_parent(text, text, text, text, text, int, text) to anon, authenticated;
 
+create table if not exists public.schema_migrations (
+  version text primary key,
+  name text not null,
+  applied_at timestamptz not null default now()
+);
 insert into public.schema_migrations (version, name)
 values ('035', 'ulasan orang tua')
 on conflict (version) do nothing;
