@@ -1543,6 +1543,10 @@ input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39
   .mq-nav a { font-size: .64rem; }
   .mq-nav a svg { width: 24px; height: 24px; }
 }
+
+/* Keep fixed bottom actions in Meti's bright, friendly mint palette. */
+.mq-foot .mq-btn:not(.ghost):not(.bad):not(.warn):not([disabled]) { background: #8debd2; color: #04382e; box-shadow: 0 3px 0 #43c9ab; }
+.mq-foot .mq-btn:not(.ghost):not(.bad):not(.warn):not([disabled]):active { box-shadow: 0 1px 0 #43c9ab; }
 @media (prefers-reduced-motion: reduce) {
   .isle.cur .isle-buddy, .isle-row::after, .jtile .art svg, .mq-gt .art svg { animation: none !important; transition: none !important; }
 }
