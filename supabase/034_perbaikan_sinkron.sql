@@ -20,6 +20,10 @@ insert into public.schema_migrations (version, name)
 values ('034', 'perbaikan sinkronisasi progres')
 on conflict (version) do nothing;
 
+/* Catatan migrasi hanya untuk admin; jangan dapat dibaca anon/authenticated. */
+alter table public.schema_migrations enable row level security;
+revoke all on table public.schema_migrations from anon, authenticated;
+
 /* Aturan menang: att, score, ok, ms, last. */
 create or replace function public._progress_guard() returns trigger
 language plpgsql
