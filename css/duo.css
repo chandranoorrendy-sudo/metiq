@@ -1552,16 +1552,19 @@ input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39
   gap: 18px;
   margin-inline: calc(-1 * clamp(16px, 4vw, 40px));
   padding: 12px clamp(16px, 4vw, 40px);
-  border-bottom: 1px solid rgba(19, 76, 67, .1);
-  background: rgba(255, 255, 255, .96);
-  box-shadow: 0 6px 20px rgba(23, 67, 61, .045);
+  border-bottom: 2px solid #1db796;
+  background: #35e0bd;
+  box-shadow: 0 6px 20px rgba(10, 125, 104, .16);
   backdrop-filter: blur(14px);
 }
 .mq-lnav { display: flex; align-items: center; justify-content: center; gap: clamp(8px, 1.2vw, 16px); min-width: 0; margin-inline: auto; }
-.mq-lnav a { flex: none; padding: 8px 0; color: #45615a; font-size: .8rem; font-weight: 800; text-decoration: none; white-space: nowrap; transition: color .15s ease; }
-.mq-lnav a:hover { color: #087d69; }
+.mq-lnav a { flex: none; padding: 8px 9px; border-radius: 999px; color: #04382e; font-size: .8rem; font-weight: 900; text-decoration: none; white-space: nowrap; transition: color .15s ease, background .15s ease; }
+.mq-lnav a:hover { color: #04382e; background: rgba(255,255,255,.66); }
 .mq-lnav a:focus-visible { outline: 2px solid #128a72; outline-offset: 4px; border-radius: 4px; }
 .mq-lfoot { justify-content: center; border-top: 1px solid #e9f0ed; color: #74847f; font-size: .78rem; }
+.mq-lfoot nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px 20px; width: 100%; }
+.mq-lfoot nav a { color: #45615a; }
+.mq-lfoot small { flex-basis: 100%; text-align: center; font-weight: 700; }
 @media (max-width: 1100px) {
   .mq-land .mq-lhead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
   .mq-lhead .mq-logo { grid-column: 1; grid-row: 1; }

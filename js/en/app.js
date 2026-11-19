@@ -213,7 +213,7 @@
     if (ses.role === 'guru' && (cloudOn() ? ses.token : S.teacher(ses.id))) return go('#/guru/ringkasan');
     const kid = ses.role === 'siswa' && S.student(ses.id);
     app.innerHTML = `<div class="mq-land">
-      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=${window.METIQ_ASSET_VERSION}" alt="">Metiq<span class="alpha">Beta</span></a><nav class="mq-lnav" aria-label="Main navigation"><a href="#/permainan">Games</a><a href="#/profesi">Careers</a><a href="#/olimpiade">Olympiad</a><a href="#/harga">Pricing</a><a href="#/panduan/siswa">Help</a><a href="#/ajukan">Request an account</a><a href="#/ajukan/status">Check status</a><a href="privasi.html">Privacy</a></nav><span class="mq-lright"><a class="mq-tlink" href="#/guru">Teachers<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 1 9l11 6 9-4.9V17h2V9L12 3zm-6 9.7V16c0 1.7 2.7 3.5 6 3.5s6-1.8 6-3.5v-3.3l-6 3.3-6-3.3z"/></svg></a><button class="mq-lang" data-act="lang" aria-label="Switch language">${window.METIQ_LANG === 'en' ? 'EN' : 'ID'}<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 9h12l-6 7z"/></svg></button></span></header>
+      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=${window.METIQ_ASSET_VERSION}" alt="">Metiq<span class="alpha">Beta</span></a><nav class="mq-lnav" aria-label="Main navigation"><a href="#/permainan">Games</a><a href="#/profesi">Careers</a><a href="#/olimpiade">Olympiad</a><a href="#/harga">Pricing</a></nav><span class="mq-lright"><a class="mq-tlink" href="#/guru">Teachers<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 1 9l11 6 9-4.9V17h2V9L12 3zm-6 9.7V16c0 1.7 2.7 3.5 6 3.5s6-1.8 6-3.5v-3.3l-6 3.3-6-3.3z"/></svg></a><button class="mq-lang" data-act="lang" aria-label="Switch language">${window.METIQ_LANG === 'en' ? 'EN' : 'ID'}<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 9h12l-6 7z"/></svg></button></span></header>
       <section class="mq-hero">
         <div class="mq-stage" aria-label="Meti and friends"><span class="mq-sym a">+</span><span class="mq-sym b">×</span><span class="mq-sym c">=</span><span class="mq-sym d">7</span>
           <div class="st st-meti">${MQ.svg('hello', { size: 190 })}</div>
@@ -240,7 +240,7 @@
       ${landTeachHTML()}
       <section class="mq-testi"><h2>What people say</h2>${marquee(TESTI.map(([who, role, text]) => `<figure><blockquote>${esc(text)}</blockquote><figcaption><b>${esc(who)}</b>${esc(role)}</figcaption></figure>`).join(''))}</section>
       ${landFaqHTML()}
-      <footer class="mq-lfoot">© 2026 Metiq · Math made fun</footer>
+      <footer class="mq-lfoot"><nav aria-label="Help and policies"><a href="#/panduan/siswa">Help</a><a href="#/ajukan/status">Check status</a><a href="privasi.html#en">Privacy</a></nav><small>© 2026 Metiq · Math made fun</small></footer>
     </div>`;
     loadLandingStats(); gReveal();
   }
