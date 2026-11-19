@@ -45,11 +45,13 @@ select version, name, applied_at from public.schema_migrations order by version;
 | 031 | `031_jadwal_pertemuan.sql` | Jadwal pertemuan |
 | 032 | `032_riset_tanpa_kelas.sql` | Riset tanpa kelas |
 | 033 | `033_ujian_fokus.sql` | Mode fokus ujian |
-| 034 | `034_perbaikan_sinkron.sql` | Sinkronisasi progres + ulasan orang tua |
+| 034 | `034_perbaikan_sinkron.sql` | Sinkronisasi progres: trigger urutan + pembungkus bintang |
+| 035 | `035_ulasan_orang_tua.sql` | Ulasan orang tua dengan sesi/kode orang tua |
 
-## Catatan 034
+## Catatan 034 dan 035
 
-- Progres menang berdasarkan urutan `att`, `score`, `ok`, `ms`, `last` — bukan `att >= att`.
-- `x:`/`u:`/`g:` (bintang) tidak diterima dari perangkat, baik `p_server` true maupun false.
+- Progres menang berdasarkan urutan `att`, `score`, `ok`, `ms`, `last` (trigger `progress_guard`).
+- `x:`/`u:`/`g:` (bintang) tidak diterima dari perangkat; `student_sync` membungkus `_student_sync_v1`.
 - Ulasan orang tua wajib `submit_feedback_parent` dengan sesi orang tua atau kode orang tua.
-- `js/config.js` memakai `starsServer: true`; pastikan 014 dan 034 sudah dijalankan.
+- `js/config.js` memakai `starsServer: true`; jalankan 014, 034, dan 035.
+- Kedua berkas kecil (di bawah 10 KB) supaya bisa ditempel di SQL Editor Supabase.

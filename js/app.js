@@ -4622,7 +4622,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       return call.then(finish).catch((err) => {
         if (btn) btn.disabled = false;
         if (isParent && (err.status === 404 || /could not find the function|schema cache/i.test(err.message || ''))) {
-          return toast('Ulasan orang tua belum aktif di server. Jalankan supabase/034_perbaikan_sinkron.sql.');
+          return toast('Ulasan orang tua belum aktif di server. Jalankan supabase/034_perbaikan_sinkron.sql dan 035_ulasan_orang_tua.sql.');
         }
         toast(err.status ? esc(err.message) : 'Tidak bisa terhubung ke server');
       });
