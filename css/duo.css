@@ -1544,6 +1544,43 @@ input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39
   .mq-nav a svg { width: 24px; height: 24px; }
 }
 
+/* Landing-page navigation: bring the useful links into the first screen. */
+.mq-land .mq-lhead {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  gap: 18px;
+  margin-inline: calc(-1 * clamp(16px, 4vw, 40px));
+  padding: 12px clamp(16px, 4vw, 40px);
+  border-bottom: 1px solid rgba(19, 76, 67, .1);
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 6px 20px rgba(23, 67, 61, .045);
+  backdrop-filter: blur(14px);
+}
+.mq-lnav { display: flex; align-items: center; justify-content: center; gap: clamp(8px, 1.2vw, 16px); min-width: 0; margin-inline: auto; }
+.mq-lnav a { flex: none; padding: 8px 0; color: #45615a; font-size: .8rem; font-weight: 800; text-decoration: none; white-space: nowrap; transition: color .15s ease; }
+.mq-lnav a:hover { color: #087d69; }
+.mq-lnav a:focus-visible { outline: 2px solid #128a72; outline-offset: 4px; border-radius: 4px; }
+.mq-lfoot { justify-content: center; border-top: 1px solid #e9f0ed; color: #74847f; font-size: .78rem; }
+@media (max-width: 1100px) {
+  .mq-land .mq-lhead { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; }
+  .mq-lhead .mq-logo { grid-column: 1; grid-row: 1; }
+  .mq-lhead .mq-lright { grid-column: 2; grid-row: 1; }
+  .mq-lnav { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; width: 100%; gap: clamp(14px, 3vw, 24px); overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; }
+  .mq-lnav::-webkit-scrollbar { display: none; }
+}
+@media (max-width: 480px) {
+  .mq-land .mq-lhead { padding-block: 9px 6px; }
+  .mq-lnav { gap: 18px; }
+  .mq-lnav a { font-size: .76rem; }
+  .mq-land .mq-tlink { padding: 8px 12px; font-size: .82rem; }
+  .mq-land .mq-lang { height: 40px; }
+}
+@media (max-width: 600px) {
+  .mq-lnav { flex-wrap: wrap; gap: 2px 14px; overflow: visible; }
+  .mq-lnav a { padding-block: 5px; }
+}
+
 /* Keep fixed bottom actions in Meti's bright, friendly mint palette. */
 .mq-foot .mq-btn:not(.ghost):not(.bad):not(.warn):not([disabled]) { background: #8debd2; color: #04382e; box-shadow: 0 3px 0 #43c9ab; }
 .mq-foot .mq-btn:not(.ghost):not(.bad):not(.warn):not([disabled]):active { box-shadow: 0 1px 0 #43c9ab; }
