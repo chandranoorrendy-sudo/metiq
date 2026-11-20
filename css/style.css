@@ -915,6 +915,7 @@ ol.tahap small { color: var(--muted); font-weight: 700; font-size: .85em; displa
 .plan small { text-transform: uppercase; letter-spacing: .06em; font-weight: 800; color: var(--muted, #6b7c78); }
 .plan h2 { margin: 0; } .plan p { flex: 1; margin: 4px 0 10px; }
 .plan .price { font-size: 1.6rem; font-weight: 900; color: var(--brand); } .plan .price span { font-size: .85rem; font-weight: 700; color: var(--muted, #6b7c78); }
+.plan .price small { display: inline; font-size: .82rem; font-weight: 700; color: var(--muted, #6b7c78); letter-spacing: 0; text-transform: none; }
 .pcompare td:not(:first-child), .pcompare th:not(:first-child) { text-align: center; width: 72px; }
 .pyes { color: var(--ok); font-weight: 900; } .pno { color: #b8c4c1; }
 details.faq { border-top: 1px solid var(--line); padding: 10px 0; } details.faq summary { font-weight: 800; cursor: pointer; } details.faq p { margin: 8px 0 0; }

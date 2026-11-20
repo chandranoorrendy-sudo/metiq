@@ -12,7 +12,7 @@
   // Tugas dari guru disembunyikan dulu di tampilan siswa: tahap ini guru belum banyak dilibatkan.
   // Fitur guru (memberi tugas, melihat kemajuan) tetap utuh. Ubah ke true untuk menampilkannya lagi.
   const TASKS_ON = false;
-  // Bintang dihitung di server (lihat supabase/014_bintang_server.sql). Menyala lewat js/config.js.
+  // Bintang dihitung di server (lihat supabase/014a-014c). Menyala lewat js/config.js.
   const STARS_SRV = !!(window.METIQ_CONFIG || {}).starsServer;
 
   /* ---------- Utilitas ---------- */
@@ -211,9 +211,11 @@
     const ses = session.get();
     // Guru yang sudah masuk langsung ke dasbornya
     if (ses.role === 'guru' && (cloudOn() ? ses.token : S.teacher(ses.id))) return go('#/guru/ringkasan');
+    if (ses.role === 'ortu' && (ses.ptoken || ses.pcode || ses.demo)) return go('#/ortu/anak');
+    if (ses.role === 'siswa' && S.student(ses.id)) return go('#/belajar');
     const kid = ses.role === 'siswa' && S.student(ses.id);
     app.innerHTML = `<div class="mq-land">
-      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=${window.METIQ_ASSET_VERSION}" alt="">Metiq<span class="alpha">Beta</span></a><nav class="mq-lnav" aria-label="Main navigation"><a href="#/permainan">Games</a><a href="#/profesi">Careers</a><a href="#/olimpiade">Olympiad</a><a href="#/harga">Pricing</a></nav><span class="mq-lright"><a class="mq-tlink" href="#/guru">Teachers<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 1 9l11 6 9-4.9V17h2V9L12 3zm-6 9.7V16c0 1.7 2.7 3.5 6 3.5s6-1.8 6-3.5v-3.3l-6 3.3-6-3.3z"/></svg></a><button class="mq-lang" data-act="lang" aria-label="Switch language">${window.METIQ_LANG === 'en' ? 'EN' : 'ID'}<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 9h12l-6 7z"/></svg></button></span></header>
+      <header class="mq-lhead"><a class="mq-logo" href="#/"><img src="icons/icon.svg?v=${window.METIQ_ASSET_VERSION}" alt="">Metiq<span class="alpha">Beta</span></a><nav class="mq-lnav" aria-label="Navigasi utama"><a href="#/permainan">Permainan</a><a href="#/profesi">Profesi</a><a href="#/olimpiade">Olimpiade</a><a href="#/harga">Harga</a></nav><span class="mq-lright"><a class="mq-tlink" href="#/guru">Saya guru<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 3 1 9l11 6 9-4.9V17h2V9L12 3zm-6 9.7V16c0 1.7 2.7 3.5 6 3.5s6-1.8 6-3.5v-3.3l-6 3.3-6-3.3z"/></svg></a><button class="mq-lang" data-act="lang" aria-label="Switch language">${window.METIQ_LANG === 'en' ? 'EN' : 'ID'}<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M6 9h12l-6 7z"/></svg></button></span></header>
       <section class="mq-hero">
         <div class="mq-stage" aria-label="Meti and friends"><span class="mq-sym a">+</span><span class="mq-sym b">×</span><span class="mq-sym c">=</span><span class="mq-sym d">7</span>
           <div class="st st-meti">${MQ.svg('hello', { size: 190 })}</div>
@@ -222,13 +224,17 @@
           <div class="st st-lumo"><div class="jump">${MQ.svg('happy', { size: 92, who: 'lumo', enter: false })}</div><svg class="wave" viewBox="0 0 240 30" preserveAspectRatio="none" aria-hidden="true"><path d="M0 15 Q15 3 30 15 T60 15 T90 15 T120 15 T150 15 T180 15 T210 15 T240 15 V30 H0Z"/></svg></div></div>
         <h1>Learning math is <span>fun!</span></h1>
         <p>Short practice, level up, and collect rewards with Meti.</p>
-        ${installGuideHTML()}
+        <div class="mq-role-label">Choose how to continue</div>
         ${kid ? `<a class="mq-resume" href="#/belajar"><span class="av">${avHTML(kid.avatar)}</span><span class="grow">${esc(kid.name)}<small style="display:block;font-weight:700;color:#6a7f7a">Continue learning</small></span>›</a>` : ''}
         <div class="mq-cta">${kid
     ? '<a class="mq-btn pulse" href="#/belajar"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>Keep learning</a><a class="mq-btn ghost" href="#/kode"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" d="M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5V10a2 2 0 0 0 0 4v2.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5V14a2 2 0 0 0 0-4z"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M9.5 12.5l2 2 3.5-4"/></svg>Learning code</a>'
     : '<a class="mq-btn pulse" href="#/siswa-baru"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M7 4.5v15a1 1 0 0 0 1.5.86l12.4-7.5a1 1 0 0 0 0-1.72L8.5 3.64A1 1 0 0 0 7 4.5z"/></svg>Start learning</a><a class="mq-btn ghost" href="#/kode"><svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" d="M3 7.5A1.5 1.5 0 0 1 4.5 6h15A1.5 1.5 0 0 1 21 7.5V10a2 2 0 0 0 0 4v2.5a1.5 1.5 0 0 1-1.5 1.5h-15A1.5 1.5 0 0 1 3 16.5V14a2 2 0 0 0 0-4z"/><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" d="M9.5 12.5l2 2 3.5-4"/></svg>I already have a code</a>'}</div>
         ${kid ? '' : '<p class="mq-land-alt"><a class="mq-link" href="#/mulai/siswa">Try it first with sample data</a></p><p class="mq-land-alt gshow" hidden><button class="mq-link" data-act="gkids">🔑 Continue learning with a parent\'s Gmail<span class="chev" aria-hidden="true">›</span></button></p>'}
-        <a class="mq-resume mq-parent" href="#/ortu"><span class="av"><img class="family-icon" src="icons/family-parent-v1.png" alt=""></span><span class="grow">Saya orang tua<small>Lihat laporan belajar anak dengan kode dari guru</small></span>›</a>
+        <div class="mq-role-links" aria-label="Continue as a parent or teacher">
+          <a class="mq-role-card mq-role-parent" href="#/ortu"><span aria-hidden="true">👪</span><span class="grow"><b>Parent</b><small>View your child’s report with a teacher’s code</small></span><span aria-hidden="true">›</span></a>
+          <a class="mq-role-card mq-role-teacher" href="#/guru"><span aria-hidden="true">🎓</span><span class="grow"><b>Teacher</b><small>Sign in or create a free teacher account</small></span><span aria-hidden="true">›</span></a>
+        </div>
+        ${installGuideHTML()}
       </section>
       <section class="mq-feat">
         <div style="--bg:#e6fffa"><span class="em">${IC.target}</span>Soal pas dengan levelmu</div>
@@ -240,7 +246,7 @@
       ${landTeachHTML()}
       <section class="mq-testi"><h2>What people say</h2>${marquee(TESTI.map(([who, role, text]) => `<figure><blockquote>${esc(text)}</blockquote><figcaption><b>${esc(who)}</b>${esc(role)}</figcaption></figure>`).join(''))}</section>
       ${landFaqHTML()}
-      <footer class="mq-lfoot"><nav aria-label="Help and policies"><a href="#/panduan/siswa">Help</a><a href="#/ajukan/status">Check status</a><a href="privasi.html#en">Privacy</a></nav><small>© 2026 Metiq · Math made fun</small></footer>
+      <footer class="mq-lfoot"><nav aria-label="Tautan bantuan dan kebijakan"><a href="#/panduan/siswa">Bantuan</a><a href="#/ajukan/status">Cek status</a><a href="privasi.html">Privasi</a></nav><small>© 2026 Metiq · Belajar matematika jadi seru</small></footer>
     </div>`;
     loadLandingStats(); gReveal();
   }
@@ -495,6 +501,7 @@
         ${allDone ? '' : `<button class="isle-score" data-act="tip" data-t="SmartScore for the step you're working on. Reach 80 to master it." aria-label="SmartScore ${sc}"><small>SmartScore</small><b>${sc}<i>⭐</i></b></button>`}</section>
       ${unsent ? `<div class="mq-demo">📶 ${unsent} answers are waiting for internet to reach your teacher.</div>` : ''}
       ${TASKS_ON && todo ? `<a class="mq-task" href="#/tugas"><span class="em">📌</span><b>${todo} tasks from your teacher</b><span>›</span></a>` : ''}
+      <a class="mq-task daily-entry" href="#/harian"><span class="em">📚</span><b>Jalur drill hari ini</b><span>Mulai 10 soal →</span></a>
       ${allDone ? `<div class="mq-all">${MQ.svg('cheer', { size: 120 })}<div>All ${gname(g)} chapters are complete! 🎉</div><button class="mq-btn" style="margin-top:12px" data-act="gsheet">Choose another grade</button></div>` : ''}
       ${isleMapHTML(st, isles, fresh, { biomes: (() => { const stats = Object.fromEntries(EXPEDITION_ORDER.map((w) => [w, { done: 0, total: 0 }])); m.units.forEach((u) => { const p = stats[mapWorldOf(u)]; p.total++; if (u.skills.every((s) => ['done', 'gold'].includes(m.st(s.id).state))) p.done++; }); return stats; })() })}
       ${gradeSheet}`, 'belajar');
@@ -1089,8 +1096,10 @@
     if (adabOn() && sessionStorage.getItem('metiq_doa') !== st.id) return viewDoa();
     sessionStorage.setItem('metiq_open', sk.unit);
     const p = S.progress(st.id, id);
-    P = { sid: st.id, sk, rid: 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), score: p.score, score0: p.score, count: 0, correct: 0, combo: 0, start: Date.now(), msSum: 0, q: null, input: '', sel: -1, locked: false };
-    if (P.score >= 100 && !again) return renderMastered(true);
+    let daily = null; try { daily = JSON.parse(sessionStorage.getItem('metiq_daily_run') || 'null'); } catch (e) {}
+    const dailyRun = !!(daily && daily.sid === st.id && daily.skill === id && daily.day === isoDay(Date.now()));
+    P = { sid: st.id, sk, rid: 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), score: p.score, score0: p.score, count: 0, correct: 0, combo: 0, start: Date.now(), msSum: 0, q: null, input: '', sel: -1, locked: false, daily: dailyRun };
+    if (P.score >= 100 && !again && !P.daily) return renderMastered(true);
     app.innerHTML = lessonShell(0, 'quit', false);
     nextQ();
   }
@@ -1283,6 +1292,7 @@
   // Layar akhir satu putaran latihan: bintang, tiga kartu (skor, tepat, waktu), dan satu tombol utama yang menyesuaikan
   function renderRound() {
     clearInterval(timer);
+    if (P.daily) { localStorage.setItem(dailyKey(P.sid), 'done'); sessionStorage.removeItem('metiq_daily_run'); }
     const sk = P.sk, mastered = P.score >= 100, acc = pct(P.correct, P.count), delta = P.score - P.score0, up = P.score >= 80 && P.score0 < 80;
     const avg = P.msSum / Math.max(1, P.count);
     let want = acc >= 100 ? 3 : acc >= 80 ? 2 : acc >= 60 ? 1 : 0, why = '';
@@ -2668,8 +2678,8 @@
     const box = document.getElementById('super-box'); if (!box) return;
     try {
       const tok = session.get().token;
-      const [ov, rq, parents, plans, quotes, students] = await Promise.all([Cloud.rpc('super_overview', { p_token: tok }), Cloud.rpc('super_requests', { p_token: tok }), Cloud.rpc('super_parents', { p_token: tok }).catch(() => []), Cloud.rpc('super_school_plans', { p_token: tok }).catch(() => null), Cloud.rpc('super_quotes', { p_token: tok }).catch(() => null), Cloud.rpc('super_students', { p_token: tok }).catch(() => null)]);
-      SUP = { ov, rq, ctx, parents, plans, quotes, students };
+      const [ov, rq, parents, plans, quotes, students, familySubs] = await Promise.all([Cloud.rpc('super_overview', { p_token: tok }), Cloud.rpc('super_requests', { p_token: tok }), Cloud.rpc('super_parents', { p_token: tok }).catch(() => []), Cloud.rpc('super_school_plans', { p_token: tok }).catch(() => null), Cloud.rpc('super_quotes', { p_token: tok }).catch(() => null), Cloud.rpc('super_students', { p_token: tok }).catch(() => null), Cloud.rpc('super_family_subscriptions', { p_token: tok }).catch(() => null)]);
+      SUP = { ov, rq, ctx, parents, plans, quotes, students, familySubs };
       if (document.getElementById('super-box')) { box.innerHTML = superHTML(sub); renderSupStudents(); }
     } catch (e) {
       box.innerHTML = e.status === 404 ? emptyCard('Needs SQL 008 to be run', 'Run supabase/006_research_feedback_bbo.sql, then 008_schools_superadmin.sql in the Supabase SQL Editor.') : emptyCard('Failed to load', e.status ? esc(e.message) : 'Can\'t connect to the server.');
@@ -2697,7 +2707,7 @@
     const { ov, rq } = SUP, pend = rq.filter((r) => r.status === 'menunggu'), schools = ov.schools || [];
     const kpi = (l, v) => `<div class="kpi"><small>${l}</small><b>${v}</b></div>`;
     const sum = (k) => schools.reduce((t, s) => t + (s[k] || 0), 0);
-    const subs = [['pengajuan', `✋ Requests${pend.length ? ` (${pend.length})` : ''}`], ['sekolah', '🏫 Schools & families'], ['kelas', '📚 Classes'], ['siswa', '🧒 Students'], ['guru', '👩‍🏫 Teachers'], ['ortu', '👨‍👩‍👧 Parents'], ['penawaran', `📨 Quotes${(SUP.quotes || []).filter((q) => q.status === 'baru').length ? ` (${(SUP.quotes || []).filter((q) => q.status === 'baru').length})` : ''}`]];
+    const subs = [['pengajuan', `✋ Requests${pend.length ? ` (${pend.length})` : ''}`], ['sekolah', '🏫 Schools & families'], ['kelas', '📚 Classes'], ['siswa', '🧒 Students'], ['guru', '👩‍🏫 Teachers'], ['ortu', '👨‍👩‍👧 Parents'], ['keluarga', '💳 Metiq Plus'], ['penawaran', `📨 Quotes${(SUP.quotes || []).filter((q) => q.status === 'baru').length ? ` (${(SUP.quotes || []).filter((q) => q.status === 'baru').length})` : ''}`]];
     let body = '';
     if (sub === 'pengajuan') {
       const schoolOpts = (want) => `<option value="">➕ New school (name below)</option>${schools.filter((s) => s.kind === 'sekolah').map((s) => `<option value="${s.id}" ${want && s.name.toLowerCase() === want.toLowerCase() ? 'selected' : ''}>${esc(s.name)}</option>`).join('')}`;
@@ -2732,6 +2742,11 @@
           ${schools.filter((s) => s.students).sort((a, b) => b.students - a.students).map((s) => `<div class="fbar"><span>${s.kind === 'homeschool' ? '🏡' : '🏫'} ${esc(s.name)}</span><i><b style="width:${Math.round((s.students / max) * 100)}%"></b></i><small>${s.active7} active / ${s.students}</small></div>`).join('') || '<p class="muted">No students yet.</p>'}</section>
         ${planCardHTML(schools)}
         <section class="card"><h2>Add school</h2><form data-form="newschool" class="form inline newschool"><input name="name" required maxlength="100" placeholder="School or homeschool family name"><select name="kind"><option value="sekolah">School</option><option value="homeschool">Homeschool</option></select><button class="btn">Add</button></form></section>`;
+    } else if (sub === 'keluarga') {
+      const rows = SUP.familySubs;
+      body = rows === null ? emptyCard('SQL 037 and 038 need to be run', 'Run supabase/037_paket_keluarga.sql, then supabase/038_paket_keluarga_manual.sql in the Supabase SQL Editor to enable manual plans.')
+        : `<section class="card"><h2>Activate Metiq Plus</h2><p class="small muted">Use after confirming the transfer in the bank statement. Access is activated per child; the payment note is saved for audit.</p>
+          ${rows.length ? `<div class="tscroll"><table class="tbl"><thead><tr><th>Children</th><th>Parent</th><th>Status saat ini</th><th>Paket dibeli</th><th>Transfer note</th><th></th></tr></thead><tbody>${rows.map((x) => `<tr><td><b>${esc(x.studentName)}</b></td><td>${esc(x.parentName)}<small class="muted">${esc(x.email || '')}</small></td><td>${x.active ? `Aktif s.d. ${esc(String(x.currentPeriodEnd).slice(0, 10))}` : 'Not active'}</td><td><select id="family-plan-${esc(x.studentId)}"><option value="monthly">Monthly · Rp39,000</option><option value="annual">Annual · Rp399,000</option></select></td><td><input id="family-note-${esc(x.studentId)}" maxlength="120" placeholder="Transfer reference / date"></td><td><button class="btn sm" data-act="familyactivate" data-parent="${esc(x.parentId)}" data-student="${esc(x.studentId)}">Activate</button></td></tr>`).join('')}</tbody></table></div>` : '<p class="muted">No children are linked to a parent account yet.</p>'}</section>`;
     } else if (sub === 'penawaran') {
       const qs = SUP.quotes;
       body = qs === null ? emptyCard('Needs SQL 020 to be run', 'Run supabase/020_paket_sekolah.sql in the Supabase SQL Editor.') : !qs.length ? emptyCard('No requests yet', 'Requests from the Pricing page appear here.')
@@ -3524,6 +3539,7 @@
   function viewParentHome() {
     const ses = session.get(), demoKids = ses.role === 'ortu' && ses.demo && ses.kids, codeKids = ses.role === 'ortu' && !ses.demo && ses.pcode && ses.kids;
     if (!(ses.role === 'ortu' && (ses.ptoken || demoKids || codeKids))) return go('#/ortu');
+    if (ses.ptoken) syncFamilyPlan(ses.ptoken);
     const p = demoKids ? { name: (tryInfo() || {}).name } : codeKids ? { name: 'Parent' } : S.db.parent || {};
     const kids = demoKids || codeKids ? ses.kids.map((id) => S.student(id)).filter(Boolean) : S.db.students;
     app.innerHTML = shell(`
@@ -3543,7 +3559,7 @@
     const k = ses.role === 'ortu' && S.student(sid || ses.id) && (!ses.kids || ses.kids.includes(sid || ses.id)) && S.student(sid || ses.id);
     if (!k) return go(ses.ptoken ? '#/ortu/anak' : '#/ortu');
     logParentView(k.id);
-    app.innerHTML = shell((ses.ptoken || (ses.kids && ses.kids.length > 1) ? '<a class="back" href="#/ortu/anak">← My children</a>' : '') + parentReportHTML(k) + (ses.demo ? realParentCard(k) : ''), { right: topRight() });
+    app.innerHTML = shell((ses.ptoken || (ses.kids && ses.kids.length > 1) ? '<a class="back" href="#/ortu/anak">← My children</a>' : '') + `<div class="report-print noprint"><button class="btn ghost" data-act="printreport">Print report</button></div>` + parentReportHTML(k) + (ses.demo ? realParentCard(k) : ''), { right: topRight() });
   }
 
   /* ---------- Panduan pemakaian ---------- */
@@ -4010,40 +4026,112 @@
   let jDragJustEnded = 0;
 
 
-  /* ---------- Harga: gratis untuk siswa dan guru; harga sekolah belum ditetapkan, jadi tidak ditampilkan. PRICE hanya untuk panel super admin ---------- */
+  /* ---------- Jalur drill harian, lembar latihan, dan paket keluarga ---------- */
+  const familyPlanCache = () => { try { return JSON.parse(localStorage.getItem('metiq_family_plan') || '{}'); } catch (e) { return {}; } };
+  const familyPlus = (sid) => { const p = familyPlanCache(), until = (p.byKid || {})[sid]; return !!(until && Date.parse(until) > Date.now()); };
+  async function syncFamilyPlan(token) {
+    if (!token) return familyPlanCache();
+    try {
+      const r = await fetch('/api/family/status', { headers: { Authorization: `Bearer ${token}` } });
+      if (!r.ok) return familyPlanCache();
+      const p = await r.json();
+      localStorage.setItem('metiq_family_plan', JSON.stringify({ byKid: Object.fromEntries((p.subscriptions || []).map((x) => [x.studentId, x.currentPeriodEnd])) }));
+      return p;
+    } catch (e) { return familyPlanCache(); }
+  }
+  async function startFamilyCheckout(plan) {
+    const ses = session.get();
+    if (!ses.ptoken) { toast('Masuk ke akun orang tua dengan Google untuk berlangganan.'); return go('#/ortu'); }
+    const studentId = document.getElementById('family-student')?.value || '';
+    if (!studentId) return toast('Pilih anak yang sudah tertaut ke akun orang tua ini.');
+    try {
+      const r = await fetch('/api/family/create-checkout', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${ses.ptoken}` }, body: JSON.stringify({ plan, studentId }) });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error || 'Payments are not available yet.');
+      const src = data.production ? 'https://app.midtrans.com/snap/snap.js' : 'https://app.sandbox.midtrans.com/snap/snap.js';
+      if (!window.snap) await new Promise((resolve, reject) => { const s = document.createElement('script'); s.src = src; s.setAttribute('data-client-key', data.clientKey); s.onload = resolve; s.onerror = reject; document.head.appendChild(s); });
+      window.snap.pay(data.token, {
+        onSuccess: async () => { await syncFamilyPlan(ses.ptoken); toast('Payment succeeded. Plus access is syncing.'); route(); },
+        onPending: () => toast('Payment is awaiting confirmation. Metiq will activate Plus after Midtrans confirms it.'),
+        onError: () => toast('Payment did not go through. Please try again.'),
+        onClose: () => toast('Checkout was closed. You can continue any time.'),
+      });
+    } catch (e) { toast(esc(e.message || 'Payments are not available yet.')); }
+  }
+  const dailyKey = (sid, day = isoDay(Date.now())) => `metiq_daily_${sid}_${day}`;
+  const worksheetWeek = () => { const d = new Date(); d.setHours(0, 0, 0, 0); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return isoDay(d.getTime()); };
+  const worksheetKey = (sid) => `metiq_worksheet_${sid}_${worksheetWeek()}`;
+  function dailySkill(st) {
+    const model = pathModel(st.id, getGrade());
+    const ids = model.flat || [];
+    return ids.slice(model.cur || 0).find((id) => SKILLS[id] && S.progress(st.id, id).score < 100)
+      || ids.find((id) => SKILLS[id] && S.progress(st.id, id).score < 100)
+      || (ids.length ? ids[0] : null);
+  }
+  async function viewDaily() {
+    const ses = session.get(), st = S.student(ses.id);
+    if (ses.role !== 'siswa' || !st) return go('#/siswa');
+    const guardian = st.parentId && session.get().ptoken;
+    if (guardian) await syncFamilyPlan(guardian);
+    const sid = dailySkill(st); if (!sid || !SKILLS[sid]) return go('#/belajar');
+    const sk = SKILLS[sid], done = localStorage.getItem(dailyKey(st.id)) === 'done', plus = familyPlus(st.id);
+    app.innerHTML = mqPage(`<div class="mq-ghead"><a class="mq-ico" href="#/belajar" aria-label="Back">${IC.back}</a><span class="mq-gtitle">Daily drill path</span></div>
+      <section class="daily-card"><span class="daily-kicker">10 QUESTIONS · 1 SKILL</span><h1>${esc(sk.name)}</h1><p>Short practice focused on your next step on the learning map. Complete one round to finish today's drill.</p>
+        ${done && !plus ? `<div class="daily-done">✅ Your free drill for today is complete. You can still open regular practice from the map any time.</div><a class="mq-btn ghost" href="#/harga">See Metiq Plus for unlimited daily drills</a>` : `<button class="mq-btn pulse" data-act="dailystart" data-id="${esc(sid)}">${done ? 'Repeat today\'s drill' : 'Start 10 questions'}</button>`} <a class="mq-btn ghost" href="#/lembar/${esc(sid)}">Print this topic worksheet</a>
+      </section><section class="card daily-free"><b>Gratis setiap hari</b><p>All lessons and regular practice stay open. Free accounts get one guided drill per day, parent progress reports, and one printable worksheet per week.</p></section>`, 'harian');
+  }
+  async function viewWorksheet(id) {
+    const sk = SKILLS[id]; if (!sk) return go('#/belajar');
+    const ses = session.get(), userId = ses.id || 'device';
+    if (ses.ptoken) await syncFamilyPlan(ses.ptoken);
+    const plus = familyPlus(userId);
+    const qs = [], seen = new Set(); let tries = 0;
+    while (qs.length < 20 && tries++ < 100) { const q = sk.gen(); if (q.type !== 'input') continue; const k = strip(q.text); if (seen.has(k)) continue; seen.add(k); qs.push(q); }
+    const rows = qs.map((q, i) => `<li><b>${i + 1}.</b><span>${q.text}</span></li>`).join('');
+    const key = qs.map((q, i) => `<li><b>${i + 1}.</b> ${esc(strip(q.answer))}</li>`).join('');
+    const used = +localStorage.getItem(worksheetKey(userId)) || 0;
+    app.innerHTML = `<main class="worksheet-wrap"><header class="worksheet-tools"><a href="#/harian">← Kembali</a><span>${plus ? 'Metiq Plus · unlimited printing' : `${Math.max(0, 1 - used)} free worksheet remaining this week`}</span><button class="mq-btn" data-act="printworksheet" data-sid="${esc(userId)}">Print worksheet</button></header>
+      <article class="worksheet"><header><img src="icons/icon.svg" alt=""><div><b>Metiq · Latihan Matematika</b><h1>${esc(sk.name)}</h1><small>Work carefully. Show your working on scratch paper.</small></div></header><div class="worksheet-meta"><span>Name: ____________________</span><span>Date: ______________</span></div><ol>${rows}</ol></article>
+      <article class="worksheet answer-sheet"><h2>Kunci jawaban · ${esc(sk.name)}</h2><ol>${key}</ol></article></main>`;
+  }
+  /* ---------- Harga: paket keluarga, guru gratis, dan penawaran sekolah ---------- */
   const PRICE = 15000, rp = (n) => 'Rp' + Number(n).toLocaleString('en-US');
   function viewPricing() {
     const yes = '<span class="pyes" aria-label="Included">✓</span>', no = '<span class="pno" aria-label="Not included">–</span>';
+    const ps = session.get(), linkedKids = ps.role === 'ortu' && ps.ptoken ? (S.db.students || []) : [];
+    const kidChooser = linkedKids.length ? `<label class="family-kid-pick">Pilih anak untuk paket ini<select id="family-student">${linkedKids.map((k) => `<option value="${esc(k.id)}">${esc(k.name)}</option>`).join('')}</select></label>` : '<p class="small muted family-kid-hint">Masuk dengan akun Google orang tua dan tautkan anak terlebih dahulu. Paket Plus berlaku per anak.</p>';
     const rows = [
-      ['All practice from Pre-K to Calculus, lessons, games, A Day at Work', yes, yes, yes],
-      ['Learning path adapts to each child\'s ability', yes, yes, yes],
-      ['No ads', yes, yes, yes],
-      ['Reports for parents', yes, yes, yes],
-      ['Classes with a class code; add students with a learning code', no, yes, yes],
-      ['Assign tasks to a class, group, or single student', no, yes, yes],
-      ['Class dashboard: who needs help, hard topics, task suggestions', no, yes, yes],
-      ['School dashboards and reports across classes and teachers', no, no, yes],
-      ['School admins manage teachers and classes', no, no, yes],
-      ['Starting assessment to place each student at the right level', yes, yes, yes],
-      ['Teacher training and mentoring', no, no, yes],
+      ['All practice from Pre-K to Calculus, lessons, games, A Day at Work', yes, yes, yes, yes],
+      ['Guided daily drill path', '1 jalur / hari', 'Tanpa batas', no, no],
+      ['Parent progress report', yes, yes, no, no],
+      ['Printable worksheets', '1 worksheet / week', 'Tanpa batas', 'Tanpa batas', 'Tanpa batas'],
+      ['Classes with a class code; add students with a learning code', no, no, yes, yes],
+      ['Assign tasks to a class, group, or single student', no, no, yes, yes],
+      ['Class dashboard: who needs help, hard topics, task suggestions', no, no, yes, yes],
+      ['School dashboards and reports across classes and teachers', no, no, no, yes],
+      ['School admins manage teachers and classes', no, no, no, yes],
+      ['Starting assessment to place each student at the right level', yes, yes, yes, yes],
+      ['Teacher training and mentoring', no, no, no, yes],
     ];
     const faq = [
       ['Is Metiq free for teachers?', 'Yes. Anyone who teaches math can sign up free and be active right away: create classes, add students, assign tasks, and see class reports.'],
       ['What\'s in the School plan?', 'A school layer on top of the free app: cross-class dashboards and reports, school admins managing teachers, plus training and support.'],
       ['How much does it cost?', 'The School plan price hasn\'t been set yet. Fill out the form below and the Metiq team will contact you.'],
       ['How do teachers join a school?', 'Teachers first sign up free. The school admin then adds them using their email in the 🏫 School tab → Manage teachers.'],
+      ['How do I subscribe to Metiq Plus?', 'Choose a child and plan, then contact a Metiq admin on WhatsApp. The admin will send transfer details and activate access after confirming payment. Renewals are manual, not automatic.'],
       ['How do we get started?', 'Fill out the form below. The Metiq team will contact you to discuss your school\'s needs.'],
       ['How is student data protected?', 'Metiq shows no ads and doesn\'t sell data. Other teachers can\'t see the names of students outside their class; teachers can only add students with a learning code from the child or parent.'],
     ];
     app.innerHTML = shell(`<a class="back" href="#/">← Back</a>
-      <section class="phero"><h1>One app, three ways to use it</h1><p>Metiq is free for students and math teachers. Schools with many classes can request a quote for the school dashboard, teacher management, and support.</p></section>
+      <section class="phero"><h1>Learn for free. Practice with more focus with Plus.</h1><p>Core lessons and math practice stay free. Metiq Plus gives families unlimited guided daily drills and printable worksheets.</p></section>
       <div class="plans">
-        <section class="plan"><small>At home</small><h2>Families</h2><b class="price">Free</b><p>Children learn on their own at their level, and parents see their progress.</p><a class="btn ghost" href="#/siswa-baru">Start learning</a></section>
-        <section class="plan hl"><small>One class</small><h2>Teacher</h2><b class="price">Free</b><p>Complete class tools for assigning tasks and monitoring progress. Active right away.</p><a class="btn" href="#/guru/daftar">Free teacher sign-up</a></section>
-        <section class="plan"><small>Many classes</small><h2>School</h2><b class="price">Contact us</b><p>School dashboard, admins manage teachers, training.</p><a class="btn ghost" href="#quote" data-act="quotego">Request a quote</a></section>
+        <section class="plan"><small>At home</small><h2>Free Family</h2><b class="price">Free</b><p>Semua materi, latihan biasa tanpa batas, laporan orang tua, satu drill terpandu per hari, dan satu lembar cetak per minggu.</p><a class="btn ghost" href="#/siswa-baru">Start learning</a></section>
+        <section class="plan hl"><small>For regular practice · per child</small><h2>Metiq Plus</h2><b class="price">Rp39,000 <small>/ child / 1 month</small></b><p>Unlimited guided drills and printable worksheets, plus all family features. Renew manually; the annual plan saves more.</p><b class="price annual">Rp399,000 <small>/ child / 1 year</small></b>${kidChooser}<div class="family-wa-actions"><button class="btn" data-act="familywa" data-plan="annual" data-wa="6285759028919">Ask about annual · WhatsApp 1</button><button class="btn ghost" data-act="familywa" data-plan="annual" data-wa="6285710086041">WhatsApp 2</button><button class="btn" data-act="familywa" data-plan="monthly" data-wa="6285759028919">Ask about monthly · WhatsApp 1</button><button class="btn ghost" data-act="familywa" data-plan="monthly" data-wa="6285710086041">WhatsApp 2</button></div><small class="payment-note">Transfer BSI dan konfirmasi bukti pembayaran dilakukan lewat WhatsApp. Admin mengaktifkan paket setelah dana diterima.</small></section>
+        <section class="plan hl"><small>One class</small><h2>Teacher</h2><b class="price">Gratis</b><p>Complete class tools for assigning tasks and monitoring progress. Active right away.</p><a class="btn" href="#/guru/daftar">Daftar guru gratis</a></section>
+        <section class="plan"><small>Many classes</small><h2>School</h2><b class="price">Hubungi kami</b><p>School dashboard, admins manage teachers, training.</p><a class="btn ghost" href="#quote" data-act="quotego">Minta penawaran</a></section>
       </div>
-      <section class="card"><h2>Compare</h2><div class="tscroll"><table class="tbl pcompare"><thead><tr><th></th><th>Families</th><th>Teacher</th><th>School</th></tr></thead><tbody>
-        ${rows.map(([t, a, b, c]) => `<tr><td>${t}</td><td>${a}</td><td>${b}</td><td>${c}</td></tr>`).join('')}</tbody></table></div></section>
+      <section class="card"><h2>Compare</h2><div class="tscroll"><table class="tbl pcompare"><thead><tr><th>Fitur</th><th>Keluarga gratis</th><th>Metiq Plus</th><th>Teacher</th><th>School</th></tr></thead><tbody>
+        ${rows.map(([t, a, b, c, d]) => `<tr><td>${t}</td><td>${a}</td><td>${b}</td><td>${c}</td><td>${d}</td></tr>`).join('')}</tbody></table></div></section>
       <section class="card"><h2>When does a school need this plan?</h2><p>Practice, lessons, and class tools are currently free for students and math teachers. The School plan adds the layer needed when Metiq is used in many classes: cross-class reports, teacher management, assessments to measure improvement, training, and direct support.</p></section>
       <section class="card" id="quote"><h2>📨 Request a quote for your school</h2>
         ${cloudOn() ? `<form data-form="quote" class="form"><label>School name<input name="school" required minlength="2" maxlength="120"></label><label>City<input name="city" maxlength="80"></label>
@@ -4266,7 +4354,7 @@
     const seq = ++routeSeq;
     S.setMode(cloudOn());
     if (session.get().demo) tlog('view', { p: a === 'guru' ? 'guru/' + (b || '') : a || 'beranda', ...(a === 'latihan' || a === 'main' || a === 'pelajaran' ? { s: b } : {}) });
-    const needsData = a === 'kelas' || a === 'sesi' || a === 'belajar' || a === 'asesmen' || a === 'permainan' || a === 'main' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi' || a === 'tugas' || a === 'aku' || a === 'ujian' || a === 'profesi' || a === 'misi';
+    const needsData = a === 'kelas' || a === 'sesi' || a === 'belajar' || a === 'asesmen' || a === 'permainan' || a === 'main' || a === 'hadiah' || a === 'laporanku' || a === 'latihan' || (a === 'ortu' && (b === 'laporan' || b === 'anak')) || (a === 'guru' && b && b !== 'masuk' && b !== 'daftar') || a === 'avatar' || a === 'notifikasi' || a === 'tugas' || a === 'aku' || a === 'ujian' || a === 'profesi' || a === 'misi' || (a === 'harga' && session.get().role === 'ortu' && session.get().ptoken);
     if (needsData && !(await ensure())) return;
     if (seq !== routeSeq) return;
     // Anak tanpa kelas: Ayah/Bunda masuk dengan Gmail sekali di HP ini sebelum lanjut belajar
@@ -4286,6 +4374,8 @@
       case 'mulai': return viewTryStart(b);
       case 'ajukan': return b === 'status' ? viewRequestStatus(c) : b ? viewRequestForm(b) : viewRequestChooser();
       case 'belajar': return viewStudentHome();
+      case 'harian': return viewDaily();
+      case 'sheets': return viewWorksheet(b);
       case 'bab': return viewChapter(b);
       case 'gmail': return b === 'anak' ? viewGKids() : viewGmailStart();
       case 'asesmen': return b === 'hasil' ? viewDiagResult('a') : b === 'akhir' ? (c === 'hasil' ? viewDiagResult('b') : viewDiag('b')) : viewDiag('a');
@@ -4341,6 +4431,19 @@
     if (act === 'quotego') { e.preventDefault(); const q = document.getElementById('quote'); if (q) q.scrollIntoView({ behavior: 'smooth' }); return; }
     if (act === 'sgdel') { if (!confirm(`Remove ${el.dataset.n} from the school? Their classes and students stay with that teacher but no longer appear on the school dashboard.`)) return; Cloud.rpc('school_teacher_remove', { p_token: session.get().token, p_teacher_id: el.dataset.id }).then(() => { toast('Teacher removed from school ✔'); loadSchoolTeachers(); }).catch((er) => toast(er.status ? esc(er.message) : 'Can\'t connect to the server')); return; }
     if (act === 'quotest') { Cloud.rpc('super_quote_status', { p_token: session.get().token, p_id: +el.dataset.id, p_status: el.dataset.s }).then(() => { toast('Status updated ✔'); route(); }).catch((er) => toast(er.status ? esc(er.message) : 'Can\'t connect to the server')); return; }
+    if (act === 'familywa') {
+      const ps = session.get(), sid = document.getElementById('family-student')?.value || '', kid = sid && S.student(sid);
+      const plan = el.dataset.plan === 'annual' ? 'tahunan 1 tahun (Rp399.000)' : 'bulanan 1 bulan (Rp39.000)';
+      const greeting = kid ? `Saya ingin berlangganan Metiq Plus ${plan} untuk anak ${kid.name}${ps.name ? `, akun orang tua ${ps.name}` : ''}. Mohon kirimkan detail transfer BSI. Setelah saya membayar, saya akan mengirim bukti transfer di chat ini.` : `Saya ingin bertanya tentang Metiq Plus ${plan}. Mohon bantu cara menghubungkan akun orang tua dan anak, serta kirimkan detail pembayaran.`;
+      window.open(`https://wa.me/${el.dataset.wa}?text=${encodeURIComponent(greeting)}`, '_blank', 'noopener'); return;
+    }
+    if (act === 'familyactivate') {
+      const sid = el.dataset.student, plan = document.getElementById(`family-plan-${sid}`)?.value || 'monthly', note = document.getElementById(`family-note-${sid}`)?.value || '';
+      if (!note.trim()) return toast('Add a brief note with the transfer date or reference.');
+      if (!confirm(`Pastikan dana sudah masuk ke rekening sebelum mengaktifkan Metiq Plus ${plan === 'annual' ? 'tahunan' : 'bulanan'} untuk anak ini. Lanjutkan?`)) return;
+      el.disabled = true;
+      Cloud.rpc('super_family_activate', { p_token: session.get().token, p_parent_id: el.dataset.parent, p_student_id: sid, p_plan: plan, p_payment_note: note.trim() }).then(() => { toast('Metiq Plus activated ✔'); loadSuper(teacherCtx(), 'keluarga'); }).catch((er) => { el.disabled = false; toast(er.status ? esc(er.message) : 'Could not activate the plan'); }); return;
+    }
     if (act === 'gstart') return startGame();
     if (act === 'coret') return openCoret();
     if (act === 'album') return openAlbum(+el.dataset.i);
@@ -4474,6 +4577,21 @@
     }
     else if (act === 'pickkid') { session.set({ role: 'siswa', id: el.dataset.id, code: el.dataset.code, demo: session.get().demo || undefined }); go('#/belajar'); }
     else if (act === 'trydemo') go('#/mulai/' + el.dataset.r);
+    else if (act === 'dailystart') {
+      const st = S.student(session.get().id), sk = el.dataset.id;
+      if (!st || !SKILLS[sk]) return go('#/belajar');
+      if (!familyPlus(st.id) && localStorage.getItem(dailyKey(st.id)) === 'done') return toast('Today\'s free guided drill is complete. Regular practice is still available from the map.');
+      sessionStorage.setItem('metiq_daily_run', JSON.stringify({ sid: st.id, skill: sk, day: isoDay(Date.now()) })); go('#/latihan/' + sk);
+    }
+    else if (act === 'familybuy') startFamilyCheckout(el.dataset.plan);
+    else if (act === 'printworksheet') {
+      const sk = location.hash.split('/')[2], sid = el.dataset.sid || 'device';
+      if (!SKILLS[sk]) return;
+      if (!familyPlus(sid) && (+localStorage.getItem(worksheetKey(sid)) || 0) >= 1) return toast('Your free worksheet for this week has been used. Metiq Plus includes unlimited printing.');
+      if (!familyPlus(sid)) localStorage.setItem(worksheetKey(sid), String((+localStorage.getItem(worksheetKey(sid)) || 0) + 1));
+      window.print();
+    }
+    else if (act === 'printreport') window.print();
     else if (act === 'trykid') startDemo('siswa', '', '', [], el.dataset.s);
     else if (act === 'realstart') { tlog('view', { p: 'mulai' }); tflush(); session.set({}); S.setMode(cloudOn()); go('#/siswa-baru'); }
     else if (act === 'realsignup') { tlog('view', { p: 'daftar' }); tflush(); session.set({}); S.setMode(cloudOn()); go('#/ajukan/' + (el.dataset.k || '')); }

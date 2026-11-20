@@ -50,6 +50,8 @@ select version, name, applied_at from public.schema_migrations order by version;
 | 034 | `034_perbaikan_sinkron.sql` | Urutan progres: trigger `progress_guard` |
 | 035 | `035_ulasan_orang_tua.sql` | Ulasan orang tua dengan sesi/kode orang tua |
 | 036 | `036_satu_student_sync.sql` | Hapus `student_sync` 4 argumen (hindari PGRST203) |
+| 037 | `037_paket_keluarga.sql` | Paket Metiq Plus dan status pesanan Midtrans |
+| 038 | `038_paket_keluarga_manual.sql` | Pembayaran transfer manual dan aktivasi Plus oleh super admin |
 
 ## Catatan 014a–014c, 034, dan 035
 
