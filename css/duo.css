@@ -2495,7 +2495,6 @@ input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39
 .daily-card p, .daily-free p { color: #637872; line-height: 1.55; }
 .daily-kicker { color: #0e8e7c; font-size: .76rem; font-weight: 900; letter-spacing: .12em; }
 .daily-card .mq-btn { width: 100%; text-align: center; }
-.daily-done { padding: 12px 14px; border-radius: 14px; background: #e9f8ef; color: #23664c; font-weight: 800; }
 .daily-free { max-width: 680px; margin: 14px auto; }
 .worksheet-wrap { width: min(920px,100%); margin: 0 auto; padding: 18px; color: #172e3e; }
 .worksheet-tools { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
@@ -2512,14 +2511,6 @@ input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39
 .answer-sheet { margin-top: 18px; page-break-before: always; break-before: page; }
 .answer-sheet ol li { min-height: 28px; }
 .report-print { max-width: 860px; margin: 0 auto 10px; text-align: right; }
-.plan .annual { margin-top: 4px; }
-.payment-note { margin-top: 8px; color: #6d7f7a; font-size: .78rem; line-height: 1.4; text-transform: none !important; letter-spacing: 0 !important; }
-.family-kid-pick { display: grid; gap: 6px; margin: 4px 0 8px; color: #516963; font-size: .86rem; font-weight: 800; }
-.family-kid-pick select { width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid #cfe3dc; border-radius: 12px; background: #fff; color: #203b43; font: inherit; }
-.family-wa-actions { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-top: 12px; }
-.family-wa-actions .btn { min-height: 44px; white-space: normal; line-height: 1.25; }
-@media (max-width: 460px) { .family-wa-actions { grid-template-columns: 1fr; } }
-.family-kid-hint { margin: 4px 0 8px !important; line-height: 1.4; }
 @media (max-width: 560px) { .worksheet ol { grid-template-columns: 1fr; gap: 13px; } .worksheet-meta { flex-direction: column; gap: 8px; } .worksheet-tools { flex-wrap: wrap; } }
 @media print {
   @page { size: A4; margin: 14mm; }
