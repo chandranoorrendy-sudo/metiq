@@ -2541,7 +2541,7 @@ input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39
 @media (max-width: 380px) { .jmetrics { grid-template-columns: 1fr; } }
 
 /* Varied answer interactions in adaptive math practice */
-.mq-entry { width: 100%; box-sizing: border-box; font: inherit; text-align: center; }
+.mq-entry { width: 100%; box-sizing: border-box; text-align: center; }
 .mq-sliderbox { max-width: 520px; margin: 22px auto; padding: 20px; border-radius: 20px; background: #f4f8ff; }
 .mq-sliderread { display:flex; justify-content:space-between; align-items:center; font-weight:700; margin-bottom:18px; }
 .mq-sliderread b { min-width:56px; padding:8px 14px; border-radius:14px; background:#fff; color:#3958bb; font-size:1.5rem; text-align:center; box-shadow:0 2px 0 #dce5ff; }
