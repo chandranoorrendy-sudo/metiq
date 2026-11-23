@@ -1169,6 +1169,14 @@
       else if (requested === 'hold') P.mode = 'hold';
       else P.mode = 'choice';
     } else if (q.type === 'input') P.mode = 'type';
+    if (q.type === 'choice' && Array.isArray(q.options)) {
+      q.answer = String(q.answer);
+      q.options = [...new Set(q.options.map(String))];
+      if (!q.options.includes(q.answer)) q.options.unshift(q.answer);
+      const n = practiceInteger(q.answer);
+      if (n !== null && q.options.length < 4) q.options = [...new Set([...q.options, ...practiceOptions(n)])].slice(0, 4);
+      if (q.options.length < 2) { q.type = 'input'; delete q.options; P.mode = 'type'; }
+    }
     return q;
   }
   // Tombol Periksa aktif hanya setelah ada jawaban (pilihan atau angka)
@@ -1259,7 +1267,7 @@
     if (q.type === 'input' && given === '') return toast('Write your answer first');
     // titik ribuan dan spasi diabaikan; tanda minus dan koma desimal dibakukan
     const norm = (x) => String(x).trim().toLowerCase().replace(/[−–]/g, '-').replace(/[,\s]/g, '');
-    const ok = q.type === 'choice' ? given === q.answer : norm(given) === norm(q.answer);
+    const ok = q.type === 'choice' ? String(given).trim() === String(q.answer).trim() : norm(given) === norm(q.answer);
     if (P.diag) return diagAnswer(ok);
     tlog('answer', { s: P.sk.id, ok, ms: Date.now() - P.qStart });
     P.locked = true; P.count++; P.msSum += Date.now() - P.qStart;
