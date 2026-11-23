@@ -2234,6 +2234,10 @@ input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39
   background-color: #effbf7;
   border-radius: 50%;
 }
+.avportrait-hijab {
+  background-image: url('../assets/generated/avatar-hijab-portraits.png');
+  background-size: 200% 200%;
+}
 .alb-th.lock > svg { filter: grayscale(1) blur(3px); opacity: .45; }
 .mq-btn {
   min-height: 50px;

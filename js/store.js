@@ -19,7 +19,7 @@
   const CODE_CH = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   const makeCode = (n = 6) => { let s; do { s = ''; for (let i = 0; i < n; i++) s += CODE_CH[Math.floor(Math.random() * CODE_CH.length)]; } while (db.classes.some((c) => c.code === s) || db.students.some((x) => x.parentCode === s)); return s; };
   const hash = (s) => { let h = 5381; for (const ch of String(s)) h = ((h * 33) ^ ch.charCodeAt(0)) >>> 0; return h.toString(36); };
-  const AVATARS = ['portrait:0', 'portrait:1', 'portrait:2', 'portrait:3', 'portrait:4', 'portrait:5', 'portrait:6', 'portrait:7', 'portrait:8', 'portrait:9', 'portrait:10', 'portrait:11', '🦁', '🐯', '🐼', '🐨', '🐸', '🐵', '🦊', '🐰', '🐻', '🐧', '🦄', '🐙', '🐳', '🦋', '🐞', '🐢'];
+  const AVATARS = ['portrait:0', 'portrait:1', 'portrait:2', 'portrait:3', 'portrait:4', 'portrait:5', 'portrait:6', 'portrait:7', 'portrait:8', 'portrait:9', 'portrait:10', 'portrait:11', 'portrait:12', 'portrait:13', 'portrait:14', 'portrait:15', '🦁', '🐯', '🐼', '🐨', '🐸', '🐵', '🦊', '🐰', '🐻', '🐧', '🦄', '🐙', '🐳', '🦋', '🐞', '🐢'];
 
   // SmartScore ala IXL: naik cepat di awal, makin sulit mendekati 100; salah menurunkan skor
   function nextScore(s, ok) {

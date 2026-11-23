@@ -41,7 +41,7 @@
 
   const T = (id, en) => (window.METIQ_LANG === 'en' ? en : id);
   const CATALOG = [
-    [T('Anak', 'Children'), [...Array(12)].map((_, i) => `portrait:${i}`).concat(['svg:girl-hijab', 'svg:girl-hijab-blue', 'svg:girl-hijab-lilac', 'svg:girl-hijab-teal', 'svg:girl-hijab-peach', 'svg:girl-hijab-navy', 'svg:girl-ponytail', 'svg:boy-peci', 'svg:boy-glasses', 'svg:boy-curly', '👧', '👦', '🧒', '👩‍🎓', '👨‍🎓', '🧕'])],
+    [T('Anak', 'Children'), [...Array(16)].map((_, i) => `portrait:${i}`).concat(['svg:girl-hijab', 'svg:girl-hijab-blue', 'svg:girl-hijab-lilac', 'svg:girl-hijab-teal', 'svg:girl-hijab-peach', 'svg:girl-hijab-navy', 'svg:girl-ponytail', 'svg:boy-peci', 'svg:boy-glasses', 'svg:boy-curly', '👧', '👦', '🧒', '👩‍🎓', '👨‍🎓', '🧕'])],
     [T('Guru', 'Teachers'), ['svg:ustadzah', 'svg:ustadz', '👩‍🏫', '👨‍🏫']],
     [T('Hewan', 'Animals'), ['svg:meti', 'svg:tito', 'svg:nahla', 'svg:lumo', '🦁', '🐯', '🐼', '🐨', '🐸', '🐵', '🦊', '🐰', '🐻', '🐧', '🦄', '🐙', '🐳', '🦋', '🐞', '🐢', '🐱', '🐶', '🐮', '🐔', '🦉', '🐠']],
     [T('Tumbuhan', 'Plants'), ['🌻', '🌵', '🌳', '🌴', '🍀', '🌷', '🌸', '🍁', '🌿', '🍄', '🌹', '🌾']],
@@ -51,6 +51,7 @@
   const NAMES = { 'svg:girl-hijab': T('Anak berhijab', 'Child with hijab'), 'svg:girl-hijab-blue': T('Anak berhijab biru', 'Child with blue hijab'), 'svg:girl-hijab-lilac': T('Anak berhijab ungu dan kulit sawo matang', 'Child with lilac hijab and tan skin'), 'svg:girl-hijab-teal': T('Anak berhijab hijau dan kulit gelap', 'Child with teal hijab and dark skin'), 'svg:girl-hijab-peach': T('Anak berhijab jingga dan kulit cerah', 'Child with peach hijab and light skin'), 'svg:girl-hijab-navy': T('Anak berhijab biru tua dan kulit cokelat', 'Child with navy hijab and brown skin'), 'svg:girl-ponytail': T('Anak berkuncir', 'Girl with ponytail'), 'svg:boy-peci': T('Anak berpeci', 'Child with peci'), 'svg:boy-glasses': T('Anak berkacamata', 'Boy with glasses'), 'svg:boy-curly': T('Anak berambut keriting', 'Boy with curly hair'), 'svg:ustadzah': 'Ustadzah', 'svg:ustadz': 'Ustadz', 'svg:meti': T('Meti si gurita', 'Meti the octopus'), 'svg:tito': T('Tito si semut', 'Tito the ant'), 'svg:nahla': T('Nahla si lebah', 'Nahla the bee'), 'svg:lumo': T('Lumo si lumba-lumba', 'Lumo the dolphin') };
   const portraitNames = [T('Anak berambut pirang', 'Child with blonde hair'), T('Anak berambut merah', 'Child with auburn hair'), T('Anak berambut hitam panjang', 'Child with long dark hair'), T('Anak berkacamata', 'Child with glasses'), T('Anak berambut ikal', 'Child with wavy hair'), T('Anak berkulit gelap dan berambut keriting', 'Child with dark skin and curly hair'), T('Anak berhijab ungu', 'Child with a purple hijab'), T('Anak berambut cokelat ikal', 'Child with curly brown hair'), T('Anak dengan rambut keriting', 'Child with coily hair'), T('Anak berkacamata dan rambut ikal', 'Child with glasses and wavy hair'), T('Anak berambut hitam pendek', 'Child with short dark hair'), T('Anak dengan kepang', 'Child with braids')];
   portraitNames.forEach((name, i) => { NAMES[`portrait:${i}`] = name; });
+  [T('Anak berhijab merah muda dan kulit sawo matang', 'Child with rose hijab and olive skin'), T('Anak berhijab hijau dan kulit gelap', 'Child with teal hijab and deep brown skin'), T('Anak berhijab ungu dan kulit tan', 'Child with lavender hijab and tan skin'), T('Anak berhijab kuning dan kulit cerah', 'Child with golden hijab and fair skin')].forEach((name, i) => { NAMES[`portrait:${i + 12}`] = name; });
   // Wajah maskot Metiq sebagai avatar (digambar oleh js/mascot.js saat ditampilkan)
   const MASCOT_BG = { meti: '#e6fffa', tito: '#ffe8e9', nahla: '#fff4d6', lumo: '#e3ebff' };
   const mascotAvatar = (k) => { const M = window.METIQ_MASCOT; if (!M || !(k in MASCOT_BG)) return null; const f = M.face(62, 'happy', k === 'meti' ? undefined : k).replace('<svg ', '<svg x="1" y="7" ').replace(/ role="img" aria-label="[^"]*"/, ' aria-hidden="true"'); return `<svg viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="32" fill="${MASCOT_BG[k]}"/>${f}</svg>`; };
@@ -58,7 +59,11 @@
   // HTML avatar: ilustrasi SVG atau emoji
   function html(a) {
     const portrait = /^portrait:(\d+)$/.exec(String(a || ''));
-    if (portrait) { const i = Math.min(11, Number(portrait[1])); return `<span class="avportrait" role="img" aria-label="${T('Avatar anak', 'Child avatar')}" style="--px:${(i % 4) * 33.333}%;--py:${Math.floor(i / 4) * 50}%"></span>`; }
+    if (portrait) {
+      const i = Math.min(15, Number(portrait[1]));
+      if (i >= 12) return `<span class="avportrait avportrait-hijab" role="img" aria-label="${NAMES[`portrait:${i}`]}" style="--px:${((i - 12) % 2) * 100}%;--py:${Math.floor((i - 12) / 2) * 100}%"></span>`;
+      return `<span class="avportrait" role="img" aria-label="${NAMES[`portrait:${i}`] || T('Avatar anak', 'Child avatar')}" style="--px:${(i % 4) * 33.333}%;--py:${Math.floor(i / 4) * 50}%"></span>`;
+    }
     const k = String(a || '').startsWith('svg:') ? String(a).slice(4) : null;
     if (k && SVG[k]) return `<span class="avsvg" role="img" aria-label="${NAMES['svg:' + k] || 'avatar'}">${SVG[k]}</span>`;
     const mv = k && mascotAvatar(k);
