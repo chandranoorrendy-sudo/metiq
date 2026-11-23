@@ -1123,7 +1123,7 @@
   function practiceOptions(n) {
     const step = Math.abs(n) >= 100 ? 10 : 1, candidates = [n, n + step, n - step, n + 2 * step, n - 2 * step, n + 3 * step, n - 3 * step];
     const vals = [...new Set(candidates.filter((x) => (n < 0 || x >= 0) && Math.abs(x) < 1000000).map(String))];
-    return shuf([n, ...shuf(vals.filter((x) => x !== n)).slice(0, 3)]);
+    return shuf([String(n), ...shuf(vals.filter((x) => x !== String(n))).slice(0, 3)]);
   }
   function setPracticeFormat(q) {
     q = Object.assign({}, q);
