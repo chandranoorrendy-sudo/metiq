@@ -2523,3 +2523,43 @@ input:focus, select:focus { border-color: #278e83; box-shadow: 0 0 0 3px rgba(39
   .answer-sheet { page-break-before: always; break-before: page; }
   .worksheet > header img { width: 40px; height: 40px; }
 }
+/* Guided inquiry mission pilot: phase cues and touch-friendly investigation controls. */
+.jphase { margin: 0 0 8px; color: var(--mq-dd); font-size: .78rem; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.jinvest { display: grid; gap: 14px; width: 100%; margin: 6px auto 14px; padding: 16px; border: 2px solid var(--mq-line); border-radius: 20px; background: linear-gradient(160deg, #fff, #f5fcf8); }
+.jinvest > label { display: grid; grid-template-columns: 1fr auto; gap: 8px 12px; align-items: center; color: var(--mq-ink); font-weight: 800; }
+.jinvest > label b { color: var(--mq-dd); }
+.jinvest input[type=range] { grid-column: 1 / -1; width: 100%; min-height: 34px; accent-color: var(--mq-d); touch-action: pan-y; }
+.jmetrics { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.jmetrics > span { display: grid; gap: 4px; min-height: 78px; padding: 11px; border-radius: 15px; background: #e9f8f3; color: #526a63; font-size: .85rem; font-weight: 800; }
+.jmetrics b { color: var(--mq-dd); font-size: 1.22rem; }
+.jmetrics small { font-size: .72rem; }
+.jexplore-status { margin: 0; text-align: center; color: var(--mq-dd); font-weight: 900; }
+@media (max-width: 380px) { .jmetrics { grid-template-columns: 1fr; } }
+
+/* Varied answer interactions in adaptive math practice */
+.mq-entry { width: 100%; box-sizing: border-box; font: inherit; text-align: center; }
+.mq-sliderbox { max-width: 520px; margin: 22px auto; padding: 20px; border-radius: 20px; background: #f4f8ff; }
+.mq-sliderread { display:flex; justify-content:space-between; align-items:center; font-weight:700; margin-bottom:18px; }
+.mq-sliderread b { min-width:56px; padding:8px 14px; border-radius:14px; background:#fff; color:#3958bb; font-size:1.5rem; text-align:center; box-shadow:0 2px 0 #dce5ff; }
+.mq-slider { width:100%; min-height:36px; accent-color:#526fe1; touch-action:pan-y; }
+.mq-sliderends { display:flex; justify-content:space-between; color:#738096; font-weight:700; }
+.mq-digits { max-width:520px; margin:18px auto; text-align:center; }
+.mq-interact-hint { color:#718096; font-size:.95rem; font-weight:700; text-align:center; margin:12px auto; }
+.mq-dropslots,.mq-tilebank { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; margin:14px auto; }
+.mq-dropslot,.mq-tile { min-width:58px; min-height:58px; border:2px dashed #b9c8df; border-radius:16px; background:#fff; color:#253b54; font-size:1.7rem; font-weight:800; box-shadow:0 3px 0 #e1e8f0; touch-action:manipulation; }
+.mq-dropslot { border-style:dashed; color:#526fe1; }
+.mq-tile { border:0; background:#eaf0ff; box-shadow:0 4px 0 #c9d5ff; cursor:grab; }
+.mq-tile:active { transform:translateY(2px); box-shadow:0 2px 0 #c9d5ff; }
+.mq-tile.used { opacity:.35; }
+.mq-dropchoice { max-width:420px; min-height:54px; margin:16px auto; padding:14px; border:2px dashed #aabbd5; border-radius:16px; color:#51627a; text-align:center; font-weight:800; }
+.mq-opts.hold-mode .mq-opt { position:relative; overflow:hidden; touch-action:manipulation; }
+.mq-holdfill { position:absolute; inset:auto 0 0; height:0; background:#ffd76e80; pointer-events:none; }
+.mq-opt.holding .mq-holdfill { height:100%; transition:height .72s linear; }
+
+.mq-draw { max-width:520px; margin:16px auto; text-align:center; }
+.mq-drawboard { min-height:88px; display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:6px; padding:14px; border:2px dashed #b8c8df; border-radius:18px; background:#f8faff; }
+.mq-drawdot { width:36px; height:36px; border:0; border-radius:50%; color:#526fe1; background:#e5ebff; font-size:1.5rem; cursor:pointer; }
+.mq-drawcount { margin:12px; font-weight:800; color:#40516b; }
+.mq-drawtools { display:flex; justify-content:center; flex-wrap:wrap; gap:10px; }
+.mq-drawadd,.mq-drawzero { min-height:48px; padding:8px 18px; border:0; border-radius:14px; background:#eaf0ff; color:#334b9c; font:inherit; font-weight:800; cursor:pointer; box-shadow:0 3px 0 #cbd7ff; }
+.mq-drawadd:disabled { opacity:.45; cursor:default; }

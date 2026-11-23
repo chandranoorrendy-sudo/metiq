@@ -115,6 +115,25 @@
       wrapUp: 'You calculated the rafter length and roof angle, then checked whether the tiles are suitable.', nextMath: ['Sine and cosine rules', 'Force vectors', 'Calculus for beam deflection'] },
 
     /* ---------- Arsitek ---------- */
+    { id: 'architect-school-garden-inquiry', key: 'arsGrdn', profession: 'arsitek', level: 'SD 1-3', title: 'Design a school garden',
+      instructionalMode: 'guided_inquiry', version: 1, competencyIds: ['3K2', '3K3'], learningObjectives: ['Distinguish area from perimeter.', 'Test dimensions against two constraints.', 'Explain a decision with calculation evidence.'],
+      inquiry: { phases: ['orientation', 'conceptualization', 'investigation', 'conclusion', 'discussion'], rubricId: 'area-perimeter-transfer-v1' },
+      scenario: 'The school wants a rectangular garden with an area of at least 20 m². The fence can be no longer than 20 m. Can you find dimensions that satisfy both constraints?',
+      art: '👩‍🎨🌱', topics: ['ukur', 'geometri'], units: ['3K'],
+      steps: [
+        { type: 'choice', phase: 'orientation', question: 'What two constraints must the garden meet?', options: ['Area at least 20 m² and fence at most 20 m', 'Area at most 20 m² and fence at least 20 m', 'The garden must be 20 m long'], answer: 'Area at least 20 m² and fence at most 20 m',
+          hintLevels: ['Look for one limit on area and one limit on fence length.', 'At least means no less; at most means no more.'], explanation: 'The design must meet both constraints: area ≥ 20 m² and perimeter ≤ 20 m.' },
+        { type: 'choice', phase: 'conceptualization', question: 'Before using the tool: will a 3 m × 5 m garden meet both constraints?', options: ['Yes, both area and fence fit', 'No, the area is too small', 'No, the fence is too long'], answer: 'No, the area is too small',
+          hintLevels: ['Estimate area with length × width, then compare it with 20.', 'Area is 3 × 5 = 15 m²; perimeter is 2 × (3 + 5) = 16 m.'], explanation: 'Your prediction is right: the 16 m fence fits, but 15 m² is less than the required 20 m².' },
+        { type: 'investigate', phase: 'investigation', question: 'Change the length and width. Find one design that meets both constraints.', config: { min: 2, max: 10, length: 3, width: 5, minArea: 20, maxPerimeter: 20 },
+          hintLevels: ['Try increasing the area without making the sides too long.', 'Area = length × width. Perimeter = 2 × (length + width).', 'Try 4 m × 5 m or 3 m × 7 m, then check both calculations.'], explanation: 'A good design must have area at least 20 m² and perimeter at most 20 m.' },
+        { type: 'choice', phase: 'conclusion', question: 'Which design meets the minimum area and fence limit?', options: ['4 m × 5 m: area 20 m², perimeter 18 m', '2 m × 10 m: area 20 m², perimeter 24 m', '3 m × 5 m: area 15 m², perimeter 16 m'], answer: '4 m × 5 m: area 20 m², perimeter 18 m',
+          hintLevels: ['Check area and perimeter. Both must pass, not just one.', 'For 4 × 5: area is 20 m²; fence is 2 × (4 + 5) = 18 m.'], explanation: '4 m × 5 m is evidence of a design that meets both constraints: 20 m² of area and an 18 m fence.' },
+        { type: 'choice', phase: 'discussion', question: 'Why does 4 m × 5 m meet the challenge?', options: ['Its area is 20 m² and its perimeter is 18 m', 'A garden with area 20 m² always has perimeter 20 m', 'Only the garden length needs to be checked'], answer: 'Its area is 20 m² and its perimeter is 18 m',
+          hintLevels: ['Explain with two calculations: area and perimeter.', 'Compare 20 with the minimum area, then 18 with the maximum fence.'], explanation: 'The 20 m² area reaches the minimum, and the 18 m fence stays below 20 m. The decision checks area and perimeter together.' },
+      ],
+      wrapUp: 'You tested several garden sizes, then used area and perimeter evidence to choose a design that meets the constraints.', nextMath: ['Composite shapes and perimeter (Grade 4)', 'Scale drawings (middle school)'] },
+
     { id: 'architect-house-shapes', key: 'arsTK', profession: 'arsitek', level: 'TK', audio: true, title: 'Find shapes in the house',
       scenario: 'Ms. Nadia is an architect. She draws a house from shapes. Let\'s help Ms. Nadia find the shapes!',
       art: '👩‍🎨🏠', topics: ['geometri'], units: ['TAG', 'TBI'],

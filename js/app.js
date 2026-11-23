@@ -97,14 +97,14 @@
   // Bacakan soal memakai suara bawaan perangkat. Jika perangkat tidak punya suara bahasa Indonesia, peramban akan membaca
   // dengan aksen Inggris, jadi dalam kasus itu tidak ada suara dan tombol speaker disembunyikan (kelas "has-tts" di <html>).
   const TTS_ON = true;
-  const idVoice = () => { try { return TTS_ON && 'speechSynthesis' in window ? speechSynthesis.getVoices().find((x) => x.lang && /^id([-_]|$)/i.test(x.lang)) || null : null; } catch (e) { return null; } };
+  const idVoice = () => { try { if (!TTS_ON || !('speechSynthesis' in window)) return null; const voices = speechSynthesis.getVoices().filter((x) => x.lang && /^id([-_]|$)/i.test(x.lang)); return voices.find((x) => /gadis|female|woman/i.test(x.name)) || voices[0] || null; } catch (e) { return null; } };
   const syncTTS = () => document.documentElement.classList.toggle('has-tts', !!idVoice());
   if ('speechSynthesis' in window) { syncTTS(); if (speechSynthesis.addEventListener) speechSynthesis.addEventListener('voiceschanged', syncTTS); else speechSynthesis.onvoiceschanged = syncTTS; }
   function speak(text) {
     const voice = idVoice(); if (!voice) return;
-    const t = strip(text).replace(/−/g, ' kurang ').replace(/\+/g, ' tambah ').replace(/=/g, ' sama dengan ').replace(/\?/g, ' berapa? ').replace(/×/g, ' kali ');
+    const t = strip(text).replace(/−/g, ' kurang ').replace(/\+/g, ' tambah ').replace(/=/g, ' sama dengan ').replace(/×/g, ' kali ');
     speechSynthesis.cancel();
-    const u = new SpeechSynthesisUtterance(t); u.lang = 'id-ID'; u.rate = 0.9;
+    const u = new SpeechSynthesisUtterance(t); u.lang = 'id-ID'; u.rate = 0.9; u.pitch = 1.1;
     u.voice = voice; u.lang = voice.lang;
     speechSynthesis.speak(u);
   }  // Audio rekaman (cerita TK): diputar berurutan dan tidak bergantung pada suara bawaan perangkat
@@ -961,7 +961,7 @@
 
   /* ---------- Latihan: satu soal per layar, pilih dulu lalu Periksa; benar, hampir benar, atau salah ---------- */
   let P = null;
-  const ROUND = 10; // soal per putaran latihan
+  const ROUND = 20; // soal per putaran latihan
   const mmss = (ms) => { const s = Math.round(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
   const lessonShell = (pct, quit, diag) => `<div class="mq-top"><button class="mq-ico" data-act="${quit}" aria-label="Keluar">${IC.x}</button>
       <div class="mq-prog" id="mqprog" ${diag ? 'data-diag="1"' : ''}><i id="sbar" style="width:${pct}%"></i></div>
@@ -1099,7 +1099,7 @@
     const p = S.progress(st.id, id);
     let daily = null; try { daily = JSON.parse(sessionStorage.getItem('metiq_daily_run') || 'null'); } catch (e) {}
     const dailyRun = !!(daily && daily.sid === st.id && daily.skill === id && daily.day === isoDay(Date.now()));
-    P = { sid: st.id, sk, rid: 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), score: p.score, score0: p.score, count: 0, correct: 0, combo: 0, start: Date.now(), msSum: 0, q: null, input: '', sel: -1, locked: false, daily: dailyRun };
+    P = { sid: st.id, sk, rid: 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), score: p.score, score0: p.score, count: 0, correct: 0, combo: 0, start: Date.now(), msSum: 0, q: null, input: '', sel: -1, locked: false, daily: dailyRun, formatQueue: sk.grade === 1 ? mixedPracticeFormats() : null };
     if (P.score >= 100 && !again && !P.daily) return renderMastered(true);
     app.innerHTML = lessonShell(0, 'quit', false);
     nextQ();
@@ -1112,38 +1112,142 @@
       ${ok ? `${d.ar ? `<p class="doa-ar" dir="rtl" lang="ar">${esc(d.ar)}</p>` : ''}${d.id ? `<p class="doa-id">${esc(d.id)}</p>` : ''}${d.ref ? `<p class="small muted">${esc(d.ref)}</p>` : ''}` : ''}
     </div></main><div class="mq-foot"><div class="mq-foot-in"><button class="mq-btn" data-act="doaok">${esc(d.tombol || 'Mulai belajar')}</button></div></div>`;
   }
+  function mixedPracticeFormats() {
+    const left = { type: 4, choice: 4, slide: 3, drag: 3, hold: 3, draw: 3 }, out = [];
+    while (out.length < ROUND) {
+      const available = shuf(Object.keys(left).filter((f) => left[f] > 0 && f !== out[out.length - 1]));
+      const picked = available[0]; out.push(picked); left[picked]--;
+    }
+    return out;
+  }
+  const practiceInteger = (v) => /^-?\d{1,6}$/.test(String(v).trim()) ? Number(String(v).trim()) : null;
+  function practiceOptions(n) {
+    const step = Math.abs(n) >= 100 ? 10 : 1, candidates = [n, n + step, n - step, n + 2 * step, n - 2 * step, n + 3 * step, n - 3 * step];
+    const vals = [...new Set(candidates.filter((x) => (n < 0 || x >= 0) && Math.abs(x) < 1000000).map(String))];
+    return shuf([n, ...shuf(vals.filter((x) => x !== n)).slice(0, 3)]);
+  }
+  function setPracticeFormat(q) {
+    q = Object.assign({}, q);
+    const requested = !P.test && !P.diag && P.formatQueue ? P.formatQueue[P.count % P.formatQueue.length] : (q.type === 'choice' ? 'choice' : 'type');
+    const answerNum = practiceInteger(q.answer);
+    const optionNums = q.type === 'choice' && Array.isArray(q.options) && q.options.every((x) => practiceInteger(x) !== null);
+    P.mode = requested;
+    P.sliderValue = null; P.tilePick = null; P.tileSlots = []; P.tiles = []; P.drawCount = 0; P.drawTouched = false;
+    if (q.type === 'input' && answerNum !== null) {
+      if (requested === 'draw' && answerNum >= 0 && answerNum <= 20) P.mode = 'draw';
+      else if (requested === 'choice' || requested === 'hold' || (requested === 'drag' && answerNum < 0)) {
+        const options = practiceOptions(answerNum);
+        if (options.length === 4) { q.type = 'choice'; q.answer = String(answerNum); q.options = options; P.mode = requested === 'drag' ? 'dragChoice' : requested; }
+        else P.mode = 'type';
+      } else if (requested === 'slide') {
+        P.mode = 'slide';
+        const span = Math.max(3, Math.ceil(Math.abs(answerNum) * .2));
+        const min = answerNum < 0 ? answerNum - span : Math.max(0, answerNum - span), max = answerNum + span;
+        P.sliderValue = Math.max(min, Math.min(max, answerNum === min ? answerNum + 1 : answerNum - 1));
+        P.sliderMin = min; P.sliderMax = max;
+      } else if (requested === 'drag' && answerNum >= 0) {
+        P.mode = 'digits';
+        const digits = String(answerNum).split('');
+        let spare = 0; while (digits.includes(String(spare))) spare++;
+        P.tiles = shuf(digits.concat(String(spare))).map((digit, id) => ({ id, digit }));
+        P.tileSlots = Array(digits.length).fill(null);
+      } else P.mode = 'type';
+    } else if (q.type === 'choice') {
+      if ((requested === 'type' || requested === 'slide' || (requested === 'draw' && answerNum >= 0 && answerNum <= 20)) && optionNums && answerNum !== null) {
+        q.type = 'input'; q.answer = String(answerNum); delete q.options;
+        if (requested === 'draw') P.mode = 'draw';
+        else if (requested === 'slide') {
+          P.mode = 'slide'; const span = Math.max(3, Math.ceil(Math.abs(answerNum) * .2));
+          P.sliderMin = answerNum < 0 ? answerNum - span : Math.max(0, answerNum - span); P.sliderMax = answerNum + span;
+          P.sliderValue = answerNum === P.sliderMin ? answerNum + 1 : answerNum - 1;
+        } else P.mode = 'type';
+      } else if (requested === 'slide' && q.options.length > 1) {
+        P.mode = 'slideChoice';
+      } else if (requested === 'type' || requested === 'slide' || requested === 'draw') {
+        // Jawaban kata juga berubah menjadi isian agar soal nonangka tidak terjebak pilihan ganda.
+        q.type = 'input'; delete q.options; P.mode = 'type';
+      } else if (requested === 'drag') P.mode = 'dragChoice';
+      else if (requested === 'hold') P.mode = 'hold';
+      else P.mode = 'choice';
+    } else if (q.type === 'input') P.mode = 'type';
+    return q;
+  }
   // Tombol Periksa aktif hanya setelah ada jawaban (pilihan atau angka)
   function refreshCheck() {
     const b = document.getElementById('mqcheck'); if (!b || !P || P.locked) return;
-    b.disabled = !(P.q.type === 'choice' ? P.sel >= 0 : P.input !== '');
+    b.disabled = P.q.type === 'choice' ? P.sel < 0 : P.mode === 'slide' ? P.sliderValue == null : P.mode === 'digits' ? P.tileSlots.some((x) => x == null) : P.mode === 'draw' ? !P.drawTouched : P.input === '';
     const d = document.getElementById('indisp'); if (d) d.classList.toggle('has', P.input !== '');
     const d2 = document.getElementById('indisp2'); if (d2) d2.textContent = P.input || '–';
   }
+  function practiceGiven() { return P.q.type === 'choice' ? P.q.options[P.sel] : P.mode === 'slide' ? String(P.sliderValue) : P.mode === 'digits' ? P.tileSlots.map((i) => P.tiles.find((t) => t.id === i).digit).join('') : P.mode === 'draw' ? String(P.drawCount) : P.input; }
+  function renderDrawInput() {
+    const root = document.getElementById('mqdraw'); if (!root) return;
+    root.innerHTML = `<p class="mq-interact-hint">Gambar jawaban dengan menambahkan titik. Ketuk titik untuk menghapus.</p><div class="mq-drawboard" aria-label="Area gambar jawaban">${Array.from({ length: P.drawCount }, (_, i) => `<button class="mq-drawdot on" data-act="drawdot" data-i="${i}" aria-label="Hapus titik ${i + 1}">●</button>`).join('')}</div><div class="mq-drawcount">Titik: <b>${P.drawCount}</b></div><div class="mq-drawtools"><button class="mq-drawadd" data-act="drawadd" ${P.drawCount >= 20 ? 'disabled' : ''}>＋ Tambah titik</button><button class="mq-drawzero" data-act="drawzero">Mulai dari nol</button></div>`;
+  }
+  function renderDigitInput() {
+    const root = document.getElementById('mqdigits'); if (!root) return;
+    root.innerHTML = `<p class="mq-interact-hint">Susun angka dari kiri ke kanan. Ketuk angka untuk menaruhnya.</p><div class="mq-dropslots">${P.tileSlots.map((id, i) => `<button class="mq-dropslot" data-act="tileslot" data-i="${i}" aria-label="Tempat angka ${i + 1}">${id == null ? '·' : P.tiles.find((t) => t.id === id).digit}</button>`).join('')}</div><div class="mq-tilebank">${P.tiles.map((t) => `<button class="mq-tile ${P.tileSlots.includes(t.id) ? 'used' : ''}" draggable="${!P.tileSlots.includes(t.id)}" data-act="tile" data-i="${t.id}" ${P.tileSlots.includes(t.id) ? 'disabled' : ''}>${t.digit}</button>`).join('')}</div>`;
+    root.querySelectorAll('.mq-tile:not(:disabled)').forEach((b) => b.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', b.dataset.i)));
+    root.querySelectorAll('.mq-dropslot').forEach((b) => { b.addEventListener('dragover', (e) => e.preventDefault()); b.addEventListener('drop', (e) => { e.preventDefault(); const id = +e.dataTransfer.getData('text/plain'), i = +b.dataset.i; P.tileSlots = P.tileSlots.map((x) => x === id ? null : x); P.tileSlots[i] = id; renderDigitInput(); refreshCheck(); }); });
+  }
   function nextQ() {
     if (P.test) { if (P.count >= TEST_N) return renderChest(); P.sk = SKILLS[P.test.queue[P.count]]; }
-    else if (!P.diag && (P.count >= ROUND || (P.score >= 100 && P.score0 < 100))) return renderRound();
+    else if (!P.diag && P.count >= ROUND) return renderRound();
     let q, guard = 0;
     // latihan fakta berpola (urut, acak, bentuk lain); asesmen dan ujian bab tetap acak
     if (!P.test && !P.diag && window.METIQ_POLA && window.METIQ_POLA.has(P.sk.id)) q = window.METIQ_POLA.next(P.sid, P.sk.id);
     else do { q = P.sk.gen(); } while (P.q && strip(q.text + (q.vis || '')) === strip(P.q.text + (P.q.vis || '')) && guard++ < 5);
+    q = setPracticeFormat(q);
     P.q = q; P.input = ''; P.sel = -1; P.locked = false; P.qStart = Date.now();
     const canCoret = coretOn(P.sk) || /class="(stack|pgap)/.test(q.vis || '');
     closeCoret(true); { const cb = document.getElementById('mqcoret'); if (cb) cb.hidden = !canCoret; }
     const choice = q.type === 'choice', box = document.getElementById('pq');
-    box.innerHTML = `
-      <h2 class="mq-title">${choice ? 'Pilih jawaban yang benar' : 'Tulis jawabannya'}</h2>
+    const opts = choice && P.mode !== 'slideChoice' ? `<div class="mq-opts ${q.options.every((o) => strip(o).length <= 4) ? 'short' : ''} ${P.mode === 'hold' ? 'hold-mode' : ''} ${P.mode === 'dragChoice' ? 'drag-mode' : ''}">${q.options.map((o, i) => `<button class="mq-opt" data-act="choose" data-i="${i}" ${P.mode === 'dragChoice' ? 'draggable="true"' : ''}>${o}${P.mode === 'hold' ? '<i class="mq-holdfill"></i>' : ''}</button>`).join('')}</div>${P.mode === 'hold' ? '<p class="mq-interact-hint">Tekan dan tahan jawaban sebentar, atau pilih lalu tekan Periksa.</p>' : P.mode === 'dragChoice' ? `<div class="mq-dropchoice" data-dropchoice>${P.sel >= 0 ? q.options[P.sel] : 'Lepaskan jawaban di sini · atau ketuk pilihan'}</div>` : ''}` : P.mode === 'slideChoice'
+      ? `<div class="mq-sliderbox"><div class="mq-sliderread"><span>Geser untuk memilih</span><b id="mqslideval">${q.options[0]}</b></div><input class="mq-slider" type="range" min="0" max="${q.options.length - 1}" step="1" value="0" aria-label="Geser untuk memilih jawaban"><div class="mq-sliderends"><span>${q.options[0]}</span><span>${q.options[q.options.length - 1]}</span></div></div>` : P.mode === 'slide'
+      ? `<div class="mq-sliderbox"><div class="mq-sliderread"><span>Pilih hasilnya</span><b id="mqslideval">${P.sliderValue}</b></div><input class="mq-slider" type="range" min="${P.sliderMin}" max="${P.sliderMax}" step="1" value="${P.sliderValue}" aria-label="Geser untuk memilih hasil"><div class="mq-sliderends"><span>${P.sliderMin}</span><span>${P.sliderMax}</span></div></div>`
+      : P.mode === 'digits' ? '<div id="mqdigits" class="mq-digits"></div>'
+      : P.mode === 'draw' ? '<div id="mqdraw" class="mq-draw"></div>'
+      : `<div class="mq-ans">${q.unit ? `<span class="u">${q.unit}</span>` : ''}<input class="mq-disp mq-entry" id="indisp" type="text" inputmode="${practiceInteger(q.answer) === null ? 'text' : 'numeric'}" autocomplete="off" spellcheck="false" aria-label="Ketik jawaban" value="${P.input}"></div>`;
+    box.innerHTML = `<h2 class="mq-title">${P.mode === 'choice' ? 'Pilih jawaban' : P.mode === 'slide' || P.mode === 'slideChoice' ? 'Geser untuk menjawab' : P.mode === 'digits' ? 'Susun angka' : P.mode === 'draw' ? 'Gambar jawaban' : P.mode === 'hold' ? 'Tekan dan tahan' : P.mode === 'dragChoice' ? 'Seret jawaban' : 'Ketik jawaban'}</h2>
       ${P.diag && D && D.n === 0 ? '<p class="mq-hint">Tidak apa-apa kalau belum tahu. Tebak saja ya!</p>' : ''}
       <div class="mq-say"><div id="mqm">${MQ.svg('normal', { size: choice ? 92 : 76, enter: false })}</div><div class="mq-bubble"><button class="mq-spk${q.audio ? ' aud' : ''}" data-act="say" aria-label="Dengarkan soal">${IC.spk}</button><span>${q.text}</span></div></div>
       ${q.vis ? `<div class="mq-vis">${q.vis}</div>` : ''}
       ${canCoret ? '<button class="mq-coretcta" data-act="coret">✏️ Kertas coret</button>' : ''}
-      ${choice
-    ? `<div class="mq-opts ${q.options.every((o) => strip(o).length <= 4) ? 'short' : ''}">${q.options.map((o, i) => `<button class="mq-opt" data-act="choose" data-i="${i}">${o}</button>`).join('')}</div>`
-    : `<div class="mq-ans">${q.unit ? `<span class="u">${q.unit}</span>` : ''}<div class="mq-disp" id="indisp">&nbsp;</div></div>`}`;
+      ${opts}`;
+    if (P.mode === 'digits') renderDigitInput();
+    if (P.mode === 'draw') renderDrawInput();
+    const entry = box.querySelector('#indisp'); if (entry) entry.addEventListener('input', () => { P.input = entry.value; refreshCheck(); });
+    const slider = box.querySelector('.mq-slider'); if (slider) slider.addEventListener('input', () => { if (P.mode === 'slideChoice') { P.sel = +slider.value; box.querySelector('#mqslideval').textContent = q.options[P.sel]; } else { P.sliderValue = +slider.value; box.querySelector('#mqslideval').textContent = P.sliderValue; } refreshCheck(); });
+    const choiceTray = box.querySelector('.mq-opts');
+    if (choiceTray) {
+      let startX = null, holdTimer = null;
+      choiceTray.addEventListener('pointerdown', (e) => {
+        const b = e.target.closest('.mq-opt'); if (!b) return;
+        if (e.pointerType === 'touch') startX = e.clientX;
+        if (P.mode === 'hold') { b.classList.add('holding'); holdTimer = setTimeout(() => { if (!P.locked) submit(q.options[+b.dataset.i]); }, 720); }
+      });
+      const clearHold = (e) => { const b = e.target.closest('.mq-opt'); if (b) b.classList.remove('holding'); clearTimeout(holdTimer); };
+      choiceTray.addEventListener('pointerup', clearHold); choiceTray.addEventListener('pointercancel', clearHold); choiceTray.addEventListener('pointerleave', clearHold);
+      if (P.mode === 'hold') choiceTray.addEventListener('contextmenu', (e) => e.preventDefault());
+      if (P.mode === 'dragChoice') {
+        choiceTray.querySelectorAll('.mq-opt').forEach((b) => b.addEventListener('dragstart', (e) => e.dataTransfer.setData('text/plain', b.dataset.i)));
+        const drop = box.querySelector('[data-dropchoice]');
+        drop.addEventListener('dragover', (e) => e.preventDefault());
+        drop.addEventListener('drop', (e) => { e.preventDefault(); P.sel = +e.dataTransfer.getData('text/plain'); drop.textContent = q.options[P.sel]; refreshCheck(); });
+      }
+      choiceTray.addEventListener('pointerup', (e) => {
+        if (P.mode !== 'choice' || startX === null) return;
+        const dx = e.clientX - startX; startX = null;
+        if (Math.abs(dx) < 48) return;
+        const all = [...choiceTray.querySelectorAll('.mq-opt')];
+        const idx = Math.max(0, Math.min(all.length - 1, (P.sel < 0 ? (dx < 0 ? 0 : all.length - 1) : P.sel + (dx < 0 ? 1 : -1))));
+        if (all[idx]) all[idx].click();
+      });
+    }
     // Papan angka dan tombol Periksa menempel di bawah layar, supaya selalu terjangkau tanpa menggulir
-    const keys = choice ? '' : `${q.keys ? `<div class="mq-keys extra">${q.keys.map((k) => `<button class="mq-key" data-act="key" data-k="${k}">${k}</button>`).join('')}</div>` : ''}
-       <div class="mq-keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button class="mq-key" data-act="key" data-k="${n}">${n}</button>`).join('')}<button class="mq-key del" data-act="key" data-k="del" aria-label="Hapus">⌫</button><button class="mq-key" data-act="key" data-k="0">0</button><span></span></div>`;
-    const fb = document.getElementById('fb'); fb.className = 'mq-foot' + (!choice && canCoret ? ' compact' : '');
-    const krow = !choice && canCoret ? '<div class="mq-krow"><button class="mq-ktog" data-act="keystog" aria-label="Tampilkan atau sembunyikan tombol angka">🔢 <span class="ka">Tombol angka</span><span class="kb">Sembunyikan</span> <i>▲</i></button><span class="mq-mini">Jawaban: <b id="indisp2">–</b></span></div>' : '';
+    const keys = choice || P.mode !== 'type' || practiceInteger(q.answer) === null ? '' : `${q.keys ? `<div class="mq-keys extra">${q.keys.map((k) => `<button class="mq-key" data-act="key" data-k="${k}">${k}</button>`).join('')}</div>` : ''}<div class="mq-keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button class="mq-key" data-act="key" data-k="${n}">${n}</button>`).join('')}<button class="mq-key del" data-act="key" data-k="del" aria-label="Hapus">⌫</button><button class="mq-key" data-act="key" data-k="0">0</button><span></span></div>`;
+    const fb = document.getElementById('fb'); fb.className = 'mq-foot' + (P.mode === 'type' && canCoret ? ' compact' : '');
+    const krow = P.mode === 'type' && canCoret ? '<div class="mq-krow"><button class="mq-ktog" data-act="keystog" aria-label="Tampilkan atau sembunyikan tombol angka">🔢 <span class="ka">Tombol angka</span><span class="kb">Sembunyikan</span> <i>▲</i></button><span class="mq-mini">Jawaban: <b id="indisp2">–</b></span></div>' : '';
     fb.innerHTML = `<div class="mq-foot-in">${krow}${keys}<button class="mq-btn" id="mqcheck" data-act="check" disabled>Periksa</button></div>`;
     box.style.paddingBottom = fb.offsetHeight + 20 + 'px';
     const d = document.getElementById('indisp'); if (d) d.style.scrollMarginBottom = fb.offsetHeight + 12 + 'px';
@@ -2480,7 +2584,7 @@
         <p class="small muted">Rata-rata dan "sesuai usia" dihitung dari siswa yang sudah mengerjakan keduanya. Kelas sesuai usia: 4 tahun = TK A, 5 = TK B, 6–7 tahun = Kelas 1, 8 = Kelas 2, …, 11 = Kelas 5, 12 = Kelas 6. Siswa 13 tahun ke atas memilih sendiri jenjang yang sedang ditempuh (Kelas 7 sampai Kalkulus). Naik dan tertinggal dihitung menurut urutan TK A, TK B, Kelas 1, …, Kelas 8, Aljabar 1, Geometri, Aljabar 2, Prakalkulus, Kalkulus.</p></section>
       ${all.map((s) => { const rs = prepostRows(S.studentsOf(s.c.id)), canOpen = rs.filter((r) => r.pre && !r.pending); return `<section class="card"><div class="lrow"><span class="grow"><b>${esc(s.c.name)}</b><small>${esc(s.c.teacherName || '')} · ${rs.filter((r) => r.pre).length}/${rs.length} sudah asesmen awal</small></span>${canOpen.length ? `<button class="btn sm" data-act="postclass" data-c="${s.c.id}">🏁 Buka asesmen akhir (${canOpen.length})</button>` : ''}</div>
         <div class="tscroll"><table class="tbl"><thead><tr><th>Siswa</th><th>Usia</th><th>Sesuai usia</th><th>Awal</th><th>Akhir</th><th>Naik</th><th>Status</th><th></th></tr></thead><tbody>
-        ${rs.map((r) => `<tr><td><a href="#/guru/siswa/${r.k.id}" data-act="openkid" data-id="${s.c.id}" data-s="${r.k.id}">${avHTML(r.k.avatar)} ${esc(r.k.name)}</a></td><td>${(r.post || r.pre || {}).age || '–'}</td><td>${r.ag ? gname(r.ag) : '–'}</td><td>${cell(r.pre)}</td><td>${r.pending ? '⏳ dibuka' : cell(r.post)}</td>
+        ${rs.map((r) => `<tr><td><a href="#/guru/siswa/${r.k.id}" data-act="openkid" data-id="${s.c.id}" data-s="${r.k.id}"><span class="av sm">${avHTML(r.k.avatar)}</span> ${esc(r.k.name)}</a></td><td>${(r.post || r.pre || {}).age || '–'}</td><td>${r.ag ? gname(r.ag) : '–'}</td><td>${cell(r.pre)}</td><td>${r.pending ? '⏳ dibuka' : cell(r.post)}</td>
           <td>${r.gain === null ? '–' : `<b class="${r.gain > 0 ? 'okc' : ''}">${r.gain > 0 ? '+' : ''}${r.gain}</b>`}</td>
           <td>${!r.pre ? '<span class="muted">belum asesmen</span>' : (() => { const d = r.post || r.pre, gap = lvGap(ageGradeOf(d), d.level); return gap > 0 ? `<span class="accb ${gap >= 2 ? 'r' : 'y'}">tertinggal ${gap}</span>` : '<span class="accb g">sesuai usia</span>'; })()}</td>
           <td>${r.pre ? (r.pending ? `<button class="link small" data-act="postone" data-s="${r.k.id}" data-o="0">Batalkan</button>` : `<button class="link small" data-act="postone" data-s="${r.k.id}" data-o="1">${r.post ? 'Ulangi' : 'Buka'}</button>`) : ''}</td></tr>`).join('')}
@@ -3121,7 +3225,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const pill = (x) => { const lock = x.id > max; return `<button class="mq-gg ${x.id === g ? 'on' : ''} ${lock ? 'lock' : ''}" data-act="ggrade" data-g="${x.id}" aria-label="${gname(x.id)}${lock ? ' (terkunci)' : ''}"><b>${x.short || x.id}</b>${lock ? `<i>${IC.lock}</i>` : ''}</button>`; };
     const tile = (x) => {
       const b = best(x.id), st = b ? G.starsFor(x, b.score) : 0, [c, bg] = G.LOOK[x.type];
-      return `<a class="mq-gt" href="#/main/${x.id}" style="--c:${c};--bg:${bg}" aria-label="${esc(x.name)}, ${st} bintang">${x.isNew && !b ? '<span class="new">Baru</span>' : ''}<span class="art">${G.art(x.type)}</span><b>${esc(x.name)}</b><small class="gt-detail">${esc(G.TYPES[x.type] || '')}</small><span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span></a>`;
+      return `<a class="mq-gt" href="#/main/${x.id}" style="--c:${c};--bg:${bg}" aria-label="${esc(x.name)}, ${st} bintang">${x.isNew && !b ? '<span class="new">Baru</span>' : ''}<span class="art">${G.art(x.type, 120, x)}</span><b>${esc(x.name)}</b><small class="gt-detail">${esc(G.TYPES[x.type] || '')}</small><span class="st">${[0, 1, 2].map((i) => gStar(i < st)).join('')}</span></a>`;
     };
     let body;
     if (g > max) {
@@ -3149,7 +3253,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     app.innerHTML = `<div class="mq-top"><a class="mq-ico" href="#/permainan" aria-label="Keluar">${IC.x}</a><span class="mq-gtitle">${x.name}</span>
         <button class="mq-ico psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button></div>
       <main class="mq-screen mq-gplay" id="garea" style="--c:${c};--bg:${bg}">
-        <div class="mq-gintro">${G.buddy(x) ? `<div class="mq-gsay gbuddy">${MQ.svg('hello', { size: 84, who: G.buddy(x) })}<div class="mq-bubble"><p>Main bersama <b>${buddyName(G.buddy(x))}</b>, yuk!</p></div></div>` : ''}<div class="mq-gart">${G.art(x.type, 210)}</div>
+        <div class="mq-gintro">${G.buddy(x) ? `<div class="mq-gsay gbuddy">${MQ.svg('hello', { size: 84, who: G.buddy(x) })}<div class="mq-bubble"><p>Main bersama <b>${buddyName(G.buddy(x))}</b>, yuk!</p></div></div>` : ''}<div class="mq-gart">${G.art(x.type, 210, x)}</div>
           <div class="mq-ghow">${G.HOW[x.type](x).map(([e, t]) => `<div><span class="e">${e}</span>${t}</div>`).join('')}</div>
           ${G.EX[x.type] ? `<div class="mq-gex"><small>Contoh</small>${G.EX[x.type](x)}</div>` : ''}
           <div class="mq-goal">${x.stars.map((p, i) => `<div><span>${gStar(true).repeat(i + 1)}</span><b>${p}</b></div>`).join('')}</div>
@@ -3841,10 +3945,20 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     return s === '' || s === '-' ? NaN : Number(s);
   };
   const jFmt = (v) => (Math.round(v * 1e4) / 1e4).toLocaleString('id-ID', { maximumFractionDigits: 4 });
+  const J_PHASES = { orientation: 'Orientasi', conceptualization: 'Prediksi', investigation: 'Investigasi', conclusion: 'Kesimpulan', discussion: 'Jelaskan' };
+  function jHintText(st) {
+    const levels = st.hintLevels || (st.hint ? [st.hint] : []), idx = Math.min(Math.max(0, (JM.tries || 0) + ((JM.hints && JM.hints[JM.i]) || 0) - 1), Math.max(0, levels.length - 1));
+    let tip = levels[idx] || st.hint || '';
+    if (st.type === 'investigate' && JM.explore) {
+      const c = st.config, a = JM.explore.length * JM.explore.width, p = 2 * (JM.explore.length + JM.explore.width);
+      tip += ' Saat ini: luas ' + a + ' m², keliling ' + p + ' m.';
+    }
+    return tip;
+  }
   function viewMission(id) {
     const m = J.byId(id); if (!m) return go('#/profesi');
     const p = J.prof(m.profession);
-    JM = { m, p, i: -1, tries: 0, first: 0, input: '', sel: -1, place: {}, pick: null, t0: Date.now(), log: [] };
+    JM = { m, p, i: -1, tries: 0, first: 0, input: '', sel: -1, place: {}, pick: null, t0: Date.now(), log: [], hints: [], events: [], explore: null };
     app.innerHTML = `<div class="mq-top"><a class="mq-ico" href="#/profesi/${p.id}" aria-label="Keluar">${IC.x}</a><div class="mq-prog"><i id="sbar" style="width:0%"></i></div>
         <button class="mq-ico mq-coretbtn" id="mqcoret" data-act="coret" aria-label="Kertas coret" hidden>✏️</button>${m.audio ? `<button class="mq-ico" data-act="jsay" aria-label="Dengarkan">🔊</button>` : `<button class="mq-ico psound" data-act="sound" aria-label="Suara">${window.SFX.enabled() ? '🔔' : '🔕'}</button>`}</div>
       <div class="jtrail" id="jtrail" style="--n:${m.steps.length};--c:${p.color}"><u></u>${m.steps.map((_, k) => `<i style="left:${4 + (k / m.steps.length) * 92}%"></i>`).join('')}<em>🏁</em><span>${MQ.svg('happy', { size: 40, enter: false })}</span></div>
@@ -3861,16 +3975,16 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   }
   function jStep() {
     const { m } = JM, st = m.steps[JM.i], box = document.getElementById('pq'), fb = document.getElementById('fb');
-    JM.tries = 0; JM.input = ''; JM.sel = -1; JM.place = {}; JM.pick = null;
+    JM.tries = 0; JM.input = ''; JM.sel = -1; JM.place = {}; JM.pick = null; JM.hints[JM.i] = 0;
     // Kertas coret untuk langkah hitungan di atas jenjang TK; setiap langkah mulai dari kertas bersih
-    const canCoret = m.level !== 'TK' && st.type !== 'drag';
+    const canCoret = m.level !== 'TK' && st.type !== 'drag' && st.type !== 'investigate';
     closeCoret(true); document.getElementById('mqcoret').hidden = !canCoret;
     document.getElementById('sbar').style.width = (JM.i / m.steps.length) * 100 + '%'; jTrail(JM.i);
     // Cerita misi (berisi datanya) dan jawaban langkah sebelumnya tetap terlihat di setiap langkah
     const found = JM.log.map((x, k) => `<li><small>Langkah ${k + 1}: ${esc(x.q)}</small><b>${x.a}</b></li>`).join('');
     const ctx = `<details class="jctx" ${m.level === 'TK' ? '' : 'open'}><summary>📋 Data misi</summary><p>${esc(m.scenario)}</p>${found ? `<ul class="jfound">${found}</ul>` : ''}</details>`;
-    box.innerHTML = `<h2 class="mq-title jstept">Langkah ${JM.i + 1} dari ${m.steps.length}</h2>${ctx}
-      <div class="mq-say jq"><div id="mqm">${MQ.svg('normal', { size: 76, enter: false })}</div><div class="mq-bubble">${m.audio ? '<button class="mq-spk aud" data-act="jsay" aria-label="Dengarkan soal">' + IC.spk + '</button>' : ''}<span>${esc(st.question)}</span>${st.hint ? `<span class="jhintw"><button class="mq-link" data-act="jhint">💡 Butuh petunjuk?</button></span><span class="jhint" id="jhint" hidden>💡 ${esc(st.hint)}</span>` : ''}</div></div>
+    box.innerHTML = `<h2 class="mq-title jstept">Langkah ${JM.i + 1} dari ${m.steps.length}</h2>${st.phase ? `<p class="jphase">${J_PHASES[st.phase]}</p>` : ''}${ctx}
+      <div class="mq-say jq"><div id="mqm">${MQ.svg('normal', { size: 76, enter: false })}</div><div class="mq-bubble">${m.audio ? '<button class="mq-spk aud" data-act="jsay" aria-label="Dengarkan soal">' + IC.spk + '</button>' : ''}<span>${esc(st.question)}</span>${st.hint || st.hintLevels ? `<span class="jhintw"><button class="mq-link" data-act="jhint">💡 Butuh petunjuk?</button></span><span class="jhint" id="jhint" hidden>💡 ${esc(jHintText(st))}</span>` : ''}</div></div>
       ${st.vis ? `<div class="mq-vis">${st.vis}</div>` : st.type === 'drag' ? '' : `<div class="jmini" aria-hidden="true">${m.art}</div>`}${canCoret ? '<button class="mq-coretcta" data-act="coret">✏️ Kertas coret</button>' : ''}<div id="jbody"></div>`;
     jBody(); jFit();
     jPlay('q' + (JM.i + 1), 300);
@@ -3878,7 +3992,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   // Grafik dan kotak jawaban harus terlihat di atas papan angka; di layar pendek kartu Data dilipat lebih dulu, baru halaman digeser
   function jFit() {
     window.scrollTo(0, 0);
-    const foot = document.getElementById('fb'), ctx = document.querySelector('#pq .jctx'), tgt = document.querySelector('#pq .mq-ans') || document.querySelector('#pq .mq-vis');
+    const foot = document.getElementById('fb'), ctx = document.querySelector('#pq .jctx'), tgt = document.querySelector('#pq .mq-ans') || document.querySelector('#pq .mq-vis') || document.querySelector('#pq .jinvest');
     if (!foot || !tgt) return;
     const over = () => tgt.getBoundingClientRect().bottom + 8 - foot.getBoundingClientRect().top;
     if (ctx && ctx.open && over() > 0) ctx.open = false;
@@ -3896,6 +4010,11 @@ Ketik nama untuk konfirmasi: ${x.name}`);
       keys = `${Number.isInteger(st.answer) && st.answer >= 0 ? '' : `<div class="mq-keys extra">${['−', ',', '/'].map((k) => `<button class="mq-key" data-act="jkey" data-k="${k}">${k}</button>`).join('')}</div>`}
         <div class="mq-keys">${[1, 2, 3, 4, 5, 6, 7, 8, 9].map((n) => `<button class="mq-key" data-act="jkey" data-k="${n}">${n}</button>`).join('')}<button class="mq-key del" data-act="jkey" data-k="del" aria-label="Hapus">⌫</button><button class="mq-key" data-act="jkey" data-k="0">0</button></div>`;
       ready = JM.input !== '';
+    } else if (st.type === 'investigate') {
+      const c = st.config, x = JM.explore || (JM.explore = { length: c.length, width: c.width });
+      const area = x.length * x.width, perimeter = 2 * (x.length + x.width);
+      body.innerHTML = `<section class="jinvest"><label>Panjang <b><span data-jlength>${x.length}</span> m</b><input type="range" min="${c.min}" max="${c.max}" value="${x.length}" data-dim="length" aria-label="Panjang taman, meter"></label><label>Lebar <b><span data-jwidth>${x.width}</span> m</b><input type="range" min="${c.min}" max="${c.max}" value="${x.width}" data-dim="width" aria-label="Lebar taman, meter"></label><div class="jmetrics"><span>Luas taman <b><span data-jarea>${area}</span> m²</b><small data-jarea-ok>${area >= c.minArea ? 'Syarat luas terpenuhi' : 'Butuh minimal ' + c.minArea + ' m²'}</small></span><span>Panjang pagar <b><span data-jperimeter>${perimeter}</span> m</b><small data-jperimeter-ok>${perimeter <= c.maxPerimeter ? 'Syarat pagar terpenuhi' : 'Maksimal ' + c.maxPerimeter + ' m'}</small></span></div><p class="jexplore-status" data-jstatus>${area >= c.minArea && perimeter <= c.maxPerimeter ? 'Desain ini memenuhi kedua syarat.' : 'Ubah ukuran dan periksa kedua syarat.'}</p></section>`;
+      ready = true;
     } else if (st.type === 'drag') {
       const placed = new Set(Object.values(JM.place).flat());
       const item = (it) => `<button class="jitem ${JM.pick === it.id ? 'pick' : ''}" data-act="jitem" data-id="${it.id}" aria-label="Benda">${it.html}</button>`;
@@ -3916,16 +4035,27 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const kept = ['cor', 'kshow'].filter((c) => fb.classList.contains(c));
     fb.className = ['mq-foot', ...(keys && JM.m.level !== 'TK' ? ['compact'] : []), ...kept].join(' ');
     fb.innerHTML = `<div class="mq-foot-in">${krow}${keys}<button class="mq-btn" id="mqcheck" data-act="jcheck" ${ready ? '' : 'disabled'}>Periksa</button></div>`;
+    if (st.type === 'investigate') body.querySelectorAll('[data-dim]').forEach((input) => input.addEventListener('input', () => {
+      JM.explore[input.dataset.dim] = +input.value;
+      const c = st.config, a = JM.explore.length * JM.explore.width, per = 2 * (JM.explore.length + JM.explore.width), okA = a >= c.minArea, okP = per <= c.maxPerimeter;
+      body.querySelector('[data-jlength]').textContent = JM.explore.length; body.querySelector('[data-jwidth]').textContent = JM.explore.width;
+      body.querySelector('[data-jarea]').textContent = a; body.querySelector('[data-jperimeter]').textContent = per;
+      body.querySelector('[data-jarea-ok]').textContent = okA ? 'Syarat luas terpenuhi' : 'Butuh minimal ' + c.minArea + ' m²';
+      body.querySelector('[data-jperimeter-ok]').textContent = okP ? 'Syarat pagar terpenuhi' : 'Maksimal ' + c.maxPerimeter + ' m';
+      body.querySelector('[data-jstatus]').textContent = okA && okP ? 'Desain ini memenuhi kedua syarat.' : 'Ubah ukuran dan periksa kedua syarat.';
+      JM.events.push({ length: JM.explore.length, width: JM.explore.width, area: a, perimeter: per }); if (JM.events.length > 100) JM.events.shift();
+    }));
     { const d2 = document.getElementById('indisp2'); if (d2) d2.textContent = JM.input || '–'; }
     document.getElementById('pq').style.paddingBottom = fb.offsetHeight + 20 + 'px';
   }
   function jCorrect(st) {
     if (st.type === 'choice') return st.options[JM.sel] === st.answer;
     if (st.type === 'number') { const v = jnum(JM.input); return !isNaN(v) && Math.abs(v - st.answer) <= (st.tol ?? 1e-6); }
+    if (st.type === 'investigate') { const c = st.config, a = JM.explore.length * JM.explore.width, p = 2 * (JM.explore.length + JM.explore.width); return a >= c.minArea && p <= c.maxPerimeter; }
     if (st.mode === 'order') return (JM.place.seq || []).join() === st.answer.join();
     return st.items.every((it) => (JM.place[it.bin] || []).includes(it.id));
   }
-  const jAnswerText = (st) => (st.type === 'number' ? `${jFmt(st.answer)}${st.unit ? ' ' + st.unit : ''}` : st.type === 'choice' ? st.answer : st.mode === 'order' ? st.answer.map((id) => st.items.find((x) => x.id === id).html).join(' ') : st.bins.map((b) => `${b.label}: ${st.items.filter((x) => x.bin === b.id).map((x) => x.html).join(' ')}`).join(' · '));
+  const jAnswerText = (st) => (st.type === 'number' ? `${jFmt(st.answer)}${st.unit ? ' ' + st.unit : ''}` : st.type === 'choice' ? st.answer : st.type === 'investigate' ? `${JM.explore.length} m × ${JM.explore.width} m (luas ${JM.explore.length * JM.explore.width} m², keliling ${2 * (JM.explore.length + JM.explore.width)} m)` : st.mode === 'order' ? st.answer.map((id) => st.items.find((x) => x.id === id).html).join(' ') : st.bins.map((b) => `${b.label}: ${st.items.filter((x) => x.bin === b.id).map((x) => x.html).join(' ')}`).join(' · '));
   function jCheck() {
     const st = JM.m.steps[JM.i], ok = jCorrect(st), fb = document.getElementById('fb'), m = document.getElementById('mqm');
     // Umpan balik butuh ruang; kertas coret disimpan dengan isinya dan kembali saat "Coba lagi"
@@ -3934,7 +4064,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (ok) {
       if (!JM.tries) JM.first++;
       { const v = document.querySelector('#pq .mq-vis'); if (st.done && v) v.innerHTML = st.done; const b = document.createElement('div'); b.innerHTML = JV.burst(); const host = document.querySelector('#pq .mq-say'); if (host) { host.style.position = 'relative'; host.appendChild(b.firstChild); } }
-      JM.log.push({ q: st.question, a: jAnswerText(st), ex: st.explanation, first: !JM.tries });
+      JM.log.push({ q: st.question, a: jAnswerText(st), ex: st.explanation, first: !JM.tries, independent: !JM.tries && !(JM.hints[JM.i] || 0), hintUse: JM.hints[JM.i] || 0, phase: st.phase || null });
       window.SFX.correct();
       fb.className = 'mq-foot ok';
       fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${IC.ok}</span>${['Benar!', 'Tepat sekali!', 'Hebat!'][JM.i % 3]}</div><div class="mq-fbody"><p>${esc(st.explanation)}</p></div><button class="mq-btn" data-act="jnext">Lanjut</button></div>`;
@@ -3942,14 +4072,14 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     } else {
       JM.tries++;
       window.SFX.wrong();
-      if (JM.tries >= 3) {
+      if (JM.tries >= 3 && !JM.m.inquiry) {
         JM.log.push({ q: st.question, a: jAnswerText(st), ex: st.explanation, first: false });
         fb.className = 'mq-foot no';
         fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">${IC.x}</span>Ayo lihat caranya</div><div class="mq-fbody"><p>Jawabannya: <b>${jAnswerText(st)}</b></p><p>${esc(st.explanation)}</p></div><button class="mq-btn" data-act="jnext">Lanjut</button></div>`;
         jPlay('e' + (JM.i + 1), 300);
       } else {
         fb.className = 'mq-foot near';
-        fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">!</span>Belum tepat</div><div class="mq-fbody"><p>💡 ${esc(st.hint)}</p></div><button class="mq-btn" data-act="jretry">Coba lagi</button></div>`;
+        fb.innerHTML = `<div class="mq-foot-in"><div class="mq-fbh"><span class="ic">!</span>Belum tepat</div><div class="mq-fbody"><p>💡 ${esc(jHintText(st))}</p></div><button class="mq-btn" data-act="jretry">Coba lagi</button></div>`;
         jPlay('h' + (JM.i + 1), 300);
       }
     }
@@ -3957,11 +4087,15 @@ Ketik nama untuk konfirmasi: ${x.name}`);
   }
   function jFinish() {
     const { m, p } = JM, kid = gameKid(), n = m.steps.length, stars = JM.first === n ? 3 : JM.first >= n / 2 ? 2 : 1;
+    const phaseRows = JM.log.filter((x) => x.phase);
+    const understanding = m.inquiry ? Math.round(100 * ['conceptualization', 'investigation', 'discussion'].filter((phase) => phaseRows.some((x) => x.phase === phase && x.independent)).length / 3) : null;
+    const evidence = m.inquiry ? { version: m.version, mode: m.instructionalMode, missionVersion: m.version, predictions: phaseRows.filter((x) => x.phase === 'conceptualization').map((x) => ({ answer: x.a, firstTry: x.first, independent: x.independent, hints: x.hintUse })), investigationEvents: JM.events.slice(), explanations: phaseRows.filter((x) => x.phase === 'discussion').map((x) => ({ answer: x.a, firstTry: x.first, independent: x.independent, hints: x.hintUse })), hintUsage: JM.hints.slice(), phasesCompleted: [...new Set(phaseRows.map((x) => x.phase))], assessmentResults: { completionStars: stars, understanding }, completedAt: Date.now() } : null;
     closeCoret(true); document.getElementById('mqcoret').hidden = true;
     document.getElementById('sbar').style.width = '100%'; jTrail(n);
     if (kid) {
-      const before = missionStars(kid, m), res = S.recordMission(kid.id, m.key, stars, Date.now() - JM.t0);
-      if (cloudOn()) Cloud.queueProgress(kid.id, session.get().code, 'm:' + m.key, res);
+      const before = missionStars(kid, m);
+      const res = S.recordMission(kid.id, m.key, stars, Date.now() - JM.t0, evidence);
+      if (cloudOn()) { const synced = Object.assign({}, res); delete synced.evidence; Cloud.queueProgress(kid.id, session.get().code, 'm:' + m.key, synced); }
       const gain = Math.max(0, stars - before);
       if (gain) { const sr = S.addStars(kid.id, gain); if (cloudOn() && sr.entry) Cloud.queueProgress(kid.id, session.get().code, sr.key, sr.entry); }
     }
@@ -3971,7 +4105,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     const others = J.MISSIONS.filter((x) => x.level === m.level && x.profession !== m.profession && !missionDone(kid, x));
     const nextM = others[0] || J.MISSIONS.find((x) => x.level === m.level && x.id !== m.id);
     document.getElementById('pq').innerHTML = `<div class="jresult" style="--c:${p.color}"><div class="jmedal" aria-hidden="true"><span>${m.art}</span></div>${MQ.svg(stars >= 2 ? 'cheer' : 'happy', { size: 110 })}<p class="jbadge">Sehari menjadi <b>${esc(p.name)}</b></p>
-        <div class="mq-gstars">${[0, 1, 2].map((i) => gStar(i < stars)).join('')}</div><h1>Misi selesai!</h1><p class="jwrap">${esc(m.wrapUp)}</p>
+        <div class="mq-gstars">${[0, 1, 2].map((i) => gStar(i < stars)).join('')}</div><h1>Misi selesai!</h1><p class="jwrap">${esc(m.wrapUp)}</p>${m.inquiry ? `<section class="jcard jscore"><h2>🔎 Bukti pemahaman</h2><p>Misi selesai: <b>${stars} bintang</b></p><p>Bukti mandiri dari prediksi, investigasi, dan penjelasan: <b>${understanding}%</b></p></section>` : ''}
         <section class="jcard"><h2>✅ Jawaban dan penjelasan</h2><ol>${JM.log.map((x) => `<li><small>${esc(x.q)}</small><b>${x.a}</b> ${x.first ? '⭐' : ''}<p>${esc(x.ex)}</p></li>`).join('')}</ol></section>
         <section class="jcard"><h2>🧮 Matematika yang kamu pakai</h2><div class="jtopics">${m.units.map(unitLink).join('')}</div></section>
         <section class="jcard"><h2>🚀 Apa selanjutnya?</h2><p>Di jenjang yang lebih tinggi, ${esc(p.name.toLowerCase())} memakai: <b>${m.nextMath.map(esc).join(', ')}</b>.</p>
@@ -4505,12 +4639,17 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (act === 'key') {
       if (!P || P.locked) return;
       if (el.dataset.k === 'del') P.input = P.input.slice(0, -1); else if (P.input.length < 12) P.input += el.dataset.k;
-      document.getElementById('indisp').innerHTML = P.input || '&nbsp;'; refreshCheck();
+      const display = document.getElementById('indisp'); if (display) { if ('value' in display) display.value = P.input; else display.innerHTML = P.input || '&nbsp;'; } refreshCheck();
       if (!document.querySelector('#fb.cor')) document.getElementById('indisp').scrollIntoView({ block: 'nearest' });
-    } else if (act === 'jhint') { const h = document.getElementById('jhint'); if (h) { h.hidden = false; el.parentElement.hidden = true; } }
+    } else if (act === 'jhint') { const h = document.getElementById('jhint'); if (h) { JM.hints[JM.i] = (JM.hints[JM.i] || 0) + 1; h.textContent = '💡 ' + jHintText(st); h.hidden = false; el.parentElement.hidden = true; } }
     else if (act === 'keystog') { const fb = document.getElementById('fb'); if (fb) { fb.classList.toggle('kshow'); if (fb.classList.contains('ol-keys')) document.body.classList.toggle('ol-keypad-open', fb.classList.contains('kshow')); } }
-    else if (act === 'check') { if (P && !P.locked) submit(P.q.type === 'choice' ? P.q.options[P.sel] : P.input); }
-    else if (act === 'choose') { if (!P || P.locked) return; P.sel = +el.dataset.i; if (P.q.optAudio) playClips([P.q.optAudio[P.sel]]); document.querySelectorAll('.mq-opt').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); refreshCheck(); }
+    else if (act === 'check') { if (P && !P.locked) submit(practiceGiven()); }
+    else if (act === 'choose') { if (!P || P.locked) return; P.sel = +el.dataset.i; const drop = document.querySelector('[data-dropchoice]'); if (drop) drop.textContent = P.q.options[P.sel]; if (P.q.optAudio) playClips([P.q.optAudio[P.sel]]); document.querySelectorAll('.mq-opt').forEach((b) => b.classList.toggle('sel', b === el)); window.SFX.step(); refreshCheck(); }
+    else if (act === 'tile') { if (!P || P.locked) return; const id = +el.dataset.i; const slot = P.tileSlots.indexOf(null); if (slot >= 0) { P.tileSlots[slot] = id; renderDigitInput(); refreshCheck(); } }
+    else if (act === 'tileslot') { if (!P || P.locked) return; const slot = +el.dataset.i; const id = P.tileSlots[slot]; if (id != null) { P.tileSlots[slot] = null; renderDigitInput(); refreshCheck(); } }
+    else if (act === 'drawdot') { if (!P || P.locked) return; P.drawCount = Math.max(0, P.drawCount - 1); P.drawTouched = true; renderDrawInput(); refreshCheck(); }
+    else if (act === 'drawadd') { if (!P || P.locked || P.drawCount >= 20) return; P.drawCount++; P.drawTouched = true; renderDrawInput(); refreshCheck(); }
+    else if (act === 'drawzero') { if (!P || P.locked) return; P.drawCount = 0; P.drawTouched = true; renderDrawInput(); refreshCheck(); }
     else if (act === 'next') nextQ();
     else if (act === 'again') viewPractice(P.sk.id, true);
     else if (act === 'say') { if (P.q.audio) playClips(P.q.audio); else speak(P.q.speak || P.q.text.replace(/<table class="mtbl mv">[\s\S]*?<\/table>/g, '')); }  // tabel tegak (versi HP) tidak ikut dibacakan
@@ -4632,7 +4771,7 @@ Ketik nama untuk konfirmasi: ${x.name}`);
     if (P.q && P.q.type === 'input' && !P.locked) {
       const extra = { ',': ',', '.': ',', '-': 'âˆ’', '/': '/' };
       if (/^[0-9]$/.test(e.key) && P.input.length < 12) P.input += e.key; else if (extra[e.key] && (P.q.keys || []).includes(extra[e.key])) P.input += extra[e.key]; else if (e.key === 'Backspace') P.input = P.input.slice(0, -1); else return;
-      document.getElementById('indisp').innerHTML = P.input || '&nbsp;'; refreshCheck();
+      const display = document.getElementById('indisp'); if (display) { if ('value' in display) display.value = P.input; else display.innerHTML = P.input || '&nbsp;'; } refreshCheck();
     }
   });
   // Kode kelas: huruf besar otomatis, tombol Masuk aktif setelah 4 huruf, dan langsung masuk saat 5 huruf

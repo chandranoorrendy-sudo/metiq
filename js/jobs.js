@@ -114,6 +114,25 @@
       wrapUp: 'Kamu menghitung panjang kasau dan sudut atap, lalu memeriksa apakah gentengnya cocok.', nextMath: ['Aturan sinus dan cosinus', 'Vektor gaya', 'Kalkulus untuk lendutan balok'] },
 
     /* ---------- Arsitek ---------- */
+    { id: 'architect-school-garden-inquiry', key: 'arsGrdn', profession: 'arsitek', level: 'SD 1-3', title: 'Rancang taman sekolah',
+      instructionalMode: 'guided_inquiry', version: 1, competencyIds: ['3K2', '3K3'], learningObjectives: ['Membedakan luas dan keliling.', 'Menguji ukuran terhadap dua batasan.', 'Menjelaskan keputusan dengan bukti hitungan.'],
+      inquiry: { phases: ['orientation', 'conceptualization', 'investigation', 'conclusion', 'discussion'], rubricId: 'area-perimeter-transfer-v1' },
+      scenario: 'Sekolah ingin membuat taman berbentuk persegi panjang. Taman harus memiliki luas minimal 20 m², sedangkan pagar yang tersedia paling panjang 20 m. Bisakah kamu menemukan ukuran yang memenuhi keduanya?',
+      art: '👩‍🎨🌱', topics: ['ukur', 'geometri'], units: ['3K'],
+      steps: [
+        { type: 'choice', phase: 'orientation', question: 'Apa dua syarat yang harus dipenuhi taman?', options: ['Luas minimal 20 m² dan pagar maksimal 20 m', 'Luas maksimal 20 m² dan pagar minimal 20 m', 'Panjang taman harus 20 m'], answer: 'Luas minimal 20 m² dan pagar maksimal 20 m',
+          hintLevels: ['Cari satu batas untuk luas dan satu batas untuk panjang pagar.', 'Kata minimal berarti paling sedikit; maksimal berarti paling banyak.'], explanation: 'Desain harus memenuhi dua syarat sekaligus: luas ≥ 20 m² dan keliling ≤ 20 m.' },
+        { type: 'choice', phase: 'conceptualization', question: 'Sebelum mencoba alat ukur: apakah taman 3 m × 5 m memenuhi kedua syarat?', options: ['Ya, luas dan pagarnya memenuhi', 'Tidak, luasnya belum cukup', 'Tidak, pagarnya terlalu panjang'], answer: 'Tidak, luasnya belum cukup',
+          hintLevels: ['Perkirakan luas dengan panjang × lebar, lalu bandingkan dengan 20.', 'Luasnya 3 × 5 = 15 m²; pagarnya 2 × (3 + 5) = 16 m.'], explanation: 'Prediksi yang tepat: pagar 16 m memenuhi batas, tetapi luas 15 m² masih kurang dari 20 m².' },
+        { type: 'investigate', phase: 'investigation', question: 'Ubah panjang dan lebar. Cari satu desain yang memenuhi kedua syarat.', config: { min: 2, max: 10, length: 3, width: 5, minArea: 20, maxPerimeter: 20 },
+          hintLevels: ['Coba tambah luas tanpa membuat sisi-sisinya terlalu panjang.', 'Luas = panjang × lebar. Keliling = 2 × (panjang + lebar).', 'Coba 4 m × 5 m atau 3 m × 7 m; periksa kedua hitungan.'], explanation: 'Desain yang baik harus memenuhi luas minimal 20 m² dan keliling maksimal 20 m.' },
+        { type: 'choice', phase: 'conclusion', question: 'Desain mana yang memenuhi luas minimal dan batas pagar?', options: ['4 m × 5 m: luas 20 m², keliling 18 m', '2 m × 10 m: luas 20 m², keliling 24 m', '3 m × 5 m: luas 15 m², keliling 16 m'], answer: '4 m × 5 m: luas 20 m², keliling 18 m',
+          hintLevels: ['Periksa luas dan keliling. Keduanya harus lolos, bukan hanya salah satu.', 'Untuk 4 × 5: luas 20 m²; pagar 2 × (4 + 5) = 18 m.'], explanation: '4 m × 5 m adalah bukti desain yang memenuhi dua syarat: luas 20 m² dan pagar 18 m.' },
+        { type: 'choice', phase: 'discussion', question: 'Mengapa 4 m × 5 m memenuhi tantangan?', options: ['Karena luasnya 20 m² dan kelilingnya 18 m', 'Karena taman dengan luas 20 m² selalu punya keliling 20 m', 'Karena hanya panjang taman yang perlu diperiksa'], answer: 'Karena luasnya 20 m² dan kelilingnya 18 m',
+          hintLevels: ['Jelaskan dengan dua bukti hitungan: luas dan keliling.', 'Bandingkan 20 dengan luas minimal, lalu 18 dengan pagar maksimal.'], explanation: 'Luas 20 m² mencapai batas minimal, sementara pagar 18 m tidak melebihi 20 m. Keputusan perlu memeriksa luas dan keliling bersama-sama.' },
+      ],
+      wrapUp: 'Kamu menguji beberapa ukuran taman, lalu memakai bukti luas dan keliling untuk memilih desain yang memenuhi syarat.', nextMath: ['Bangun gabungan dan keliling (Kelas 4)', 'Skala denah (SMP)'] },
+
     { id: 'architect-house-shapes', key: 'arsTK', profession: 'arsitek', level: 'TK', audio: true, title: 'Cari bentuk di rumah',
       scenario: 'Bu Nadia seorang arsitek. Ia menggambar rumah dari bentuk-bentuk. Ayo bantu Bu Nadia mencari bentuknya!',
       art: '👩‍🎨🏠', topics: ['geometri'], units: ['TAG', 'TBI'],
